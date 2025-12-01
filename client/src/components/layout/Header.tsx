@@ -1,9 +1,22 @@
 import { Search, User, ShoppingCart, Menu, Phone } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 
 export function Header() {
+  const [location] = useLocation();
+
+  const navItems = [
+    { name: '금시세조회', path: '/gold-price' },
+    { name: '골드바', path: '/products' },
+    { name: '실버바', path: '/products' },
+    { name: '순금제품', path: '/products' },
+    { name: '다이아몬드', path: '/products' },
+    { name: '기업선물', path: '/products' },
+    { name: '이벤트', path: '/products' }
+  ];
+
   return (
     <header className="w-full border-b border-gray-200 bg-white sticky top-0 z-50">
       {/* Top Utility Bar */}
@@ -77,10 +90,12 @@ export function Header() {
             <SheetContent side="right">
               <nav className="flex flex-col gap-4 mt-8">
                 <Link href="/" className="text-lg font-medium">홈</Link>
-                <Link href="/products" className="text-lg font-medium">골드바</Link>
-                <Link href="/products" className="text-lg font-medium">실버바</Link>
-                <Link href="/products" className="text-lg font-medium">돌반지</Link>
-                <Link href="/login" className="text-lg font-medium text-gray-500">로그인</Link>
+                {navItems.map((item) => (
+                  <Link key={item.name} href={item.path} className="text-lg font-medium hover:text-primary">
+                    {item.name}
+                  </Link>
+                ))}
+                <Link href="/login" className="text-lg font-medium text-gray-500 mt-4 pt-4 border-t">로그인</Link>
               </nav>
             </SheetContent>
           </Sheet>
@@ -97,10 +112,13 @@ export function Header() {
                 전체카테고리
               </Link>
             </li>
-            {['금시세조회', '골드바', '실버바', '순금제품', '다이아몬드', '기업선물', '이벤트'].map((item) => (
-              <li key={item}>
-                <Link href="#" className="text-gray-700 font-medium hover:text-primary transition-colors text-sm h-14 flex items-center">
-                  {item}
+            {navItems.map((item) => (
+              <li key={item.name}>
+                <Link href={item.path} className={cn(
+                  "text-gray-700 font-medium hover:text-primary transition-colors text-sm h-14 flex items-center border-b-2 border-transparent hover:border-primary px-1",
+                  location === item.path && "text-primary border-primary"
+                )}>
+                  {item.name}
                 </Link>
               </li>
             ))}
