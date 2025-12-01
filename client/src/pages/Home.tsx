@@ -12,8 +12,8 @@ export default function Home() {
       <main>
         <Hero />
         
-        {/* Price Board Section - Overlapping Hero */}
-        <div className="container-custom relative -mt-20 z-10 mb-16">
+        {/* Price Board Section - Moved below Hero, no overlap */}
+        <div className="container-custom py-8">
           <PriceBoard />
         </div>
 
