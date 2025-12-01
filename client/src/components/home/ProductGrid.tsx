@@ -1,16 +1,50 @@
-import { PRODUCTS, CATEGORIES } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Heart, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import type { Product, Category } from "@shared/schema";
+
+const DEFAULT_CATEGORIES = [
+  { id: "gold_bar", name: "골드바" },
+  { id: "silver_bar", name: "실버바" },
+  { id: "baby_ring", name: "돌반지/돌팔찌" },
+  { id: "jewelry", name: "순금제품" },
+  { id: "diamond", name: "다이아몬드" },
+  { id: "corporate", name: "기업선물" },
+  { id: "gift_gold", name: "순금기념품" },
+  { id: "event", name: "이벤트" },
+];
+
+const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1610375461246-83df859d849d?w=500&h=500&fit=crop";
 
 export function ProductGrid() {
   const [activeCategory, setActiveCategory] = useState("all");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Filter products based on active category
-  const filteredProducts = activeCategory === "all" 
-    ? PRODUCTS 
-    : PRODUCTS.filter(p => p.category === activeCategory);
+  const fetchProducts = async () => {
+    try {
+      const url = activeCategory === "all" 
+        ? "/api/products" 
+        : `/api/products?category=${activeCategory}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.success) {
+        setProducts(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    fetchProducts();
+  }, [activeCategory]);
+
+  const filteredProducts = products;
 
   return (
     <section className="py-16">
@@ -25,10 +59,11 @@ export function ProductGrid() {
                 ? "bg-primary text-white border-primary shadow-md" 
                 : "bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary"
             )}
+            data-testid="button-category-all"
           >
             전체보기
           </button>
-          {CATEGORIES.map((cat) => (
+          {DEFAULT_CATEGORIES.map((cat) => (
             <button 
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
@@ -38,6 +73,7 @@ export function ProductGrid() {
                   ? "bg-primary text-white border-primary shadow-md" 
                   : "bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary"
               )}
+              data-testid={`button-category-${cat.id}`}
             >
               {cat.name}
             </button>
@@ -49,26 +85,34 @@ export function ProductGrid() {
       <div className="flex justify-between items-end mb-8 pb-4 border-b border-gray-100">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            {activeCategory === "all" ? "전체 상품" : CATEGORIES.find(c => c.id === activeCategory)?.name}
+            {activeCategory === "all" ? "전체 상품" : DEFAULT_CATEGORIES.find(c => c.id === activeCategory)?.name}
           </h2>
           <p className="text-gray-500 text-sm">
-            한국공인금거래소가 보증하는 정품 {activeCategory === "all" ? "귀금속" : CATEGORIES.find(c => c.id === activeCategory)?.name} 모음
+            한국공인금거래소가 보증하는 정품 {activeCategory === "all" ? "귀금속" : DEFAULT_CATEGORIES.find(c => c.id === activeCategory)?.name} 모음
           </p>
         </div>
         <div className="text-sm text-gray-500">
-          총 <span className="font-bold text-primary">{filteredProducts.length}</span>개의 상품이 있습니다.
+          총 <span className="font-bold text-primary" data-testid="text-product-count">{filteredProducts.length}</span>개의 상품이 있습니다.
         </div>
       </div>
 
       {/* Product Grid */}
-      {filteredProducts.length > 0 ? (
+      {loading ? (
+        <div className="py-20 text-center">
+          <div className="text-gray-500">상품을 불러오는 중...</div>
+        </div>
+      ) : filteredProducts.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {filteredProducts.map((product) => (
-            <div key={product.id} className="group bg-white border border-gray-100 hover:border-primary/50 hover:shadow-lg transition-all duration-300 relative flex flex-col">
+            <div 
+              key={product.id} 
+              className="group bg-white border border-gray-100 hover:border-primary/50 hover:shadow-lg transition-all duration-300 relative flex flex-col"
+              data-testid={`card-product-${product.id}`}
+            >
               {/* Image Container */}
               <div className="aspect-square bg-gray-50 p-8 relative overflow-hidden">
                 <img 
-                  src={product.image} 
+                  src={product.imageUrl || DEFAULT_IMAGE} 
                   alt={product.name} 
                   className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
                 />
@@ -119,7 +163,11 @@ export function ProductGrid() {
         </div>
       ) : (
         <div className="py-20 text-center bg-gray-50 border border-dashed border-gray-200 rounded-lg">
-          <p className="text-gray-500">해당 카테고리에 등록된 상품이 없습니다.</p>
+          <p className="text-gray-500 mb-4">해당 카테고리에 등록된 상품이 없습니다.</p>
+          <p className="text-sm text-gray-400">관리자 페이지에서 상품을 추가해주세요.</p>
+          <a href="/admin" className="inline-block mt-4 text-primary hover:underline text-sm">
+            관리자 페이지 바로가기 →
+          </a>
         </div>
       )}
       
