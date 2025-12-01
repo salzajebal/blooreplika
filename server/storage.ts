@@ -2,7 +2,8 @@ import {
   type User, type InsertUser, users,
   type Product, type InsertProduct, products,
   type Category, type InsertCategory, categories,
-  type GoldPrice, type InsertGoldPrice, goldPrices
+  type GoldPrice, type InsertGoldPrice, goldPrices,
+  type Member, type InsertMember, members
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -30,6 +31,15 @@ export interface IStorage {
   // Gold Prices
   getGoldPrices(): Promise<GoldPrice[]>;
   updateGoldPrice(metalType: string, data: Omit<InsertGoldPrice, 'metalType'>): Promise<GoldPrice>;
+  
+  // Members
+  getAllMembers(): Promise<Member[]>;
+  getMember(id: string): Promise<Member | undefined>;
+  getMemberByEmail(email: string): Promise<Member | undefined>;
+  createMember(member: InsertMember): Promise<Member>;
+  updateMember(id: string, member: Partial<InsertMember>): Promise<Member | undefined>;
+  deleteMember(id: string): Promise<boolean>;
+  updateMemberLastLogin(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -110,7 +120,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateGoldPrice(metalType: string, data: Omit<InsertGoldPrice, 'metalType'>): Promise<GoldPrice> {
-    // Try to find existing price
     const [existing] = await db.select().from(goldPrices).where(eq(goldPrices.metalType, metalType));
     
     if (existing) {
@@ -125,6 +134,45 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return created;
     }
+  }
+
+  // Members
+  async getAllMembers(): Promise<Member[]> {
+    return db.select().from(members).orderBy(desc(members.createdAt));
+  }
+
+  async getMember(id: string): Promise<Member | undefined> {
+    const [member] = await db.select().from(members).where(eq(members.id, id));
+    return member;
+  }
+
+  async getMemberByEmail(email: string): Promise<Member | undefined> {
+    const [member] = await db.select().from(members).where(eq(members.email, email));
+    return member;
+  }
+
+  async createMember(insertMember: InsertMember): Promise<Member> {
+    const [member] = await db.insert(members).values(insertMember).returning();
+    return member;
+  }
+
+  async updateMember(id: string, updateData: Partial<InsertMember>): Promise<Member | undefined> {
+    const [member] = await db.update(members)
+      .set(updateData)
+      .where(eq(members.id, id))
+      .returning();
+    return member;
+  }
+
+  async deleteMember(id: string): Promise<boolean> {
+    const result = await db.delete(members).where(eq(members.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async updateMemberLastLogin(id: string): Promise<void> {
+    await db.update(members)
+      .set({ lastLoginAt: new Date() })
+      .where(eq(members.id, id));
   }
 }
 

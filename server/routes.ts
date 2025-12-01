@@ -1,8 +1,27 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertProductSchema, insertCategorySchema } from "@shared/schema";
+import { insertProductSchema, insertCategorySchema, insertMemberSchema } from "@shared/schema";
 import { z } from "zod";
+
+const ADMIN_USERNAME = "admin123";
+const ADMIN_PASSWORD = "admin123";
+
+const adminSessions = new Map<string, { expiresAt: Date }>();
+
+function generateSessionToken(): string {
+  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+}
+
+function isValidSession(token: string): boolean {
+  const session = adminSessions.get(token);
+  if (!session) return false;
+  if (new Date() > session.expiresAt) {
+    adminSessions.delete(token);
+    return false;
+  }
+  return true;
+}
 
 // Gold price fetch function (simulated real-time with fallback)
 async function fetchGoldPrices() {
@@ -415,6 +434,200 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error seeding data:", error);
       res.status(500).json({ success: false, error: "Failed to seed data" });
+    }
+  });
+
+  // ==================== ADMIN AUTHENTICATION ====================
+  
+  app.post("/api/admin/login", async (req: Request, res: Response) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+        const token = generateSessionToken();
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+        adminSessions.set(token, { expiresAt });
+        
+        res.json({ 
+          success: true, 
+          token,
+          message: "로그인 성공" 
+        });
+      } else {
+        res.status(401).json({ 
+          success: false, 
+          error: "아이디 또는 비밀번호가 일치하지 않습니다." 
+        });
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(500).json({ success: false, error: "로그인 처리 중 오류가 발생했습니다." });
+    }
+  });
+  
+  app.post("/api/admin/logout", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (token) {
+      adminSessions.delete(token);
+    }
+    res.json({ success: true, message: "로그아웃 성공" });
+  });
+  
+  app.get("/api/admin/verify", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (token && isValidSession(token)) {
+      res.json({ success: true, authenticated: true });
+    } else {
+      res.status(401).json({ success: false, authenticated: false });
+    }
+  });
+
+  // ==================== MEMBER MANAGEMENT API ====================
+  
+  app.get("/api/admin/members", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (!token || !isValidSession(token)) {
+      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
+    }
+    
+    try {
+      const memberList = await storage.getAllMembers();
+      res.json({ success: true, data: memberList });
+    } catch (error) {
+      console.error("Error fetching members:", error);
+      res.status(500).json({ success: false, error: "회원 목록을 불러올 수 없습니다." });
+    }
+  });
+  
+  app.get("/api/admin/members/:id", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (!token || !isValidSession(token)) {
+      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
+    }
+    
+    try {
+      const member = await storage.getMember(req.params.id);
+      if (!member) {
+        return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: member });
+    } catch (error) {
+      console.error("Error fetching member:", error);
+      res.status(500).json({ success: false, error: "회원 정보를 불러올 수 없습니다." });
+    }
+  });
+  
+  app.post("/api/admin/members", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (!token || !isValidSession(token)) {
+      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
+    }
+    
+    try {
+      const validatedData = insertMemberSchema.parse(req.body);
+      const member = await storage.createMember(validatedData);
+      res.status(201).json({ success: true, data: member });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error creating member:", error);
+      res.status(500).json({ success: false, error: "회원 생성에 실패했습니다." });
+    }
+  });
+  
+  app.patch("/api/admin/members/:id", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (!token || !isValidSession(token)) {
+      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
+    }
+    
+    try {
+      const partialSchema = insertMemberSchema.partial();
+      const validatedData = partialSchema.parse(req.body);
+      const member = await storage.updateMember(req.params.id, validatedData);
+      if (!member) {
+        return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: member });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error updating member:", error);
+      res.status(500).json({ success: false, error: "회원 정보 수정에 실패했습니다." });
+    }
+  });
+  
+  app.delete("/api/admin/members/:id", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (!token || !isValidSession(token)) {
+      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
+    }
+    
+    try {
+      const success = await storage.deleteMember(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, message: "회원이 삭제되었습니다." });
+    } catch (error) {
+      console.error("Error deleting member:", error);
+      res.status(500).json({ success: false, error: "회원 삭제에 실패했습니다." });
+    }
+  });
+
+  // Public member signup
+  app.post("/api/members/signup", async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertMemberSchema.parse(req.body);
+      
+      // Check if email already exists
+      const existing = await storage.getMemberByEmail(validatedData.email);
+      if (existing) {
+        return res.status(400).json({ success: false, error: "이미 등록된 이메일입니다." });
+      }
+      
+      const member = await storage.createMember(validatedData);
+      res.status(201).json({ success: true, message: "회원가입이 완료되었습니다." });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error during signup:", error);
+      res.status(500).json({ success: false, error: "회원가입 처리 중 오류가 발생했습니다." });
+    }
+  });
+
+  // ==================== ADMIN STATS ====================
+  
+  app.get("/api/admin/stats", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (!token || !isValidSession(token)) {
+      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
+    }
+    
+    try {
+      const products = await storage.getAllProducts();
+      const members = await storage.getAllMembers();
+      const categories = await storage.getAllCategories();
+      
+      res.json({
+        success: true,
+        data: {
+          totalProducts: products.length,
+          totalMembers: members.length,
+          totalCategories: categories.length,
+          productsByCategory: categories.map(cat => ({
+            id: cat.id,
+            name: cat.name,
+            count: products.filter(p => p.category === cat.id).length
+          }))
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      res.status(500).json({ success: false, error: "통계를 불러올 수 없습니다." });
     }
   });
 
