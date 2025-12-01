@@ -31,6 +31,7 @@ export function Header() {
             <Link href="/signup">회원가입</Link>
             <Link href="/cart">장바구니</Link>
             <Link href="/support">고객센터</Link>
+            <Link href="/admin" className="text-primary font-medium">관리자</Link>
           </div>
         </div>
       </div>
