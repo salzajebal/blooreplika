@@ -200,7 +200,7 @@ export default function Admin() {
 
   const handleSeedData = async () => {
     try {
-      const res = await fetch("/api/seed-full", { method: "POST" });
+      const res = await fetchWithAuth("/api/seed-full", { method: "POST" });
       const data = await res.json();
       if (data.success) {
         toast({ title: "성공", description: data.message });
@@ -214,7 +214,7 @@ export default function Admin() {
 
   const handleCreate = async () => {
     try {
-      const res = await fetch("/api/products", {
+      const res = await fetchWithAuth("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -236,7 +236,7 @@ export default function Admin() {
 
   const handleUpdate = async (id: string) => {
     try {
-      const res = await fetch(`/api/products/${id}`, {
+      const res = await fetchWithAuth(`/api/products/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -256,7 +256,7 @@ export default function Admin() {
     if (!confirm("정말로 이 상품을 삭제하시겠습니까?")) return;
     
     try {
-      const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
+      const res = await fetchWithAuth(`/api/products/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         toast({ title: "성공", description: "상품이 삭제되었습니다." });

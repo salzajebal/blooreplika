@@ -23,6 +23,14 @@ function isValidSession(token: string): boolean {
   return true;
 }
 
+function requireAdminAuth(req: Request, res: Response, next: Function) {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  if (!token || !isValidSession(token)) {
+    return res.status(401).json({ success: false, error: "인증이 필요합니다." });
+  }
+  next();
+}
+
 // Gold price fetch function (simulated real-time with fallback)
 async function fetchGoldPrices() {
   // Try to fetch from a real API (metals-api or similar)
@@ -135,8 +143,8 @@ export async function registerRoutes(
     }
   });
   
-  // Create product (Admin)
-  app.post("/api/products", async (req: Request, res: Response) => {
+  // Create product (Admin - Protected)
+  app.post("/api/products", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const validatedData = insertProductSchema.parse(req.body);
       const product = await storage.createProduct(validatedData);
@@ -150,8 +158,8 @@ export async function registerRoutes(
     }
   });
   
-  // Update product (Admin)
-  app.patch("/api/products/:id", async (req: Request, res: Response) => {
+  // Update product (Admin - Protected)
+  app.patch("/api/products/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const partialSchema = insertProductSchema.partial();
       const validatedData = partialSchema.parse(req.body);
@@ -169,8 +177,8 @@ export async function registerRoutes(
     }
   });
   
-  // Delete product (Admin)
-  app.delete("/api/products/:id", async (req: Request, res: Response) => {
+  // Delete product (Admin - Protected)
+  app.delete("/api/products/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const success = await storage.deleteProduct(req.params.id);
       if (!success) {
@@ -196,8 +204,8 @@ export async function registerRoutes(
     }
   });
   
-  // Create category (Admin)
-  app.post("/api/categories", async (req: Request, res: Response) => {
+  // Create category (Admin - Protected)
+  app.post("/api/categories", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const validatedData = insertCategorySchema.parse(req.body);
       const category = await storage.createCategory(validatedData);
@@ -213,8 +221,8 @@ export async function registerRoutes(
   
   // ==================== SEED DATA ====================
   
-  // Reset and seed comprehensive product data
-  app.post("/api/seed-full", async (req: Request, res: Response) => {
+  // Reset and seed comprehensive product data (Admin - Protected)
+  app.post("/api/seed-full", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       // Delete all existing products first
       const existingProducts = await storage.getAllProducts();
@@ -242,102 +250,154 @@ export async function registerRoutes(
         }
       }
       
+      // Image URLs by category
+      const categoryImages: Record<string, string[]> = {
+        gold_bar: [
+          "/images/gold_bar_investment__387f2a88.jpg",
+          "/images/gold_bar_investment__88b39b22.jpg",
+          "/images/gold_bar_investment__e8df734a.jpg",
+          "/images/gold_bar_investment__5310ba8d.jpg",
+          "/images/gold_bar_investment__dd21ba3e.jpg",
+        ],
+        silver_bar: [
+          "/images/silver_bar_precious__13a68013.jpg",
+          "/images/silver_bar_precious__407c7ecf.jpg",
+          "/images/silver_bar_precious__0359b3bd.jpg",
+        ],
+        baby_ring: [
+          "/images/baby_gold_ring_jewel_8be0fd1f.jpg",
+          "/images/baby_gold_ring_jewel_482fc739.jpg",
+          "/images/baby_gold_ring_jewel_0ce8422b.jpg",
+        ],
+        jewelry: [
+          "/images/gold_necklace_bracel_7734c76c.jpg",
+          "/images/gold_necklace_bracel_71b2e33d.jpg",
+          "/images/gold_necklace_bracel_be16df58.jpg",
+          "/images/gold_necklace_bracel_022f2625.jpg",
+        ],
+        diamond: [
+          "/images/diamond_ring_solitai_9d0dd718.jpg",
+          "/images/diamond_ring_solitai_2a941a5b.jpg",
+          "/images/diamond_ring_solitai_993ab741.jpg",
+        ],
+        corporate: [
+          "/images/gold_corporate_gift__38c38353.jpg",
+          "/images/gold_corporate_gift__013daad3.jpg",
+          "/images/gold_corporate_gift__58fc1a8c.jpg",
+        ],
+        gift_gold: [
+          "/images/gold_figurine_pig_lu_50eddba6.jpg",
+          "/images/gold_figurine_pig_lu_6943e4b6.jpg",
+          "/images/gold_figurine_pig_lu_9f84d1a3.jpg",
+        ],
+        event: [
+          "/images/gold_coin_limited_ed_bf80ea77.jpg",
+          "/images/gold_coin_limited_ed_e6f20c04.jpg",
+          "/images/gold_coin_limited_ed_89ba9616.jpg",
+        ],
+      };
+      
+      const getImageForCategory = (category: string, index: number) => {
+        const images = categoryImages[category] || categoryImages.gold_bar;
+        return images[index % images.length];
+      };
+
       // Comprehensive product data based on real Korean gold exchange offerings
       const productData = [
         // ==================== GOLD BARS (15 items) ====================
-        { name: "한국금거래소 골드바 1kg", weight: "1000g", purity: "999.9‰", price: "149,800,000", category: "gold_bar", isBest: true, isNew: false, description: "LBMA 인증 국제 공인 순금 바" },
-        { name: "한국금거래소 골드바 500g", weight: "500g", purity: "999.9‰", price: "75,200,000", category: "gold_bar", isBest: true, isNew: false, description: "투자용 대형 순금 바" },
-        { name: "한국금거래소 골드바 100g", weight: "100g", purity: "999.9‰", price: "15,100,000", category: "gold_bar", isBest: true, isNew: false, description: "가장 인기있는 투자용 골드바" },
-        { name: "한국금거래소 골드바 50g", weight: "50g", purity: "999.9‰", price: "7,580,000", category: "gold_bar", isBest: false, isNew: true, description: "중량 투자 입문용 골드바" },
-        { name: "한국금거래소 골드바 37.5g (10돈)", weight: "37.5g", purity: "999.9‰", price: "5,620,000", category: "gold_bar", isBest: true, isNew: false, description: "전통 10돈 순금 바" },
-        { name: "한국금거래소 골드바 30g", weight: "30g", purity: "999.9‰", price: "4,530,000", category: "gold_bar", isBest: false, isNew: false, description: "선물용 순금 바" },
-        { name: "한국금거래소 골드바 18.75g (5돈)", weight: "18.75g", purity: "999.9‰", price: "2,850,000", category: "gold_bar", isBest: false, isNew: false, description: "5돈 순금 바" },
-        { name: "한국금거래소 골드바 10g", weight: "10g", purity: "999.9‰", price: "1,550,000", category: "gold_bar", isBest: false, isNew: true, description: "소액 투자 입문용" },
-        { name: "한국금거래소 골드바 5g", weight: "5g", purity: "999.9‰", price: "785,000", category: "gold_bar", isBest: false, isNew: true, description: "소형 투자용 골드바" },
-        { name: "한국금거래소 골드바 3.75g (1돈)", weight: "3.75g", purity: "999.9‰", price: "590,000", category: "gold_bar", isBest: false, isNew: false, description: "1돈 순금 바" },
-        { name: "한국금거래소 골드바 1g", weight: "1g", purity: "999.9‰", price: "165,000", category: "gold_bar", isBest: false, isNew: true, description: "미니 골드바 선물용" },
-        { name: "LS-Nikko 동제련 골드바 1kg", weight: "1000g", purity: "999.9‰", price: "150,500,000", category: "gold_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 순금" },
-        { name: "LS-Nikko 동제련 골드바 100g", weight: "100g", purity: "999.9‰", price: "15,250,000", category: "gold_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 순금" },
-        { name: "PAMP 스위스 골드바 100g", weight: "100g", purity: "999.9‰", price: "15,450,000", category: "gold_bar", isBest: false, isNew: false, description: "스위스 PAMP 정제" },
-        { name: "PAMP 스위스 골드바 50g", weight: "50g", purity: "999.9‰", price: "7,780,000", category: "gold_bar", isBest: false, isNew: true, description: "스위스 PAMP 정제" },
+        { name: "한국금거래소 골드바 1kg", weight: "1000g", purity: "999.9‰", price: "149,800,000", category: "gold_bar", isBest: true, isNew: false, description: "LBMA 인증 국제 공인 순금 바", imageUrl: getImageForCategory("gold_bar", 0) },
+        { name: "한국금거래소 골드바 500g", weight: "500g", purity: "999.9‰", price: "75,200,000", category: "gold_bar", isBest: true, isNew: false, description: "투자용 대형 순금 바", imageUrl: getImageForCategory("gold_bar", 1) },
+        { name: "한국금거래소 골드바 100g", weight: "100g", purity: "999.9‰", price: "15,100,000", category: "gold_bar", isBest: true, isNew: false, description: "가장 인기있는 투자용 골드바", imageUrl: getImageForCategory("gold_bar", 2) },
+        { name: "한국금거래소 골드바 50g", weight: "50g", purity: "999.9‰", price: "7,580,000", category: "gold_bar", isBest: false, isNew: true, description: "중량 투자 입문용 골드바", imageUrl: getImageForCategory("gold_bar", 3) },
+        { name: "한국금거래소 골드바 37.5g (10돈)", weight: "37.5g", purity: "999.9‰", price: "5,620,000", category: "gold_bar", isBest: true, isNew: false, description: "전통 10돈 순금 바", imageUrl: getImageForCategory("gold_bar", 4) },
+        { name: "한국금거래소 골드바 30g", weight: "30g", purity: "999.9‰", price: "4,530,000", category: "gold_bar", isBest: false, isNew: false, description: "선물용 순금 바", imageUrl: getImageForCategory("gold_bar", 0) },
+        { name: "한국금거래소 골드바 18.75g (5돈)", weight: "18.75g", purity: "999.9‰", price: "2,850,000", category: "gold_bar", isBest: false, isNew: false, description: "5돈 순금 바", imageUrl: getImageForCategory("gold_bar", 1) },
+        { name: "한국금거래소 골드바 10g", weight: "10g", purity: "999.9‰", price: "1,550,000", category: "gold_bar", isBest: false, isNew: true, description: "소액 투자 입문용", imageUrl: getImageForCategory("gold_bar", 2) },
+        { name: "한국금거래소 골드바 5g", weight: "5g", purity: "999.9‰", price: "785,000", category: "gold_bar", isBest: false, isNew: true, description: "소형 투자용 골드바", imageUrl: getImageForCategory("gold_bar", 3) },
+        { name: "한국금거래소 골드바 3.75g (1돈)", weight: "3.75g", purity: "999.9‰", price: "590,000", category: "gold_bar", isBest: false, isNew: false, description: "1돈 순금 바", imageUrl: getImageForCategory("gold_bar", 4) },
+        { name: "한국금거래소 골드바 1g", weight: "1g", purity: "999.9‰", price: "165,000", category: "gold_bar", isBest: false, isNew: true, description: "미니 골드바 선물용", imageUrl: getImageForCategory("gold_bar", 0) },
+        { name: "LS-Nikko 동제련 골드바 1kg", weight: "1000g", purity: "999.9‰", price: "150,500,000", category: "gold_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 순금", imageUrl: getImageForCategory("gold_bar", 1) },
+        { name: "LS-Nikko 동제련 골드바 100g", weight: "100g", purity: "999.9‰", price: "15,250,000", category: "gold_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 순금", imageUrl: getImageForCategory("gold_bar", 2) },
+        { name: "PAMP 스위스 골드바 100g", weight: "100g", purity: "999.9‰", price: "15,450,000", category: "gold_bar", isBest: false, isNew: false, description: "스위스 PAMP 정제", imageUrl: getImageForCategory("gold_bar", 3) },
+        { name: "PAMP 스위스 골드바 50g", weight: "50g", purity: "999.9‰", price: "7,780,000", category: "gold_bar", isBest: false, isNew: true, description: "스위스 PAMP 정제", imageUrl: getImageForCategory("gold_bar", 4) },
 
         // ==================== SILVER BARS (8 items) ====================
-        { name: "한국금거래소 실버바 1kg", weight: "1000g", purity: "999.9‰", price: "1,850,000", category: "silver_bar", isBest: true, isNew: false, description: "투자용 대형 실버바" },
-        { name: "한국금거래소 실버바 500g", weight: "500g", purity: "999.9‰", price: "950,000", category: "silver_bar", isBest: false, isNew: false, description: "중형 투자용 실버바" },
-        { name: "한국금거래소 실버바 100g", weight: "100g", purity: "999.9‰", price: "195,000", category: "silver_bar", isBest: true, isNew: true, description: "인기 투자용 실버바" },
-        { name: "한국금거래소 실버바 50g", weight: "50g", purity: "999.9‰", price: "105,000", category: "silver_bar", isBest: false, isNew: false, description: "소형 투자용 실버바" },
-        { name: "한국금거래소 실버바 37.5g", weight: "37.5g", purity: "999.9‰", price: "82,000", category: "silver_bar", isBest: false, isNew: false, description: "10돈 실버바" },
-        { name: "한국금거래소 실버바 10g", weight: "10g", purity: "999.9‰", price: "25,000", category: "silver_bar", isBest: false, isNew: true, description: "미니 실버바" },
-        { name: "LS-Nikko 실버바 1kg", weight: "1000g", purity: "999.9‰", price: "1,870,000", category: "silver_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 은" },
-        { name: "LS-Nikko 실버바 100g", weight: "100g", purity: "999.9‰", price: "198,000", category: "silver_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 은" },
+        { name: "한국금거래소 실버바 1kg", weight: "1000g", purity: "999.9‰", price: "1,850,000", category: "silver_bar", isBest: true, isNew: false, description: "투자용 대형 실버바", imageUrl: getImageForCategory("silver_bar", 0) },
+        { name: "한국금거래소 실버바 500g", weight: "500g", purity: "999.9‰", price: "950,000", category: "silver_bar", isBest: false, isNew: false, description: "중형 투자용 실버바", imageUrl: getImageForCategory("silver_bar", 1) },
+        { name: "한국금거래소 실버바 100g", weight: "100g", purity: "999.9‰", price: "195,000", category: "silver_bar", isBest: true, isNew: true, description: "인기 투자용 실버바", imageUrl: getImageForCategory("silver_bar", 2) },
+        { name: "한국금거래소 실버바 50g", weight: "50g", purity: "999.9‰", price: "105,000", category: "silver_bar", isBest: false, isNew: false, description: "소형 투자용 실버바", imageUrl: getImageForCategory("silver_bar", 0) },
+        { name: "한국금거래소 실버바 37.5g", weight: "37.5g", purity: "999.9‰", price: "82,000", category: "silver_bar", isBest: false, isNew: false, description: "10돈 실버바", imageUrl: getImageForCategory("silver_bar", 1) },
+        { name: "한국금거래소 실버바 10g", weight: "10g", purity: "999.9‰", price: "25,000", category: "silver_bar", isBest: false, isNew: true, description: "미니 실버바", imageUrl: getImageForCategory("silver_bar", 2) },
+        { name: "LS-Nikko 실버바 1kg", weight: "1000g", purity: "999.9‰", price: "1,870,000", category: "silver_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 은", imageUrl: getImageForCategory("silver_bar", 0) },
+        { name: "LS-Nikko 실버바 100g", weight: "100g", purity: "999.9‰", price: "198,000", category: "silver_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 은", imageUrl: getImageForCategory("silver_bar", 1) },
 
         // ==================== BABY RINGS / 돌반지 (10 items) ====================
-        { name: "순금 뽀로로 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "285,000", category: "baby_ring", isBest: true, isNew: false, description: "뽀로로 캐릭터 돌반지" },
-        { name: "순금 왕관 돌반지 3.75g", weight: "3.75g", purity: "99.9%", price: "540,000", category: "baby_ring", isBest: true, isNew: true, description: "왕관 모양 프리미엄 돌반지" },
-        { name: "순금 하트 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "290,000", category: "baby_ring", isBest: false, isNew: false, description: "하트 모양 돌반지" },
-        { name: "순금 별 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "288,000", category: "baby_ring", isBest: false, isNew: false, description: "별 모양 돌반지" },
-        { name: "순금 토끼 돌반지 3.75g", weight: "3.75g", purity: "99.9%", price: "545,000", category: "baby_ring", isBest: false, isNew: true, description: "토끼 모양 돌반지" },
-        { name: "순금 코끼리 돌팔찌 3.75g", weight: "3.75g", purity: "99.9%", price: "560,000", category: "baby_ring", isBest: true, isNew: false, description: "코끼리 모양 돌팔찌" },
-        { name: "순금 클로버 돌팔찌 5.625g", weight: "5.625g", purity: "99.9%", price: "820,000", category: "baby_ring", isBest: false, isNew: false, description: "네잎클로버 돌팔찌" },
-        { name: "순금 공주 돌반지 세트", weight: "5.625g", purity: "99.9%", price: "850,000", category: "baby_ring", isBest: false, isNew: true, description: "반지+팔찌 세트" },
-        { name: "순금 왕자 돌반지 세트", weight: "5.625g", purity: "99.9%", price: "850,000", category: "baby_ring", isBest: false, isNew: true, description: "반지+팔찌 세트" },
-        { name: "순금 곰돌이 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "295,000", category: "baby_ring", isBest: false, isNew: false, description: "곰돌이 캐릭터 돌반지" },
+        { name: "순금 뽀로로 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "285,000", category: "baby_ring", isBest: true, isNew: false, description: "뽀로로 캐릭터 돌반지", imageUrl: getImageForCategory("baby_ring", 0) },
+        { name: "순금 왕관 돌반지 3.75g", weight: "3.75g", purity: "99.9%", price: "540,000", category: "baby_ring", isBest: true, isNew: true, description: "왕관 모양 프리미엄 돌반지", imageUrl: getImageForCategory("baby_ring", 1) },
+        { name: "순금 하트 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "290,000", category: "baby_ring", isBest: false, isNew: false, description: "하트 모양 돌반지", imageUrl: getImageForCategory("baby_ring", 2) },
+        { name: "순금 별 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "288,000", category: "baby_ring", isBest: false, isNew: false, description: "별 모양 돌반지", imageUrl: getImageForCategory("baby_ring", 0) },
+        { name: "순금 토끼 돌반지 3.75g", weight: "3.75g", purity: "99.9%", price: "545,000", category: "baby_ring", isBest: false, isNew: true, description: "토끼 모양 돌반지", imageUrl: getImageForCategory("baby_ring", 1) },
+        { name: "순금 코끼리 돌팔찌 3.75g", weight: "3.75g", purity: "99.9%", price: "560,000", category: "baby_ring", isBest: true, isNew: false, description: "코끼리 모양 돌팔찌", imageUrl: getImageForCategory("baby_ring", 2) },
+        { name: "순금 클로버 돌팔찌 5.625g", weight: "5.625g", purity: "99.9%", price: "820,000", category: "baby_ring", isBest: false, isNew: false, description: "네잎클로버 돌팔찌", imageUrl: getImageForCategory("baby_ring", 0) },
+        { name: "순금 공주 돌반지 세트", weight: "5.625g", purity: "99.9%", price: "850,000", category: "baby_ring", isBest: false, isNew: true, description: "반지+팔찌 세트", imageUrl: getImageForCategory("baby_ring", 1) },
+        { name: "순금 왕자 돌반지 세트", weight: "5.625g", purity: "99.9%", price: "850,000", category: "baby_ring", isBest: false, isNew: true, description: "반지+팔찌 세트", imageUrl: getImageForCategory("baby_ring", 2) },
+        { name: "순금 곰돌이 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "295,000", category: "baby_ring", isBest: false, isNew: false, description: "곰돌이 캐릭터 돌반지", imageUrl: getImageForCategory("baby_ring", 0) },
 
         // ==================== JEWELRY / 순금제품 (12 items) ====================
-        { name: "순금 체인 목걸이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,750,000", category: "jewelry", isBest: true, isNew: false, description: "클래식 체인 목걸이" },
-        { name: "순금 팔찌 37.5g (10돈)", weight: "37.5g", purity: "99.9%", price: "5,450,000", category: "jewelry", isBest: true, isNew: true, description: "두꺼운 체인 팔찌" },
-        { name: "순금 대나무 체인 목걸이 37.5g", weight: "37.5g", purity: "99.9%", price: "5,520,000", category: "jewelry", isBest: false, isNew: false, description: "대나무 마디 체인" },
-        { name: "순금 로프 목걸이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,780,000", category: "jewelry", isBest: false, isNew: false, description: "로프 꼬임 디자인" },
-        { name: "순금 뱅글 팔찌 18.75g", weight: "18.75g", purity: "99.9%", price: "2,820,000", category: "jewelry", isBest: false, isNew: true, description: "원형 뱅글 팔찌" },
-        { name: "순금 커프 팔찌 15g", weight: "15g", purity: "99.9%", price: "2,280,000", category: "jewelry", isBest: false, isNew: false, description: "오픈형 커프 팔찌" },
-        { name: "순금 하트 펜던트 3.75g", weight: "3.75g", purity: "99.9%", price: "580,000", category: "jewelry", isBest: false, isNew: false, description: "하트 모양 펜던트" },
-        { name: "순금 십자가 펜던트 7.5g", weight: "7.5g", purity: "99.9%", price: "1,150,000", category: "jewelry", isBest: false, isNew: true, description: "십자가 펜던트" },
-        { name: "순금 반지 3.75g", weight: "3.75g", purity: "99.9%", price: "565,000", category: "jewelry", isBest: false, isNew: false, description: "심플 순금 반지" },
-        { name: "순금 커플링 세트 7.5g", weight: "7.5g", purity: "99.9%", price: "1,180,000", category: "jewelry", isBest: true, isNew: true, description: "커플 반지 2개 세트" },
-        { name: "순금 귀걸이 3.75g", weight: "3.75g", purity: "99.9%", price: "590,000", category: "jewelry", isBest: false, isNew: false, description: "드롭형 귀걸이" },
-        { name: "순금 브로치 7.5g", weight: "7.5g", purity: "99.9%", price: "1,180,000", category: "jewelry", isBest: false, isNew: false, description: "꽃 모양 브로치" },
+        { name: "순금 체인 목걸이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,750,000", category: "jewelry", isBest: true, isNew: false, description: "클래식 체인 목걸이", imageUrl: getImageForCategory("jewelry", 0) },
+        { name: "순금 팔찌 37.5g (10돈)", weight: "37.5g", purity: "99.9%", price: "5,450,000", category: "jewelry", isBest: true, isNew: true, description: "두꺼운 체인 팔찌", imageUrl: getImageForCategory("jewelry", 1) },
+        { name: "순금 대나무 체인 목걸이 37.5g", weight: "37.5g", purity: "99.9%", price: "5,520,000", category: "jewelry", isBest: false, isNew: false, description: "대나무 마디 체인", imageUrl: getImageForCategory("jewelry", 2) },
+        { name: "순금 로프 목걸이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,780,000", category: "jewelry", isBest: false, isNew: false, description: "로프 꼬임 디자인", imageUrl: getImageForCategory("jewelry", 3) },
+        { name: "순금 뱅글 팔찌 18.75g", weight: "18.75g", purity: "99.9%", price: "2,820,000", category: "jewelry", isBest: false, isNew: true, description: "원형 뱅글 팔찌", imageUrl: getImageForCategory("jewelry", 0) },
+        { name: "순금 커프 팔찌 15g", weight: "15g", purity: "99.9%", price: "2,280,000", category: "jewelry", isBest: false, isNew: false, description: "오픈형 커프 팔찌", imageUrl: getImageForCategory("jewelry", 1) },
+        { name: "순금 하트 펜던트 3.75g", weight: "3.75g", purity: "99.9%", price: "580,000", category: "jewelry", isBest: false, isNew: false, description: "하트 모양 펜던트", imageUrl: getImageForCategory("jewelry", 2) },
+        { name: "순금 십자가 펜던트 7.5g", weight: "7.5g", purity: "99.9%", price: "1,150,000", category: "jewelry", isBest: false, isNew: true, description: "십자가 펜던트", imageUrl: getImageForCategory("jewelry", 3) },
+        { name: "순금 반지 3.75g", weight: "3.75g", purity: "99.9%", price: "565,000", category: "jewelry", isBest: false, isNew: false, description: "심플 순금 반지", imageUrl: getImageForCategory("jewelry", 0) },
+        { name: "순금 커플링 세트 7.5g", weight: "7.5g", purity: "99.9%", price: "1,180,000", category: "jewelry", isBest: true, isNew: true, description: "커플 반지 2개 세트", imageUrl: getImageForCategory("jewelry", 1) },
+        { name: "순금 귀걸이 3.75g", weight: "3.75g", purity: "99.9%", price: "590,000", category: "jewelry", isBest: false, isNew: false, description: "드롭형 귀걸이", imageUrl: getImageForCategory("jewelry", 2) },
+        { name: "순금 브로치 7.5g", weight: "7.5g", purity: "99.9%", price: "1,180,000", category: "jewelry", isBest: false, isNew: false, description: "꽃 모양 브로치", imageUrl: getImageForCategory("jewelry", 3) },
 
         // ==================== DIAMOND (8 items) ====================
-        { name: "1캐럿 다이아몬드 솔리테어 링", weight: "1.02ct", purity: "GIA F/VS2", price: "12,500,000", category: "diamond", isBest: true, isNew: false, description: "GIA 인증 1캐럿 링" },
-        { name: "0.7캐럿 다이아몬드 링", weight: "0.71ct", purity: "GIA G/VS1", price: "7,800,000", category: "diamond", isBest: true, isNew: true, description: "GIA 인증 0.7캐럿" },
-        { name: "0.5캐럿 다이아몬드 웨딩링", weight: "0.5ct", purity: "GIA E/SI1", price: "4,200,000", category: "diamond", isBest: false, isNew: false, description: "웨딩 다이아몬드 링" },
-        { name: "0.3캐럿 다이아몬드 반지", weight: "0.31ct", purity: "GIA F/VS2", price: "2,100,000", category: "diamond", isBest: false, isNew: false, description: "데일리 다이아몬드" },
-        { name: "화이트골드 다이아몬드 목걸이 0.5ct", weight: "0.5ct", purity: "18K WG", price: "3,850,000", category: "diamond", isBest: false, isNew: true, description: "18K 화이트골드 목걸이" },
-        { name: "다이아몬드 테니스 팔찌 3ct", weight: "3.0ct", purity: "18K WG", price: "15,800,000", category: "diamond", isBest: false, isNew: false, description: "테니스 브레이슬릿" },
-        { name: "다이아몬드 귀걸이 0.4ct", weight: "0.4ct", purity: "18K WG", price: "2,400,000", category: "diamond", isBest: false, isNew: true, description: "스터드 귀걸이" },
-        { name: "다이아몬드 프로포즈 링 0.5ct", weight: "0.5ct", purity: "Pt950", price: "4,800,000", category: "diamond", isBest: true, isNew: false, description: "플래티넘 프로포즈 링" },
+        { name: "1캐럿 다이아몬드 솔리테어 링", weight: "1.02ct", purity: "GIA F/VS2", price: "12,500,000", category: "diamond", isBest: true, isNew: false, description: "GIA 인증 1캐럿 링", imageUrl: getImageForCategory("diamond", 0) },
+        { name: "0.7캐럿 다이아몬드 링", weight: "0.71ct", purity: "GIA G/VS1", price: "7,800,000", category: "diamond", isBest: true, isNew: true, description: "GIA 인증 0.7캐럿", imageUrl: getImageForCategory("diamond", 1) },
+        { name: "0.5캐럿 다이아몬드 웨딩링", weight: "0.5ct", purity: "GIA E/SI1", price: "4,200,000", category: "diamond", isBest: false, isNew: false, description: "웨딩 다이아몬드 링", imageUrl: getImageForCategory("diamond", 2) },
+        { name: "0.3캐럿 다이아몬드 반지", weight: "0.31ct", purity: "GIA F/VS2", price: "2,100,000", category: "diamond", isBest: false, isNew: false, description: "데일리 다이아몬드", imageUrl: getImageForCategory("diamond", 0) },
+        { name: "화이트골드 다이아몬드 목걸이 0.5ct", weight: "0.5ct", purity: "18K WG", price: "3,850,000", category: "diamond", isBest: false, isNew: true, description: "18K 화이트골드 목걸이", imageUrl: getImageForCategory("diamond", 1) },
+        { name: "다이아몬드 테니스 팔찌 3ct", weight: "3.0ct", purity: "18K WG", price: "15,800,000", category: "diamond", isBest: false, isNew: false, description: "테니스 브레이슬릿", imageUrl: getImageForCategory("diamond", 2) },
+        { name: "다이아몬드 귀걸이 0.4ct", weight: "0.4ct", purity: "18K WG", price: "2,400,000", category: "diamond", isBest: false, isNew: true, description: "스터드 귀걸이", imageUrl: getImageForCategory("diamond", 0) },
+        { name: "다이아몬드 프로포즈 링 0.5ct", weight: "0.5ct", purity: "Pt950", price: "4,800,000", category: "diamond", isBest: true, isNew: false, description: "플래티넘 프로포즈 링", imageUrl: getImageForCategory("diamond", 1) },
 
         // ==================== CORPORATE GIFTS (10 items) ====================
-        { name: "순금 감사패 (우드 케이스) 37.5g", weight: "37.5g", purity: "99.9%", price: "5,800,000", category: "corporate", isBest: true, isNew: false, description: "고급 우드 케이스 포함" },
-        { name: "순금 행운의 열쇠 3.75g", weight: "3.75g", purity: "99.9%", price: "550,000", category: "corporate", isBest: true, isNew: false, description: "성공 기원 열쇠" },
-        { name: "순금 VIP 명패 18.75g", weight: "18.75g", purity: "99.9%", price: "2,850,000", category: "corporate", isBest: false, isNew: true, description: "VIP 고객 명패" },
-        { name: "순금 우수사원상 7.5g", weight: "7.5g", purity: "99.9%", price: "1,150,000", category: "corporate", isBest: false, isNew: false, description: "우수사원 포상용" },
-        { name: "순금 창립기념 메달 15g", weight: "15g", purity: "99.9%", price: "2,320,000", category: "corporate", isBest: false, isNew: true, description: "창립기념 메달" },
-        { name: "기업 로고 순금 뱃지 3.75g", weight: "3.75g", purity: "99.9%", price: "580,000", category: "corporate", isBest: false, isNew: true, description: "맞춤 로고 제작 가능" },
-        { name: "순금 근속패 11.25g", weight: "11.25g", purity: "99.9%", price: "1,720,000", category: "corporate", isBest: false, isNew: false, description: "10년 근속 기념패" },
-        { name: "순금 골프공 마커 1.875g", weight: "1.875g", purity: "99.9%", price: "295,000", category: "corporate", isBest: false, isNew: false, description: "골프 기념품" },
-        { name: "순금 볼펜 세트", weight: "3.75g", purity: "99.9%", price: "680,000", category: "corporate", isBest: false, isNew: true, description: "순금 장식 볼펜" },
-        { name: "순금 명함케이스", weight: "7.5g", purity: "99.9%", price: "1,250,000", category: "corporate", isBest: false, isNew: false, description: "순금 장식 명함케이스" },
+        { name: "순금 감사패 (우드 케이스) 37.5g", weight: "37.5g", purity: "99.9%", price: "5,800,000", category: "corporate", isBest: true, isNew: false, description: "고급 우드 케이스 포함", imageUrl: getImageForCategory("corporate", 0) },
+        { name: "순금 행운의 열쇠 3.75g", weight: "3.75g", purity: "99.9%", price: "550,000", category: "corporate", isBest: true, isNew: false, description: "성공 기원 열쇠", imageUrl: getImageForCategory("corporate", 1) },
+        { name: "순금 VIP 명패 18.75g", weight: "18.75g", purity: "99.9%", price: "2,850,000", category: "corporate", isBest: false, isNew: true, description: "VIP 고객 명패", imageUrl: getImageForCategory("corporate", 2) },
+        { name: "순금 우수사원상 7.5g", weight: "7.5g", purity: "99.9%", price: "1,150,000", category: "corporate", isBest: false, isNew: false, description: "우수사원 포상용", imageUrl: getImageForCategory("corporate", 0) },
+        { name: "순금 창립기념 메달 15g", weight: "15g", purity: "99.9%", price: "2,320,000", category: "corporate", isBest: false, isNew: true, description: "창립기념 메달", imageUrl: getImageForCategory("corporate", 1) },
+        { name: "기업 로고 순금 뱃지 3.75g", weight: "3.75g", purity: "99.9%", price: "580,000", category: "corporate", isBest: false, isNew: true, description: "맞춤 로고 제작 가능", imageUrl: getImageForCategory("corporate", 2) },
+        { name: "순금 근속패 11.25g", weight: "11.25g", purity: "99.9%", price: "1,720,000", category: "corporate", isBest: false, isNew: false, description: "10년 근속 기념패", imageUrl: getImageForCategory("corporate", 0) },
+        { name: "순금 골프공 마커 1.875g", weight: "1.875g", purity: "99.9%", price: "295,000", category: "corporate", isBest: false, isNew: false, description: "골프 기념품", imageUrl: getImageForCategory("corporate", 1) },
+        { name: "순금 볼펜 세트", weight: "3.75g", purity: "99.9%", price: "680,000", category: "corporate", isBest: false, isNew: true, description: "순금 장식 볼펜", imageUrl: getImageForCategory("corporate", 2) },
+        { name: "순금 명함케이스", weight: "7.5g", purity: "99.9%", price: "1,250,000", category: "corporate", isBest: false, isNew: false, description: "순금 장식 명함케이스", imageUrl: getImageForCategory("corporate", 0) },
 
         // ==================== GIFT GOLD / 순금기념품 (10 items) ====================
-        { name: "순금 황금돼지 37.5g", weight: "37.5g", purity: "99.9%", price: "5,700,000", category: "gift_gold", isBest: true, isNew: true, description: "복을 부르는 황금돼지" },
-        { name: "순금 거북이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,850,000", category: "gift_gold", isBest: false, isNew: false, description: "장수 기원 거북이" },
-        { name: "순금 용 37.5g", weight: "37.5g", purity: "99.9%", price: "5,850,000", category: "gift_gold", isBest: true, isNew: false, description: "2024년 용의 해 기념" },
-        { name: "순금 뱀 18.75g", weight: "18.75g", purity: "99.9%", price: "2,900,000", category: "gift_gold", isBest: false, isNew: true, description: "2025년 뱀의 해 기념" },
-        { name: "순금 두꺼비 11.25g", weight: "11.25g", purity: "99.9%", price: "1,750,000", category: "gift_gold", isBest: false, isNew: false, description: "재물 행운 두꺼비" },
-        { name: "순금 코끼리 18.75g", weight: "18.75g", purity: "99.9%", price: "2,880,000", category: "gift_gold", isBest: false, isNew: false, description: "행운의 코끼리" },
-        { name: "순금 부처님 37.5g", weight: "37.5g", purity: "99.9%", price: "5,750,000", category: "gift_gold", isBest: false, isNew: false, description: "평화와 복을 기원" },
-        { name: "순금 호랑이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,920,000", category: "gift_gold", isBest: false, isNew: true, description: "용맹한 호랑이 조각" },
-        { name: "순금 잉어 11.25g", weight: "11.25g", purity: "99.9%", price: "1,780,000", category: "gift_gold", isBest: false, isNew: false, description: "출세 기원 잉어" },
-        { name: "순금 봉황 37.5g", weight: "37.5g", purity: "99.9%", price: "5,900,000", category: "gift_gold", isBest: true, isNew: false, description: "부귀영화 봉황" },
+        { name: "순금 황금돼지 37.5g", weight: "37.5g", purity: "99.9%", price: "5,700,000", category: "gift_gold", isBest: true, isNew: true, description: "복을 부르는 황금돼지", imageUrl: getImageForCategory("gift_gold", 0) },
+        { name: "순금 거북이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,850,000", category: "gift_gold", isBest: false, isNew: false, description: "장수 기원 거북이", imageUrl: getImageForCategory("gift_gold", 1) },
+        { name: "순금 용 37.5g", weight: "37.5g", purity: "99.9%", price: "5,850,000", category: "gift_gold", isBest: true, isNew: false, description: "2024년 용의 해 기념", imageUrl: getImageForCategory("gift_gold", 2) },
+        { name: "순금 뱀 18.75g", weight: "18.75g", purity: "99.9%", price: "2,900,000", category: "gift_gold", isBest: false, isNew: true, description: "2025년 뱀의 해 기념", imageUrl: getImageForCategory("gift_gold", 0) },
+        { name: "순금 두꺼비 11.25g", weight: "11.25g", purity: "99.9%", price: "1,750,000", category: "gift_gold", isBest: false, isNew: false, description: "재물 행운 두꺼비", imageUrl: getImageForCategory("gift_gold", 1) },
+        { name: "순금 코끼리 18.75g", weight: "18.75g", purity: "99.9%", price: "2,880,000", category: "gift_gold", isBest: false, isNew: false, description: "행운의 코끼리", imageUrl: getImageForCategory("gift_gold", 2) },
+        { name: "순금 부처님 37.5g", weight: "37.5g", purity: "99.9%", price: "5,750,000", category: "gift_gold", isBest: false, isNew: false, description: "평화와 복을 기원", imageUrl: getImageForCategory("gift_gold", 0) },
+        { name: "순금 호랑이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,920,000", category: "gift_gold", isBest: false, isNew: true, description: "용맹한 호랑이 조각", imageUrl: getImageForCategory("gift_gold", 1) },
+        { name: "순금 잉어 11.25g", weight: "11.25g", purity: "99.9%", price: "1,780,000", category: "gift_gold", isBest: false, isNew: false, description: "출세 기원 잉어", imageUrl: getImageForCategory("gift_gold", 2) },
+        { name: "순금 봉황 37.5g", weight: "37.5g", purity: "99.9%", price: "5,900,000", category: "gift_gold", isBest: true, isNew: false, description: "부귀영화 봉황", imageUrl: getImageForCategory("gift_gold", 0) },
 
         // ==================== EVENT / 이벤트 (6 items) ====================
-        { name: "[이벤트] 2025 신년 기념 골드 코인 1돈", weight: "3.75g", purity: "99.9%", price: "520,000", category: "event", isBest: true, isNew: true, description: "2025년 한정판 코인" },
-        { name: "[특가] 골드바 10g + 실버바 100g 세트", weight: "110g", purity: "99.9%", price: "1,720,000", category: "event", isBest: true, isNew: false, description: "세트 할인 상품" },
-        { name: "[한정] 럭키백 순금 1돈", weight: "3.75g", purity: "99.9%", price: "550,000", category: "event", isBest: false, isNew: true, description: "랜덤 디자인 순금" },
-        { name: "[이벤트] 결혼기념 골드바 세트", weight: "7.5g", purity: "99.9%", price: "1,180,000", category: "event", isBest: false, isNew: true, description: "커플 각인 서비스" },
-        { name: "[특가] 돌반지 + 돌팔찌 세트", weight: "7.5g", purity: "99.9%", price: "1,100,000", category: "event", isBest: false, isNew: false, description: "돌잔치 세트 할인" },
-        { name: "[한정] 설날 특선 황금 복주머니", weight: "3.75g", purity: "99.9%", price: "580,000", category: "event", isBest: true, isNew: true, description: "설날 한정 기획상품" },
+        { name: "[이벤트] 2025 신년 기념 골드 코인 1돈", weight: "3.75g", purity: "99.9%", price: "520,000", category: "event", isBest: true, isNew: true, description: "2025년 한정판 코인", imageUrl: getImageForCategory("event", 0) },
+        { name: "[특가] 골드바 10g + 실버바 100g 세트", weight: "110g", purity: "99.9%", price: "1,720,000", category: "event", isBest: true, isNew: false, description: "세트 할인 상품", imageUrl: getImageForCategory("event", 1) },
+        { name: "[한정] 럭키백 순금 1돈", weight: "3.75g", purity: "99.9%", price: "550,000", category: "event", isBest: false, isNew: true, description: "랜덤 디자인 순금", imageUrl: getImageForCategory("event", 2) },
+        { name: "[이벤트] 결혼기념 골드바 세트", weight: "7.5g", purity: "99.9%", price: "1,180,000", category: "event", isBest: false, isNew: true, description: "커플 각인 서비스", imageUrl: getImageForCategory("event", 0) },
+        { name: "[특가] 돌반지 + 돌팔찌 세트", weight: "7.5g", purity: "99.9%", price: "1,100,000", category: "event", isBest: false, isNew: false, description: "돌잔치 세트 할인", imageUrl: getImageForCategory("event", 1) },
+        { name: "[한정] 설날 특선 황금 복주머니", weight: "3.75g", purity: "99.9%", price: "580,000", category: "event", isBest: true, isNew: true, description: "설날 한정 기획상품", imageUrl: getImageForCategory("event", 2) },
       ];
       
       let createdCount = 0;
@@ -357,8 +417,8 @@ export async function registerRoutes(
     }
   });
 
-  // Seed initial data (Admin - one-time setup)
-  app.post("/api/seed", async (req: Request, res: Response) => {
+  // Seed initial data (Admin - Protected)
+  app.post("/api/seed", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       // Seed categories
       const categoryData = [
