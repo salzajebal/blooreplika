@@ -12,6 +12,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/products/:category" component={ProductList} />
       <Route path="/products" component={ProductList} />
       <Route path="/gold-price" component={GoldPrice} />
       <Route component={NotFound} />

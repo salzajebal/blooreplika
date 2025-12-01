@@ -8,6 +8,12 @@ import silverBar100g from "@assets/generated_images/100g_silver_bar_product_shot
 import goldTurtle from "@assets/generated_images/gold_turtle_gift_product_shot.png";
 import goldKey from "@assets/generated_images/gold_key_gift_product_shot.png";
 import goldPig from "@assets/generated_images/gold_pig_gift_product_shot.png";
+import diamondRing from "@assets/generated_images/diamond_ring_solitaire_product_shot.png";
+import diamondNecklace from "@assets/generated_images/diamond_necklace_product_shot.png";
+import pureGoldNecklace from "@assets/generated_images/pure_gold_necklace_product_shot.png";
+import pureGoldBracelet from "@assets/generated_images/pure_gold_bracelet_product_shot.png";
+import corporatePlaque from "@assets/generated_images/gold_corporate_plaque_product_shot.png";
+import eventCoin from "@assets/generated_images/event_gold_coin_product_shot.png";
 
 export const PRICE_DATA = {
   gold: {
@@ -31,12 +37,14 @@ export const PRICE_DATA = {
 };
 
 export const CATEGORIES = [
-  { id: "gold_bar", name: "골드바", count: 42 },
-  { id: "silver_bar", name: "실버바", count: 15 },
-  { id: "baby_ring", name: "돌반지/돌팔찌", count: 28 },
-  { id: "gift_gold", name: "순금기념품", count: 35 },
-  { id: "jewelry", name: "순금주얼리", count: 56 },
-  { id: "silver_coin", name: "은화/기타", count: 12 },
+  { id: "gold_bar", name: "골드바", count: 42, description: "한국공인금거래소가 보증하는 최고 품질의 순금 바" },
+  { id: "silver_bar", name: "실버바", count: 15, description: "투자 가치가 높은 고순도 실버바 컬렉션" },
+  { id: "baby_ring", name: "돌반지/돌팔찌", count: 28, description: "소중한 아이의 첫 생일을 축하하는 순금 선물" },
+  { id: "jewelry", name: "순금제품", count: 56, description: "품격 있는 디자인의 고순도 순금 주얼리" },
+  { id: "diamond", name: "다이아몬드", count: 12, description: "영원히 변치 않는 가치, 최상급 다이아몬드" },
+  { id: "corporate", name: "기업선물", count: 24, description: "임직원 및 VIP를 위한 품격 있는 기업 전용 선물" },
+  { id: "gift_gold", name: "순금기념품", count: 35, description: "특별한 날을 기념하는 소장가치 높은 순금 기념품" },
+  { id: "event", name: "이벤트", count: 8, description: "한국공인금거래소의 특별한 혜택과 기획 상품" },
 ];
 
 // Expanded product list to match a real catalog
@@ -133,7 +141,7 @@ export const PRODUCTS = [
     isNew: true,
   },
   
-  // Baby Rings (Dol Gifts)
+  // Baby Rings (Dol Gifts) & Jewelry (Pure Gold Products)
   {
     id: 4,
     name: "순금 뽀르띠 돌반지 1.875g",
@@ -157,18 +165,86 @@ export const PRODUCTS = [
     isNew: true,
   },
   {
-    id: 11,
-    name: "순금 천사 날개 돌반지 3.75g",
-    weight: "3.75g",
+    id: 15,
+    name: "순금 체인 목걸이 18.75g",
+    weight: "18.75g",
     purity: "99.9%",
-    price: "545,000",
-    image: babyRing,
-    category: "baby_ring",
+    price: "2,750,000",
+    image: pureGoldNecklace,
+    category: "jewelry",
+    isBest: true,
+    isNew: false,
+  },
+  {
+    id: 16,
+    name: "순금 팔찌 37.5g (10돈)",
+    weight: "37.5g",
+    purity: "99.9%",
+    price: "5,450,000",
+    image: pureGoldBracelet,
+    category: "jewelry",
+    isBest: false,
+    isNew: true,
+  },
+  {
+    id: 17,
+    name: "순금 대나무 체인 목걸이 37.5g",
+    weight: "37.5g",
+    purity: "99.9%",
+    price: "5,520,000",
+    image: pureGoldNecklace,
+    category: "jewelry",
     isBest: false,
     isNew: false,
   },
   
-  // Gift Gold (Commemorative)
+  // Diamonds
+  {
+    id: 18,
+    name: "1캐럿 다이아몬드 솔리테어 링",
+    weight: "1.02ct",
+    purity: "GIA F/VS2",
+    price: "12,500,000",
+    image: diamondRing,
+    category: "diamond",
+    isBest: true,
+    isNew: false,
+  },
+  {
+    id: 19,
+    name: "화이트골드 다이아몬드 목걸이",
+    weight: "0.5ct",
+    purity: "18K WG",
+    price: "3,850,000",
+    image: diamondNecklace,
+    category: "diamond",
+    isBest: false,
+    isNew: true,
+  },
+  {
+    id: 20,
+    name: "5부 다이아몬드 웨딩 링",
+    weight: "0.5ct",
+    purity: "GIA E/SI1",
+    price: "4,200,000",
+    image: diamondRing,
+    category: "diamond",
+    isBest: false,
+    isNew: false,
+  },
+
+  // Corporate Gifts
+  {
+    id: 21,
+    name: "순금 감사패 (우드 케이스)",
+    weight: "37.5g",
+    purity: "99.9%",
+    price: "5,800,000",
+    image: corporatePlaque,
+    category: "corporate",
+    isBest: true,
+    isNew: false,
+  },
   {
     id: 12,
     name: "순금 행운의 열쇠 3.75g",
@@ -176,10 +252,23 @@ export const PRODUCTS = [
     purity: "99.9%",
     price: "550,000",
     image: goldKey,
-    category: "gift_gold",
+    category: "corporate", // Also Corporate
     isBest: true,
     isNew: false,
   },
+  {
+    id: 22,
+    name: "기업 로고 순금 뱃지",
+    weight: "3.75g",
+    purity: "99.9%",
+    price: "580,000",
+    image: goldBar10gLS, // Using generic gold item for badge placeholder
+    category: "corporate",
+    isBest: false,
+    isNew: true,
+  },
+
+  // Gift Gold (Commemorative) - Reusing items
   {
     id: 13,
     name: "순금 황금돼지 37.5g",
@@ -200,6 +289,30 @@ export const PRODUCTS = [
     image: goldTurtle,
     category: "gift_gold",
     isBest: false,
+    isNew: false,
+  },
+
+  // Events
+  {
+    id: 23,
+    name: "[이벤트] 2025 신년 기념 골드 코인",
+    weight: "3.75g",
+    purity: "99.9%",
+    price: "520,000",
+    image: eventCoin,
+    category: "event",
+    isBest: false,
+    isNew: true,
+  },
+  {
+    id: 24,
+    name: "[특가] 골드바 10g + 실버바 100g 세트",
+    weight: "110g",
+    purity: "99.9%",
+    price: "1,720,000",
+    image: goldBar10gLS,
+    category: "event",
+    isBest: true,
     isNew: false,
   }
 ];
