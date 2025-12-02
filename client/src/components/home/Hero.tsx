@@ -1,4 +1,5 @@
 import heroBg from "@assets/generated_images/luxurious_gold_bars_background_for_website_hero_section.png";
+import trustBg from "@assets/generated_images/smiling_korean_businessman_gold.png";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useState, useEffect, useCallback } from "react";
@@ -314,8 +315,21 @@ export function Hero() {
               </div>
             </div>
 
-            <div className="w-full flex-shrink-0">
-              <div className="max-w-3xl">
+            <div className="w-full flex-shrink-0 relative">
+              <div className="absolute inset-0 flex justify-end items-center pointer-events-none">
+                <div className="w-1/2 h-full relative hidden md:block">
+                  <img 
+                    src={trustBg} 
+                    alt="신뢰할 수 있는 한국골드금거래소" 
+                    className="h-full w-full object-cover object-center opacity-60 mask-gradient-left"
+                    style={{
+                      maskImage: 'linear-gradient(to right, transparent, black 30%)',
+                      WebkitMaskImage: 'linear-gradient(to right, transparent, black 30%)'
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="max-w-3xl relative z-10">
                 <div className="flex items-center gap-3 mb-6">
                   <span className="inline-flex items-center gap-2 py-2 px-4 bg-amber-700/80 text-amber-100 text-sm font-medium tracking-wide rounded-full">
                     <Shield className="w-4 h-4" />
