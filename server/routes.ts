@@ -416,16 +416,16 @@ export async function registerRoutes(
         { name: "LS-Nikko 실버바 100g", weight: "100g", purity: "999.9‰", price: "198,000", category: "silver_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 은", imageUrl: getImageForCategory("silver_bar", 1) },
 
         // ==================== BABY RINGS / 돌반지 (10 items) ====================
-        { name: "순금 뽀로로 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "285,000", category: "baby_ring", isBest: true, isNew: false, description: "뽀로로 캐릭터 돌반지", imageUrl: getImageForCategory("baby_ring", 0) },
-        { name: "순금 왕관 돌반지 3.75g", weight: "3.75g", purity: "99.9%", price: "540,000", category: "baby_ring", isBest: true, isNew: true, description: "왕관 모양 프리미엄 돌반지", imageUrl: getImageForCategory("baby_ring", 1) },
-        { name: "순금 하트 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "290,000", category: "baby_ring", isBest: false, isNew: false, description: "하트 모양 돌반지", imageUrl: getImageForCategory("baby_ring", 2) },
-        { name: "순금 별 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "288,000", category: "baby_ring", isBest: false, isNew: false, description: "별 모양 돌반지", imageUrl: getImageForCategory("baby_ring", 0) },
-        { name: "순금 토끼 돌반지 3.75g", weight: "3.75g", purity: "99.9%", price: "545,000", category: "baby_ring", isBest: false, isNew: true, description: "토끼 모양 돌반지", imageUrl: getImageForCategory("baby_ring", 1) },
-        { name: "순금 코끼리 돌팔찌 3.75g", weight: "3.75g", purity: "99.9%", price: "560,000", category: "baby_ring", isBest: true, isNew: false, description: "코끼리 모양 돌팔찌", imageUrl: getImageForCategory("baby_ring", 2) },
-        { name: "순금 클로버 돌팔찌 5.625g", weight: "5.625g", purity: "99.9%", price: "820,000", category: "baby_ring", isBest: false, isNew: false, description: "네잎클로버 돌팔찌", imageUrl: getImageForCategory("baby_ring", 0) },
-        { name: "순금 공주 돌반지 세트", weight: "5.625g", purity: "99.9%", price: "850,000", category: "baby_ring", isBest: false, isNew: true, description: "반지+팔찌 세트", imageUrl: getImageForCategory("baby_ring", 1) },
-        { name: "순금 왕자 돌반지 세트", weight: "5.625g", purity: "99.9%", price: "850,000", category: "baby_ring", isBest: false, isNew: true, description: "반지+팔찌 세트", imageUrl: getImageForCategory("baby_ring", 2) },
-        { name: "순금 곰돌이 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "295,000", category: "baby_ring", isBest: false, isNew: false, description: "곰돌이 캐릭터 돌반지", imageUrl: getImageForCategory("baby_ring", 0) },
+        { name: "순금 뽀로로 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "285,000", category: "baby_ring", isBest: true, isNew: false, description: "뽀로로 캐릭터 돌반지", imageUrl: "/images/pororo_gold_baby_ring.png" },
+        { name: "순금 왕관 돌반지 3.75g", weight: "3.75g", purity: "99.9%", price: "540,000", category: "baby_ring", isBest: true, isNew: true, description: "왕관 모양 프리미엄 돌반지", imageUrl: "/images/crown_gold_baby_ring.png" },
+        { name: "순금 하트 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "290,000", category: "baby_ring", isBest: false, isNew: false, description: "하트 모양 돌반지", imageUrl: "/images/heart_gold_baby_ring.png" },
+        { name: "순금 별 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "288,000", category: "baby_ring", isBest: false, isNew: false, description: "별 모양 돌반지", imageUrl: "/images/star_gold_baby_ring.png" },
+        { name: "순금 토끼 돌반지 3.75g", weight: "3.75g", purity: "99.9%", price: "545,000", category: "baby_ring", isBest: false, isNew: true, description: "토끼 모양 돌반지", imageUrl: "/images/bunny_gold_baby_ring.png" },
+        { name: "순금 코끼리 돌팔찌 3.75g", weight: "3.75g", purity: "99.9%", price: "560,000", category: "baby_ring", isBest: true, isNew: false, description: "코끼리 모양 돌팔찌", imageUrl: "/images/elephant_gold_baby_bracelet.png" },
+        { name: "순금 클로버 돌팔찌 5.625g", weight: "5.625g", purity: "99.9%", price: "820,000", category: "baby_ring", isBest: false, isNew: false, description: "네잎클로버 돌팔찌", imageUrl: "/images/clover_gold_baby_bracelet.png" },
+        { name: "순금 공주 돌반지 세트", weight: "5.625g", purity: "99.9%", price: "850,000", category: "baby_ring", isBest: false, isNew: true, description: "반지+팔찌 세트", imageUrl: "/images/princess_gold_jewelry_set.png" },
+        { name: "순금 왕자 돌반지 세트", weight: "5.625g", purity: "99.9%", price: "850,000", category: "baby_ring", isBest: false, isNew: true, description: "반지+팔찌 세트", imageUrl: "/images/prince_gold_jewelry_set.png" },
+        { name: "순금 곰돌이 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "295,000", category: "baby_ring", isBest: false, isNew: false, description: "곰돌이 캐릭터 돌반지", imageUrl: "/images/teddy_bear_baby_ring.png" },
 
         // ==================== JEWELRY / 순금제품 (12 items) ====================
         { name: "순금 체인 목걸이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,750,000", category: "jewelry", isBest: true, isNew: false, description: "클래식 체인 목걸이", imageUrl: getImageForCategory("jewelry", 0) },
