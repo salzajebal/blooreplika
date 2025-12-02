@@ -12,6 +12,8 @@ import Admin from "@/pages/Admin";
 import Signup from "@/pages/Signup";
 import Login from "@/pages/Login";
 import Support from "@/pages/Support";
+import Reviews from "@/pages/Reviews";
+import Notices from "@/pages/Notices";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 
 function Router() {
@@ -26,6 +28,8 @@ function Router() {
       <Route path="/signup" component={Signup} />
       <Route path="/login" component={Login} />
       <Route path="/support" component={Support} />
+      <Route path="/reviews" component={Reviews} />
+      <Route path="/notices" component={Notices} />
       <Route component={NotFound} />
     </Switch>
   );

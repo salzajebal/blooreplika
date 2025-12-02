@@ -22,8 +22,8 @@ export function Header() {
       <div className="bg-[#f8f8f8] border-b border-gray-100 py-2 hidden md:block">
         <div className="container-custom flex justify-between items-center text-xs text-gray-500">
           <div className="flex gap-4">
-            <span>즐겨찾기</span>
-            <span>한국공인금거래소란?</span>
+            <Link href="/notices">공지사항</Link>
+            <Link href="/reviews">고객후기</Link>
           </div>
           <div className="flex gap-4">
             <Link href="/login">로그인</Link>
@@ -94,6 +94,9 @@ export function Header() {
                     {item.name}
                   </Link>
                 ))}
+                <Link href="/notices" className="text-lg font-medium hover:text-primary">공지사항</Link>
+                <Link href="/reviews" className="text-lg font-medium hover:text-primary">고객후기</Link>
+                <Link href="/support" className="text-lg font-medium hover:text-primary">고객센터</Link>
                 <Link href="/login" className="text-lg font-medium text-gray-500 mt-4 pt-4 border-t">로그인</Link>
               </nav>
             </SheetContent>
