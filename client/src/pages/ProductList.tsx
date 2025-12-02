@@ -9,12 +9,9 @@ import type { Product } from "@shared/schema";
 const DEFAULT_CATEGORIES = [
   { id: "gold_bar", name: "골드바", description: "한국공인금거래소가 보증하는 최고 품질의 순금 바" },
   { id: "silver_bar", name: "실버바", description: "투자 가치가 높은 고순도 실버바 컬렉션" },
-  { id: "baby_ring", name: "돌반지/돌팔찌", description: "소중한 아이의 첫 생일을 축하하는 순금 선물" },
-  { id: "jewelry", name: "순금제품", description: "품격 있는 디자인의 고순도 순금 주얼리" },
-  { id: "diamond", name: "다이아몬드", description: "영원히 변치 않는 가치, 최상급 다이아몬드" },
-  { id: "corporate", name: "기업선물", description: "임직원 및 VIP를 위한 품격 있는 기업 전용 선물" },
-  { id: "gift_gold", name: "순금기념품", description: "특별한 날을 기념하는 소장가치 높은 순금 기념품" },
-  { id: "event", name: "이벤트", description: "한국공인금거래소의 특별한 혜택과 기획 상품" },
+  { id: "baby_ring", name: "돌선물", description: "아기 돌선물, 돌반지, 돌팔찌" },
+  { id: "jewelry", name: "순금기념품", description: "순금 기념품, 행운의 열쇠, 감사패, 순금동물" },
+  { id: "pure_jewelry", name: "순금주얼리", description: "24K 순금 목걸이, 팔찌, 반지, 귀걸이" },
 ];
 
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1610375461246-83df859d849d?w=500&h=500&fit=crop";

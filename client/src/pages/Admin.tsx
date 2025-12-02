@@ -15,12 +15,9 @@ import type { Product, Category, Member } from "@shared/schema";
 const CATEGORY_OPTIONS = [
   { id: "gold_bar", name: "골드바" },
   { id: "silver_bar", name: "실버바" },
-  { id: "baby_ring", name: "돌반지/돌팔찌" },
-  { id: "jewelry", name: "순금제품" },
-  { id: "diamond", name: "다이아몬드" },
-  { id: "corporate", name: "기업선물" },
-  { id: "gift_gold", name: "순금기념품" },
-  { id: "event", name: "이벤트" },
+  { id: "baby_ring", name: "돌선물" },
+  { id: "jewelry", name: "순금기념품" },
+  { id: "pure_jewelry", name: "순금주얼리" },
 ];
 
 interface AdminStats {

@@ -11,10 +11,9 @@ export function Header() {
     { name: '금시세조회', path: '/gold-price' },
     { name: '골드바', path: '/products/gold_bar' },
     { name: '실버바', path: '/products/silver_bar' },
-    { name: '순금제품', path: '/products/jewelry' },
-    { name: '다이아몬드', path: '/products/diamond' },
-    { name: '기업선물', path: '/products/corporate' },
-    { name: '이벤트', path: '/products/event' }
+    { name: '돌선물', path: '/products/baby_ring' },
+    { name: '순금기념품', path: '/products/jewelry' },
+    { name: '순금주얼리', path: '/products/pure_jewelry' }
   ];
 
   return (
