@@ -479,7 +479,7 @@ export async function registerRoutes(
         { name: "[이벤트] 2025 신년 기념 골드 코인 1돈", weight: "3.75g", purity: "99.9%", price: "520,000", category: "event", isBest: true, isNew: true, description: "2025년 한정판 코인", imageUrl: getImageForCategory("event", 0) },
         { name: "[특가] 골드바 10g + 실버바 100g 세트", weight: "110g", purity: "99.9%", price: "1,720,000", category: "event", isBest: true, isNew: false, description: "세트 할인 상품", imageUrl: getImageForCategory("event", 1) },
         { name: "[한정] 럭키백 순금 1돈", weight: "3.75g", purity: "99.9%", price: "550,000", category: "event", isBest: false, isNew: true, description: "랜덤 디자인 순금", imageUrl: getImageForCategory("event", 2) },
-        { name: "[이벤트] 결혼기념 골드바 세트", weight: "7.5g", purity: "99.9%", price: "1,180,000", category: "event", isBest: false, isNew: true, description: "커플 각인 서비스", imageUrl: getImageForCategory("event", 0) },
+        { name: "[이벤트] 결혼기념 골드바 세트", weight: "7.5g", purity: "99.9%", price: "1,180,000", category: "event", isBest: false, isNew: true, description: "커플 각인 서비스", imageUrl: "/attached_assets/generated_images/wedding_gold_bar_gift_set.png" },
         { name: "[특가] 돌반지 + 돌팔찌 세트", weight: "7.5g", purity: "99.9%", price: "1,100,000", category: "event", isBest: false, isNew: false, description: "돌잔치 세트 할인", imageUrl: getImageForCategory("event", 1) },
         { name: "[한정] 설날 특선 황금 복주머니", weight: "3.75g", purity: "99.9%", price: "580,000", category: "event", isBest: true, isNew: true, description: "설날 한정 기획상품", imageUrl: getImageForCategory("event", 2) },
       ];
