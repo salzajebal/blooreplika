@@ -1979,7 +1979,10 @@ export default function Admin() {
                             <span className="font-medium">회원:</span> {request.memberName} ({request.memberEmail})
                           </p>
                           <p>
-                            <span className="font-medium">입금자:</span> {request.depositorName} ({request.bankName})
+                            <span className="font-medium">입금자:</span> {request.depositorName}
+                            {request.bankName && request.bankName !== "카카오톡문의" && (
+                              <span className="text-gray-500"> ({request.bankName})</span>
+                            )}
                           </p>
                           <p>
                             <span className="font-medium">신청일:</span>{" "}

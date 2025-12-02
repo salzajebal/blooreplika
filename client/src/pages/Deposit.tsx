@@ -236,64 +236,80 @@ export default function Deposit() {
               <CardHeader>
                 <CardTitle>입금신청서 작성</CardTitle>
                 <CardDescription>
-                  입금 완료 후 아래 양식을 작성해주세요
+                  카카오톡 상담 후 아래 양식을 작성해주세요
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="amount" className="text-gray-700 font-medium">입금 금액</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      placeholder="최소 10,000원"
-                      value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                      required
-                      min="10000"
-                      step="1000"
-                      className="h-11"
-                      data-testid="input-deposit-amount"
-                    />
-                    {formData.amount && (
-                      <p className="text-sm text-amber-600">
-                        {parseInt(formData.amount).toLocaleString()}원
+                {!kakaoTalkLink ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <p className="font-medium">카카오톡 고객센터가 설정되지 않았습니다.</p>
+                    <p className="text-sm mt-2">관리자에게 문의해주세요.</p>
+                  </div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="p-4 bg-yellow-50 rounded-lg text-sm text-yellow-800 border border-yellow-200">
+                      <p className="font-medium flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4" />
+                        카카오톡 상담을 먼저 진행해주세요
                       </p>
-                    )}
-                  </div>
+                      <p className="mt-1 text-yellow-700">입금 계좌 및 상세 안내를 받으신 후 신청서를 작성해주세요.</p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="amount" className="text-gray-700 font-medium">입금 금액</Label>
+                      <Input
+                        id="amount"
+                        type="number"
+                        placeholder="최소 10,000원"
+                        value={formData.amount}
+                        onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                        required
+                        min="10000"
+                        step="1000"
+                        className="h-11"
+                        data-testid="input-deposit-amount"
+                      />
+                      {formData.amount && (
+                        <p className="text-sm text-amber-600">
+                          {parseInt(formData.amount).toLocaleString()}원
+                        </p>
+                      )}
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="depositorName" className="text-gray-700 font-medium">입금자명</Label>
-                    <Input
-                      id="depositorName"
-                      type="text"
-                      placeholder="실제 입금하신 분의 성함"
-                      value={formData.depositorName}
-                      onChange={(e) => setFormData({ ...formData, depositorName: e.target.value })}
-                      required
-                      className="h-11"
-                      data-testid="input-depositor-name"
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="depositorName" className="text-gray-700 font-medium">입금자명</Label>
+                      <Input
+                        id="depositorName"
+                        type="text"
+                        placeholder="실제 입금하신 분의 성함"
+                        value={formData.depositorName}
+                        onChange={(e) => setFormData({ ...formData, depositorName: e.target.value })}
+                        required
+                        className="h-11"
+                        data-testid="input-depositor-name"
+                      />
+                    </div>
 
-                  <div className="p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
-                    <p className="font-medium mb-2">입금 전 확인사항</p>
-                    <ul className="list-disc list-inside space-y-1">
-                      <li>입금자명과 신청서의 이름이 일치해야 합니다.</li>
-                      <li>입금 확인까지 영업일 기준 1-2일 소요됩니다.</li>
-                      <li>주말/공휴일 입금은 다음 영업일에 처리됩니다.</li>
-                    </ul>
-                  </div>
+                    <div className="p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
+                      <p className="font-medium mb-2">입금 전 확인사항</p>
+                      <ul className="list-disc list-inside space-y-1">
+                        <li>카카오톡에서 안내받은 계좌로 입금해주세요.</li>
+                        <li>입금자명과 신청서의 이름이 일치해야 합니다.</li>
+                        <li>입금 확인까지 영업일 기준 1-2일 소요됩니다.</li>
+                      </ul>
+                    </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full h-12 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold"
-                    disabled={loading}
-                    data-testid="button-submit-deposit"
-                  >
-                    {loading ? "신청 중..." : "입금신청 하기"}
-                  </Button>
-                </form>
+                    <Button
+                      type="submit"
+                      className="w-full h-12 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold"
+                      disabled={loading}
+                      data-testid="button-submit-deposit"
+                    >
+                      {loading ? "신청 중..." : "입금신청 하기"}
+                    </Button>
+                  </form>
+                )}
               </CardContent>
             </Card>
           </div>
