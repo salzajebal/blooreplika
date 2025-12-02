@@ -18,7 +18,6 @@ import Notices from "@/pages/Notices";
 import Cart from "@/pages/Cart";
 import Profile from "@/pages/Profile";
 import Deposit from "@/pages/Deposit";
-import { ChatWidget } from "@/components/chat/ChatWidget";
 
 function Router() {
   return (
@@ -49,7 +48,6 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
-          <ChatWidget />
         </TooltipProvider>
       </WishlistProvider>
     </QueryClientProvider>

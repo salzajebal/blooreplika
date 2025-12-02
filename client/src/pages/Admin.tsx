@@ -3,16 +3,16 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { 
   Plus, Pencil, Trash2, Check, X, RefreshCw, Database, 
   LogOut, Users, Package, BarChart3, Eye, EyeOff,
   Lock, User, Mail, Phone, CheckCircle, XCircle,
-  MessageCircle, Send, Star, FileText, Bell, Calendar,
+  Star, FileText, Bell, Calendar,
   Wallet, Clock, Snowflake, Unlock, Settings, Link2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Product, Category, Member, ChatConversation, ChatMessage, Review, Notice } from "@shared/schema";
+import type { Product, Category, Member, Review, Notice } from "@shared/schema";
 
 const CATEGORY_OPTIONS = [
   { id: "gold_bar", name: "골드바" },
@@ -53,15 +53,8 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "members" | "deposits" | "chat" | "reviews" | "notices" | "settings">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "members" | "deposits" | "reviews" | "notices" | "settings">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [conversations, setConversations] = useState<ChatConversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<ChatConversation | null>(null);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [adminReply, setAdminReply] = useState("");
-  const [isWsConnected, setIsWsConnected] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
-  const wsConversationIdRef = useRef<string | null>(null);
   
   const [products, setProducts] = useState<Product[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -385,18 +378,6 @@ export default function Admin() {
     }
   };
 
-  const fetchConversations = async () => {
-    try {
-      const res = await fetchWithAuth("/api/chat/conversations");
-      const data = await res.json();
-      if (data.success) {
-        setConversations(data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching conversations:", error);
-    }
-  };
-
   const fetchReviews = async () => {
     try {
       const res = await fetchWithAuth("/api/admin/reviews");
@@ -421,145 +402,12 @@ export default function Admin() {
     }
   };
 
-  const cleanupWebSocket = useCallback(() => {
-    if (wsRef.current) {
-      wsRef.current.onopen = null;
-      wsRef.current.onmessage = null;
-      wsRef.current.onclose = null;
-      wsRef.current.onerror = null;
-      if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
-        wsRef.current.close();
-      }
-      wsRef.current = null;
-    }
-    setIsWsConnected(false);
-  }, []);
-
-  const connectWebSocket = useCallback((conversationId: string) => {
-    if (wsConversationIdRef.current === conversationId && wsRef.current?.readyState === WebSocket.OPEN) {
-      return;
-    }
-    
-    cleanupWebSocket();
-    wsConversationIdRef.current = conversationId;
-    
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/chat`);
-    
-    ws.onopen = () => {
-      setIsWsConnected(true);
-      if (wsConversationIdRef.current) {
-        ws.send(JSON.stringify({ type: "join", conversationId: wsConversationIdRef.current }));
-      }
-    };
-    
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "new_message") {
-          setChatMessages(prev => {
-            const exists = prev.some(m => m.id === data.data.id);
-            if (exists) return prev;
-            return [...prev, data.data];
-          });
-        }
-      } catch (error) {
-        console.error("WebSocket message parse error:", error);
-      }
-    };
-    
-    ws.onclose = () => {
-      setIsWsConnected(false);
-    };
-    
-    wsRef.current = ws;
-  }, [cleanupWebSocket]);
-
-  const selectConversation = async (conv: ChatConversation) => {
-    setSelectedConversation(conv);
-    try {
-      const res = await fetch(`/api/chat/conversations/${conv.id}`);
-      const data = await res.json();
-      if (data.success) {
-        setChatMessages(data.data.messages);
-        connectWebSocket(conv.id);
-      }
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-    }
-  };
-
-  const sendAdminReply = async () => {
-    if (!adminReply.trim() || !selectedConversation) return;
-    
-    const messageText = adminReply.trim();
-    setAdminReply("");
-    
-    if (wsRef.current?.readyState === WebSocket.OPEN && wsConversationIdRef.current) {
-      wsRef.current.send(JSON.stringify({
-        type: "message",
-        senderType: "admin",
-        senderName: "관리자",
-        message: messageText,
-      }));
-    } else {
-      try {
-        const res = await fetch("/api/chat/messages", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            conversationId: selectedConversation.id,
-            senderType: "admin",
-            senderName: "관리자",
-            message: messageText,
-            isRead: false,
-          }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setChatMessages(prev => [...prev, data.data]);
-        }
-      } catch (error) {
-        console.error("Error sending admin reply:", error);
-        toast({ title: "오류", description: "메시지 전송에 실패했습니다.", variant: "destructive" });
-      }
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      cleanupWebSocket();
-    };
-  }, [cleanupWebSocket]);
-
-  const updateConversationStatus = async (convId: string, status: string) => {
-    try {
-      const res = await fetchWithAuth(`/api/chat/conversations/${convId}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        fetchConversations();
-        if (selectedConversation?.id === convId) {
-          setSelectedConversation(data.data);
-        }
-        toast({ title: "성공", description: "상태가 변경되었습니다." });
-      }
-    } catch (error) {
-      console.error("Error updating status:", error);
-      toast({ title: "오류", description: "상태 변경에 실패했습니다.", variant: "destructive" });
-    }
-  };
-
   useEffect(() => {
     if (isAuthenticated) {
       fetchStats();
       fetchProducts();
       fetchMembers();
       fetchDepositRequests();
-      fetchConversations();
       fetchReviews();
       fetchNotices();
       fetchSiteSettings();
@@ -1100,20 +948,6 @@ export default function Admin() {
             {depositRequests.filter(d => d.status === "pending").length > 0 && (
               <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
                 {depositRequests.filter(d => d.status === "pending").length}
-              </span>
-            )}
-          </Button>
-          <Button
-            data-testid="tab-chat"
-            variant={activeTab === "chat" ? "default" : "outline"}
-            onClick={() => setActiveTab("chat")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "chat" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <MessageCircle className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">채팅 상담</span>
-            {conversations.filter(c => c.status === "open").length > 0 && (
-              <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
-                {conversations.filter(c => c.status === "open").length}
               </span>
             )}
           </Button>
@@ -2035,134 +1869,6 @@ export default function Admin() {
                 ))}
               </div>
             )}
-          </div>
-        )}
-
-        {activeTab === "chat" && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-3 h-[600px]">
-              <div className="border-r border-gray-200 overflow-hidden flex flex-col">
-                <div className="p-4 border-b border-gray-200 bg-gray-50">
-                  <h3 className="font-bold text-gray-900">상담 목록</h3>
-                  <p className="text-xs text-gray-500">총 {conversations.length}건의 상담</p>
-                </div>
-                <div className="flex-1 overflow-y-auto">
-                  {conversations.length === 0 ? (
-                    <div className="p-6 text-center text-gray-500">
-                      <MessageCircle className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                      <p>상담 내역이 없습니다</p>
-                    </div>
-                  ) : (
-                    conversations.map((conv) => (
-                      <div
-                        key={conv.id}
-                        onClick={() => selectConversation(conv)}
-                        className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                          selectedConversation?.id === conv.id ? "bg-yellow-50 border-l-4 border-l-yellow-500" : ""
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium text-gray-900">{conv.guestName || "익명"}</span>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            conv.status === "open" ? "bg-green-100 text-green-700" :
-                            conv.status === "pending" ? "bg-yellow-100 text-yellow-700" :
-                            "bg-gray-100 text-gray-600"
-                          }`}>
-                            {conv.status === "open" ? "진행중" : conv.status === "pending" ? "대기" : "종료"}
-                          </span>
-                        </div>
-                        <p className="text-sm text-gray-600 truncate">{conv.subject}</p>
-                        <p className="text-xs text-gray-400 mt-1">
-                          {conv.createdAt ? new Date(conv.createdAt).toLocaleDateString("ko-KR") : ""}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div className="col-span-2 flex flex-col">
-                {selectedConversation ? (
-                  <>
-                    <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-                      <div>
-                        <h3 className="font-bold text-gray-900">{selectedConversation.subject}</h3>
-                        <p className="text-sm text-gray-500">
-                          {selectedConversation.guestName} {selectedConversation.guestEmail && `(${selectedConversation.guestEmail})`}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant={selectedConversation.status === "open" ? "default" : "outline"}
-                          onClick={() => updateConversationStatus(selectedConversation.id, "open")}
-                          className={selectedConversation.status === "open" ? "bg-green-500 hover:bg-green-600" : ""}
-                        >
-                          진행중
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={selectedConversation.status === "closed" ? "default" : "outline"}
-                          onClick={() => updateConversationStatus(selectedConversation.id, "closed")}
-                          className={selectedConversation.status === "closed" ? "bg-gray-500 hover:bg-gray-600" : ""}
-                        >
-                          종료
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-                      {chatMessages.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`mb-3 flex ${msg.senderType === "admin" ? "justify-end" : "justify-start"}`}
-                        >
-                          <div
-                            className={`max-w-[70%] px-4 py-2 rounded-2xl ${
-                              msg.senderType === "admin"
-                                ? "bg-yellow-500 text-white rounded-br-sm"
-                                : "bg-white border border-gray-200 text-gray-800 rounded-bl-sm"
-                            }`}
-                          >
-                            <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-                            <p className={`text-xs mt-1 ${msg.senderType === "admin" ? "text-yellow-100" : "text-gray-400"}`}>
-                              {msg.senderName} · {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) : ""}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="p-4 border-t border-gray-200 bg-white">
-                      <div className="flex gap-2">
-                        <Input
-                          value={adminReply}
-                          onChange={(e) => setAdminReply(e.target.value)}
-                          onKeyPress={(e) => e.key === "Enter" && sendAdminReply()}
-                          placeholder="답변을 입력하세요..."
-                          className="flex-1"
-                          data-testid="input-admin-reply"
-                        />
-                        <Button 
-                          onClick={sendAdminReply}
-                          className="bg-yellow-500 hover:bg-yellow-600"
-                          data-testid="button-send-admin-reply"
-                        >
-                          <Send className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="flex-1 flex items-center justify-center text-gray-500">
-                    <div className="text-center">
-                      <MessageCircle className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                      <p>상담을 선택해주세요</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
         )}
 
