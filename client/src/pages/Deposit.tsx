@@ -56,13 +56,18 @@ export default function Deposit() {
 
   const { data: depositAccount } = useQuery<DepositAccount>({
     queryKey: ["/api/settings/deposit-account"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings/deposit-account");
+      if (!res.ok) return null;
+      return res.json();
+    },
     enabled: !!memberToken,
   });
 
   const { data: myRequests = [] } = useQuery<DepositRequest[]>({
-    queryKey: ["/api/deposit-requests/my"],
+    queryKey: ["/api/members/deposit-requests"],
     queryFn: async () => {
-      const res = await fetch("/api/deposit-requests/my", {
+      const res = await fetch("/api/members/deposit-requests", {
         headers: {
           "Authorization": `Bearer ${memberToken}`,
         },
@@ -109,21 +114,17 @@ export default function Deposit() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/deposit-requests", {
+      const res = await fetch("/api/members/deposit-requests", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${memberToken}`,
         },
         body: JSON.stringify({
-          memberId,
-          memberName,
-          memberEmail,
           amount,
           bankName: depositAccount?.bankName || "",
           accountNumber: depositAccount?.accountNumber || "",
           depositorName: formData.depositorName,
-          status: "pending",
         }),
       });
 
@@ -133,7 +134,7 @@ export default function Deposit() {
           description: "입금신청이 완료되었습니다. 입금 확인 후 포인트가 충전됩니다.",
         });
         setFormData({ amount: "", depositorName: "" });
-        queryClient.invalidateQueries({ queryKey: ["/api/deposit-requests/my"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/members/deposit-requests"] });
       } else {
         const data = await res.json();
         throw new Error(data.error || "신청 실패");
