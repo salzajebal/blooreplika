@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, MessageCircle, HelpCircle, FileText, Bell } from "lucide-react";
 import type { Faq } from "@shared/schema";
+import { useKakaoLink } from "@/hooks/use-kakao-link";
 
 const FAQ_CATEGORIES = [
   { id: "order", name: "주문/배송" },
@@ -29,6 +30,7 @@ export default function Support() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const [faqs, setFaqs] = useState<typeof DEFAULT_FAQS>(DEFAULT_FAQS);
+  const { kakaoLink } = useKakaoLink();
 
   useEffect(() => {
     const fetchFaqs = async () => {
@@ -65,11 +67,17 @@ export default function Support() {
             <h3 className="font-bold text-gray-900 mb-2">자주묻는질문</h3>
             <p className="text-sm text-gray-500">FAQ에서 빠르게 답변을 찾아보세요</p>
           </div>
-          <div className="bg-blue-50 border border-blue-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer">
-            <MessageCircle className="w-10 h-10 text-blue-600 mx-auto mb-3" />
-            <h3 className="font-bold text-gray-900 mb-2">1:1 문의</h3>
-            <p className="text-sm text-gray-500">실시간 채팅으로 문의하세요</p>
-          </div>
+          <a 
+            href={kakaoLink || "#"} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="bg-yellow-50 border border-yellow-300 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer block"
+            onClick={(e) => !kakaoLink && e.preventDefault()}
+          >
+            <MessageCircle className="w-10 h-10 text-yellow-600 mx-auto mb-3" />
+            <h3 className="font-bold text-gray-900 mb-2">카카오톡 문의</h3>
+            <p className="text-sm text-gray-500">카카오톡으로 상담하세요</p>
+          </a>
           <div className="bg-green-50 border border-green-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer">
             <FileText className="w-10 h-10 text-green-600 mx-auto mb-3" />
             <h3 className="font-bold text-gray-900 mb-2">공지사항</h3>
