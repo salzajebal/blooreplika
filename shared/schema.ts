@@ -26,18 +26,71 @@ export const members = pgTable("members", {
   phone: text("phone"),
   isActive: boolean("is_active").default(true),
   isAdmin: boolean("is_admin").default(false),
+  isFrozen: boolean("is_frozen").default(false),
+  pointBalance: integer("point_balance").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   lastLoginAt: timestamp("last_login_at"),
+  frozenAt: timestamp("frozen_at"),
+  frozenReason: text("frozen_reason"),
 });
 
 export const insertMemberSchema = createInsertSchema(members).omit({
   id: true,
   createdAt: true,
   lastLoginAt: true,
+  frozenAt: true,
 });
 
 export type InsertMember = z.infer<typeof insertMemberSchema>;
 export type Member = typeof members.$inferSelect;
+
+// Deposit requests table (point charging requests)
+export const depositRequests = pgTable("deposit_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  memberId: varchar("member_id").notNull(),
+  memberName: text("member_name").notNull(),
+  memberEmail: text("member_email").notNull(),
+  amount: integer("amount").notNull(),
+  bankName: text("bank_name").notNull(),
+  accountNumber: text("account_number"),
+  depositorName: text("depositor_name").notNull(),
+  status: text("status").default("pending"), // pending, approved, rejected
+  adminNote: text("admin_note"),
+  requestedAt: timestamp("requested_at").defaultNow(),
+  processedAt: timestamp("processed_at"),
+  processedBy: varchar("processed_by"),
+});
+
+export const insertDepositRequestSchema = createInsertSchema(depositRequests).omit({
+  id: true,
+  requestedAt: true,
+  processedAt: true,
+  processedBy: true,
+});
+
+export type InsertDepositRequest = z.infer<typeof insertDepositRequestSchema>;
+export type DepositRequest = typeof depositRequests.$inferSelect;
+
+// Point transactions table (audit log for point changes)
+export const pointTransactions = pgTable("point_transactions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  memberId: varchar("member_id").notNull(),
+  type: text("type").notNull(), // deposit_approved, manual_adjustment, purchase
+  amount: integer("amount").notNull(), // positive or negative
+  balanceAfter: integer("balance_after").notNull(),
+  description: text("description"),
+  relatedId: varchar("related_id"), // deposit request id, order id, etc.
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: varchar("created_by"), // admin id if applicable
+});
+
+export const insertPointTransactionSchema = createInsertSchema(pointTransactions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertPointTransaction = z.infer<typeof insertPointTransactionSchema>;
+export type PointTransaction = typeof pointTransactions.$inferSelect;
 
 // Products table
 export const products = pgTable("products", {

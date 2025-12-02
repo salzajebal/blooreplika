@@ -8,7 +8,9 @@ import {
   type ChatMessage, type InsertChatMessage, chatMessages,
   type Faq, type InsertFaq, faqs,
   type Review, type InsertReview, reviews,
-  type Notice, type InsertNotice, notices
+  type Notice, type InsertNotice, notices,
+  type DepositRequest, type InsertDepositRequest, depositRequests,
+  type PointTransaction, type InsertPointTransaction, pointTransactions
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -78,6 +80,24 @@ export interface IStorage {
   updateNotice(id: string, notice: Partial<InsertNotice>): Promise<Notice | undefined>;
   deleteNotice(id: string): Promise<boolean>;
   incrementNoticeViewCount(id: string): Promise<void>;
+  
+  // Deposit Requests
+  getAllDepositRequests(): Promise<DepositRequest[]>;
+  getPendingDepositRequests(): Promise<DepositRequest[]>;
+  getDepositRequestsByMember(memberId: string): Promise<DepositRequest[]>;
+  getDepositRequest(id: string): Promise<DepositRequest | undefined>;
+  createDepositRequest(request: InsertDepositRequest): Promise<DepositRequest>;
+  approveDepositRequest(id: string, adminNote?: string): Promise<DepositRequest | undefined>;
+  rejectDepositRequest(id: string, adminNote?: string): Promise<DepositRequest | undefined>;
+  
+  // Point Transactions
+  getPointTransactionsByMember(memberId: string): Promise<PointTransaction[]>;
+  createPointTransaction(transaction: InsertPointTransaction): Promise<PointTransaction>;
+  
+  // Member Point & Freeze Management
+  updateMemberPoints(id: string, amount: number): Promise<Member | undefined>;
+  freezeMember(id: string, reason: string): Promise<Member | undefined>;
+  unfreezeMember(id: string): Promise<Member | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -365,6 +385,142 @@ export class DatabaseStorage implements IStorage {
         .set({ viewCount: (notice.viewCount || 0) + 1 })
         .where(eq(notices.id, id));
     }
+  }
+
+  // Deposit Requests
+  async getAllDepositRequests(): Promise<DepositRequest[]> {
+    return db.select().from(depositRequests).orderBy(desc(depositRequests.requestedAt));
+  }
+
+  async getPendingDepositRequests(): Promise<DepositRequest[]> {
+    return db.select().from(depositRequests)
+      .where(eq(depositRequests.status, "pending"))
+      .orderBy(desc(depositRequests.requestedAt));
+  }
+
+  async getDepositRequestsByMember(memberId: string): Promise<DepositRequest[]> {
+    return db.select().from(depositRequests)
+      .where(eq(depositRequests.memberId, memberId))
+      .orderBy(desc(depositRequests.requestedAt));
+  }
+
+  async getDepositRequest(id: string): Promise<DepositRequest | undefined> {
+    const [request] = await db.select().from(depositRequests).where(eq(depositRequests.id, id));
+    return request;
+  }
+
+  async createDepositRequest(insertRequest: InsertDepositRequest): Promise<DepositRequest> {
+    const [request] = await db.insert(depositRequests).values(insertRequest).returning();
+    return request;
+  }
+
+  async approveDepositRequest(id: string, adminNote?: string): Promise<DepositRequest | undefined> {
+    const request = await this.getDepositRequest(id);
+    if (!request || request.status !== "pending") return undefined;
+
+    const member = await this.getMember(request.memberId);
+    if (!member) return undefined;
+
+    const newBalance = (member.pointBalance || 0) + request.amount;
+
+    await db.update(members)
+      .set({ pointBalance: newBalance })
+      .where(eq(members.id, request.memberId));
+
+    await db.insert(pointTransactions).values({
+      memberId: request.memberId,
+      type: "deposit_approved",
+      amount: request.amount,
+      balanceAfter: newBalance,
+      description: `입금 승인: ${request.amount.toLocaleString()}원`,
+      relatedId: id,
+    });
+
+    const [updated] = await db.update(depositRequests)
+      .set({ 
+        status: "approved", 
+        adminNote,
+        processedAt: new Date() 
+      })
+      .where(eq(depositRequests.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  async rejectDepositRequest(id: string, adminNote?: string): Promise<DepositRequest | undefined> {
+    const request = await this.getDepositRequest(id);
+    if (!request || request.status !== "pending") return undefined;
+
+    const [updated] = await db.update(depositRequests)
+      .set({ 
+        status: "rejected", 
+        adminNote,
+        processedAt: new Date() 
+      })
+      .where(eq(depositRequests.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  // Point Transactions
+  async getPointTransactionsByMember(memberId: string): Promise<PointTransaction[]> {
+    return db.select().from(pointTransactions)
+      .where(eq(pointTransactions.memberId, memberId))
+      .orderBy(desc(pointTransactions.createdAt));
+  }
+
+  async createPointTransaction(insertTransaction: InsertPointTransaction): Promise<PointTransaction> {
+    const [transaction] = await db.insert(pointTransactions).values(insertTransaction).returning();
+    return transaction;
+  }
+
+  // Member Point & Freeze Management
+  async updateMemberPoints(id: string, amount: number): Promise<Member | undefined> {
+    const member = await this.getMember(id);
+    if (!member) return undefined;
+
+    const newBalance = (member.pointBalance || 0) + amount;
+    
+    const [updated] = await db.update(members)
+      .set({ pointBalance: newBalance })
+      .where(eq(members.id, id))
+      .returning();
+
+    await db.insert(pointTransactions).values({
+      memberId: id,
+      type: "manual_adjustment",
+      amount: amount,
+      balanceAfter: newBalance,
+      description: amount >= 0 ? `관리자 포인트 지급: ${amount.toLocaleString()}원` : `관리자 포인트 차감: ${Math.abs(amount).toLocaleString()}원`,
+    });
+
+    return updated;
+  }
+
+  async freezeMember(id: string, reason: string): Promise<Member | undefined> {
+    const [member] = await db.update(members)
+      .set({ 
+        isFrozen: true, 
+        frozenAt: new Date(),
+        frozenReason: reason 
+      })
+      .where(eq(members.id, id))
+      .returning();
+    return member;
+  }
+
+  async unfreezeMember(id: string): Promise<Member | undefined> {
+    const [member] = await db.update(members)
+      .set({ 
+        isFrozen: false, 
+        frozenAt: null,
+        frozenReason: null 
+      })
+      .where(eq(members.id, id))
+      .returning();
+    return member;
   }
 }
 
