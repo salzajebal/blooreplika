@@ -154,3 +154,45 @@ export const insertFaqSchema = createInsertSchema(faqs).omit({
 
 export type InsertFaq = z.infer<typeof insertFaqSchema>;
 export type Faq = typeof faqs.$inferSelect;
+
+// Reviews table (customer reviews - admin can manipulate all fields)
+export const reviews = pgTable("reviews", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  authorName: text("author_name").notNull(),
+  productId: varchar("product_id"),
+  productName: text("product_name"),
+  rating: integer("rating").default(5),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  imageUrl: text("image_url"),
+  isVisible: boolean("is_visible").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  displayDate: timestamp("display_date").defaultNow(),
+});
+
+export const insertReviewSchema = createInsertSchema(reviews).omit({
+  id: true,
+});
+
+export type InsertReview = z.infer<typeof insertReviewSchema>;
+export type Review = typeof reviews.$inferSelect;
+
+// Notices table (announcements)
+export const notices = pgTable("notices", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  category: text("category").default("general"),
+  isPinned: boolean("is_pinned").default(false),
+  isVisible: boolean("is_visible").default(true),
+  viewCount: integer("view_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  displayDate: timestamp("display_date").defaultNow(),
+});
+
+export const insertNoticeSchema = createInsertSchema(notices).omit({
+  id: true,
+});
+
+export type InsertNotice = z.infer<typeof insertNoticeSchema>;
+export type Notice = typeof notices.$inferSelect;
