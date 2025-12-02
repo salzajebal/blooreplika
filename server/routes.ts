@@ -773,12 +773,249 @@ export async function registerRoutes(
           id: member.id,
           name: member.name,
           email: member.email,
-          phone: member.phone
+          phone: member.phone,
+          pointBalance: member.pointBalance || 0,
+          isFrozen: member.isFrozen || false
         }
       });
     } catch (error) {
       console.error("Error during login:", error);
       res.status(500).json({ success: false, error: "로그인 처리 중 오류가 발생했습니다." });
+    }
+  });
+
+  // Get member info (for logged-in member)
+  app.get("/api/members/me", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (!token) {
+      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
+    }
+    
+    const session = memberSessions.get(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+    }
+    
+    try {
+      const member = await storage.getMember(session.memberId);
+      if (!member) {
+        return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
+      }
+      
+      res.json({
+        success: true,
+        data: {
+          id: member.id,
+          name: member.name,
+          email: member.email,
+          phone: member.phone,
+          pointBalance: member.pointBalance || 0,
+          isFrozen: member.isFrozen || false
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching member:", error);
+      res.status(500).json({ success: false, error: "회원 정보를 불러올 수 없습니다." });
+    }
+  });
+
+  // ==================== DEPOSIT REQUESTS (Member) ====================
+  
+  // Create deposit request
+  app.post("/api/members/deposit-requests", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (!token) {
+      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
+    }
+    
+    const session = memberSessions.get(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+    }
+    
+    try {
+      const member = await storage.getMember(session.memberId);
+      if (!member) {
+        return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
+      }
+      
+      if (member.isFrozen) {
+        return res.status(403).json({ success: false, error: "계정이 동결되어 입금신청을 할 수 없습니다." });
+      }
+      
+      const { amount, bankName, accountNumber, depositorName } = req.body;
+      
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ success: false, error: "유효한 금액을 입력해주세요." });
+      }
+      
+      if (!bankName || !depositorName) {
+        return res.status(400).json({ success: false, error: "은행명과 입금자명을 입력해주세요." });
+      }
+      
+      const request = await storage.createDepositRequest({
+        memberId: member.id,
+        memberName: member.name,
+        memberEmail: member.email,
+        amount: parseInt(amount),
+        bankName,
+        accountNumber: accountNumber || "",
+        depositorName,
+        status: "pending"
+      });
+      
+      res.status(201).json({ success: true, data: request, message: "입금신청이 접수되었습니다." });
+    } catch (error) {
+      console.error("Error creating deposit request:", error);
+      res.status(500).json({ success: false, error: "입금신청 처리 중 오류가 발생했습니다." });
+    }
+  });
+
+  // Get my deposit requests
+  app.get("/api/members/deposit-requests", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (!token) {
+      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
+    }
+    
+    const session = memberSessions.get(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+    }
+    
+    try {
+      const requests = await storage.getDepositRequestsByMember(session.memberId);
+      res.json({ success: true, data: requests });
+    } catch (error) {
+      console.error("Error fetching deposit requests:", error);
+      res.status(500).json({ success: false, error: "입금신청 목록을 불러올 수 없습니다." });
+    }
+  });
+
+  // Get my point transactions
+  app.get("/api/members/point-transactions", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (!token) {
+      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
+    }
+    
+    const session = memberSessions.get(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+    }
+    
+    try {
+      const transactions = await storage.getPointTransactionsByMember(session.memberId);
+      res.json({ success: true, data: transactions });
+    } catch (error) {
+      console.error("Error fetching point transactions:", error);
+      res.status(500).json({ success: false, error: "포인트 내역을 불러올 수 없습니다." });
+    }
+  });
+
+  // ==================== ADMIN DEPOSIT & POINT MANAGEMENT ====================
+  
+  // Get all deposit requests (admin)
+  app.get("/api/admin/deposit-requests", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const status = req.query.status as string;
+      let requests;
+      if (status === "pending") {
+        requests = await storage.getPendingDepositRequests();
+      } else {
+        requests = await storage.getAllDepositRequests();
+      }
+      res.json({ success: true, data: requests });
+    } catch (error) {
+      console.error("Error fetching deposit requests:", error);
+      res.status(500).json({ success: false, error: "입금신청 목록을 불러올 수 없습니다." });
+    }
+  });
+
+  // Approve deposit request (admin)
+  app.post("/api/admin/deposit-requests/:id/approve", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { adminNote } = req.body;
+      const request = await storage.approveDepositRequest(req.params.id, adminNote);
+      if (!request) {
+        return res.status(404).json({ success: false, error: "입금신청을 찾을 수 없거나 이미 처리되었습니다." });
+      }
+      res.json({ success: true, data: request, message: "입금신청이 승인되었습니다." });
+    } catch (error) {
+      console.error("Error approving deposit request:", error);
+      res.status(500).json({ success: false, error: "입금신청 승인 처리 중 오류가 발생했습니다." });
+    }
+  });
+
+  // Reject deposit request (admin)
+  app.post("/api/admin/deposit-requests/:id/reject", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { adminNote } = req.body;
+      const request = await storage.rejectDepositRequest(req.params.id, adminNote);
+      if (!request) {
+        return res.status(404).json({ success: false, error: "입금신청을 찾을 수 없거나 이미 처리되었습니다." });
+      }
+      res.json({ success: true, data: request, message: "입금신청이 거부되었습니다." });
+    } catch (error) {
+      console.error("Error rejecting deposit request:", error);
+      res.status(500).json({ success: false, error: "입금신청 거부 처리 중 오류가 발생했습니다." });
+    }
+  });
+
+  // Adjust member points manually (admin)
+  app.post("/api/admin/members/:id/adjust-points", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { amount, reason } = req.body;
+      
+      if (typeof amount !== "number" || amount === 0) {
+        return res.status(400).json({ success: false, error: "유효한 금액을 입력해주세요." });
+      }
+      
+      const member = await storage.updateMemberPoints(req.params.id, amount);
+      if (!member) {
+        return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
+      }
+      
+      res.json({ success: true, data: member, message: `포인트가 ${amount >= 0 ? "지급" : "차감"}되었습니다.` });
+    } catch (error) {
+      console.error("Error adjusting member points:", error);
+      res.status(500).json({ success: false, error: "포인트 조정 처리 중 오류가 발생했습니다." });
+    }
+  });
+
+  // Freeze member account (admin)
+  app.post("/api/admin/members/:id/freeze", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { reason } = req.body;
+      
+      if (!reason) {
+        return res.status(400).json({ success: false, error: "동결 사유를 입력해주세요." });
+      }
+      
+      const member = await storage.freezeMember(req.params.id, reason);
+      if (!member) {
+        return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
+      }
+      
+      res.json({ success: true, data: member, message: "계정이 동결되었습니다." });
+    } catch (error) {
+      console.error("Error freezing member:", error);
+      res.status(500).json({ success: false, error: "계정 동결 처리 중 오류가 발생했습니다." });
+    }
+  });
+
+  // Unfreeze member account (admin)
+  app.post("/api/admin/members/:id/unfreeze", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const member = await storage.unfreezeMember(req.params.id);
+      if (!member) {
+        return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
+      }
+      
+      res.json({ success: true, data: member, message: "계정 동결이 해제되었습니다." });
+    } catch (error) {
+      console.error("Error unfreezing member:", error);
+      res.status(500).json({ success: false, error: "계정 동결 해제 처리 중 오류가 발생했습니다." });
     }
   });
 
