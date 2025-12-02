@@ -135,6 +135,13 @@ export default function Admin() {
     kakaoTalkLink: string;
   }>({ kakaoTalkLink: "https://open.kakao.com/o/samplelink" });
   const [settingsLoading, setSettingsLoading] = useState(false);
+  
+  const [depositAccountSettings, setDepositAccountSettings] = useState({
+    bankName: "",
+    accountNumber: "",
+    accountHolder: "",
+  });
+  const [depositAccountLoading, setDepositAccountLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
@@ -568,6 +575,20 @@ export default function Admin() {
     } catch (error) {
       console.log("Settings not found, using defaults");
     }
+    
+    try {
+      const res = await fetch("/api/settings/deposit-account");
+      if (res.ok) {
+        const data = await res.json();
+        setDepositAccountSettings({
+          bankName: data.bankName || "",
+          accountNumber: data.accountNumber || "",
+          accountHolder: data.accountHolder || "",
+        });
+      }
+    } catch (error) {
+      console.log("Deposit account settings not found");
+    }
   };
 
   const saveSiteSettings = async () => {
@@ -591,6 +612,27 @@ export default function Admin() {
       toast({ title: "오류", description: "설정 저장에 실패했습니다.", variant: "destructive" });
     } finally {
       setSettingsLoading(false);
+    }
+  };
+  
+  const saveDepositAccountSettings = async () => {
+    setDepositAccountLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/settings/deposit-account", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(depositAccountSettings),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: "입금 계좌 정보가 저장되었습니다." });
+      } else {
+        toast({ title: "오류", description: data.error || "설정 저장에 실패했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "설정 저장에 실패했습니다.", variant: "destructive" });
+    } finally {
+      setDepositAccountLoading(false);
     }
   };
 
@@ -2664,6 +2706,103 @@ export default function Admin() {
                     <li className="flex items-start gap-2">
                       <span className="text-yellow-500 mt-1">•</span>
                       <span>올바른 URL 형식인지 "테스트" 버튼으로 확인하세요.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Wallet className="w-5 h-5 text-amber-600" />
+                  입금 계좌 설정
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">회원들이 입금신청 시 안내받을 계좌 정보를 설정합니다.</p>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">은행명</label>
+                      <Input
+                        data-testid="input-deposit-bank"
+                        type="text"
+                        value={depositAccountSettings.bankName}
+                        onChange={(e) => setDepositAccountSettings(prev => ({ ...prev, bankName: e.target.value }))}
+                        placeholder="예: 국민은행"
+                        className="w-full max-w-md"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">계좌번호</label>
+                      <Input
+                        data-testid="input-deposit-account-number"
+                        type="text"
+                        value={depositAccountSettings.accountNumber}
+                        onChange={(e) => setDepositAccountSettings(prev => ({ ...prev, accountNumber: e.target.value }))}
+                        placeholder="예: 123-456-789012"
+                        className="w-full max-w-md"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">예금주</label>
+                      <Input
+                        data-testid="input-deposit-holder"
+                        type="text"
+                        value={depositAccountSettings.accountHolder}
+                        onChange={(e) => setDepositAccountSettings(prev => ({ ...prev, accountHolder: e.target.value }))}
+                        placeholder="예: 한국골드금거래소"
+                        className="w-full max-w-md"
+                      />
+                    </div>
+                    <Button
+                      data-testid="button-save-deposit-account"
+                      onClick={saveDepositAccountSettings}
+                      disabled={depositAccountLoading}
+                      className="bg-amber-500 hover:bg-amber-600 text-white"
+                    >
+                      {depositAccountLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                      저장
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Eye className="w-4 h-4" />
+                    현재 설정된 계좌
+                  </h4>
+                  {depositAccountSettings.bankName && depositAccountSettings.accountNumber ? (
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500 w-16">은행:</span>
+                        <span className="font-medium">{depositAccountSettings.bankName}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500 w-16">계좌:</span>
+                        <span className="font-medium">{depositAccountSettings.accountNumber}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-500 w-16">예금주:</span>
+                        <span className="font-medium">{depositAccountSettings.accountHolder}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm">설정된 계좌가 없습니다. 위에서 계좌 정보를 입력해주세요.</p>
+                  )}
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-500 mt-1">•</span>
+                      <span>설정한 계좌정보는 회원 입금신청 페이지에 표시됩니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-500 mt-1">•</span>
+                      <span>계좌정보 변경 시 즉시 반영됩니다.</span>
                     </li>
                   </ul>
                 </div>
