@@ -17,6 +17,7 @@ import Reviews from "@/pages/Reviews";
 import Notices from "@/pages/Notices";
 import Cart from "@/pages/Cart";
 import Profile from "@/pages/Profile";
+import Deposit from "@/pages/Deposit";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 
 function Router() {
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/notices" component={Notices} />
       <Route path="/cart" component={Cart} />
       <Route path="/profile" component={Profile} />
+      <Route path="/deposit" component={Deposit} />
       <Route component={NotFound} />
     </Switch>
   );

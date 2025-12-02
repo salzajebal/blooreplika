@@ -33,6 +33,7 @@ export default function Login() {
 
       if (data.success) {
         localStorage.setItem("memberToken", data.token);
+        localStorage.setItem("memberId", data.member.id);
         localStorage.setItem("memberName", data.member.name);
         localStorage.setItem("memberEmail", data.member.email);
         toast({

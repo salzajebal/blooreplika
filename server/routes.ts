@@ -1471,6 +1471,116 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== DEPOSIT ACCOUNT SETTINGS ====================
+
+  // Get deposit account info (for deposit page)
+  app.get("/api/settings/deposit-account", async (req: Request, res: Response) => {
+    try {
+      const bankName = await storage.getSiteSetting("deposit_bank_name");
+      const accountNumber = await storage.getSiteSetting("deposit_account_number");
+      const accountHolder = await storage.getSiteSetting("deposit_account_holder");
+      
+      if (!bankName || !accountNumber || !accountHolder) {
+        return res.status(404).json({ error: "입금 계좌가 설정되지 않았습니다." });
+      }
+      
+      res.json({
+        id: "deposit-account",
+        bankName: bankName.value,
+        accountNumber: accountNumber.value,
+        accountHolder: accountHolder.value,
+        isActive: true,
+      });
+    } catch (error) {
+      console.error("Error fetching deposit account:", error);
+      res.status(500).json({ error: "계좌 정보를 불러올 수 없습니다." });
+    }
+  });
+
+  // Update deposit account (admin)
+  app.put("/api/admin/settings/deposit-account", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { bankName, accountNumber, accountHolder } = req.body;
+      
+      if (!bankName || !accountNumber || !accountHolder) {
+        return res.status(400).json({ error: "모든 필드를 입력해주세요." });
+      }
+      
+      await storage.setSiteSetting("deposit_bank_name", bankName, "입금 은행명");
+      await storage.setSiteSetting("deposit_account_number", accountNumber, "입금 계좌번호");
+      await storage.setSiteSetting("deposit_account_holder", accountHolder, "예금주");
+      
+      res.json({
+        success: true,
+        data: {
+          id: "deposit-account",
+          bankName,
+          accountNumber,
+          accountHolder,
+          isActive: true,
+        }
+      });
+    } catch (error) {
+      console.error("Error updating deposit account:", error);
+      res.status(500).json({ error: "계좌 정보 저장에 실패했습니다." });
+    }
+  });
+
+  // Get member's deposit requests
+  app.get("/api/deposit-requests/my", async (req: Request, res: Response) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "로그인이 필요합니다." });
+      }
+      
+      const token = authHeader.split(" ")[1];
+      const [memberId] = token.split(":");
+      
+      const requests = await storage.getDepositRequestsByMember(memberId);
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching my deposit requests:", error);
+      res.status(500).json({ error: "입금신청 내역을 불러올 수 없습니다." });
+    }
+  });
+
+  // Create deposit request
+  app.post("/api/deposit-requests", async (req: Request, res: Response) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader?.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "로그인이 필요합니다." });
+      }
+      
+      const { memberId, memberName, memberEmail, amount, bankName, accountNumber, depositorName } = req.body;
+      
+      if (!amount || amount < 10000) {
+        return res.status(400).json({ error: "최소 10,000원 이상 입금 가능합니다." });
+      }
+      
+      if (!depositorName) {
+        return res.status(400).json({ error: "입금자명을 입력해주세요." });
+      }
+      
+      const request = await storage.createDepositRequest({
+        memberId,
+        memberName,
+        memberEmail,
+        amount,
+        bankName: bankName || "",
+        accountNumber: accountNumber || "",
+        depositorName,
+        status: "pending",
+      });
+      
+      res.json({ success: true, data: request });
+    } catch (error) {
+      console.error("Error creating deposit request:", error);
+      res.status(500).json({ error: "입금신청에 실패했습니다." });
+    }
+  });
+
   // ==================== SITE SETTINGS API ====================
   
   // Get all site settings (admin only)
