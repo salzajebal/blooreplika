@@ -249,3 +249,16 @@ export const insertNoticeSchema = createInsertSchema(notices).omit({
 
 export type InsertNotice = z.infer<typeof insertNoticeSchema>;
 export type Notice = typeof notices.$inferSelect;
+
+// Site settings table (key-value store for site configuration)
+export const siteSettings = pgTable("site_settings", {
+  key: varchar("key").primaryKey(),
+  value: text("value").notNull(),
+  description: text("description"),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertSiteSettingSchema = createInsertSchema(siteSettings);
+
+export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
+export type SiteSetting = typeof siteSettings.$inferSelect;

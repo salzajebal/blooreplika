@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { ArrowUp, ArrowDown, Minus, TrendingUp, Clock, RefreshCw, Sparkles } from "lucide-react";
+import { useKakaoLink } from "@/hooks/use-kakao-link";
 
 function KakaoIcon({ className }: { className?: string }) {
   return (
@@ -180,9 +181,10 @@ function PriceModal() {
 
 export function Hero() {
   const [, setLocation] = useLocation();
+  const { openKakaoChat } = useKakaoLink();
 
   const handleKakaoClick = () => {
-    window.open("https://pf.kakao.com/_xnxaxcxj", "_blank");
+    openKakaoChat();
   };
 
   return (

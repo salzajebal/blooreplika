@@ -1,4 +1,6 @@
 import { ArrowUp, ArrowDown, Minus, RotateCw, RefreshCw, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useKakaoLink } from "@/hooks/use-kakao-link";
 
 function KakaoIcon({ className }: { className?: string }) {
   return (
@@ -7,7 +9,6 @@ function KakaoIcon({ className }: { className?: string }) {
     </svg>
   );
 }
-import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 
@@ -28,6 +29,7 @@ export function PriceBoard() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [prices, setPrices] = useState<PriceResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const { openKakaoChat } = useKakaoLink();
 
   const eventPrices = {
     gold: "750,000",
@@ -91,7 +93,7 @@ export function PriceBoard() {
   };
 
   const handleKakaoClick = () => {
-    window.open("https://pf.kakao.com/_xnxaxcxj", "_blank");
+    openKakaoChat();
   };
 
   return (

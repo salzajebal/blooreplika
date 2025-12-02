@@ -10,7 +10,8 @@ import {
   type Review, type InsertReview, reviews,
   type Notice, type InsertNotice, notices,
   type DepositRequest, type InsertDepositRequest, depositRequests,
-  type PointTransaction, type InsertPointTransaction, pointTransactions
+  type PointTransaction, type InsertPointTransaction, pointTransactions,
+  type SiteSetting, type InsertSiteSetting, siteSettings
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -98,6 +99,11 @@ export interface IStorage {
   updateMemberPoints(id: string, amount: number): Promise<Member | undefined>;
   freezeMember(id: string, reason: string): Promise<Member | undefined>;
   unfreezeMember(id: string): Promise<Member | undefined>;
+  
+  // Site Settings
+  getSiteSetting(key: string): Promise<SiteSetting | undefined>;
+  getAllSiteSettings(): Promise<SiteSetting[]>;
+  setSiteSetting(key: string, value: string, description?: string): Promise<SiteSetting>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -521,6 +527,33 @@ export class DatabaseStorage implements IStorage {
       .where(eq(members.id, id))
       .returning();
     return member;
+  }
+
+  // Site Settings
+  async getSiteSetting(key: string): Promise<SiteSetting | undefined> {
+    const [setting] = await db.select().from(siteSettings).where(eq(siteSettings.key, key));
+    return setting;
+  }
+
+  async getAllSiteSettings(): Promise<SiteSetting[]> {
+    return db.select().from(siteSettings);
+  }
+
+  async setSiteSetting(key: string, value: string, description?: string): Promise<SiteSetting> {
+    const existing = await this.getSiteSetting(key);
+    
+    if (existing) {
+      const [updated] = await db.update(siteSettings)
+        .set({ value, description, updatedAt: new Date() })
+        .where(eq(siteSettings.key, key))
+        .returning();
+      return updated;
+    } else {
+      const [setting] = await db.insert(siteSettings)
+        .values({ key, value, description })
+        .returning();
+      return setting;
+    }
   }
 }
 

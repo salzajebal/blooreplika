@@ -9,7 +9,7 @@ import {
   LogOut, Users, Package, BarChart3, Eye, EyeOff,
   Lock, User, Mail, Phone, CheckCircle, XCircle,
   MessageCircle, Send, Star, FileText, Bell, Calendar,
-  Wallet, Clock, Snowflake, Unlock
+  Wallet, Clock, Snowflake, Unlock, Settings, Link2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, ChatConversation, ChatMessage, Review, Notice } from "@shared/schema";
@@ -53,7 +53,7 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "members" | "deposits" | "chat" | "reviews" | "notices">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "members" | "deposits" | "chat" | "reviews" | "notices" | "settings">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<ChatConversation | null>(null);
@@ -126,6 +126,11 @@ export default function Admin() {
   const [freezeReason, setFreezeReason] = useState("");
   const [selectedMemberForAction, setSelectedMemberForAction] = useState<string | null>(null);
   const [actionType, setActionType] = useState<"adjust" | "freeze" | null>(null);
+  
+  const [siteSettings, setSiteSettings] = useState<{
+    kakaoTalkLink: string;
+  }>({ kakaoTalkLink: "https://open.kakao.com/o/samplelink" });
+  const [settingsLoading, setSettingsLoading] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
@@ -545,8 +550,45 @@ export default function Admin() {
       fetchConversations();
       fetchReviews();
       fetchNotices();
+      fetchSiteSettings();
     }
   }, [isAuthenticated]);
+  
+  const fetchSiteSettings = async () => {
+    try {
+      const res = await fetch("/api/settings/kakaoTalkLink");
+      const data = await res.json();
+      if (data.success && data.data) {
+        setSiteSettings(prev => ({ ...prev, kakaoTalkLink: data.data.value }));
+      }
+    } catch (error) {
+      console.log("Settings not found, using defaults");
+    }
+  };
+
+  const saveSiteSettings = async () => {
+    setSettingsLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/settings/kakaoTalkLink", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          value: siteSettings.kakaoTalkLink,
+          description: "카카오톡 오픈채팅 링크"
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: "카카오톡 링크가 저장되었습니다." });
+      } else {
+        toast({ title: "오류", description: "설정 저장에 실패했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "설정 저장에 실패했습니다.", variant: "destructive" });
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (isAuthenticated && activeTab === "deposits") {
@@ -1032,6 +1074,15 @@ export default function Admin() {
           >
             <Bell className="w-4 h-4 mr-2" />
             공지 관리
+          </Button>
+          <Button
+            data-testid="tab-settings"
+            variant={activeTab === "settings" ? "default" : "outline"}
+            onClick={() => setActiveTab("settings")}
+            className={activeTab === "settings" ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            설정
           </Button>
         </div>
 
@@ -2420,6 +2471,100 @@ export default function Admin() {
                   <p>등록된 공지사항이 없습니다</p>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "settings" && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-yellow-600" />
+                  사이트 설정
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">카카오톡 문의 링크 및 사이트 설정을 관리합니다.</p>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-yellow-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg viewBox="0 0 24 24" className="w-6 h-6 text-black" fill="currentColor">
+                        <path d="M12 3C6.48 3 2 6.58 2 11c0 2.84 1.83 5.33 4.56 6.78-.12.47-.44 1.75-.51 2.02-.08.32.12.64.46.64.25 0 .5-.11.67-.27.11-.1 1.41-1.14 2.1-1.7.56.07 1.14.11 1.72.11 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-900 mb-2">카카오톡 문의 링크</h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        사이트 전체의 "카카오톡 문의" 버튼을 눌렀을 때 이동할 카카오톡 오픈채팅 링크를 설정합니다.
+                      </p>
+                      <div className="flex gap-3">
+                        <div className="flex-1">
+                          <Input
+                            data-testid="input-kakao-link"
+                            type="url"
+                            value={siteSettings.kakaoTalkLink}
+                            onChange={(e) => setSiteSettings(prev => ({ ...prev, kakaoTalkLink: e.target.value }))}
+                            placeholder="https://open.kakao.com/o/your-link"
+                            className="w-full"
+                          />
+                          <p className="text-xs text-gray-500 mt-2">
+                            예: https://open.kakao.com/o/samplelink 형식의 오픈채팅 링크를 입력하세요.
+                          </p>
+                        </div>
+                        <Button
+                          data-testid="button-save-kakao-link"
+                          onClick={saveSiteSettings}
+                          disabled={settingsLoading}
+                          className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                        >
+                          {settingsLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : "저장"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Link2 className="w-4 h-4" />
+                    현재 설정된 링크
+                  </h4>
+                  <div className="flex items-center gap-3">
+                    <code className="flex-1 bg-white px-3 py-2 rounded border text-sm font-mono truncate">
+                      {siteSettings.kakaoTalkLink || "설정된 링크 없음"}
+                    </code>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(siteSettings.kakaoTalkLink, "_blank")}
+                      disabled={!siteSettings.kakaoTalkLink}
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      테스트
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-6">
+                  <h4 className="font-semibold text-gray-700 mb-3">도움말</h4>
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-yellow-500 mt-1">•</span>
+                      <span>카카오톡 오픈채팅 링크는 카카오톡 앱에서 생성할 수 있습니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-yellow-500 mt-1">•</span>
+                      <span>링크 변경 시 사이트 전체의 모든 "카카오톡 문의" 버튼에 즉시 반영됩니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-yellow-500 mt-1">•</span>
+                      <span>올바른 URL 형식인지 "테스트" 버튼으로 확인하세요.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         )}

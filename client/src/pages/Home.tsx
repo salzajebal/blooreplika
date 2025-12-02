@@ -5,6 +5,7 @@ import { PriceBoard } from "@/components/home/PriceBoard";
 import { ProductGrid } from "@/components/home/ProductGrid";
 import { Sparkles } from "lucide-react";
 import { Link } from "wouter";
+import { useKakaoLink } from "@/hooks/use-kakao-link";
 
 function KakaoIcon({ className }: { className?: string }) {
   return (
@@ -15,8 +16,9 @@ function KakaoIcon({ className }: { className?: string }) {
 }
 
 export default function Home() {
+  const { openKakaoChat } = useKakaoLink();
   const handleKakaoClick = () => {
-    window.open("https://pf.kakao.com/_xnxaxcxj", "_blank");
+    openKakaoChat();
   };
 
   return (
