@@ -171,7 +171,7 @@ function PriceModal() {
       )}
 
       <div className="bg-gray-50 p-4 rounded-lg text-xs text-gray-500 space-y-1">
-        <p>• 상기 시세는 한국공인금거래소 기준이며, 실제 거래 시 차이가 있을 수 있습니다.</p>
+        <p>• 상기 시세는 한국골드금거래소 기준이며, 실제 거래 시 차이가 있을 수 있습니다.</p>
         <p>• 살 때 가격은 VAT(부가세) 별도이며, 대량 거래 시 별도 문의바랍니다.</p>
         <p>• 국제 금 시세 변동에 따라 실시간으로 변경될 수 있습니다.</p>
       </div>
@@ -208,7 +208,7 @@ export function Hero() {
           </div>
           
           <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4">
-            한국공인금거래소
+            한국골드금거래소
             <br />
             <span className="text-amber-400">2주년 특별가 안내</span>
           </h1>

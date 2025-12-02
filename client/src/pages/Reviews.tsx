@@ -41,7 +41,7 @@ export default function Reviews() {
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">고객 후기</h1>
-          <p className="text-gray-600">한국공인금거래소를 이용해주신 고객님들의 생생한 후기입니다</p>
+          <p className="text-gray-600">한국골드금거래소를 이용해주신 고객님들의 생생한 후기입니다</p>
         </div>
 
         {isLoading ? (

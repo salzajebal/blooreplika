@@ -32,7 +32,7 @@ export default function Signup() {
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">회원가입</h1>
-            <p className="text-gray-500">한국공인금거래소 회원이 되어 다양한 혜택을 누리세요</p>
+            <p className="text-gray-500">한국골드금거래소 회원이 되어 다양한 혜택을 누리세요</p>
           </div>
 
           {/* Form */}

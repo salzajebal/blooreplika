@@ -324,7 +324,7 @@ export default function Profile() {
                       <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                         <h3 className="font-bold text-amber-800 mb-2">입금 안내</h3>
                         <div className="text-sm text-amber-700 space-y-1">
-                          <p>- 예금주: (주)한국공인금거래소</p>
+                          <p>- 예금주: (주)한국골드금거래소</p>
                           <p>- 국민은행: 123-456-789012</p>
                           <p>- 입금자명은 반드시 신청서와 동일하게 입금해주세요.</p>
                         </div>

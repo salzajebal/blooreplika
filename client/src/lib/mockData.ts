@@ -37,14 +37,14 @@ export const PRICE_DATA = {
 };
 
 export const CATEGORIES = [
-  { id: "gold_bar", name: "골드바", count: 42, description: "한국공인금거래소가 보증하는 최고 품질의 순금 바" },
+  { id: "gold_bar", name: "골드바", count: 42, description: "한국골드금거래소가 보증하는 최고 품질의 순금 바" },
   { id: "silver_bar", name: "실버바", count: 15, description: "투자 가치가 높은 고순도 실버바 컬렉션" },
   { id: "baby_ring", name: "돌반지/돌팔찌", count: 28, description: "소중한 아이의 첫 생일을 축하하는 순금 선물" },
   { id: "jewelry", name: "순금제품", count: 56, description: "품격 있는 디자인의 고순도 순금 주얼리" },
   { id: "diamond", name: "다이아몬드", count: 12, description: "영원히 변치 않는 가치, 최상급 다이아몬드" },
   { id: "corporate", name: "기업선물", count: 24, description: "임직원 및 VIP를 위한 품격 있는 기업 전용 선물" },
   { id: "gift_gold", name: "순금기념품", count: 35, description: "특별한 날을 기념하는 소장가치 높은 순금 기념품" },
-  { id: "event", name: "이벤트", count: 8, description: "한국공인금거래소의 특별한 혜택과 기획 상품" },
+  { id: "event", name: "이벤트", count: 8, description: "한국골드금거래소의 특별한 혜택과 기획 상품" },
 ];
 
 // Expanded product list to match a real catalog
@@ -52,7 +52,7 @@ export const PRODUCTS = [
   // Gold Bars
   {
     id: 1,
-    name: "한국공인금거래소 골드바 1,000g",
+    name: "한국골드금거래소 골드바 1,000g",
     weight: "1000g",
     purity: "999.9‰",
     price: "149,800,000",
@@ -63,7 +63,7 @@ export const PRODUCTS = [
   },
   {
     id: 2,
-    name: "한국공인금거래소 골드바 100g",
+    name: "한국골드금거래소 골드바 100g",
     weight: "100g",
     purity: "999.9‰",
     price: "15,100,000",
@@ -74,7 +74,7 @@ export const PRODUCTS = [
   },
   {
     id: 5,
-    name: "한국공인금거래소 골드바 10g",
+    name: "한국골드금거래소 골드바 10g",
     weight: "10g",
     purity: "999.9‰",
     price: "1,550,000",
@@ -85,7 +85,7 @@ export const PRODUCTS = [
   },
   {
     id: 6,
-    name: "한국공인금거래소 골드바 37.5g",
+    name: "한국골드금거래소 골드바 37.5g",
     weight: "37.5g",
     purity: "999.9‰",
     price: "5,620,000",
@@ -120,7 +120,7 @@ export const PRODUCTS = [
   // Silver Bars
   {
     id: 3,
-    name: "한국공인금거래소 실버바 1,000g",
+    name: "한국골드금거래소 실버바 1,000g",
     weight: "1000g",
     purity: "999.9‰",
     price: "1,850,000",
@@ -131,7 +131,7 @@ export const PRODUCTS = [
   },
   {
     id: 9,
-    name: "한국공인금거래소 실버바 100g",
+    name: "한국골드금거래소 실버바 100g",
     weight: "100g",
     purity: "999.9‰",
     price: "195,000",

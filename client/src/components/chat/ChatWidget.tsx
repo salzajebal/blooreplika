@@ -153,7 +153,7 @@ export function ChatWidget({ guestName = "방문자", guestEmail }: ChatWidgetPr
         conversationId,
         senderType: "admin",
         senderName: "상담원",
-        message: `안녕하세요, ${inputName}님! 한국공인금거래소 고객상담센터입니다. 무엇을 도와드릴까요?`,
+        message: `안녕하세요, ${inputName}님! 한국골드금거래소 고객상담센터입니다. 무엇을 도와드릴까요?`,
         isRead: false,
       };
       
@@ -256,7 +256,7 @@ export function ChatWidget({ guestName = "방문자", guestEmail }: ChatWidgetPr
           <div>
             <h3 className="font-bold">1:1 실시간 상담</h3>
             <p className="text-xs text-amber-100 flex items-center gap-1">
-              한국공인금거래소
+              한국골드금거래소
               {!isStarting && (
                 <span className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-400" : "bg-gray-400"}`} />
               )}
@@ -282,7 +282,7 @@ export function ChatWidget({ guestName = "방문자", guestEmail }: ChatWidgetPr
       {isStarting ? (
         <div className="p-6">
           <p className="text-gray-600 mb-4 text-sm">
-            안녕하세요! 한국공인금거래소 고객상담센터입니다.
+            안녕하세요! 한국골드금거래소 고객상담센터입니다.
             상담을 시작하려면 아래 정보를 입력해주세요.
           </p>
           <div className="space-y-4">

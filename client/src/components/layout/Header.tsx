@@ -71,7 +71,7 @@ export function Header() {
             <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-gradient-to-br from-yellow-200 to-amber-300 rounded-full opacity-80"></div>
           </div>
           <div className="flex flex-col">
-            <span className="text-xl font-bold tracking-tight text-gray-900 leading-none">한국공인금거래소</span>
+            <span className="text-xl font-bold tracking-tight text-gray-900 leading-none">한국골드금거래소</span>
             <span className="text-[10px] text-amber-600 font-medium tracking-widest uppercase mt-1">KOREA AUTHORIZED GOLD EXCHANGE</span>
           </div>
         </Link>

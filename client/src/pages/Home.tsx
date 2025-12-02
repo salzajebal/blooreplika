@@ -74,7 +74,7 @@ export default function Home() {
                 <Sparkles className="w-5 h-5 text-amber-400" />
               </div>
               <h3 className="text-2xl md:text-3xl font-bold mb-3">
-                한국공인금거래소 특별가 안내
+                한국골드금거래소 특별가 안내
               </h3>
               <p className="text-stone-300 mb-6">
                 고객님의 성원에 감사드리며, 특별한 가격으로 안내해 드립니다.

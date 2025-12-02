@@ -110,7 +110,7 @@ export function ProductGrid() {
             {activeCategory === "all" ? "전체 상품" : DEFAULT_CATEGORIES.find(c => c.id === activeCategory)?.name}
           </h2>
           <p className="text-gray-500 text-sm">
-            한국공인금거래소가 보증하는 정품 {activeCategory === "all" ? "귀금속" : DEFAULT_CATEGORIES.find(c => c.id === activeCategory)?.name} 모음
+            한국골드금거래소가 보증하는 정품 {activeCategory === "all" ? "귀금속" : DEFAULT_CATEGORIES.find(c => c.id === activeCategory)?.name} 모음
           </p>
         </div>
         <div className="text-sm text-gray-500">

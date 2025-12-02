@@ -1,6 +1,6 @@
 # Overview
 
-This is a Korean gold exchange e-commerce platform (한국공인금거래소 - Korea Authorized Gold Exchange) built as a full-stack web application. The platform allows users to browse and purchase precious metals (gold, silver, platinum) and related products, view real-time precious metal prices, and includes an admin panel for product management.
+This is a Korean gold exchange e-commerce platform (한국골드금거래소 - Korea Gold Exchange) built as a full-stack web application. The platform allows users to browse and purchase precious metals (gold, silver, platinum) and related products, view real-time precious metal prices, and includes an admin panel for product management.
 
 The application serves as an online marketplace for gold bars, silver bars, jewelry, diamonds, and corporate gifts with real-time pricing updates based on international metal markets.
 

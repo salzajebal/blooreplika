@@ -7,9 +7,9 @@ export function Footer() {
       <div className="container-custom grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
         {/* Company Info */}
         <div className="col-span-1 md:col-span-1">
-          <h3 className="text-white font-bold text-xl mb-6">한국공인금거래소</h3>
+          <h3 className="text-white font-bold text-xl mb-6">한국골드금거래소</h3>
           <p className="leading-relaxed text-sm mb-6 max-w-md">
-            한국공인금거래소는 투명하고 공정한 귀금속 거래 문화를 선도합니다.
+            한국골드금거래소는 투명하고 공정한 귀금속 거래 문화를 선도합니다.
             최고 품질의 골드바와 실버바를 합리적인 가격에 만나보세요.
           </p>
         </div>

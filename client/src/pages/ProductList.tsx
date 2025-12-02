@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_CATEGORIES = [
-  { id: "gold_bar", name: "골드바", description: "한국공인금거래소가 보증하는 최고 품질의 순금 바" },
+  { id: "gold_bar", name: "골드바", description: "한국골드금거래소가 보증하는 최고 품질의 순금 바" },
   { id: "silver_bar", name: "실버바", description: "투자 가치가 높은 고순도 실버바 컬렉션" },
   { id: "baby_ring", name: "돌선물", description: "아기 돌선물, 돌반지, 돌팔찌" },
   { id: "jewelry", name: "순금기념품", description: "순금 기념품, 행운의 열쇠, 감사패, 순금동물" },
@@ -27,7 +27,7 @@ export default function ProductList() {
   const { toggleItem, isInWishlist } = useWishlist();
   const { toast } = useToast();
   
-  const categoryInfo = DEFAULT_CATEGORIES.find(c => c.id === categoryId) || { name: "전체 상품 목록", description: "한국공인금거래소가 보증하는 최고의 품질" };
+  const categoryInfo = DEFAULT_CATEGORIES.find(c => c.id === categoryId) || { name: "전체 상품 목록", description: "한국골드금거래소가 보증하는 최고의 품질" };
 
   const handleWishlistToggle = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
@@ -80,7 +80,7 @@ export default function ProductList() {
         <div className="bg-gray-50 p-8 mb-12 text-center border-b border-gray-100">
           <h1 className="text-3xl font-bold text-gray-900 mb-2" data-testid="text-category-title">{categoryInfo.name}</h1>
           <p className="text-gray-500">
-             {categoryId === "all" ? "한국공인금거래소가 보증하는 최고의 품질" : `한국공인금거래소의 고품격 ${categoryInfo.name} 컬렉션`}
+             {categoryId === "all" ? "한국골드금거래소가 보증하는 최고의 품질" : `한국골드금거래소의 고품격 ${categoryInfo.name} 컬렉션`}
           </p>
         </div>
         
