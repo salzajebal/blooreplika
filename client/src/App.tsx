@@ -9,6 +9,7 @@ import ProductList from "@/pages/ProductList";
 import GoldPrice from "@/pages/GoldPrice";
 import Admin from "@/pages/Admin";
 import Signup from "@/pages/Signup";
+import Login from "@/pages/Login";
 import Support from "@/pages/Support";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/gold-price" component={GoldPrice} />
       <Route path="/admin" component={Admin} />
       <Route path="/signup" component={Signup} />
+      <Route path="/login" component={Login} />
       <Route path="/support" component={Support} />
       <Route component={NotFound} />
     </Switch>

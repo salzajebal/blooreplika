@@ -743,6 +743,45 @@ export async function registerRoutes(
     }
   });
 
+  // Member login
+  const memberSessions: Map<string, { memberId: string; email: string; name: string }> = new Map();
+  
+  app.post("/api/members/login", async (req: Request, res: Response) => {
+    try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ success: false, error: "이메일과 비밀번호를 입력해주세요." });
+      }
+      
+      const member = await storage.getMemberByEmail(email);
+      if (!member) {
+        return res.status(401).json({ success: false, error: "등록되지 않은 이메일입니다." });
+      }
+      
+      if (member.password !== password) {
+        return res.status(401).json({ success: false, error: "비밀번호가 일치하지 않습니다." });
+      }
+      
+      const token = Math.random().toString(36).substring(2);
+      memberSessions.set(token, { memberId: member.id, email: member.email, name: member.name });
+      
+      res.json({ 
+        success: true, 
+        token,
+        member: {
+          id: member.id,
+          name: member.name,
+          email: member.email,
+          phone: member.phone
+        }
+      });
+    } catch (error) {
+      console.error("Error during login:", error);
+      res.status(500).json({ success: false, error: "로그인 처리 중 오류가 발생했습니다." });
+    }
+  });
+
   // ==================== ADMIN STATS ====================
   
   app.get("/api/admin/stats", async (req: Request, res: Response) => {
