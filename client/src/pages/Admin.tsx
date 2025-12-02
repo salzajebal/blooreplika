@@ -1659,192 +1659,197 @@ export default function Admin() {
                 <Button onClick={() => setShowAddMemberForm(true)} variant="outline">회원 추가하기</Button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-100 text-gray-600">
-                    <tr>
-                      <th className="px-4 py-3 text-left font-medium">이름</th>
-                      <th className="px-4 py-3 text-left font-medium">이메일</th>
-                      <th className="px-4 py-3 text-left font-medium">전화번호</th>
-                      <th className="px-4 py-3 text-center font-medium">포인트</th>
-                      <th className="px-4 py-3 text-center font-medium">상태</th>
-                      <th className="px-4 py-3 text-center font-medium">권한</th>
-                      <th className="px-4 py-3 text-left font-medium">가입일</th>
-                      <th className="px-4 py-3 text-right font-medium">관리</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {members.map((member) => (
-                      <tr key={member.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3">
-                          <div className="font-medium text-gray-900">{member.name}</div>
+              <div className="space-y-4">
+                {members.map((member) => (
+                  <div key={member.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div className="flex-1 min-w-[200px]">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-bold text-lg text-gray-900">{member.name}</span>
+                          {member.isAdmin ? (
+                            <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-medium">관리자</span>
+                          ) : (
+                            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">일반</span>
+                          )}
+                          {member.isActive ? (
+                            <span className="inline-flex items-center gap-1 text-green-600 text-xs">
+                              <CheckCircle className="w-3 h-3" />
+                              활성
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-gray-400 text-xs">
+                              <XCircle className="w-3 h-3" />
+                              비활성
+                            </span>
+                          )}
                           {(member as any).isFrozen && (
-                            <span className="inline-flex items-center gap-1 text-xs text-red-600">
+                            <span className="inline-flex items-center gap-1 text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded">
                               <Snowflake className="w-3 h-3" />
                               동결됨
                             </span>
                           )}
-                          {(member as any).bank && (
-                            <div className="text-xs text-gray-500">{(member as any).bank}</div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-gray-600">{member.email}</td>
-                        <td className="px-4 py-3 text-gray-600">{member.phone || "-"}</td>
-                        <td className="px-4 py-3 text-center">
-                          <span className="font-bold text-amber-600">
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+                          <div>
+                            <span className="text-gray-500">이메일:</span>
+                            <span className="ml-2 text-gray-900">{member.email}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">전화번호:</span>
+                            <span className="ml-2 text-gray-900">{member.phone || "-"}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">가입일:</span>
+                            <span className="ml-2 text-gray-900">{member.createdAt ? new Date(member.createdAt).toLocaleDateString('ko-KR') : "-"}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">주소:</span>
+                            <span className="ml-2 text-gray-900">{(member as any).address || "-"}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">은행:</span>
+                            <span className="ml-2 text-gray-900">{(member as any).bank || "-"}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">계좌번호:</span>
+                            <span className="ml-2 text-gray-900">{(member as any).accountNumber || "-"}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="text-right">
+                          <span className="text-gray-500 text-sm">포인트</span>
+                          <div className="font-bold text-xl text-amber-600">
                             {((member as any).pointBalance || 0).toLocaleString()}P
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          {member.isActive ? (
-                            <span className="inline-flex items-center gap-1 text-green-600">
-                              <CheckCircle className="w-4 h-4" />
-                              <span className="text-xs">활성</span>
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-gray-400">
-                              <XCircle className="w-4 h-4" />
-                              <span className="text-xs">비활성</span>
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          {member.isAdmin ? (
-                            <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs">관리자</span>
-                          ) : (
-                            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">일반</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-gray-500 text-sm">
-                          {member.createdAt ? new Date(member.createdAt).toLocaleDateString('ko-KR') : "-"}
-                        </td>
-                        <td className="px-4 py-3 text-right relative">
-                          <div className="flex items-center justify-end gap-1">
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => {
+                              setSelectedMemberForAction(member.id);
+                              setActionType("adjust");
+                              setAdjustAmount("");
+                            }} 
+                            className="text-amber-600 border-amber-300 hover:bg-amber-50"
+                          >
+                            <Wallet className="w-4 h-4 mr-1" />
+                            포인트
+                          </Button>
+                          {(member as any).isFrozen ? (
                             <Button 
-                              size="icon" 
-                              variant="ghost" 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleUnfreezeMember(member.id)} 
+                              className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                            >
+                              <Unlock className="w-4 h-4 mr-1" />
+                              해제
+                            </Button>
+                          ) : (
+                            <Button 
+                              size="sm" 
+                              variant="outline"
                               onClick={() => {
                                 setSelectedMemberForAction(member.id);
-                                setActionType("adjust");
-                                setAdjustAmount("");
+                                setActionType("freeze");
+                                setFreezeReason("");
                               }} 
-                              className="h-8 w-8 text-amber-600"
-                              title="포인트 조정"
+                              className="text-cyan-600 border-cyan-300 hover:bg-cyan-50"
                             >
-                              <Wallet className="w-4 h-4" />
+                              <Snowflake className="w-4 h-4 mr-1" />
+                              동결
                             </Button>
-                            {(member as any).isFrozen ? (
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
-                                onClick={() => handleUnfreezeMember(member.id)} 
-                                className="h-8 w-8 text-blue-600"
-                                title="동결 해제"
-                              >
-                                <Unlock className="w-4 h-4" />
-                              </Button>
-                            ) : (
-                              <Button 
-                                size="icon" 
-                                variant="ghost" 
-                                onClick={() => {
-                                  setSelectedMemberForAction(member.id);
-                                  setActionType("freeze");
-                                  setFreezeReason("");
-                                }} 
-                                className="h-8 w-8 text-cyan-600"
-                                title="계정 동결"
-                              >
-                                <Snowflake className="w-4 h-4" />
-                              </Button>
-                            )}
-                            <Button 
-                              data-testid={`button-edit-member-${member.id}`}
-                              size="icon" 
-                              variant="ghost" 
-                              onClick={() => startEditMember(member)} 
-                              className="h-8 w-8"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </Button>
-                            <Button 
-                              data-testid={`button-delete-member-${member.id}`}
-                              size="icon" 
-                              variant="ghost" 
-                              onClick={() => handleDeleteMember(member.id)} 
-                              className="h-8 w-8 text-red-500"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
-
-                          {selectedMemberForAction === member.id && actionType === "adjust" && (
-                            <div className="absolute right-4 mt-2 p-4 bg-white border rounded-lg shadow-lg z-10 w-64">
-                              <h4 className="font-bold text-sm mb-2">포인트 조정</h4>
-                              <Input
-                                type="number"
-                                placeholder="금액 (음수 가능)"
-                                value={adjustAmount}
-                                onChange={(e) => setAdjustAmount(e.target.value)}
-                                className="mb-2"
-                              />
-                              <div className="flex gap-2">
-                                <Button 
-                                  size="sm" 
-                                  className="bg-amber-500 hover:bg-amber-600"
-                                  onClick={() => handleAdjustPoints(member.id)}
-                                >
-                                  적용
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => {
-                                    setSelectedMemberForAction(null);
-                                    setActionType(null);
-                                  }}
-                                >
-                                  취소
-                                </Button>
-                              </div>
-                            </div>
                           )}
+                          <Button 
+                            data-testid={`button-edit-member-${member.id}`}
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => startEditMember(member)} 
+                          >
+                            <Pencil className="w-4 h-4 mr-1" />
+                            수정
+                          </Button>
+                          <Button 
+                            data-testid={`button-delete-member-${member.id}`}
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleDeleteMember(member.id)} 
+                            className="text-red-500 border-red-300 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            삭제
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {selectedMemberForAction === member.id && actionType === "adjust" && (
+                      <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                        <h4 className="font-bold text-sm mb-2">포인트 조정</h4>
+                        <div className="flex gap-2">
+                          <Input
+                            type="number"
+                            placeholder="금액 (음수 가능)"
+                            value={adjustAmount}
+                            onChange={(e) => setAdjustAmount(e.target.value)}
+                            className="max-w-xs"
+                          />
+                          <Button 
+                            size="sm" 
+                            className="bg-amber-500 hover:bg-amber-600"
+                            onClick={() => handleAdjustPoints(member.id)}
+                          >
+                            적용
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedMemberForAction(null);
+                              setActionType(null);
+                            }}
+                          >
+                            취소
+                          </Button>
+                        </div>
+                      </div>
+                    )}
 
-                          {selectedMemberForAction === member.id && actionType === "freeze" && (
-                            <div className="absolute right-4 mt-2 p-4 bg-white border rounded-lg shadow-lg z-10 w-64">
-                              <h4 className="font-bold text-sm mb-2">계정 동결</h4>
-                              <Input
-                                placeholder="동결 사유"
-                                value={freezeReason}
-                                onChange={(e) => setFreezeReason(e.target.value)}
-                                className="mb-2"
-                              />
-                              <div className="flex gap-2">
-                                <Button 
-                                  size="sm" 
-                                  variant="destructive"
-                                  onClick={() => handleFreezeMember(member.id)}
-                                >
-                                  동결
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => {
-                                    setSelectedMemberForAction(null);
-                                    setActionType(null);
-                                  }}
-                                >
-                                  취소
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    {selectedMemberForAction === member.id && actionType === "freeze" && (
+                      <div className="mt-4 p-4 bg-cyan-50 border border-cyan-200 rounded-lg">
+                        <h4 className="font-bold text-sm mb-2">계정 동결</h4>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="동결 사유"
+                            value={freezeReason}
+                            onChange={(e) => setFreezeReason(e.target.value)}
+                            className="max-w-xs"
+                          />
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => handleFreezeMember(member.id)}
+                          >
+                            동결
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedMemberForAction(null);
+                              setActionType(null);
+                            }}
+                          >
+                            취소
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>
