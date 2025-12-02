@@ -3,6 +3,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Hero } from "@/components/home/Hero";
 import { PriceBoard } from "@/components/home/PriceBoard";
 import { ProductGrid } from "@/components/home/ProductGrid";
+import { HomePopup } from "@/components/home/HomePopup";
 import { Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { useKakaoLink } from "@/hooks/use-kakao-link";
@@ -23,6 +24,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white font-sans">
+      <HomePopup />
       <Header />
       
       <main>
