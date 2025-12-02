@@ -129,6 +129,11 @@ export default function Profile() {
   };
 
   const handleDepositSubmit = () => {
+    if (memberInfo?.isFrozen) {
+      alert("계정이 동결되어 입금신청을 할 수 없습니다.");
+      return;
+    }
+    
     if (!depositAmount || !bankName || !depositorName) {
       alert("모든 필드를 입력해주세요.");
       return;

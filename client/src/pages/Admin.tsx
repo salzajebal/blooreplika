@@ -29,6 +29,21 @@ interface AdminStats {
   productsByCategory: { id: string; name: string; count: number }[];
 }
 
+interface AdminDepositRequest {
+  id: string;
+  memberId: string;
+  memberName: string;
+  memberEmail: string;
+  amount: number;
+  bankName: string;
+  accountNumber?: string;
+  depositorName: string;
+  status: "pending" | "approved" | "rejected";
+  adminNote?: string;
+  requestedAt: string;
+  processedAt?: string;
+}
+
 export default function Admin() {
   const { toast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -104,22 +119,7 @@ export default function Admin() {
   const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
   const [showAddNoticeForm, setShowAddNoticeForm] = useState(false);
 
-  interface DepositRequest {
-    id: string;
-    memberId: string;
-    memberName: string;
-    memberEmail: string;
-    amount: number;
-    bankName: string;
-    accountNumber?: string;
-    depositorName: string;
-    status: "pending" | "approved" | "rejected";
-    adminNote?: string;
-    requestedAt: string;
-    processedAt?: string;
-  }
-
-  const [depositRequests, setDepositRequests] = useState<DepositRequest[]>([]);
+  const [depositRequests, setDepositRequests] = useState<AdminDepositRequest[]>([]);
   const [depositFilter, setDepositFilter] = useState<"all" | "pending">("pending");
   const [adminNote, setAdminNote] = useState("");
   const [adjustAmount, setAdjustAmount] = useState("");
