@@ -8,7 +8,8 @@ import {
   Plus, Pencil, Trash2, Check, X, RefreshCw, Database, 
   LogOut, Users, Package, BarChart3, Eye, EyeOff,
   Lock, User, Mail, Phone, CheckCircle, XCircle,
-  MessageCircle, Send, Star, FileText, Bell, Calendar
+  MessageCircle, Send, Star, FileText, Bell, Calendar,
+  Wallet, Clock, Snowflake, Unlock
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, ChatConversation, ChatMessage, Review, Notice } from "@shared/schema";
@@ -37,7 +38,7 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "members" | "chat" | "reviews" | "notices">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "members" | "deposits" | "chat" | "reviews" | "notices">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<ChatConversation | null>(null);
@@ -102,6 +103,29 @@ export default function Admin() {
   });
   const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
   const [showAddNoticeForm, setShowAddNoticeForm] = useState(false);
+
+  interface DepositRequest {
+    id: string;
+    memberId: string;
+    memberName: string;
+    memberEmail: string;
+    amount: number;
+    bankName: string;
+    accountNumber?: string;
+    depositorName: string;
+    status: "pending" | "approved" | "rejected";
+    adminNote?: string;
+    requestedAt: string;
+    processedAt?: string;
+  }
+
+  const [depositRequests, setDepositRequests] = useState<DepositRequest[]>([]);
+  const [depositFilter, setDepositFilter] = useState<"all" | "pending">("pending");
+  const [adminNote, setAdminNote] = useState("");
+  const [adjustAmount, setAdjustAmount] = useState("");
+  const [freezeReason, setFreezeReason] = useState("");
+  const [selectedMemberForAction, setSelectedMemberForAction] = useState<string | null>(null);
+  const [actionType, setActionType] = useState<"adjust" | "freeze" | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
@@ -218,6 +242,129 @@ export default function Admin() {
       }
     } catch (error) {
       console.error("Error fetching members:", error);
+    }
+  };
+
+  const fetchDepositRequests = async () => {
+    try {
+      const url = depositFilter === "pending" 
+        ? "/api/admin/deposit-requests?status=pending" 
+        : "/api/admin/deposit-requests";
+      const res = await fetchWithAuth(url);
+      const data = await res.json();
+      if (data.success) {
+        setDepositRequests(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching deposit requests:", error);
+    }
+  };
+
+  const handleApproveDeposit = async (id: string) => {
+    try {
+      const res = await fetchWithAuth(`/api/admin/deposit-requests/${id}/approve`, {
+        method: "POST",
+        body: JSON.stringify({ adminNote }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "승인 완료", description: "입금신청이 승인되었습니다." });
+        fetchDepositRequests();
+        setAdminNote("");
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "처리 중 오류가 발생했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleRejectDeposit = async (id: string) => {
+    try {
+      const res = await fetchWithAuth(`/api/admin/deposit-requests/${id}/reject`, {
+        method: "POST",
+        body: JSON.stringify({ adminNote }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "거부 완료", description: "입금신청이 거부되었습니다." });
+        fetchDepositRequests();
+        setAdminNote("");
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "처리 중 오류가 발생했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleAdjustPoints = async (memberId: string) => {
+    const amount = parseInt(adjustAmount);
+    if (isNaN(amount) || amount === 0) {
+      toast({ title: "오류", description: "유효한 금액을 입력해주세요.", variant: "destructive" });
+      return;
+    }
+    
+    try {
+      const res = await fetchWithAuth(`/api/admin/members/${memberId}/adjust-points`, {
+        method: "POST",
+        body: JSON.stringify({ amount }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "완료", description: data.message });
+        fetchMembers();
+        setAdjustAmount("");
+        setSelectedMemberForAction(null);
+        setActionType(null);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "처리 중 오류가 발생했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleFreezeMember = async (memberId: string) => {
+    if (!freezeReason.trim()) {
+      toast({ title: "오류", description: "동결 사유를 입력해주세요.", variant: "destructive" });
+      return;
+    }
+    
+    try {
+      const res = await fetchWithAuth(`/api/admin/members/${memberId}/freeze`, {
+        method: "POST",
+        body: JSON.stringify({ reason: freezeReason }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "완료", description: "계정이 동결되었습니다." });
+        fetchMembers();
+        setFreezeReason("");
+        setSelectedMemberForAction(null);
+        setActionType(null);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "처리 중 오류가 발생했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleUnfreezeMember = async (memberId: string) => {
+    try {
+      const res = await fetchWithAuth(`/api/admin/members/${memberId}/unfreeze`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "완료", description: "계정 동결이 해제되었습니다." });
+        fetchMembers();
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "처리 중 오류가 발생했습니다.", variant: "destructive" });
     }
   };
 
@@ -394,11 +541,18 @@ export default function Admin() {
       fetchStats();
       fetchProducts();
       fetchMembers();
+      fetchDepositRequests();
       fetchConversations();
       fetchReviews();
       fetchNotices();
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === "deposits") {
+      fetchDepositRequests();
+    }
+  }, [depositFilter, activeTab]);
 
   const handleSeedData = async () => {
     try {
@@ -832,6 +986,20 @@ export default function Admin() {
           >
             <Users className="w-4 h-4 mr-2" />
             회원 관리
+          </Button>
+          <Button
+            data-testid="tab-deposits"
+            variant={activeTab === "deposits" ? "default" : "outline"}
+            onClick={() => setActiveTab("deposits")}
+            className={activeTab === "deposits" ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+          >
+            <Wallet className="w-4 h-4 mr-2" />
+            입금관리
+            {depositRequests.filter(d => d.status === "pending").length > 0 && (
+              <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                {depositRequests.filter(d => d.status === "pending").length}
+              </span>
+            )}
           </Button>
           <Button
             data-testid="tab-chat"
@@ -1295,6 +1463,7 @@ export default function Admin() {
                       <th className="px-4 py-3 text-left font-medium">이름</th>
                       <th className="px-4 py-3 text-left font-medium">이메일</th>
                       <th className="px-4 py-3 text-left font-medium">전화번호</th>
+                      <th className="px-4 py-3 text-center font-medium">포인트</th>
                       <th className="px-4 py-3 text-center font-medium">상태</th>
                       <th className="px-4 py-3 text-center font-medium">권한</th>
                       <th className="px-4 py-3 text-left font-medium">가입일</th>
@@ -1359,9 +1528,22 @@ export default function Admin() {
                           </>
                         ) : (
                           <>
-                            <td className="px-4 py-3 font-medium text-gray-900">{member.name}</td>
+                            <td className="px-4 py-3">
+                              <div className="font-medium text-gray-900">{member.name}</div>
+                              {(member as any).isFrozen && (
+                                <span className="inline-flex items-center gap-1 text-xs text-red-600">
+                                  <Snowflake className="w-3 h-3" />
+                                  동결됨
+                                </span>
+                              )}
+                            </td>
                             <td className="px-4 py-3 text-gray-600">{member.email}</td>
                             <td className="px-4 py-3 text-gray-600">{member.phone || "-"}</td>
+                            <td className="px-4 py-3 text-center">
+                              <span className="font-bold text-amber-600">
+                                {((member as any).pointBalance || 0).toLocaleString()}P
+                              </span>
+                            </td>
                             <td className="px-4 py-3 text-center">
                               {member.isActive ? (
                                 <span className="inline-flex items-center gap-1 text-green-600">
@@ -1386,24 +1568,127 @@ export default function Admin() {
                               {member.createdAt ? new Date(member.createdAt).toLocaleDateString('ko-KR') : "-"}
                             </td>
                             <td className="px-4 py-3 text-right">
-                              <Button 
-                                data-testid={`button-edit-member-${member.id}`}
-                                size="icon" 
-                                variant="ghost" 
-                                onClick={() => startEditMember(member)} 
-                                className="h-8 w-8"
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                              <Button 
-                                data-testid={`button-delete-member-${member.id}`}
-                                size="icon" 
-                                variant="ghost" 
-                                onClick={() => handleDeleteMember(member.id)} 
-                                className="h-8 w-8 text-red-500"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                              <div className="flex items-center justify-end gap-1">
+                                <Button 
+                                  size="icon" 
+                                  variant="ghost" 
+                                  onClick={() => {
+                                    setSelectedMemberForAction(member.id);
+                                    setActionType("adjust");
+                                    setAdjustAmount("");
+                                  }} 
+                                  className="h-8 w-8 text-amber-600"
+                                  title="포인트 조정"
+                                >
+                                  <Wallet className="w-4 h-4" />
+                                </Button>
+                                {(member as any).isFrozen ? (
+                                  <Button 
+                                    size="icon" 
+                                    variant="ghost" 
+                                    onClick={() => handleUnfreezeMember(member.id)} 
+                                    className="h-8 w-8 text-blue-600"
+                                    title="동결 해제"
+                                  >
+                                    <Unlock className="w-4 h-4" />
+                                  </Button>
+                                ) : (
+                                  <Button 
+                                    size="icon" 
+                                    variant="ghost" 
+                                    onClick={() => {
+                                      setSelectedMemberForAction(member.id);
+                                      setActionType("freeze");
+                                      setFreezeReason("");
+                                    }} 
+                                    className="h-8 w-8 text-cyan-600"
+                                    title="계정 동결"
+                                  >
+                                    <Snowflake className="w-4 h-4" />
+                                  </Button>
+                                )}
+                                <Button 
+                                  data-testid={`button-edit-member-${member.id}`}
+                                  size="icon" 
+                                  variant="ghost" 
+                                  onClick={() => startEditMember(member)} 
+                                  className="h-8 w-8"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button 
+                                  data-testid={`button-delete-member-${member.id}`}
+                                  size="icon" 
+                                  variant="ghost" 
+                                  onClick={() => handleDeleteMember(member.id)} 
+                                  className="h-8 w-8 text-red-500"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+
+                              {selectedMemberForAction === member.id && actionType === "adjust" && (
+                                <div className="absolute right-4 mt-2 p-4 bg-white border rounded-lg shadow-lg z-10 w-64">
+                                  <h4 className="font-bold text-sm mb-2">포인트 조정</h4>
+                                  <Input
+                                    type="number"
+                                    placeholder="금액 (음수 가능)"
+                                    value={adjustAmount}
+                                    onChange={(e) => setAdjustAmount(e.target.value)}
+                                    className="mb-2"
+                                  />
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      size="sm" 
+                                      className="bg-amber-500 hover:bg-amber-600"
+                                      onClick={() => handleAdjustPoints(member.id)}
+                                    >
+                                      적용
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      onClick={() => {
+                                        setSelectedMemberForAction(null);
+                                        setActionType(null);
+                                      }}
+                                    >
+                                      취소
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+
+                              {selectedMemberForAction === member.id && actionType === "freeze" && (
+                                <div className="absolute right-4 mt-2 p-4 bg-white border rounded-lg shadow-lg z-10 w-64">
+                                  <h4 className="font-bold text-sm mb-2">계정 동결</h4>
+                                  <Input
+                                    placeholder="동결 사유"
+                                    value={freezeReason}
+                                    onChange={(e) => setFreezeReason(e.target.value)}
+                                    className="mb-2"
+                                  />
+                                  <div className="flex gap-2">
+                                    <Button 
+                                      size="sm" 
+                                      variant="destructive"
+                                      onClick={() => handleFreezeMember(member.id)}
+                                    >
+                                      동결
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline"
+                                      onClick={() => {
+                                        setSelectedMemberForAction(null);
+                                        setActionType(null);
+                                      }}
+                                    >
+                                      취소
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
                             </td>
                           </>
                         )}
@@ -1411,6 +1696,134 @@ export default function Admin() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "deposits" && (
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">입금 신청 관리</h2>
+                <p className="text-gray-500 text-sm">
+                  {depositFilter === "pending" 
+                    ? `대기 중인 신청 ${depositRequests.length}건` 
+                    : `전체 ${depositRequests.length}건`}
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <select
+                  className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
+                  value={depositFilter}
+                  onChange={(e) => setDepositFilter(e.target.value as "all" | "pending")}
+                >
+                  <option value="pending">대기중만 보기</option>
+                  <option value="all">전체 보기</option>
+                </select>
+                <Button variant="outline" onClick={fetchDepositRequests}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  새로고침
+                </Button>
+              </div>
+            </div>
+
+            {depositRequests.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                {depositFilter === "pending" ? "대기 중인 입금 신청이 없습니다." : "입금 신청 내역이 없습니다."}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {depositRequests.map((request) => (
+                  <div
+                    key={request.id}
+                    className={`p-4 border rounded-lg ${
+                      request.status === "pending"
+                        ? "border-yellow-300 bg-yellow-50"
+                        : request.status === "approved"
+                        ? "border-green-200 bg-green-50"
+                        : "border-red-200 bg-red-50"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-2xl font-bold text-gray-900">
+                            {request.amount.toLocaleString()}원
+                          </span>
+                          {request.status === "pending" ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                              <Clock className="w-3 h-3" />
+                              대기중
+                            </span>
+                          ) : request.status === "approved" ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                              <CheckCircle className="w-3 h-3" />
+                              승인됨
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                              <XCircle className="w-3 h-3" />
+                              거부됨
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p>
+                            <span className="font-medium">회원:</span> {request.memberName} ({request.memberEmail})
+                          </p>
+                          <p>
+                            <span className="font-medium">입금자:</span> {request.depositorName} ({request.bankName})
+                          </p>
+                          <p>
+                            <span className="font-medium">신청일:</span>{" "}
+                            {new Date(request.requestedAt).toLocaleString("ko-KR")}
+                          </p>
+                          {request.processedAt && (
+                            <p>
+                              <span className="font-medium">처리일:</span>{" "}
+                              {new Date(request.processedAt).toLocaleString("ko-KR")}
+                            </p>
+                          )}
+                          {request.adminNote && (
+                            <p className="text-amber-600">
+                              <span className="font-medium">관리자 메모:</span> {request.adminNote}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {request.status === "pending" && (
+                        <div className="flex flex-col gap-2 ml-4">
+                          <Input
+                            placeholder="관리자 메모 (선택)"
+                            className="w-48"
+                            value={adminNote}
+                            onChange={(e) => setAdminNote(e.target.value)}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              className="bg-green-500 hover:bg-green-600"
+                              onClick={() => handleApproveDeposit(request.id)}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              승인
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleRejectDeposit(request.id)}
+                            >
+                              <XCircle className="w-4 h-4 mr-1" />
+                              거부
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
