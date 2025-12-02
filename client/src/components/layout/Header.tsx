@@ -1,4 +1,4 @@
-import { Search, User, ShoppingCart, Menu, MessageSquare } from "lucide-react";
+import { Search, User, ShoppingCart, Menu, Sparkles } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -122,7 +122,7 @@ export function Header() {
                   location === item.path && "text-primary border-primary",
                   item.hasIcon && "gap-1"
                 )}>
-                  {item.hasIcon && <MessageSquare className="w-4 h-4" />}
+                  {item.hasIcon && <Sparkles className="w-4 h-4 text-amber-500" />}
                   {item.name}
                 </Link>
               </li>
