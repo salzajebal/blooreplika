@@ -54,26 +54,36 @@ export default function Deposit() {
     }
   }, [memberToken, setLocation, toast]);
 
-  const { data: depositAccount } = useQuery<DepositAccount>({
+  const { data: depositAccount, isLoading: isLoadingAccount } = useQuery<DepositAccount | null>({
     queryKey: ["/api/settings/deposit-account"],
     queryFn: async () => {
-      const res = await fetch("/api/settings/deposit-account");
-      if (!res.ok) return null;
-      return res.json();
+      try {
+        const res = await fetch("/api/settings/deposit-account");
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data;
+      } catch {
+        return null;
+      }
     },
     enabled: !!memberToken,
   });
 
-  const { data: myRequests = [] } = useQuery<DepositRequest[]>({
+  const { data: myRequests = [], isLoading: isLoadingRequests } = useQuery<DepositRequest[]>({
     queryKey: ["/api/members/deposit-requests"],
     queryFn: async () => {
-      const res = await fetch("/api/members/deposit-requests", {
-        headers: {
-          "Authorization": `Bearer ${memberToken}`,
-        },
-      });
-      if (!res.ok) throw new Error("Failed to fetch");
-      return res.json();
+      try {
+        const res = await fetch("/api/members/deposit-requests", {
+          headers: {
+            "Authorization": `Bearer ${memberToken}`,
+          },
+        });
+        if (!res.ok) return [];
+        const result = await res.json();
+        return result.data || [];
+      } catch {
+        return [];
+      }
     },
     enabled: !!memberToken,
   });
@@ -180,6 +190,21 @@ export default function Deposit() {
 
   if (!memberToken) {
     return null;
+  }
+
+  if (isLoadingAccount) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gradient-to-b from-gold-50 to-white">
+        <Header />
+        <main className="flex-1 py-6 md:py-12 px-4">
+          <div className="container-custom max-w-4xl mx-auto text-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4"></div>
+            <p className="text-gray-500">로딩 중...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   return (
