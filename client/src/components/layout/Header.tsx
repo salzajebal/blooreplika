@@ -1,4 +1,4 @@
-import { Search, User, ShoppingCart, Menu } from "lucide-react";
+import { Search, User, ShoppingCart, Menu, MessageSquare } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -13,7 +13,8 @@ export function Header() {
     { name: '실버바', path: '/products/silver_bar' },
     { name: '돌선물', path: '/products/baby_ring' },
     { name: '순금기념품', path: '/products/jewelry' },
-    { name: '순금주얼리', path: '/products/pure_jewelry' }
+    { name: '순금주얼리', path: '/products/pure_jewelry' },
+    { name: '후기', path: '/reviews', hasIcon: true }
   ];
 
   return (
@@ -118,8 +119,10 @@ export function Header() {
               <li key={item.name}>
                 <Link href={item.path} className={cn(
                   "text-gray-700 font-medium hover:text-primary transition-colors text-sm h-14 flex items-center border-b-2 border-transparent hover:border-primary px-1",
-                  location === item.path && "text-primary border-primary"
+                  location === item.path && "text-primary border-primary",
+                  item.hasIcon && "gap-1"
                 )}>
+                  {item.hasIcon && <MessageSquare className="w-4 h-4" />}
                   {item.name}
                 </Link>
               </li>
