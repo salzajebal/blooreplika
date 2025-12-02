@@ -1,8 +1,23 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertProductSchema, insertCategorySchema, insertMemberSchema, insertChatConversationSchema, insertChatMessageSchema, insertFaqSchema } from "@shared/schema";
 import { z } from "zod";
+
+const chatClients = new Map<string, Set<WebSocket>>();
+
+function broadcastToConversation(conversationId: string, message: any) {
+  const clients = chatClients.get(conversationId);
+  if (clients) {
+    const messageStr = JSON.stringify(message);
+    clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(messageStr);
+      }
+    });
+  }
+}
 
 const ADMIN_USERNAME = "admin123";
 const ADMIN_PASSWORD = "admin123";
@@ -84,6 +99,57 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  
+  // ==================== WEBSOCKET SETUP ====================
+  const wss = new WebSocketServer({ server: httpServer, path: "/ws/chat" });
+  
+  wss.on("connection", (ws, req) => {
+    let conversationId: string | null = null;
+    
+    ws.on("message", async (data) => {
+      try {
+        const message = JSON.parse(data.toString());
+        
+        if (message.type === "join" && message.conversationId) {
+          conversationId = message.conversationId as string;
+          if (!chatClients.has(conversationId)) {
+            chatClients.set(conversationId, new Set());
+          }
+          chatClients.get(conversationId)!.add(ws);
+          ws.send(JSON.stringify({ type: "joined", conversationId }));
+        }
+        
+        if (message.type === "message" && conversationId) {
+          const savedMessage = await storage.createMessage({
+            conversationId,
+            senderType: message.senderType,
+            senderName: message.senderName,
+            message: message.message,
+            isRead: false,
+          });
+          
+          broadcastToConversation(conversationId, {
+            type: "new_message",
+            data: savedMessage,
+          });
+        }
+      } catch (error) {
+        console.error("WebSocket message error:", error);
+      }
+    });
+    
+    ws.on("close", () => {
+      if (conversationId) {
+        const clients = chatClients.get(conversationId);
+        if (clients) {
+          clients.delete(ws);
+          if (clients.size === 0) {
+            chatClients.delete(conversationId);
+          }
+        }
+      }
+    });
+  });
   
   // ==================== GOLD PRICES API ====================
   
@@ -688,6 +754,85 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching stats:", error);
       res.status(500).json({ success: false, error: "통계를 불러올 수 없습니다." });
+    }
+  });
+
+  // ==================== SEED LUXURY JEWELRY ====================
+  
+  app.post("/api/seed-luxury-jewelry", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const luxuryJewelry = [
+        { name: "반클리프앤아펠 스위트 알함브라 화이트자개 목걸이", weight: "18K", purity: "750", price: "720,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Van Cleef & Arpels" },
+        { name: "쇼메 트리옹프 드 쇼메 목걸이", weight: "18K", purity: "750", price: "1,360,000", category: "pure_jewelry", isBest: false, isNew: true, description: "CHAUMET" },
+        { name: "티파니 18K 크로스 펜던트 미니", weight: "18K", purity: "750", price: "980,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Tiffany & Co." },
+        { name: "티파니 18K T1 후프 이어링", weight: "18K", purity: "750", price: "1,430,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Tiffany & Co." },
+        { name: "부쉐론 보헴 쎄뻥 S 사이즈 로즈골드 링", weight: "18K", purity: "750", price: "2,160,000", category: "pure_jewelry", isBest: false, isNew: true, description: "BOUCHERON" },
+        { name: "부쉐론 보헴 쎄뻥 XS 링", weight: "18K", purity: "750", price: "920,000", category: "pure_jewelry", isBest: false, isNew: false, description: "BOUCHERON" },
+        { name: "쇼메 주드리앙 펜던트", weight: "18K", purity: "750", price: "1,420,000", category: "pure_jewelry", isBest: true, isNew: false, description: "CHAUMET" },
+        { name: "키린 18K 브레이스릿", weight: "18K", purity: "750", price: "820,000", category: "pure_jewelry", isBest: false, isNew: true, description: "Qeelin" },
+        { name: "반클리프앤아펠 24년 홀리데이 기요세 투톤 네크리스", weight: "18K", purity: "750", price: "1,880,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Van Cleef & Arpels 리미티드" },
+        { name: "반클리프앤아펠 5P 화이트자개 브레이슬릿", weight: "18K", purity: "750", price: "2,520,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Van Cleef & Arpels" },
+        { name: "반클리프앤아펠 화이트골드 빈티지 목걸이", weight: "18K WG", purity: "750", price: "1,080,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Van Cleef & Arpels" },
+        { name: "티파니 18K 목걸이 옐로우골드", weight: "18K", purity: "750", price: "1,860,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Tiffany & Co." },
+        { name: "샤넬 18K 크러쉬 링 스몰", weight: "18K", purity: "750", price: "1,480,000", category: "pure_jewelry", isBest: true, isNew: true, description: "CHANEL" },
+        { name: "샤넬 18K 크러쉬 링 라지", weight: "18K", purity: "750", price: "1,480,000", category: "pure_jewelry", isBest: false, isNew: true, description: "CHANEL" },
+        { name: "샤넬 18K 크러쉬 링 라지 다이아", weight: "18K", purity: "750", price: "2,060,000", category: "pure_jewelry", isBest: false, isNew: false, description: "CHANEL 다이아몬드" },
+        { name: "반클리프앤아펠 리미티드 에디션 18K 포슬린", weight: "18K", purity: "750", price: "1,560,000", category: "pure_jewelry", isBest: true, isNew: false, description: "Van Cleef & Arpels 한정판" },
+        { name: "루이비통 18K 화이트 마더오브펄 핑크골드", weight: "18K", purity: "750", price: "1,180,000", category: "pure_jewelry", isBest: false, isNew: true, description: "Louis Vuitton" },
+        { name: "루이비통 블라썸 그레이 마더오브펄 썬 목걸이", weight: "18K", purity: "750", price: "1,180,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Louis Vuitton" },
+        { name: "루이비통 블라썸BB 핑크골드 화이트자개 브레이슬릿", weight: "18K", purity: "750", price: "1,880,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Louis Vuitton" },
+        { name: "피아제 18K 선라이트 네크리스", weight: "18K", purity: "750", price: "1,860,000", category: "pure_jewelry", isBest: false, isNew: true, description: "PIAGET" },
+        { name: "티파니 18K 키 목걸이 옐로우골드", weight: "18K", purity: "750", price: "1,680,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Tiffany & Co." },
+        { name: "루이비통 블라썸BB 핑크자개 목걸이", weight: "18K", purity: "750", price: "880,000", category: "pure_jewelry", isBest: false, isNew: true, description: "Louis Vuitton" },
+        { name: "루이비통 옹브레 블라썸 오픈 링", weight: "18K", purity: "750", price: "1,460,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Louis Vuitton" },
+        { name: "반클리프앤아펠 기요세 화이트 네크리스", weight: "18K", purity: "750", price: "1,580,000", category: "pure_jewelry", isBest: true, isNew: false, description: "Van Cleef & Arpels" },
+        { name: "까르띠에 18K 로즈골드 저스트 앵 끌루 다이아 팔찌", weight: "18K", purity: "750", price: "1,460,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Cartier LOVE" },
+        { name: "티파니 18K 린 이어링", weight: "18K", purity: "750", price: "1,180,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Tiffany & Co." },
+        { name: "샤넬 18K 크러쉬 링 미니", weight: "18K", purity: "750", price: "820,000", category: "pure_jewelry", isBest: false, isNew: true, description: "CHANEL" },
+        { name: "불가리 18K 미니 파베세팅 비제로원 링", weight: "18K", purity: "750", price: "1,980,000", category: "pure_jewelry", isBest: true, isNew: false, description: "BVLGARI" },
+        { name: "까르띠에 18K 러브 브레이슬릿", weight: "18K", purity: "750", price: "920,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Cartier LOVE" },
+        { name: "까르띠에 18K 슬림형 러브 브레이슬릿", weight: "18K", purity: "750", price: "1,850,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Cartier LOVE Slim" },
+        { name: "반클리프앤아펠 프리볼 18K 미니 이어링 루비", weight: "18K", purity: "750", price: "780,000", category: "pure_jewelry", isBest: false, isNew: true, description: "Van Cleef & Arpels" },
+        { name: "반클리프앤아펠 알함브라 스윗사이즈 이어링", weight: "18K", purity: "750", price: "720,000", category: "pure_jewelry", isBest: true, isNew: false, description: "Van Cleef & Arpels" },
+        { name: "반클리프앤아펠 빈티지 알함브라 화이트자개 18K 목걸이", weight: "18K", purity: "750", price: "1,720,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Van Cleef & Arpels" },
+        { name: "까르띠에 18K 신형잠금 저스트앵끌루 옐로우골드 팔찌", weight: "18K", purity: "750", price: "2,350,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Cartier Juste un Clou" },
+        { name: "부첼라티 18K 오페라 튤레 펜던트 세트", weight: "18K", purity: "750", price: "4,080,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Buccellati" },
+        { name: "프레드 18K 포스텐 라지 버클", weight: "18K", purity: "750", price: "1,380,000", category: "pure_jewelry", isBest: false, isNew: true, description: "FRED" },
+        { name: "부첼라티 18K 오페라 튤레 펜던트 스몰", weight: "18K", purity: "750", price: "1,520,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Buccellati" },
+        { name: "반클리프앤아펠 빈티지 알함브라 5모티프 브레이슬릿", weight: "18K", purity: "750", price: "3,980,000", category: "pure_jewelry", isBest: true, isNew: false, description: "Van Cleef & Arpels" },
+        { name: "그라프 18K 파베 버터플라이 다이아몬드 쁘띠 펜던트", weight: "18K", purity: "750", price: "830,000", category: "pure_jewelry", isBest: false, isNew: true, description: "GRAFF" },
+        { name: "피아제 18K 로즈 링", weight: "18K", purity: "750", price: "1,340,000", category: "pure_jewelry", isBest: false, isNew: false, description: "PIAGET" },
+        { name: "반클리프앤아펠 22년 리미티드 에디션 18K 포슬린", weight: "18K", purity: "750", price: "1,560,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Van Cleef & Arpels 한정판" },
+        { name: "쇼메 18K True 내로우 링 3.5mm", weight: "18K", purity: "750", price: "1,380,000", category: "pure_jewelry", isBest: false, isNew: true, description: "CHAUMET" },
+        { name: "디올 18K ROSE DES VENTS 팔찌", weight: "18K", purity: "750", price: "1,660,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Dior" },
+        { name: "불가리 18K 바이퍼 링", weight: "18K", purity: "750", price: "1,960,000", category: "pure_jewelry", isBest: false, isNew: false, description: "BVLGARI Serpenti" },
+        { name: "샤넬 18K 크러쉬 링", weight: "18K", purity: "750", price: "1,680,000", category: "pure_jewelry", isBest: false, isNew: true, description: "CHANEL" },
+        { name: "쇼메 18K 리앙 반지", weight: "18K", purity: "750", price: "1,680,000", category: "pure_jewelry", isBest: false, isNew: false, description: "CHAUMET" },
+        { name: "반클리프앤아펠 터키석 18K 스윗사이즈 이어링", weight: "18K", purity: "750", price: "740,000", category: "pure_jewelry", isBest: false, isNew: true, description: "Van Cleef & Arpels" },
+        { name: "반클리프앤아펠 화이트자개 이어링 스윗", weight: "18K", purity: "750", price: "720,000", category: "pure_jewelry", isBest: true, isNew: false, description: "Van Cleef & Arpels" },
+        { name: "불가리 18K 비제로원 로즈골드 링", weight: "18K", purity: "750", price: "2,460,000", category: "pure_jewelry", isBest: true, isNew: false, description: "BVLGARI B.zero1" },
+        { name: "반클리프앤아펠 뻬를리 디아망 목걸이 옐로우골드", weight: "18K", purity: "750", price: "1,560,000", category: "pure_jewelry", isBest: false, isNew: true, description: "Van Cleef & Arpels Perlée" },
+        { name: "까르띠에 18K 팬더 드 까르띠에 링", weight: "18K", purity: "750", price: "2,960,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Cartier Panthère" },
+        { name: "쇼메 18K 주드리앙 화이트자개 귀걸이", weight: "18K", purity: "750", price: "730,000", category: "pure_jewelry", isBest: false, isNew: false, description: "CHAUMET" },
+        { name: "불가리 18K 세르펜티 다이아 뱅글", weight: "18K", purity: "750", price: "5,680,000", category: "pure_jewelry", isBest: true, isNew: false, description: "BVLGARI Serpenti" },
+        { name: "디올 18K Bois de Rose 반지", weight: "18K", purity: "750", price: "1,430,000", category: "pure_jewelry", isBest: false, isNew: true, description: "Dior" },
+        { name: "티파니 18K T 이어링", weight: "18K", purity: "750", price: "1,830,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Tiffany & Co." },
+      ];
+      
+      let createdCount = 0;
+      for (const prod of luxuryJewelry) {
+        try {
+          await storage.createProduct(prod);
+          createdCount++;
+        } catch (e) {
+          console.error("Error creating luxury jewelry product:", prod.name, e);
+        }
+      }
+      
+      res.json({ success: true, message: `${createdCount}개의 럭셔리 주얼리 상품이 추가되었습니다.` });
+    } catch (error) {
+      console.error("Error seeding luxury jewelry:", error);
+      res.status(500).json({ success: false, error: "럭셔리 주얼리 상품 추가에 실패했습니다." });
     }
   });
 

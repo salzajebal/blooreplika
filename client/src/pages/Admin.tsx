@@ -3,7 +3,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { 
   Plus, Pencil, Trash2, Check, X, RefreshCw, Database, 
   LogOut, Users, Package, BarChart3, Eye, EyeOff,
@@ -43,6 +43,9 @@ export default function Admin() {
   const [selectedConversation, setSelectedConversation] = useState<ChatConversation | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [adminReply, setAdminReply] = useState("");
+  const [isWsConnected, setIsWsConnected] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+  const wsConversationIdRef = useRef<string | null>(null);
   
   const [products, setProducts] = useState<Product[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -204,6 +207,60 @@ export default function Admin() {
     }
   };
 
+  const cleanupWebSocket = useCallback(() => {
+    if (wsRef.current) {
+      wsRef.current.onopen = null;
+      wsRef.current.onmessage = null;
+      wsRef.current.onclose = null;
+      wsRef.current.onerror = null;
+      if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
+        wsRef.current.close();
+      }
+      wsRef.current = null;
+    }
+    setIsWsConnected(false);
+  }, []);
+
+  const connectWebSocket = useCallback((conversationId: string) => {
+    if (wsConversationIdRef.current === conversationId && wsRef.current?.readyState === WebSocket.OPEN) {
+      return;
+    }
+    
+    cleanupWebSocket();
+    wsConversationIdRef.current = conversationId;
+    
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/chat`);
+    
+    ws.onopen = () => {
+      setIsWsConnected(true);
+      if (wsConversationIdRef.current) {
+        ws.send(JSON.stringify({ type: "join", conversationId: wsConversationIdRef.current }));
+      }
+    };
+    
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "new_message") {
+          setChatMessages(prev => {
+            const exists = prev.some(m => m.id === data.data.id);
+            if (exists) return prev;
+            return [...prev, data.data];
+          });
+        }
+      } catch (error) {
+        console.error("WebSocket message parse error:", error);
+      }
+    };
+    
+    ws.onclose = () => {
+      setIsWsConnected(false);
+    };
+    
+    wsRef.current = ws;
+  }, [cleanupWebSocket]);
+
   const selectConversation = async (conv: ChatConversation) => {
     setSelectedConversation(conv);
     try {
@@ -211,6 +268,7 @@ export default function Admin() {
       const data = await res.json();
       if (data.success) {
         setChatMessages(data.data.messages);
+        connectWebSocket(conv.id);
       }
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -220,28 +278,45 @@ export default function Admin() {
   const sendAdminReply = async () => {
     if (!adminReply.trim() || !selectedConversation) return;
     
-    try {
-      const res = await fetch("/api/chat/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversationId: selectedConversation.id,
-          senderType: "admin",
-          senderName: "관리자",
-          message: adminReply.trim(),
-          isRead: false,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setChatMessages(prev => [...prev, data.data]);
-        setAdminReply("");
+    const messageText = adminReply.trim();
+    setAdminReply("");
+    
+    if (wsRef.current?.readyState === WebSocket.OPEN && wsConversationIdRef.current) {
+      wsRef.current.send(JSON.stringify({
+        type: "message",
+        senderType: "admin",
+        senderName: "관리자",
+        message: messageText,
+      }));
+    } else {
+      try {
+        const res = await fetch("/api/chat/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversationId: selectedConversation.id,
+            senderType: "admin",
+            senderName: "관리자",
+            message: messageText,
+            isRead: false,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setChatMessages(prev => [...prev, data.data]);
+        }
+      } catch (error) {
+        console.error("Error sending admin reply:", error);
+        toast({ title: "오류", description: "메시지 전송에 실패했습니다.", variant: "destructive" });
       }
-    } catch (error) {
-      console.error("Error sending admin reply:", error);
-      toast({ title: "오류", description: "메시지 전송에 실패했습니다.", variant: "destructive" });
     }
   };
+
+  useEffect(() => {
+    return () => {
+      cleanupWebSocket();
+    };
+  }, [cleanupWebSocket]);
 
   const updateConversationStatus = async (convId: string, status: string) => {
     try {

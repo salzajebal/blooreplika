@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { MessageCircle, X, Send, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ChatMessage, ChatConversation } from "@shared/schema";
@@ -18,8 +18,17 @@ export function ChatWidget({ guestName = "방문자", guestEmail }: ChatWidgetPr
   const [inputName, setInputName] = useState(guestName);
   const [inputEmail, setInputEmail] = useState(guestEmail || "");
   const [isStarting, setIsStarting] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const conversationIdRef = useRef<string | null>(null);
+  const isOpenRef = useRef(isOpen);
+  const shouldReconnectRef = useRef(false);
+
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -29,28 +38,82 @@ export function ChatWidget({ guestName = "방문자", guestEmail }: ChatWidgetPr
     scrollToBottom();
   }, [messages]);
 
-  useEffect(() => {
-    if (conversation && isOpen) {
-      const pollMessages = async () => {
-        try {
-          const res = await fetch(`/api/chat/conversations/${conversation.id}`);
-          const data = await res.json();
-          if (data.success) {
-            setMessages(data.data.messages);
-          }
-        } catch (error) {
-          console.error("Error polling messages:", error);
-        }
-      };
-
-      pollingRef.current = setInterval(pollMessages, 3000);
-      return () => {
-        if (pollingRef.current) {
-          clearInterval(pollingRef.current);
-        }
-      };
+  const cleanupWebSocket = useCallback(() => {
+    shouldReconnectRef.current = false;
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
     }
-  }, [conversation, isOpen]);
+    if (wsRef.current) {
+      wsRef.current.onopen = null;
+      wsRef.current.onmessage = null;
+      wsRef.current.onclose = null;
+      wsRef.current.onerror = null;
+      if (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING) {
+        wsRef.current.close();
+      }
+      wsRef.current = null;
+    }
+    setIsConnected(false);
+  }, []);
+
+  const connectWebSocket = useCallback((convId: string) => {
+    cleanupWebSocket();
+    conversationIdRef.current = convId;
+    shouldReconnectRef.current = true;
+
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/chat`);
+    
+    ws.onopen = () => {
+      setIsConnected(true);
+      if (conversationIdRef.current) {
+        ws.send(JSON.stringify({ type: "join", conversationId: conversationIdRef.current }));
+      }
+    };
+    
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "new_message") {
+          setMessages(prev => {
+            const exists = prev.some(m => m.id === data.data.id);
+            if (exists) return prev;
+            return [...prev, data.data];
+          });
+        }
+      } catch (error) {
+        console.error("WebSocket message parse error:", error);
+      }
+    };
+    
+    ws.onclose = () => {
+      setIsConnected(false);
+      if (shouldReconnectRef.current && conversationIdRef.current && isOpenRef.current) {
+        reconnectTimeoutRef.current = setTimeout(() => {
+          if (conversationIdRef.current) {
+            connectWebSocket(conversationIdRef.current);
+          }
+        }, 3000);
+      }
+    };
+    
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+    
+    wsRef.current = ws;
+  }, [cleanupWebSocket]);
+
+  useEffect(() => {
+    if (conversation && isOpen && !isStarting) {
+      connectWebSocket(conversation.id);
+    }
+    
+    return () => {
+      cleanupWebSocket();
+    };
+  }, [conversation?.id, isOpen, isStarting, connectWebSocket, cleanupWebSocket]);
 
   const startConversation = async () => {
     if (!subject.trim()) {
@@ -112,27 +175,36 @@ export function ChatWidget({ guestName = "방문자", guestEmail }: ChatWidgetPr
   const sendMessage = async () => {
     if (!newMessage.trim() || !conversation) return;
 
-    const messageData = {
-      conversationId: conversation.id,
-      senderType: "user",
-      senderName: inputName,
-      message: newMessage.trim(),
-      isRead: false,
-    };
+    const messageText = newMessage.trim();
+    setNewMessage("");
 
-    try {
-      const res = await fetch("/api/chat/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(messageData),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setMessages(prev => [...prev, data.data]);
-        setNewMessage("");
+    if (wsRef.current?.readyState === WebSocket.OPEN && conversationIdRef.current) {
+      wsRef.current.send(JSON.stringify({
+        type: "message",
+        senderType: "user",
+        senderName: inputName,
+        message: messageText,
+      }));
+    } else {
+      try {
+        const res = await fetch("/api/chat/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversationId: conversation.id,
+            senderType: "user",
+            senderName: inputName,
+            message: messageText,
+            isRead: false,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setMessages(prev => [...prev, data.data]);
+        }
+      } catch (error) {
+        console.error("Error sending message:", error);
       }
-    } catch (error) {
-      console.error("Error sending message:", error);
     }
   };
 
@@ -183,7 +255,12 @@ export function ChatWidget({ guestName = "방문자", guestEmail }: ChatWidgetPr
           <MessageCircle className="w-6 h-6" />
           <div>
             <h3 className="font-bold">1:1 실시간 상담</h3>
-            <p className="text-xs text-amber-100">한국공인금거래소</p>
+            <p className="text-xs text-amber-100 flex items-center gap-1">
+              한국공인금거래소
+              {!isStarting && (
+                <span className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-400" : "bg-gray-400"}`} />
+              )}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
