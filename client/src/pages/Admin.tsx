@@ -821,8 +821,12 @@ export default function Admin() {
         setShowAddReviewForm(false);
         setReviewFormData({ authorName: "", productName: "", rating: 5, title: "", content: "", imageUrl: "", isVisible: true, displayDate: new Date().toISOString().slice(0, 16) });
         fetchReviews();
+      } else {
+        console.error("Review creation error:", data.error);
+        toast({ title: "오류", description: data.error || "후기 추가에 실패했습니다.", variant: "destructive" });
       }
     } catch (error) {
+      console.error("Review creation error:", error);
       toast({ title: "오류", description: "후기 추가에 실패했습니다.", variant: "destructive" });
     }
   };
@@ -892,8 +896,12 @@ export default function Admin() {
         setShowAddNoticeForm(false);
         setNoticeFormData({ title: "", content: "", category: "general", isPinned: false, isVisible: true, displayDate: new Date().toISOString().slice(0, 16) });
         fetchNotices();
+      } else {
+        console.error("Notice creation error:", data.error);
+        toast({ title: "오류", description: data.error || "공지사항 추가에 실패했습니다.", variant: "destructive" });
       }
     } catch (error) {
+      console.error("Notice creation error:", error);
       toast({ title: "오류", description: "공지사항 추가에 실패했습니다.", variant: "destructive" });
     }
   };
