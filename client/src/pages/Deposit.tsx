@@ -7,16 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { Banknote, Copy, CheckCircle, Clock, XCircle, Info } from "lucide-react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
-interface DepositAccount {
-  id: string;
-  bankName: string;
-  accountNumber: string;
-  accountHolder: string;
-  isActive: boolean;
-}
+import { MessageCircle, CheckCircle, Clock, XCircle, ExternalLink } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface DepositRequest {
   id: string;
@@ -32,7 +24,6 @@ export default function Deposit() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [formData, setFormData] = useState({
     amount: "",
     depositorName: "",
@@ -54,16 +45,16 @@ export default function Deposit() {
     }
   }, [memberToken, setLocation, toast]);
 
-  const { data: depositAccount, isLoading: isLoadingAccount } = useQuery<DepositAccount | null>({
-    queryKey: ["/api/settings/deposit-account"],
+  const { data: kakaoTalkLink } = useQuery<string>({
+    queryKey: ["/api/settings/kakaoTalkLink"],
     queryFn: async () => {
       try {
-        const res = await fetch("/api/settings/deposit-account");
-        if (!res.ok) return null;
-        const data = await res.json();
-        return data;
+        const res = await fetch("/api/settings/kakaoTalkLink");
+        if (!res.ok) return "";
+        const result = await res.json();
+        return result.data?.value || "";
       } catch {
-        return null;
+        return "";
       }
     },
     enabled: !!memberToken,
@@ -87,18 +78,6 @@ export default function Deposit() {
     },
     enabled: !!memberToken,
   });
-
-  const handleCopyAccount = () => {
-    if (depositAccount) {
-      navigator.clipboard.writeText(depositAccount.accountNumber);
-      setCopied(true);
-      toast({
-        title: "복사 완료",
-        description: "계좌번호가 클립보드에 복사되었습니다.",
-      });
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,8 +111,8 @@ export default function Deposit() {
         },
         body: JSON.stringify({
           amount,
-          bankName: depositAccount?.bankName || "",
-          accountNumber: depositAccount?.accountNumber || "",
+          bankName: "카카오톡문의",
+          accountNumber: "카카오톡문의",
           depositorName: formData.depositorName,
         }),
       });
@@ -192,21 +171,6 @@ export default function Deposit() {
     return null;
   }
 
-  if (isLoadingAccount) {
-    return (
-      <div className="min-h-screen flex flex-col bg-gradient-to-b from-gold-50 to-white">
-        <Header />
-        <main className="flex-1 py-6 md:py-12 px-4">
-          <div className="container-custom max-w-4xl mx-auto text-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4"></div>
-            <p className="text-gray-500">로딩 중...</p>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gold-50 to-white">
       <Header />
@@ -216,50 +180,55 @@ export default function Deposit() {
           <h1 className="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8 text-gray-900">입금신청</h1>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
-            <Card className="shadow-lg border-amber-200">
-              <CardHeader className="bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-t-lg">
+            <Card className="shadow-lg border-yellow-300">
+              <CardHeader className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 rounded-t-lg">
                 <CardTitle className="flex items-center gap-2">
-                  <Banknote className="w-5 h-5" />
-                  입금 계좌 안내
+                  <MessageCircle className="w-5 h-5" />
+                  고객센터 안내
                 </CardTitle>
-                <CardDescription className="text-amber-100">
-                  아래 계좌로 입금 후 신청해주세요
+                <CardDescription className="text-gray-700">
+                  상세안내는 카카오톡 고객센터로 연락바랍니다
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-6">
-                {depositAccount ? (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-                      <div className="text-sm text-gray-600 mb-1">은행</div>
-                      <div className="text-xl font-bold text-gray-900">{depositAccount.bankName}</div>
-                    </div>
-                    <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-                      <div className="text-sm text-gray-600 mb-1">계좌번호</div>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                        <span className="text-lg md:text-xl font-bold text-gray-900 break-all">{depositAccount.accountNumber}</span>
-                        <Button 
-                          size="sm" 
-                          variant="outline" 
-                          onClick={handleCopyAccount}
-                          className="flex-shrink-0 w-fit"
-                        >
-                          {copied ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                          <span className="ml-1 text-xs">복사</span>
-                        </Button>
+                <div className="text-center space-y-6">
+                  <div className="p-6 bg-yellow-50 rounded-xl border-2 border-yellow-200">
+                    <p className="text-lg font-medium text-gray-800 mb-4">
+                      입금 관련 상세 안내는<br />
+                      <span className="text-xl font-bold text-yellow-700">카카오톡 고객센터</span>로<br />
+                      연락 바랍니다.
+                    </p>
+                    
+                    {kakaoTalkLink ? (
+                      <a
+                        href={kakaoTalkLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block transition-transform hover:scale-105"
+                        data-testid="link-kakao-customer-service"
+                      >
+                        <div className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-4 px-8 rounded-xl shadow-lg flex items-center gap-3 transition-colors">
+                          <svg viewBox="0 0 24 24" className="w-8 h-8" fill="currentColor">
+                            <path d="M12 3C6.48 3 2 6.58 2 11c0 2.8 1.8 5.27 4.5 6.7-.15.54-.8 2.87-.83 3.1 0 0-.02.13.07.18.09.05.19.02.19.02.25-.04 2.9-1.9 4.1-2.67.65.1 1.31.17 2 .17 5.52 0 10-3.58 10-8S17.52 3 12 3z"/>
+                          </svg>
+                          <span className="text-lg">카카오톡 상담하기</span>
+                          <ExternalLink className="w-5 h-5" />
+                        </div>
+                      </a>
+                    ) : (
+                      <div className="bg-gray-100 text-gray-500 py-4 px-8 rounded-xl">
+                        <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">카카오톡 링크가 설정되지 않았습니다.</p>
+                        <p className="text-xs mt-1">관리자에게 문의해주세요.</p>
                       </div>
-                    </div>
-                    <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-                      <div className="text-sm text-gray-600 mb-1">예금주</div>
-                      <div className="text-xl font-bold text-gray-900">{depositAccount.accountHolder}</div>
-                    </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <Info className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                    <p>입금 계좌 정보가 설정되지 않았습니다.</p>
-                    <p className="text-sm mt-2">관리자에게 문의해주세요.</p>
+                  
+                  <div className="text-sm text-gray-500">
+                    <p>영업시간: 평일 09:00 ~ 18:00</p>
+                    <p>점심시간: 12:00 ~ 13:00</p>
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
 
@@ -319,7 +288,7 @@ export default function Deposit() {
                   <Button
                     type="submit"
                     className="w-full h-12 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-semibold"
-                    disabled={loading || !depositAccount}
+                    disabled={loading}
                     data-testid="button-submit-deposit"
                   >
                     {loading ? "신청 중..." : "입금신청 하기"}
