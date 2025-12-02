@@ -7,12 +7,9 @@ import type { Product, Category } from "@shared/schema";
 const DEFAULT_CATEGORIES = [
   { id: "gold_bar", name: "골드바" },
   { id: "silver_bar", name: "실버바" },
-  { id: "baby_ring", name: "돌반지/돌팔찌" },
-  { id: "jewelry", name: "순금제품" },
-  { id: "diamond", name: "다이아몬드" },
-  { id: "corporate", name: "기업선물" },
-  { id: "gift_gold", name: "순금기념품" },
-  { id: "event", name: "이벤트" },
+  { id: "baby_ring", name: "돌선물" },
+  { id: "jewelry", name: "순금기념품" },
+  { id: "pure_jewelry", name: "순금주얼리" },
 ];
 
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1610375461246-83df859d849d?w=500&h=500&fit=crop";
@@ -171,26 +168,6 @@ export function ProductGrid() {
         </div>
       )}
       
-      {/* Pagination (Visual only) */}
-      {filteredProducts.length > 0 && (
-        <div className="mt-12 flex justify-center gap-2">
-          <Button variant="outline" size="icon" className="w-8 h-8" disabled>
-            &lt;
-          </Button>
-          <Button variant="default" size="icon" className="w-8 h-8 bg-primary hover:bg-primary/90 text-white border-none">
-            1
-          </Button>
-          <Button variant="outline" size="icon" className="w-8 h-8 hover:bg-gray-50">
-            2
-          </Button>
-          <Button variant="outline" size="icon" className="w-8 h-8 hover:bg-gray-50">
-            3
-          </Button>
-          <Button variant="outline" size="icon" className="w-8 h-8 hover:bg-gray-50">
-            &gt;
-          </Button>
-        </div>
-      )}
     </section>
   );
 }
