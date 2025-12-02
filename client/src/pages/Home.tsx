@@ -3,8 +3,16 @@ import { Footer } from "@/components/layout/Footer";
 import { Hero } from "@/components/home/Hero";
 import { PriceBoard } from "@/components/home/PriceBoard";
 import { ProductGrid } from "@/components/home/ProductGrid";
-import { Sparkles, MessageCircle } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Link } from "wouter";
+
+function KakaoIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+      <path d="M12 3C6.48 3 2 6.58 2 11c0 2.8 1.8 5.27 4.5 6.7-.15.53-.5 1.92-.57 2.22-.1.38.14.38.29.27.12-.08 1.85-1.22 2.6-1.72.72.11 1.47.17 2.18.17 5.52 0 10-3.58 10-8S17.52 3 12 3z"/>
+    </svg>
+  );
+}
 
 export default function Home() {
   const handleKakaoClick = () => {
@@ -34,7 +42,7 @@ export default function Home() {
             <h3 className="text-2xl font-bold text-gray-900 mb-2">순금 골드바</h3>
             <p className="text-amber-800 text-2xl font-bold mb-2">750,000원<span className="text-base font-normal text-stone-600">/돈</span></p>
             <span className="text-amber-700 text-sm flex items-center gap-1 font-medium">
-              <MessageCircle className="w-4 h-4" />
+              <KakaoIcon className="w-4 h-4" />
               카카오톡 문의
             </span>
           </div>
@@ -49,7 +57,7 @@ export default function Home() {
             <h3 className="text-2xl font-bold text-gray-900 mb-2">순은 실버바</h3>
             <p className="text-gray-800 text-2xl font-bold mb-2">10,150원<span className="text-base font-normal text-stone-600">/돈</span></p>
             <span className="text-gray-600 text-sm flex items-center gap-1 font-medium">
-              <MessageCircle className="w-4 h-4" />
+              <KakaoIcon className="w-4 h-4" />
               카카오톡 문의
             </span>
           </div>
@@ -81,9 +89,9 @@ export default function Home() {
               </div>
               <button 
                 onClick={handleKakaoClick}
-                className="inline-flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                className="inline-flex items-center gap-2 bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] px-6 py-3 rounded-lg font-medium transition-colors"
               >
-                <MessageCircle className="w-5 h-5" />
+                <KakaoIcon className="w-5 h-5" />
                 카카오톡으로 문의하기
               </button>
               <p className="text-stone-500 text-sm mt-4">* VAT 별도 / 별도 문의를 통해 안내받으실 수 있습니다.</p>

@@ -1,4 +1,12 @@
-import { ArrowUp, ArrowDown, Minus, RotateCw, RefreshCw, MessageCircle, Sparkles } from "lucide-react";
+import { ArrowUp, ArrowDown, Minus, RotateCw, RefreshCw, Sparkles } from "lucide-react";
+
+function KakaoIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+      <path d="M12 3C6.48 3 2 6.58 2 11c0 2.8 1.8 5.27 4.5 6.7-.15.53-.5 1.92-.57 2.22-.1.38.14.38.29.27.12-.08 1.85-1.22 2.6-1.72.72.11 1.47.17 2.18.17 5.52 0 10-3.58 10-8S17.52 3 12 3z"/>
+    </svg>
+  );
+}
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
@@ -196,9 +204,9 @@ export function PriceBoard() {
           </p>
           <button 
             onClick={handleKakaoClick}
-            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center gap-2 bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] px-4 py-2 rounded-lg text-sm font-medium transition-colors"
           >
-            <MessageCircle className="w-4 h-4" />
+            <KakaoIcon className="w-4 h-4" />
             카카오톡 문의
           </button>
         </div>
