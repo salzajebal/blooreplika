@@ -202,7 +202,7 @@ export default function ProductDetail() {
   const handleBuyNow = () => {
     toast({
       title: "구매 상담 신청",
-      description: "고객센터에서 곧 연락드리겠습니다. (1588-1234)",
+      description: "담당자가 곧 연락드리겠습니다.",
     });
   };
 
@@ -450,7 +450,7 @@ export default function ProductDetail() {
                     <li>• 상품 수령 후 7일 이내 교환/반품 가능</li>
                     <li>• 단순 변심 시 왕복 배송비 고객 부담</li>
                     <li>• 제품 하자 시 무료 교환 및 반품</li>
-                    <li>• 고객센터: 1588-1234</li>
+                    <li>• 1:1 채팅 상담 이용 가능</li>
                   </ul>
                 </div>
               </div>
