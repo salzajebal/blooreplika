@@ -8,10 +8,10 @@ import {
   Plus, Pencil, Trash2, Check, X, RefreshCw, Database, 
   LogOut, Users, Package, BarChart3, Eye, EyeOff,
   Lock, User, Mail, Phone, CheckCircle, XCircle,
-  MessageCircle, Send
+  MessageCircle, Send, Star, FileText, Bell, Calendar
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Product, Category, Member, ChatConversation, ChatMessage } from "@shared/schema";
+import type { Product, Category, Member, ChatConversation, ChatMessage, Review, Notice } from "@shared/schema";
 
 const CATEGORY_OPTIONS = [
   { id: "gold_bar", name: "골드바" },
@@ -37,7 +37,7 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "members" | "chat">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "members" | "chat" | "reviews" | "notices">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<ChatConversation | null>(null);
@@ -76,6 +76,32 @@ export default function Admin() {
   });
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [showAddMemberForm, setShowAddMemberForm] = useState(false);
+
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewFormData, setReviewFormData] = useState({
+    authorName: "",
+    productName: "",
+    rating: 5,
+    title: "",
+    content: "",
+    imageUrl: "",
+    isVisible: true,
+    displayDate: new Date().toISOString().slice(0, 16),
+  });
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+  const [showAddReviewForm, setShowAddReviewForm] = useState(false);
+
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [noticeFormData, setNoticeFormData] = useState({
+    title: "",
+    content: "",
+    category: "general",
+    isPinned: false,
+    isVisible: true,
+    displayDate: new Date().toISOString().slice(0, 16),
+  });
+  const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
+  const [showAddNoticeForm, setShowAddNoticeForm] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
@@ -204,6 +230,30 @@ export default function Admin() {
       }
     } catch (error) {
       console.error("Error fetching conversations:", error);
+    }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/reviews");
+      const data = await res.json();
+      if (data.success) {
+        setReviews(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+    }
+  };
+
+  const fetchNotices = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/notices");
+      const data = await res.json();
+      if (data.success) {
+        setNotices(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching notices:", error);
     }
   };
 
@@ -345,6 +395,8 @@ export default function Admin() {
       fetchProducts();
       fetchMembers();
       fetchConversations();
+      fetchReviews();
+      fetchNotices();
     }
   }, [isAuthenticated]);
 
@@ -505,6 +557,146 @@ export default function Admin() {
     });
   };
 
+  const handleCreateReview = async () => {
+    try {
+      const res = await fetchWithAuth("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...reviewFormData,
+          displayDate: new Date(reviewFormData.displayDate).toISOString(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: "후기가 추가되었습니다." });
+        setShowAddReviewForm(false);
+        setReviewFormData({ authorName: "", productName: "", rating: 5, title: "", content: "", imageUrl: "", isVisible: true, displayDate: new Date().toISOString().slice(0, 16) });
+        fetchReviews();
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "후기 추가에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleUpdateReview = async (id: string) => {
+    try {
+      const res = await fetchWithAuth(`/api/reviews/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...reviewFormData,
+          displayDate: new Date(reviewFormData.displayDate).toISOString(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: "후기가 수정되었습니다." });
+        setEditingReviewId(null);
+        fetchReviews();
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "후기 수정에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteReview = async (id: string) => {
+    if (!confirm("정말로 이 후기를 삭제하시겠습니까?")) return;
+    try {
+      const res = await fetchWithAuth(`/api/reviews/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: "후기가 삭제되었습니다." });
+        fetchReviews();
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "후기 삭제에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  const startEditReview = (review: Review) => {
+    setEditingReviewId(review.id);
+    setReviewFormData({
+      authorName: review.authorName,
+      productName: review.productName || "",
+      rating: review.rating || 5,
+      title: review.title,
+      content: review.content,
+      imageUrl: review.imageUrl || "",
+      isVisible: review.isVisible ?? true,
+      displayDate: review.displayDate ? new Date(review.displayDate).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+    });
+  };
+
+  const handleCreateNotice = async () => {
+    try {
+      const res = await fetchWithAuth("/api/notices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...noticeFormData,
+          displayDate: new Date(noticeFormData.displayDate).toISOString(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: "공지사항이 추가되었습니다." });
+        setShowAddNoticeForm(false);
+        setNoticeFormData({ title: "", content: "", category: "general", isPinned: false, isVisible: true, displayDate: new Date().toISOString().slice(0, 16) });
+        fetchNotices();
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "공지사항 추가에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleUpdateNotice = async (id: string) => {
+    try {
+      const res = await fetchWithAuth(`/api/notices/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...noticeFormData,
+          displayDate: new Date(noticeFormData.displayDate).toISOString(),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: "공지사항이 수정되었습니다." });
+        setEditingNoticeId(null);
+        fetchNotices();
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "공지사항 수정에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteNotice = async (id: string) => {
+    if (!confirm("정말로 이 공지사항을 삭제하시겠습니까?")) return;
+    try {
+      const res = await fetchWithAuth(`/api/notices/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: "공지사항이 삭제되었습니다." });
+        fetchNotices();
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "공지사항 삭제에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  const startEditNotice = (notice: Notice) => {
+    setEditingNoticeId(notice.id);
+    setNoticeFormData({
+      title: notice.title,
+      content: notice.content,
+      category: notice.category || "general",
+      isPinned: notice.isPinned ?? false,
+      isVisible: notice.isVisible ?? true,
+      displayDate: notice.displayDate ? new Date(notice.displayDate).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+    });
+  };
+
   const filteredProducts = productFilter === "all" 
     ? products 
     : products.filter(p => p.category === productFilter);
@@ -654,6 +846,24 @@ export default function Admin() {
                 {conversations.filter(c => c.status === "open").length}
               </span>
             )}
+          </Button>
+          <Button
+            data-testid="tab-reviews"
+            variant={activeTab === "reviews" ? "default" : "outline"}
+            onClick={() => setActiveTab("reviews")}
+            className={activeTab === "reviews" ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+          >
+            <Star className="w-4 h-4 mr-2" />
+            후기 관리
+          </Button>
+          <Button
+            data-testid="tab-notices"
+            variant={activeTab === "notices" ? "default" : "outline"}
+            onClick={() => setActiveTab("notices")}
+            className={activeTab === "notices" ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+          >
+            <Bell className="w-4 h-4 mr-2" />
+            공지 관리
           </Button>
         </div>
 
@@ -1330,6 +1540,473 @@ export default function Admin() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "reviews" && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">후기 관리</h2>
+                <p className="text-sm text-gray-500">고객 후기를 추가/수정할 수 있습니다 (날짜, 이름 등 조작 가능)</p>
+              </div>
+              <Button
+                data-testid="button-add-review"
+                onClick={() => {
+                  setShowAddReviewForm(true);
+                  setReviewFormData({ authorName: "", productName: "", rating: 5, title: "", content: "", imageUrl: "", isVisible: true, displayDate: new Date().toISOString().slice(0, 16) });
+                }}
+                className="bg-yellow-500 hover:bg-yellow-600"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                후기 추가
+              </Button>
+            </div>
+
+            {showAddReviewForm && (
+              <div className="bg-gray-50 rounded-lg p-6 mb-6 border">
+                <h3 className="font-bold mb-4">새 후기 추가</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">작성자 이름</label>
+                    <Input
+                      value={reviewFormData.authorName}
+                      onChange={(e) => setReviewFormData({ ...reviewFormData, authorName: e.target.value })}
+                      placeholder="홍길동"
+                      data-testid="input-review-author"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">상품명 (선택)</label>
+                    <Input
+                      value={reviewFormData.productName}
+                      onChange={(e) => setReviewFormData({ ...reviewFormData, productName: e.target.value })}
+                      placeholder="골드바 100g"
+                      data-testid="input-review-product"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">별점</label>
+                    <select
+                      value={reviewFormData.rating}
+                      onChange={(e) => setReviewFormData({ ...reviewFormData, rating: Number(e.target.value) })}
+                      className="w-full h-10 px-3 border rounded-md"
+                      data-testid="select-review-rating"
+                    >
+                      <option value={5}>5점</option>
+                      <option value={4}>4점</option>
+                      <option value={3}>3점</option>
+                      <option value={2}>2점</option>
+                      <option value={1}>1점</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">작성일 (표시용)</label>
+                    <Input
+                      type="datetime-local"
+                      value={reviewFormData.displayDate}
+                      onChange={(e) => setReviewFormData({ ...reviewFormData, displayDate: e.target.value })}
+                      data-testid="input-review-date"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
+                    <Input
+                      value={reviewFormData.title}
+                      onChange={(e) => setReviewFormData({ ...reviewFormData, title: e.target.value })}
+                      placeholder="후기 제목을 입력하세요"
+                      data-testid="input-review-title"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
+                    <Textarea
+                      value={reviewFormData.content}
+                      onChange={(e) => setReviewFormData({ ...reviewFormData, content: e.target.value })}
+                      placeholder="후기 내용을 입력하세요"
+                      rows={4}
+                      data-testid="input-review-content"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">이미지 URL (선택)</label>
+                    <Input
+                      value={reviewFormData.imageUrl}
+                      onChange={(e) => setReviewFormData({ ...reviewFormData, imageUrl: e.target.value })}
+                      placeholder="https://..."
+                      data-testid="input-review-image"
+                    />
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={reviewFormData.isVisible}
+                        onChange={(e) => setReviewFormData({ ...reviewFormData, isVisible: e.target.checked })}
+                        className="w-4 h-4"
+                        data-testid="input-review-visible"
+                      />
+                      <span className="text-sm">공개</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button onClick={handleCreateReview} className="bg-yellow-500 hover:bg-yellow-600" data-testid="button-save-review">
+                    <Check className="w-4 h-4 mr-2" />
+                    저장
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowAddReviewForm(false)} data-testid="button-cancel-review">
+                    <X className="w-4 h-4 mr-2" />
+                    취소
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium">작성자</th>
+                    <th className="px-4 py-3 text-left font-medium">제목</th>
+                    <th className="px-4 py-3 text-left font-medium">별점</th>
+                    <th className="px-4 py-3 text-left font-medium">작성일</th>
+                    <th className="px-4 py-3 text-left font-medium">공개</th>
+                    <th className="px-4 py-3 text-right font-medium">관리</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {reviews.map((review) => (
+                    <tr key={review.id} className="hover:bg-gray-50">
+                      {editingReviewId === review.id ? (
+                        <>
+                          <td className="px-4 py-3">
+                            <Input
+                              value={reviewFormData.authorName}
+                              onChange={(e) => setReviewFormData({ ...reviewFormData, authorName: e.target.value })}
+                              className="h-8"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <Input
+                              value={reviewFormData.title}
+                              onChange={(e) => setReviewFormData({ ...reviewFormData, title: e.target.value })}
+                              className="h-8"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <select
+                              value={reviewFormData.rating}
+                              onChange={(e) => setReviewFormData({ ...reviewFormData, rating: Number(e.target.value) })}
+                              className="h-8 px-2 border rounded"
+                            >
+                              <option value={5}>5점</option>
+                              <option value={4}>4점</option>
+                              <option value={3}>3점</option>
+                              <option value={2}>2점</option>
+                              <option value={1}>1점</option>
+                            </select>
+                          </td>
+                          <td className="px-4 py-3">
+                            <Input
+                              type="datetime-local"
+                              value={reviewFormData.displayDate}
+                              onChange={(e) => setReviewFormData({ ...reviewFormData, displayDate: e.target.value })}
+                              className="h-8"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <input
+                              type="checkbox"
+                              checked={reviewFormData.isVisible}
+                              onChange={(e) => setReviewFormData({ ...reviewFormData, isVisible: e.target.checked })}
+                              className="w-4 h-4"
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <Button size="icon" variant="ghost" onClick={() => handleUpdateReview(review.id)} className="h-8 w-8 text-green-600">
+                              <Check className="w-4 h-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => setEditingReviewId(null)} className="h-8 w-8">
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-4 py-3 font-medium">{review.authorName}</td>
+                          <td className="px-4 py-3">{review.title}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex text-yellow-400">
+                              {[...Array(review.rating || 5)].map((_, i) => (
+                                <Star key={i} className="w-4 h-4 fill-current" />
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 text-sm">
+                            {review.displayDate ? new Date(review.displayDate).toLocaleDateString('ko-KR') : "-"}
+                          </td>
+                          <td className="px-4 py-3">
+                            {review.isVisible ? (
+                              <span className="text-green-600 text-sm">공개</span>
+                            ) : (
+                              <span className="text-gray-400 text-sm">비공개</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <Button size="icon" variant="ghost" onClick={() => startEditReview(review)} className="h-8 w-8">
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => handleDeleteReview(review.id)} className="h-8 w-8 text-red-500">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {reviews.length === 0 && (
+                <div className="text-center py-12 text-gray-500">
+                  <Star className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p>등록된 후기가 없습니다</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "notices" && (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">공지사항 관리</h2>
+                <p className="text-sm text-gray-500">공지사항을 추가/수정할 수 있습니다</p>
+              </div>
+              <Button
+                data-testid="button-add-notice"
+                onClick={() => {
+                  setShowAddNoticeForm(true);
+                  setNoticeFormData({ title: "", content: "", category: "general", isPinned: false, isVisible: true, displayDate: new Date().toISOString().slice(0, 16) });
+                }}
+                className="bg-yellow-500 hover:bg-yellow-600"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                공지 추가
+              </Button>
+            </div>
+
+            {showAddNoticeForm && (
+              <div className="bg-gray-50 rounded-lg p-6 mb-6 border">
+                <h3 className="font-bold mb-4">새 공지사항 추가</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">제목</label>
+                    <Input
+                      value={noticeFormData.title}
+                      onChange={(e) => setNoticeFormData({ ...noticeFormData, title: e.target.value })}
+                      placeholder="공지사항 제목을 입력하세요"
+                      data-testid="input-notice-title"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+                    <select
+                      value={noticeFormData.category}
+                      onChange={(e) => setNoticeFormData({ ...noticeFormData, category: e.target.value })}
+                      className="w-full h-10 px-3 border rounded-md"
+                      data-testid="select-notice-category"
+                    >
+                      <option value="general">일반</option>
+                      <option value="event">이벤트</option>
+                      <option value="system">시스템</option>
+                      <option value="important">중요</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">작성일 (표시용)</label>
+                    <Input
+                      type="datetime-local"
+                      value={noticeFormData.displayDate}
+                      onChange={(e) => setNoticeFormData({ ...noticeFormData, displayDate: e.target.value })}
+                      data-testid="input-notice-date"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">내용</label>
+                    <Textarea
+                      value={noticeFormData.content}
+                      onChange={(e) => setNoticeFormData({ ...noticeFormData, content: e.target.value })}
+                      placeholder="공지사항 내용을 입력하세요"
+                      rows={6}
+                      data-testid="input-notice-content"
+                    />
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={noticeFormData.isPinned}
+                        onChange={(e) => setNoticeFormData({ ...noticeFormData, isPinned: e.target.checked })}
+                        className="w-4 h-4"
+                        data-testid="input-notice-pinned"
+                      />
+                      <span className="text-sm">상단 고정</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={noticeFormData.isVisible}
+                        onChange={(e) => setNoticeFormData({ ...noticeFormData, isVisible: e.target.checked })}
+                        className="w-4 h-4"
+                        data-testid="input-notice-visible"
+                      />
+                      <span className="text-sm">공개</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button onClick={handleCreateNotice} className="bg-yellow-500 hover:bg-yellow-600" data-testid="button-save-notice">
+                    <Check className="w-4 h-4 mr-2" />
+                    저장
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowAddNoticeForm(false)} data-testid="button-cancel-notice">
+                    <X className="w-4 h-4 mr-2" />
+                    취소
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium">제목</th>
+                    <th className="px-4 py-3 text-left font-medium">카테고리</th>
+                    <th className="px-4 py-3 text-left font-medium">작성일</th>
+                    <th className="px-4 py-3 text-left font-medium">조회수</th>
+                    <th className="px-4 py-3 text-left font-medium">상태</th>
+                    <th className="px-4 py-3 text-right font-medium">관리</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {notices.map((notice) => (
+                    <tr key={notice.id} className="hover:bg-gray-50">
+                      {editingNoticeId === notice.id ? (
+                        <>
+                          <td className="px-4 py-3">
+                            <Input
+                              value={noticeFormData.title}
+                              onChange={(e) => setNoticeFormData({ ...noticeFormData, title: e.target.value })}
+                              className="h-8"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <select
+                              value={noticeFormData.category}
+                              onChange={(e) => setNoticeFormData({ ...noticeFormData, category: e.target.value })}
+                              className="h-8 px-2 border rounded"
+                            >
+                              <option value="general">일반</option>
+                              <option value="event">이벤트</option>
+                              <option value="system">시스템</option>
+                              <option value="important">중요</option>
+                            </select>
+                          </td>
+                          <td className="px-4 py-3">
+                            <Input
+                              type="datetime-local"
+                              value={noticeFormData.displayDate}
+                              onChange={(e) => setNoticeFormData({ ...noticeFormData, displayDate: e.target.value })}
+                              className="h-8"
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 text-sm">{notice.viewCount || 0}</td>
+                          <td className="px-4 py-3">
+                            <div className="flex gap-2">
+                              <label className="flex items-center gap-1">
+                                <input
+                                  type="checkbox"
+                                  checked={noticeFormData.isPinned}
+                                  onChange={(e) => setNoticeFormData({ ...noticeFormData, isPinned: e.target.checked })}
+                                  className="w-3 h-3"
+                                />
+                                <span className="text-xs">고정</span>
+                              </label>
+                              <label className="flex items-center gap-1">
+                                <input
+                                  type="checkbox"
+                                  checked={noticeFormData.isVisible}
+                                  onChange={(e) => setNoticeFormData({ ...noticeFormData, isVisible: e.target.checked })}
+                                  className="w-3 h-3"
+                                />
+                                <span className="text-xs">공개</span>
+                              </label>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <Button size="icon" variant="ghost" onClick={() => handleUpdateNotice(notice.id)} className="h-8 w-8 text-green-600">
+                              <Check className="w-4 h-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => setEditingNoticeId(null)} className="h-8 w-8">
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              {notice.isPinned && <span className="text-red-500 text-xs font-bold">[고정]</span>}
+                              <span className="font-medium">{notice.title}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              notice.category === "important" ? "bg-red-100 text-red-700" :
+                              notice.category === "event" ? "bg-green-100 text-green-700" :
+                              notice.category === "system" ? "bg-blue-100 text-blue-700" :
+                              "bg-gray-100 text-gray-700"
+                            }`}>
+                              {notice.category === "general" ? "일반" :
+                               notice.category === "event" ? "이벤트" :
+                               notice.category === "system" ? "시스템" : "중요"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 text-sm">
+                            {notice.displayDate ? new Date(notice.displayDate).toLocaleDateString('ko-KR') : "-"}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 text-sm">{notice.viewCount || 0}</td>
+                          <td className="px-4 py-3">
+                            {notice.isVisible ? (
+                              <span className="text-green-600 text-sm">공개</span>
+                            ) : (
+                              <span className="text-gray-400 text-sm">비공개</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <Button size="icon" variant="ghost" onClick={() => startEditNotice(notice)} className="h-8 w-8">
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => handleDeleteNotice(notice.id)} className="h-8 w-8 text-red-500">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {notices.length === 0 && (
+                <div className="text-center py-12 text-gray-500">
+                  <Bell className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                  <p>등록된 공지사항이 없습니다</p>
+                </div>
+              )}
             </div>
           </div>
         )}
