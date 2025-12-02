@@ -3,10 +3,13 @@ import {
   type Product, type InsertProduct, products,
   type Category, type InsertCategory, categories,
   type GoldPrice, type InsertGoldPrice, goldPrices,
-  type Member, type InsertMember, members
+  type Member, type InsertMember, members,
+  type ChatConversation, type InsertChatConversation, chatConversations,
+  type ChatMessage, type InsertChatMessage, chatMessages,
+  type Faq, type InsertFaq, faqs
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -40,6 +43,22 @@ export interface IStorage {
   updateMember(id: string, member: Partial<InsertMember>): Promise<Member | undefined>;
   deleteMember(id: string): Promise<boolean>;
   updateMemberLastLogin(id: string): Promise<void>;
+  
+  // Chat
+  getAllConversations(): Promise<ChatConversation[]>;
+  getConversation(id: string): Promise<ChatConversation | undefined>;
+  createConversation(conversation: InsertChatConversation): Promise<ChatConversation>;
+  updateConversationStatus(id: string, status: string): Promise<ChatConversation | undefined>;
+  getMessagesByConversation(conversationId: string): Promise<ChatMessage[]>;
+  createMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  markMessagesAsRead(conversationId: string, senderType: string): Promise<void>;
+  
+  // FAQ
+  getAllFaqs(): Promise<Faq[]>;
+  getFaqsByCategory(category: string): Promise<Faq[]>;
+  createFaq(faq: InsertFaq): Promise<Faq>;
+  updateFaq(id: string, faq: Partial<InsertFaq>): Promise<Faq | undefined>;
+  deleteFaq(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -173,6 +192,83 @@ export class DatabaseStorage implements IStorage {
     await db.update(members)
       .set({ lastLoginAt: new Date() })
       .where(eq(members.id, id));
+  }
+
+  // Chat Conversations
+  async getAllConversations(): Promise<ChatConversation[]> {
+    return db.select().from(chatConversations).orderBy(desc(chatConversations.updatedAt));
+  }
+
+  async getConversation(id: string): Promise<ChatConversation | undefined> {
+    const [conversation] = await db.select().from(chatConversations).where(eq(chatConversations.id, id));
+    return conversation;
+  }
+
+  async createConversation(insertConversation: InsertChatConversation): Promise<ChatConversation> {
+    const [conversation] = await db.insert(chatConversations).values(insertConversation).returning();
+    return conversation;
+  }
+
+  async updateConversationStatus(id: string, status: string): Promise<ChatConversation | undefined> {
+    const [conversation] = await db.update(chatConversations)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(chatConversations.id, id))
+      .returning();
+    return conversation;
+  }
+
+  // Chat Messages
+  async getMessagesByConversation(conversationId: string): Promise<ChatMessage[]> {
+    return db.select().from(chatMessages)
+      .where(eq(chatMessages.conversationId, conversationId))
+      .orderBy(chatMessages.createdAt);
+  }
+
+  async createMessage(insertMessage: InsertChatMessage): Promise<ChatMessage> {
+    const [message] = await db.insert(chatMessages).values(insertMessage).returning();
+    await db.update(chatConversations)
+      .set({ updatedAt: new Date() })
+      .where(eq(chatConversations.id, insertMessage.conversationId));
+    return message;
+  }
+
+  async markMessagesAsRead(conversationId: string, senderType: string): Promise<void> {
+    const oppositeType = senderType === 'admin' ? 'user' : 'admin';
+    await db.update(chatMessages)
+      .set({ isRead: true })
+      .where(and(
+        eq(chatMessages.conversationId, conversationId),
+        eq(chatMessages.senderType, oppositeType)
+      ));
+  }
+
+  // FAQ
+  async getAllFaqs(): Promise<Faq[]> {
+    return db.select().from(faqs).where(eq(faqs.isActive, true)).orderBy(faqs.order);
+  }
+
+  async getFaqsByCategory(category: string): Promise<Faq[]> {
+    return db.select().from(faqs)
+      .where(and(eq(faqs.category, category), eq(faqs.isActive, true)))
+      .orderBy(faqs.order);
+  }
+
+  async createFaq(insertFaq: InsertFaq): Promise<Faq> {
+    const [faq] = await db.insert(faqs).values(insertFaq).returning();
+    return faq;
+  }
+
+  async updateFaq(id: string, updateData: Partial<InsertFaq>): Promise<Faq | undefined> {
+    const [faq] = await db.update(faqs)
+      .set(updateData)
+      .where(eq(faqs.id, id))
+      .returning();
+    return faq;
+  }
+
+  async deleteFaq(id: string): Promise<boolean> {
+    const result = await db.delete(faqs).where(eq(faqs.id, id)).returning();
+    return result.length > 0;
   }
 }
 

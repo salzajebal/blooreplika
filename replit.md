@@ -75,6 +75,10 @@ Preferred communication style: Simple, everyday language.
 - Products: Product catalog with categories, pricing, images, and flags (isBest, isNew)
 - Categories: Product categorization with counts and descriptions
 - Gold Prices: Real-time precious metal pricing (gold, silver, platinum)
+- Members: Customer accounts with signup/login functionality
+- Chat Conversations: Real-time 1:1 customer support chat sessions
+- Chat Messages: Individual messages within chat conversations
+- FAQs: Frequently asked questions organized by category
 
 **Validation:**
 - Zod schemas derived from Drizzle schemas using drizzle-zod

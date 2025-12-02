@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertProductSchema, insertCategorySchema, insertMemberSchema } from "@shared/schema";
+import { insertProductSchema, insertCategorySchema, insertMemberSchema, insertChatConversationSchema, insertChatMessageSchema, insertFaqSchema } from "@shared/schema";
 import { z } from "zod";
 
 const ADMIN_USERNAME = "admin123";
@@ -688,6 +688,153 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching stats:", error);
       res.status(500).json({ success: false, error: "통계를 불러올 수 없습니다." });
+    }
+  });
+
+  // ==================== CHAT API ====================
+  
+  // Get all conversations (admin only)
+  app.get("/api/chat/conversations", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const conversations = await storage.getAllConversations();
+      res.json({ success: true, data: conversations });
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({ success: false, error: "대화 목록을 불러올 수 없습니다." });
+    }
+  });
+
+  // Get single conversation with messages
+  app.get("/api/chat/conversations/:id", async (req: Request, res: Response) => {
+    try {
+      const conversation = await storage.getConversation(req.params.id);
+      if (!conversation) {
+        return res.status(404).json({ success: false, error: "대화를 찾을 수 없습니다." });
+      }
+      const messages = await storage.getMessagesByConversation(req.params.id);
+      res.json({ success: true, data: { conversation, messages } });
+    } catch (error) {
+      console.error("Error fetching conversation:", error);
+      res.status(500).json({ success: false, error: "대화를 불러올 수 없습니다." });
+    }
+  });
+
+  // Create new conversation (public)
+  app.post("/api/chat/conversations", async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertChatConversationSchema.parse(req.body);
+      const conversation = await storage.createConversation(validatedData);
+      res.status(201).json({ success: true, data: conversation });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error creating conversation:", error);
+      res.status(500).json({ success: false, error: "대화 생성에 실패했습니다." });
+    }
+  });
+
+  // Update conversation status (admin only)
+  app.patch("/api/chat/conversations/:id/status", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { status } = req.body;
+      const conversation = await storage.updateConversationStatus(req.params.id, status);
+      if (!conversation) {
+        return res.status(404).json({ success: false, error: "대화를 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: conversation });
+    } catch (error) {
+      console.error("Error updating conversation status:", error);
+      res.status(500).json({ success: false, error: "상태 변경에 실패했습니다." });
+    }
+  });
+
+  // Send message (public for users, auth for admin)
+  app.post("/api/chat/messages", async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertChatMessageSchema.parse(req.body);
+      const message = await storage.createMessage(validatedData);
+      res.status(201).json({ success: true, data: message });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error sending message:", error);
+      res.status(500).json({ success: false, error: "메시지 전송에 실패했습니다." });
+    }
+  });
+
+  // Mark messages as read
+  app.post("/api/chat/conversations/:id/read", async (req: Request, res: Response) => {
+    try {
+      const { senderType } = req.body;
+      await storage.markMessagesAsRead(req.params.id, senderType);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+      res.status(500).json({ success: false, error: "읽음 처리에 실패했습니다." });
+    }
+  });
+
+  // ==================== FAQ API ====================
+  
+  // Get all FAQs (public)
+  app.get("/api/faqs", async (req: Request, res: Response) => {
+    try {
+      const { category } = req.query;
+      let faqList;
+      if (category) {
+        faqList = await storage.getFaqsByCategory(category as string);
+      } else {
+        faqList = await storage.getAllFaqs();
+      }
+      res.json({ success: true, data: faqList });
+    } catch (error) {
+      console.error("Error fetching FAQs:", error);
+      res.status(500).json({ success: false, error: "FAQ를 불러올 수 없습니다." });
+    }
+  });
+
+  // Create FAQ (admin only)
+  app.post("/api/faqs", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertFaqSchema.parse(req.body);
+      const faq = await storage.createFaq(validatedData);
+      res.status(201).json({ success: true, data: faq });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error creating FAQ:", error);
+      res.status(500).json({ success: false, error: "FAQ 생성에 실패했습니다." });
+    }
+  });
+
+  // Update FAQ (admin only)
+  app.put("/api/faqs/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const faq = await storage.updateFaq(req.params.id, req.body);
+      if (!faq) {
+        return res.status(404).json({ success: false, error: "FAQ를 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: faq });
+    } catch (error) {
+      console.error("Error updating FAQ:", error);
+      res.status(500).json({ success: false, error: "FAQ 수정에 실패했습니다." });
+    }
+  });
+
+  // Delete FAQ (admin only)
+  app.delete("/api/faqs/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteFaq(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "FAQ를 찾을 수 없습니다." });
+      }
+      res.json({ success: true, message: "FAQ가 삭제되었습니다." });
+    } catch (error) {
+      console.error("Error deleting FAQ:", error);
+      res.status(500).json({ success: false, error: "FAQ 삭제에 실패했습니다." });
     }
   });
 

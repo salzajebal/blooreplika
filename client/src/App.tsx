@@ -9,6 +9,8 @@ import ProductList from "@/pages/ProductList";
 import GoldPrice from "@/pages/GoldPrice";
 import Admin from "@/pages/Admin";
 import Signup from "@/pages/Signup";
+import Support from "@/pages/Support";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 
 function Router() {
   return (
@@ -19,6 +21,7 @@ function Router() {
       <Route path="/gold-price" component={GoldPrice} />
       <Route path="/admin" component={Admin} />
       <Route path="/signup" component={Signup} />
+      <Route path="/support" component={Support} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -30,6 +33,7 @@ function App() {
       <TooltipProvider>
         <Toaster />
         <Router />
+        <ChatWidget />
       </TooltipProvider>
     </QueryClientProvider>
   );
