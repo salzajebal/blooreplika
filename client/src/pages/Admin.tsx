@@ -653,6 +653,18 @@ export default function Admin() {
     setShowEditMemberModal(true);
   };
 
+  const formatErrorMessage = (error: any): string => {
+    if (!error) return "알 수 없는 오류가 발생했습니다.";
+    if (typeof error === "string") return error;
+    if (Array.isArray(error)) {
+      return error.map((e: any) => e.message || JSON.stringify(e)).join(", ");
+    }
+    if (typeof error === "object" && error.message) {
+      return error.message;
+    }
+    return JSON.stringify(error);
+  };
+
   const handleCreateReview = async () => {
     try {
       const res = await fetchWithAuth("/api/reviews", {
@@ -671,7 +683,7 @@ export default function Admin() {
         fetchReviews();
       } else {
         console.error("Review creation error:", data.error);
-        toast({ title: "오류", description: data.error || "후기 추가에 실패했습니다.", variant: "destructive" });
+        toast({ title: "오류", description: formatErrorMessage(data.error) || "후기 추가에 실패했습니다.", variant: "destructive" });
       }
     } catch (error) {
       console.error("Review creation error:", error);
@@ -746,7 +758,7 @@ export default function Admin() {
         fetchNotices();
       } else {
         console.error("Notice creation error:", data.error);
-        toast({ title: "오류", description: data.error || "공지사항 추가에 실패했습니다.", variant: "destructive" });
+        toast({ title: "오류", description: formatErrorMessage(data.error) || "공지사항 추가에 실패했습니다.", variant: "destructive" });
       }
     } catch (error) {
       console.error("Notice creation error:", error);
