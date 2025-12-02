@@ -186,11 +186,11 @@ export default function Deposit() {
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-gold-50 to-white">
       <Header />
       
-      <main className="flex-1 py-12 px-4">
+      <main className="flex-1 py-6 md:py-12 px-4">
         <div className="container-custom max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold text-center mb-8 text-gray-900">입금신청</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8 text-gray-900">입금신청</h1>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
             <Card className="shadow-lg border-amber-200">
               <CardHeader className="bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-t-lg">
                 <CardTitle className="flex items-center gap-2">
@@ -210,15 +210,16 @@ export default function Deposit() {
                     </div>
                     <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
                       <div className="text-sm text-gray-600 mb-1">계좌번호</div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl font-bold text-gray-900">{depositAccount.accountNumber}</span>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <span className="text-lg md:text-xl font-bold text-gray-900 break-all">{depositAccount.accountNumber}</span>
                         <Button 
                           size="sm" 
                           variant="outline" 
                           onClick={handleCopyAccount}
-                          className="flex-shrink-0"
+                          className="flex-shrink-0 w-fit"
                         >
                           {copied ? <CheckCircle className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                          <span className="ml-1 text-xs">복사</span>
                         </Button>
                       </div>
                     </div>

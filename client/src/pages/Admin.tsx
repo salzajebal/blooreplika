@@ -1052,44 +1052,44 @@ export default function Admin() {
       </div>
       
       <div className="container mx-auto px-4 py-6">
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
           <Button
             data-testid="tab-dashboard"
             variant={activeTab === "dashboard" ? "default" : "outline"}
             onClick={() => setActiveTab("dashboard")}
-            className={activeTab === "dashboard" ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "dashboard" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
           >
-            <BarChart3 className="w-4 h-4 mr-2" />
-            대시보드
+            <BarChart3 className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">대시보드</span>
           </Button>
           <Button
             data-testid="tab-products"
             variant={activeTab === "products" ? "default" : "outline"}
             onClick={() => setActiveTab("products")}
-            className={activeTab === "products" ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "products" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
           >
-            <Package className="w-4 h-4 mr-2" />
-            상품 관리
+            <Package className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">상품 관리</span>
           </Button>
           <Button
             data-testid="tab-members"
             variant={activeTab === "members" ? "default" : "outline"}
             onClick={() => setActiveTab("members")}
-            className={activeTab === "members" ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "members" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
           >
-            <Users className="w-4 h-4 mr-2" />
-            회원 관리
+            <Users className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">회원 관리</span>
           </Button>
           <Button
             data-testid="tab-deposits"
             variant={activeTab === "deposits" ? "default" : "outline"}
             onClick={() => setActiveTab("deposits")}
-            className={activeTab === "deposits" ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "deposits" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
           >
-            <Wallet className="w-4 h-4 mr-2" />
-            입금관리
+            <Wallet className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">입금관리</span>
             {depositRequests.filter(d => d.status === "pending").length > 0 && (
-              <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+              <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
                 {depositRequests.filter(d => d.status === "pending").length}
               </span>
             )}
@@ -1098,12 +1098,12 @@ export default function Admin() {
             data-testid="tab-chat"
             variant={activeTab === "chat" ? "default" : "outline"}
             onClick={() => setActiveTab("chat")}
-            className={activeTab === "chat" ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "chat" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
           >
-            <MessageCircle className="w-4 h-4 mr-2" />
-            채팅 상담
+            <MessageCircle className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">채팅 상담</span>
             {conversations.filter(c => c.status === "open").length > 0 && (
-              <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+              <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
                 {conversations.filter(c => c.status === "open").length}
               </span>
             )}
@@ -1112,28 +1112,28 @@ export default function Admin() {
             data-testid="tab-reviews"
             variant={activeTab === "reviews" ? "default" : "outline"}
             onClick={() => setActiveTab("reviews")}
-            className={activeTab === "reviews" ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "reviews" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
           >
-            <Star className="w-4 h-4 mr-2" />
-            후기 관리
+            <Star className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">후기 관리</span>
           </Button>
           <Button
             data-testid="tab-notices"
             variant={activeTab === "notices" ? "default" : "outline"}
             onClick={() => setActiveTab("notices")}
-            className={activeTab === "notices" ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "notices" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
           >
-            <Bell className="w-4 h-4 mr-2" />
-            공지 관리
+            <Bell className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">공지 관리</span>
           </Button>
           <Button
             data-testid="tab-settings"
             variant={activeTab === "settings" ? "default" : "outline"}
             onClick={() => setActiveTab("settings")}
-            className={activeTab === "settings" ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "settings" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
           >
-            <Settings className="w-4 h-4 mr-2" />
-            설정
+            <Settings className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">설정</span>
           </Button>
         </div>
 
@@ -1759,14 +1759,14 @@ export default function Admin() {
                         </div>
                       </div>
                       
-                      <div className="flex flex-col items-end gap-2">
+                      <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
                         <div className="text-right">
-                          <span className="text-gray-500 text-sm">포인트</span>
-                          <div className="font-bold text-xl text-amber-600">
+                          <span className="text-gray-500 text-xs md:text-sm">포인트</span>
+                          <div className="font-bold text-lg md:text-xl text-amber-600">
                             {((member as any).pointBalance || 0).toLocaleString()}P
                           </div>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex flex-wrap items-center gap-1 justify-end">
                           <Button 
                             size="sm" 
                             variant="outline" 
@@ -1775,20 +1775,20 @@ export default function Admin() {
                               setActionType("adjust");
                               setAdjustAmount("");
                             }} 
-                            className="text-amber-600 border-amber-300 hover:bg-amber-50"
+                            className="text-amber-600 border-amber-300 hover:bg-amber-50 text-xs md:text-sm"
                           >
-                            <Wallet className="w-4 h-4 mr-1" />
-                            포인트
+                            <Wallet className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                            <span className="hidden sm:inline">포인트</span>
                           </Button>
                           {(member as any).isFrozen ? (
                             <Button 
                               size="sm" 
                               variant="outline"
                               onClick={() => handleUnfreezeMember(member.id)} 
-                              className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                              className="text-blue-600 border-blue-300 hover:bg-blue-50 text-xs md:text-sm"
                             >
-                              <Unlock className="w-4 h-4 mr-1" />
-                              해제
+                              <Unlock className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                              <span className="hidden sm:inline">해제</span>
                             </Button>
                           ) : (
                             <Button 
@@ -1799,10 +1799,10 @@ export default function Admin() {
                                 setActionType("freeze");
                                 setFreezeReason("");
                               }} 
-                              className="text-cyan-600 border-cyan-300 hover:bg-cyan-50"
+                              className="text-cyan-600 border-cyan-300 hover:bg-cyan-50 text-xs md:text-sm"
                             >
-                              <Snowflake className="w-4 h-4 mr-1" />
-                              동결
+                              <Snowflake className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                              <span className="hidden sm:inline">동결</span>
                             </Button>
                           )}
                           <Button 
@@ -1810,19 +1810,20 @@ export default function Admin() {
                             size="sm" 
                             variant="outline" 
                             onClick={() => startEditMember(member)} 
+                            className="text-xs md:text-sm"
                           >
-                            <Pencil className="w-4 h-4 mr-1" />
-                            수정
+                            <Pencil className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                            <span className="hidden sm:inline">수정</span>
                           </Button>
                           <Button 
                             data-testid={`button-delete-member-${member.id}`}
                             size="sm" 
                             variant="outline"
                             onClick={() => handleDeleteMember(member.id)} 
-                            className="text-red-500 border-red-300 hover:bg-red-50"
+                            className="text-red-500 border-red-300 hover:bg-red-50 text-xs md:text-sm"
                           >
-                            <Trash2 className="w-4 h-4 mr-1" />
-                            삭제
+                            <Trash2 className="w-3 h-3 md:w-4 md:h-4 mr-1" />
+                            <span className="hidden sm:inline">삭제</span>
                           </Button>
                         </div>
                       </div>

@@ -202,14 +202,14 @@ export default function Profile() {
     <div className="min-h-screen bg-gray-50 font-sans">
       <Header />
 
-      <main className="container-custom py-12">
+      <main className="container-custom py-6 md:py-12 px-4">
         <div className="max-w-2xl mx-auto">
           {memberInfo?.isFrozen && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
+            <div className="mb-4 md:mb-6 p-3 md:p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
               <div>
-                <h3 className="font-bold text-red-700">계정이 동결되었습니다</h3>
-                <p className="text-sm text-red-600 mt-1">
+                <h3 className="font-bold text-red-700 text-sm md:text-base">계정이 동결되었습니다</h3>
+                <p className="text-xs md:text-sm text-red-600 mt-1">
                   현재 계정이 동결 상태입니다. 일부 서비스 이용이 제한됩니다.
                   문의사항은 고객센터로 연락해주세요.
                 </p>
@@ -218,23 +218,23 @@ export default function Profile() {
           )}
 
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="bg-gradient-to-r from-amber-500 to-yellow-500 p-8 text-white">
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center">
-                  <User className="w-10 h-10" />
+            <div className="bg-gradient-to-r from-amber-500 to-yellow-500 p-4 md:p-8 text-white">
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className="w-14 h-14 md:w-20 md:h-20 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                  <User className="w-7 h-7 md:w-10 md:h-10" />
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   {isLoggedIn ? (
                     <>
-                      <h1 className="text-2xl font-bold" data-testid="text-profile-name">
+                      <h1 className="text-lg md:text-2xl font-bold truncate" data-testid="text-profile-name">
                         {memberInfo?.name || memberData?.name || "회원"}님
                       </h1>
-                      <p className="text-white/80 text-sm mt-1">{memberInfo?.email || memberData?.email}</p>
+                      <p className="text-white/80 text-xs md:text-sm mt-1 truncate">{memberInfo?.email || memberData?.email}</p>
                     </>
                   ) : (
                     <>
-                      <h1 className="text-2xl font-bold">로그인이 필요합니다</h1>
-                      <p className="text-white/80 text-sm mt-1">로그인하시면 더 많은 혜택을 받으실 수 있습니다</p>
+                      <h1 className="text-lg md:text-2xl font-bold">로그인이 필요합니다</h1>
+                      <p className="text-white/80 text-xs md:text-sm mt-1">로그인하시면 더 많은 혜택을 받으실 수 있습니다</p>
                     </>
                   )}
                 </div>
@@ -260,35 +260,35 @@ export default function Profile() {
                 </div>
               </div>
             ) : (
-              <div className="p-6">
-                <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="p-4 md:p-6">
+                <div className="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
                   <Link href="/cart">
-                    <div className="text-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                      <Heart className="w-8 h-8 text-primary mx-auto mb-2" />
-                      <div className="text-2xl font-bold text-gray-900">{count}</div>
-                      <div className="text-xs text-gray-500">찜 목록</div>
+                    <div className="text-center p-2 md:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                      <Heart className="w-6 h-6 md:w-8 md:h-8 text-primary mx-auto mb-1 md:mb-2" />
+                      <div className="text-lg md:text-2xl font-bold text-gray-900">{count}</div>
+                      <div className="text-[10px] md:text-xs text-gray-500">찜 목록</div>
                     </div>
                   </Link>
-                  <div className="text-center p-4 bg-gray-50 rounded-lg">
-                    <Package className="w-8 h-8 text-primary mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-gray-900">0</div>
-                    <div className="text-xs text-gray-500">주문 내역</div>
+                  <div className="text-center p-2 md:p-4 bg-gray-50 rounded-lg">
+                    <Package className="w-6 h-6 md:w-8 md:h-8 text-primary mx-auto mb-1 md:mb-2" />
+                    <div className="text-lg md:text-2xl font-bold text-gray-900">0</div>
+                    <div className="text-[10px] md:text-xs text-gray-500">주문 내역</div>
                   </div>
-                  <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg border border-amber-200">
-                    <Wallet className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-amber-700" data-testid="text-point-balance">
+                  <div className="text-center p-2 md:p-4 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg border border-amber-200">
+                    <Wallet className="w-6 h-6 md:w-8 md:h-8 text-amber-600 mx-auto mb-1 md:mb-2" />
+                    <div className="text-lg md:text-2xl font-bold text-amber-700" data-testid="text-point-balance">
                       {(memberInfo?.pointBalance || 0).toLocaleString()}
                     </div>
-                    <div className="text-xs text-amber-600 font-medium">포인트</div>
+                    <div className="text-[10px] md:text-xs text-amber-600 font-medium">포인트</div>
                   </div>
                 </div>
 
                 <Tabs defaultValue="info" className="w-full">
-                  <TabsList className="w-full grid grid-cols-4">
-                    <TabsTrigger value="info">내 정보</TabsTrigger>
-                    <TabsTrigger value="menu">메뉴</TabsTrigger>
-                    <TabsTrigger value="deposit">입금신청</TabsTrigger>
-                    <TabsTrigger value="points">포인트</TabsTrigger>
+                  <TabsList className="w-full grid grid-cols-4 h-auto">
+                    <TabsTrigger value="info" className="text-xs md:text-sm py-2 px-1 md:px-3">내 정보</TabsTrigger>
+                    <TabsTrigger value="menu" className="text-xs md:text-sm py-2 px-1 md:px-3">메뉴</TabsTrigger>
+                    <TabsTrigger value="deposit" className="text-xs md:text-sm py-2 px-1 md:px-3">입금신청</TabsTrigger>
+                    <TabsTrigger value="points" className="text-xs md:text-sm py-2 px-1 md:px-3">포인트</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="info" className="mt-4">
