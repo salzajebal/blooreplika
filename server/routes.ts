@@ -406,14 +406,14 @@ export async function registerRoutes(
         { name: "PAMP 스위스 골드바 50g", weight: "50g", purity: "999.9‰", price: "7,780,000", category: "gold_bar", isBest: false, isNew: true, description: "스위스 PAMP 정제", imageUrl: getImageForCategory("gold_bar", 4) },
 
         // ==================== SILVER BARS (8 items) ====================
-        { name: "한국금거래소 실버바 1kg", weight: "1000g", purity: "999.9‰", price: "1,850,000", category: "silver_bar", isBest: true, isNew: false, description: "투자용 대형 실버바", imageUrl: getImageForCategory("silver_bar", 0) },
-        { name: "한국금거래소 실버바 500g", weight: "500g", purity: "999.9‰", price: "950,000", category: "silver_bar", isBest: false, isNew: false, description: "중형 투자용 실버바", imageUrl: getImageForCategory("silver_bar", 1) },
-        { name: "한국금거래소 실버바 100g", weight: "100g", purity: "999.9‰", price: "195,000", category: "silver_bar", isBest: true, isNew: true, description: "인기 투자용 실버바", imageUrl: getImageForCategory("silver_bar", 2) },
-        { name: "한국금거래소 실버바 50g", weight: "50g", purity: "999.9‰", price: "105,000", category: "silver_bar", isBest: false, isNew: false, description: "소형 투자용 실버바", imageUrl: getImageForCategory("silver_bar", 0) },
-        { name: "한국금거래소 실버바 37.5g", weight: "37.5g", purity: "999.9‰", price: "82,000", category: "silver_bar", isBest: false, isNew: false, description: "10돈 실버바", imageUrl: getImageForCategory("silver_bar", 1) },
-        { name: "한국금거래소 실버바 10g", weight: "10g", purity: "999.9‰", price: "25,000", category: "silver_bar", isBest: false, isNew: true, description: "미니 실버바", imageUrl: getImageForCategory("silver_bar", 2) },
-        { name: "LS-Nikko 실버바 1kg", weight: "1000g", purity: "999.9‰", price: "1,870,000", category: "silver_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 은", imageUrl: getImageForCategory("silver_bar", 0) },
-        { name: "LS-Nikko 실버바 100g", weight: "100g", purity: "999.9‰", price: "198,000", category: "silver_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 은", imageUrl: getImageForCategory("silver_bar", 1) },
+        { name: "한국금거래소 실버바 1kg", weight: "1000g", purity: "999.9‰", price: "1,850,000", category: "silver_bar", isBest: true, isNew: false, description: "투자용 대형 실버바", imageUrl: "/images/silver_bar_1kg.png" },
+        { name: "한국금거래소 실버바 500g", weight: "500g", purity: "999.9‰", price: "950,000", category: "silver_bar", isBest: false, isNew: false, description: "중형 투자용 실버바", imageUrl: "/images/silver_bar_500g.png" },
+        { name: "한국금거래소 실버바 100g", weight: "100g", purity: "999.9‰", price: "195,000", category: "silver_bar", isBest: true, isNew: true, description: "인기 투자용 실버바", imageUrl: "/images/silver_bar_100g.png" },
+        { name: "한국금거래소 실버바 50g", weight: "50g", purity: "999.9‰", price: "105,000", category: "silver_bar", isBest: false, isNew: false, description: "소형 투자용 실버바", imageUrl: "/images/silver_bar_50g.png" },
+        { name: "한국금거래소 실버바 37.5g", weight: "37.5g", purity: "999.9‰", price: "82,000", category: "silver_bar", isBest: false, isNew: false, description: "10돈 실버바", imageUrl: "/images/silver_bar_50g.png" },
+        { name: "한국금거래소 실버바 10g", weight: "10g", purity: "999.9‰", price: "25,000", category: "silver_bar", isBest: false, isNew: true, description: "미니 실버바", imageUrl: "/images/silver_bar_10g.png" },
+        { name: "LS-Nikko 실버바 1kg", weight: "1000g", purity: "999.9‰", price: "1,870,000", category: "silver_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 은", imageUrl: "/images/silver_bar_1kg.png" },
+        { name: "LS-Nikko 실버바 100g", weight: "100g", purity: "999.9‰", price: "198,000", category: "silver_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 은", imageUrl: "/images/silver_bar_100g.png" },
 
         // ==================== BABY RINGS / 돌반지 (10 items) ====================
         { name: "순금 뽀로로 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "285,000", category: "baby_ring", isBest: true, isNew: false, description: "뽀로로 캐릭터 돌반지", imageUrl: "/images/pororo_gold_baby_ring.png" },
