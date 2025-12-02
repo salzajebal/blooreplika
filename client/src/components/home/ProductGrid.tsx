@@ -109,11 +109,11 @@ export function ProductGrid() {
               data-testid={`card-product-${product.id}`}
             >
               {/* Image Container */}
-              <div className="aspect-square bg-gray-50 p-8 relative overflow-hidden">
+              <div className="aspect-square bg-gray-50 relative overflow-hidden">
                 <img 
                   src={product.imageUrl || DEFAULT_IMAGE} 
                   alt={product.name} 
-                  className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 
                 {/* Badges */}
