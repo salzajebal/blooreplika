@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertProductSchema, insertCategorySchema, insertMemberSchema, insertChatConversationSchema, insertChatMessageSchema, insertFaqSchema } from "@shared/schema";
+import { insertProductSchema, insertCategorySchema, insertMemberSchema, insertChatConversationSchema, insertChatMessageSchema, insertFaqSchema, insertReviewSchema, insertNoticeSchema } from "@shared/schema";
 import { z } from "zod";
 
 const chatClients = new Map<string, Set<WebSocket>>();
@@ -1062,6 +1062,169 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting FAQ:", error);
       res.status(500).json({ success: false, error: "FAQ 삭제에 실패했습니다." });
+    }
+  });
+
+  // ==================== REVIEWS API ====================
+  
+  // Get all reviews (public - visible only)
+  app.get("/api/reviews", async (req: Request, res: Response) => {
+    try {
+      const reviews = await storage.getVisibleReviews();
+      res.json({ success: true, data: reviews });
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      res.status(500).json({ success: false, error: "후기를 불러올 수 없습니다." });
+    }
+  });
+
+  // Get all reviews (admin - includes hidden)
+  app.get("/api/admin/reviews", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const reviews = await storage.getAllReviews();
+      res.json({ success: true, data: reviews });
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      res.status(500).json({ success: false, error: "후기를 불러올 수 없습니다." });
+    }
+  });
+
+  // Get single review
+  app.get("/api/reviews/:id", async (req: Request, res: Response) => {
+    try {
+      const review = await storage.getReview(req.params.id);
+      if (!review) {
+        return res.status(404).json({ success: false, error: "후기를 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: review });
+    } catch (error) {
+      console.error("Error fetching review:", error);
+      res.status(500).json({ success: false, error: "후기를 불러올 수 없습니다." });
+    }
+  });
+
+  // Create review (admin only - for manipulation)
+  app.post("/api/reviews", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertReviewSchema.parse(req.body);
+      const review = await storage.createReview(validatedData);
+      res.status(201).json({ success: true, data: review });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error creating review:", error);
+      res.status(500).json({ success: false, error: "후기 생성에 실패했습니다." });
+    }
+  });
+
+  // Update review (admin only)
+  app.put("/api/reviews/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const review = await storage.updateReview(req.params.id, req.body);
+      if (!review) {
+        return res.status(404).json({ success: false, error: "후기를 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: review });
+    } catch (error) {
+      console.error("Error updating review:", error);
+      res.status(500).json({ success: false, error: "후기 수정에 실패했습니다." });
+    }
+  });
+
+  // Delete review (admin only)
+  app.delete("/api/reviews/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteReview(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "후기를 찾을 수 없습니다." });
+      }
+      res.json({ success: true, message: "후기가 삭제되었습니다." });
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      res.status(500).json({ success: false, error: "후기 삭제에 실패했습니다." });
+    }
+  });
+
+  // ==================== NOTICES API ====================
+  
+  // Get all notices (public - visible only)
+  app.get("/api/notices", async (req: Request, res: Response) => {
+    try {
+      const notices = await storage.getVisibleNotices();
+      res.json({ success: true, data: notices });
+    } catch (error) {
+      console.error("Error fetching notices:", error);
+      res.status(500).json({ success: false, error: "공지사항을 불러올 수 없습니다." });
+    }
+  });
+
+  // Get all notices (admin - includes hidden)
+  app.get("/api/admin/notices", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const notices = await storage.getAllNotices();
+      res.json({ success: true, data: notices });
+    } catch (error) {
+      console.error("Error fetching notices:", error);
+      res.status(500).json({ success: false, error: "공지사항을 불러올 수 없습니다." });
+    }
+  });
+
+  // Get single notice (and increment view count)
+  app.get("/api/notices/:id", async (req: Request, res: Response) => {
+    try {
+      const notice = await storage.getNotice(req.params.id);
+      if (!notice) {
+        return res.status(404).json({ success: false, error: "공지사항을 찾을 수 없습니다." });
+      }
+      await storage.incrementNoticeViewCount(req.params.id);
+      res.json({ success: true, data: notice });
+    } catch (error) {
+      console.error("Error fetching notice:", error);
+      res.status(500).json({ success: false, error: "공지사항을 불러올 수 없습니다." });
+    }
+  });
+
+  // Create notice (admin only)
+  app.post("/api/notices", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertNoticeSchema.parse(req.body);
+      const notice = await storage.createNotice(validatedData);
+      res.status(201).json({ success: true, data: notice });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error creating notice:", error);
+      res.status(500).json({ success: false, error: "공지사항 생성에 실패했습니다." });
+    }
+  });
+
+  // Update notice (admin only)
+  app.put("/api/notices/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const notice = await storage.updateNotice(req.params.id, req.body);
+      if (!notice) {
+        return res.status(404).json({ success: false, error: "공지사항을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: notice });
+    } catch (error) {
+      console.error("Error updating notice:", error);
+      res.status(500).json({ success: false, error: "공지사항 수정에 실패했습니다." });
+    }
+  });
+
+  // Delete notice (admin only)
+  app.delete("/api/notices/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteNotice(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "공지사항을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, message: "공지사항이 삭제되었습니다." });
+    } catch (error) {
+      console.error("Error deleting notice:", error);
+      res.status(500).json({ success: false, error: "공지사항 삭제에 실패했습니다." });
     }
   });
 
