@@ -226,7 +226,9 @@ export const reviews = pgTable("reviews", {
   displayDate: timestamp("display_date").defaultNow(),
 });
 
-export const insertReviewSchema = createInsertSchema(reviews).omit({
+export const insertReviewSchema = createInsertSchema(reviews, {
+  displayDate: z.union([z.string(), z.date()]).optional().transform(val => val ? new Date(val) : undefined),
+}).omit({
   id: true,
   createdAt: true,
 });
@@ -247,7 +249,9 @@ export const notices = pgTable("notices", {
   displayDate: timestamp("display_date").defaultNow(),
 });
 
-export const insertNoticeSchema = createInsertSchema(notices).omit({
+export const insertNoticeSchema = createInsertSchema(notices, {
+  displayDate: z.union([z.string(), z.date()]).optional().transform(val => val ? new Date(val) : undefined),
+}).omit({
   id: true,
   viewCount: true,
   createdAt: true,
