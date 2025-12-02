@@ -464,16 +464,16 @@ export async function registerRoutes(
         { name: "순금 명함케이스", weight: "7.5g", purity: "99.9%", price: "1,250,000", category: "corporate", isBest: false, isNew: false, description: "순금 장식 명함케이스", imageUrl: getImageForCategory("corporate", 0) },
 
         // ==================== GIFT GOLD / 순금기념품 (10 items) ====================
-        { name: "순금 황금돼지 37.5g", weight: "37.5g", purity: "99.9%", price: "5,700,000", category: "gift_gold", isBest: true, isNew: true, description: "복을 부르는 황금돼지", imageUrl: "/images/gold_figurine_pig_lu_50eddba6.jpg" },
-        { name: "순금 거북이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,850,000", category: "gift_gold", isBest: false, isNew: false, description: "장수 기원 거북이", imageUrl: "/images/gold_turtle_longevity_symbol.png" },
-        { name: "순금 용 37.5g", weight: "37.5g", purity: "99.9%", price: "5,850,000", category: "gift_gold", isBest: true, isNew: false, description: "2024년 용의 해 기념", imageUrl: "/images/gold_dragon_figurine_majestic.png" },
-        { name: "순금 뱀 18.75g", weight: "18.75g", purity: "99.9%", price: "2,900,000", category: "gift_gold", isBest: false, isNew: true, description: "2025년 뱀의 해 기념", imageUrl: "/images/gold_snake_zodiac_figurine.png" },
-        { name: "순금 두꺼비 11.25g", weight: "11.25g", purity: "99.9%", price: "1,750,000", category: "gift_gold", isBest: false, isNew: false, description: "재물 행운 두꺼비", imageUrl: "/images/gold_toad_figurine_wealth.png" },
-        { name: "순금 코끼리 18.75g", weight: "18.75g", purity: "99.9%", price: "2,880,000", category: "gift_gold", isBest: false, isNew: false, description: "행운의 코끼리", imageUrl: "/images/gold_elephant_luck_figurine.png" },
-        { name: "순금 부처님 37.5g", weight: "37.5g", purity: "99.9%", price: "5,750,000", category: "gift_gold", isBest: false, isNew: false, description: "평화와 복을 기원", imageUrl: "/images/gold_buddha_meditation_statue.png" },
-        { name: "순금 호랑이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,920,000", category: "gift_gold", isBest: false, isNew: true, description: "용맹한 호랑이 조각", imageUrl: "/images/gold_tiger_figurine_sculpture.png" },
-        { name: "순금 잉어 11.25g", weight: "11.25g", purity: "99.9%", price: "1,780,000", category: "gift_gold", isBest: false, isNew: false, description: "출세 기원 잉어", imageUrl: "/images/gold_carp_success_symbol.png" },
-        { name: "순금 봉황 37.5g", weight: "37.5g", purity: "99.9%", price: "5,900,000", category: "gift_gold", isBest: true, isNew: false, description: "부귀영화 봉황", imageUrl: "/images/gold_phoenix_bird_sculpture.png" },
+        { name: "순금 황금돼지 37.5g", weight: "37.5g", purity: "99.9%", price: "5,700,000", category: "gift_gold", isBest: true, isNew: true, description: "복을 부르는 황금돼지", imageUrl: "/images/gold_pig_figurine.png" },
+        { name: "순금 거북이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,850,000", category: "gift_gold", isBest: false, isNew: false, description: "장수 기원 거북이", imageUrl: "/images/gold_turtle_new.png" },
+        { name: "순금 용 37.5g", weight: "37.5g", purity: "99.9%", price: "5,850,000", category: "gift_gold", isBest: true, isNew: false, description: "2024년 용의 해 기념", imageUrl: "/images/gold_dragon_new.png" },
+        { name: "순금 뱀 18.75g", weight: "18.75g", purity: "99.9%", price: "2,900,000", category: "gift_gold", isBest: false, isNew: true, description: "2025년 뱀의 해 기념", imageUrl: "/images/gold_snake_new.png" },
+        { name: "순금 두꺼비 11.25g", weight: "11.25g", purity: "99.9%", price: "1,750,000", category: "gift_gold", isBest: false, isNew: false, description: "재물 행운 두꺼비", imageUrl: "/images/gold_toad_new.png" },
+        { name: "순금 코끼리 18.75g", weight: "18.75g", purity: "99.9%", price: "2,880,000", category: "gift_gold", isBest: false, isNew: false, description: "행운의 코끼리", imageUrl: "/images/gold_elephant_new.png" },
+        { name: "순금 부처님 37.5g", weight: "37.5g", purity: "99.9%", price: "5,750,000", category: "gift_gold", isBest: false, isNew: false, description: "평화와 복을 기원", imageUrl: "/images/gold_buddha_new.png" },
+        { name: "순금 호랑이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,920,000", category: "gift_gold", isBest: false, isNew: true, description: "용맹한 호랑이 조각", imageUrl: "/images/gold_tiger_new.png" },
+        { name: "순금 잉어 11.25g", weight: "11.25g", purity: "99.9%", price: "1,780,000", category: "gift_gold", isBest: false, isNew: false, description: "출세 기원 잉어", imageUrl: "/images/gold_carp_new.png" },
+        { name: "순금 봉황 37.5g", weight: "37.5g", purity: "99.9%", price: "5,900,000", category: "gift_gold", isBest: true, isNew: false, description: "부귀영화 봉황", imageUrl: "/images/gold_phoenix_new.png" },
 
         // ==================== EVENT / 이벤트 (6 items) ====================
         { name: "[이벤트] 2025 신년 기념 골드 코인 1돈", weight: "3.75g", purity: "99.9%", price: "520,000", category: "event", isBest: true, isNew: true, description: "2025년 한정판 코인", imageUrl: getImageForCategory("event", 0) },
