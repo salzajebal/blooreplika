@@ -1,4 +1,4 @@
-import { Search, User, Heart, Menu, Sparkles } from "lucide-react";
+import { Search, User, Heart, Menu, Sparkles, Gift, PartyPopper } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -21,7 +21,29 @@ export function Header() {
 
   return (
     <header className="w-full border-b border-gray-200 bg-white sticky top-0 z-50">
-      {/* Top Utility Bar */}
+      <div className="bg-gradient-to-r from-red-600 via-red-500 to-amber-500 text-white py-2.5 relative overflow-hidden">
+        <div className="absolute inset-0 bg-red-500/10"></div>
+        <div className="container-custom flex justify-center items-center gap-4 relative">
+          <PartyPopper className="w-5 h-5 text-yellow-300 animate-bounce" />
+          <span className="font-bold tracking-wide text-sm md:text-base flex items-center gap-2">
+            <Gift className="w-4 h-4" />
+            창립 2주년 기념 특별 이벤트
+          </span>
+          <span className="hidden md:inline-flex items-center gap-1 text-yellow-200 text-sm">
+            |
+            <span className="font-black text-white ml-2">금 750,000원</span>
+            <span className="text-yellow-200">/돈</span>
+            <span className="mx-2">·</span>
+            <span className="font-black text-white">은 10,150원</span>
+            <span className="text-yellow-200">/돈</span>
+          </span>
+          <span className="hidden lg:inline bg-yellow-400 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full ml-2 animate-pulse">
+            EVENT
+          </span>
+          <PartyPopper className="w-5 h-5 text-yellow-300 animate-bounce" />
+        </div>
+      </div>
+
       <div className="bg-[#f8f8f8] border-b border-gray-100 py-2 hidden md:block">
         <div className="container-custom flex justify-between items-center text-xs text-gray-500">
           <div className="flex gap-4">
