@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Heart, Settings, LogOut, ChevronRight, Package, Wallet, Clock, CheckCircle, XCircle, AlertTriangle, Plus } from "lucide-react";
+import { User, Heart, LogOut, ChevronRight, Package, Wallet, Clock, CheckCircle, XCircle, AlertTriangle, Plus, Mail, Phone, MapPin, Building2, CreditCard, Info } from "lucide-react";
 import { Link } from "wouter";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,8 +16,12 @@ interface MemberInfo {
   name: string;
   email: string;
   phone: string;
+  address: string | null;
+  bank: string | null;
+  accountNumber: string | null;
   pointBalance: number;
   isFrozen: boolean;
+  createdAt: string;
 }
 
 interface DepositRequest {
@@ -158,6 +162,14 @@ export default function Profile() {
     });
   };
 
+  const formatSimpleDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString("ko-KR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "pending":
@@ -271,12 +283,90 @@ export default function Profile() {
                   </div>
                 </div>
 
-                <Tabs defaultValue="menu" className="w-full">
-                  <TabsList className="w-full grid grid-cols-3">
+                <Tabs defaultValue="info" className="w-full">
+                  <TabsList className="w-full grid grid-cols-4">
+                    <TabsTrigger value="info">내 정보</TabsTrigger>
                     <TabsTrigger value="menu">메뉴</TabsTrigger>
                     <TabsTrigger value="deposit">입금신청</TabsTrigger>
-                    <TabsTrigger value="points">포인트 내역</TabsTrigger>
+                    <TabsTrigger value="points">포인트</TabsTrigger>
                   </TabsList>
+
+                  <TabsContent value="info" className="mt-4">
+                    <div className="space-y-4">
+                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
+                        <Info className="w-5 h-5 text-blue-500 mt-0.5" />
+                        <div>
+                          <p className="text-sm text-blue-700">
+                            개인정보 수정은 관리자에게 문의해주세요.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                        <h3 className="font-bold text-gray-900 mb-4">기본 정보</h3>
+                        
+                        <div className="flex items-center gap-3 py-2 border-b border-gray-200">
+                          <User className="w-5 h-5 text-gray-400" />
+                          <div className="flex-1">
+                            <p className="text-xs text-gray-500">이름</p>
+                            <p className="text-gray-900 font-medium">{memberInfo?.name || "-"}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 py-2 border-b border-gray-200">
+                          <Mail className="w-5 h-5 text-gray-400" />
+                          <div className="flex-1">
+                            <p className="text-xs text-gray-500">이메일</p>
+                            <p className="text-gray-900 font-medium">{memberInfo?.email || "-"}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 py-2 border-b border-gray-200">
+                          <Phone className="w-5 h-5 text-gray-400" />
+                          <div className="flex-1">
+                            <p className="text-xs text-gray-500">휴대폰</p>
+                            <p className="text-gray-900 font-medium">{memberInfo?.phone || "-"}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 py-2 border-b border-gray-200">
+                          <MapPin className="w-5 h-5 text-gray-400" />
+                          <div className="flex-1">
+                            <p className="text-xs text-gray-500">주소</p>
+                            <p className="text-gray-900 font-medium">{memberInfo?.address || "-"}</p>
+                          </div>
+                        </div>
+
+                        <h3 className="font-bold text-gray-900 mt-6 mb-4">환급 계좌 정보</h3>
+
+                        <div className="flex items-center gap-3 py-2 border-b border-gray-200">
+                          <Building2 className="w-5 h-5 text-gray-400" />
+                          <div className="flex-1">
+                            <p className="text-xs text-gray-500">은행</p>
+                            <p className="text-gray-900 font-medium">{memberInfo?.bank || "-"}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 py-2 border-b border-gray-200">
+                          <CreditCard className="w-5 h-5 text-gray-400" />
+                          <div className="flex-1">
+                            <p className="text-xs text-gray-500">계좌번호</p>
+                            <p className="text-gray-900 font-medium">{memberInfo?.accountNumber || "-"}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 py-2">
+                          <Clock className="w-5 h-5 text-gray-400" />
+                          <div className="flex-1">
+                            <p className="text-xs text-gray-500">가입일</p>
+                            <p className="text-gray-900 font-medium">
+                              {memberInfo?.createdAt ? formatSimpleDate(memberInfo.createdAt) : "-"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
 
                   <TabsContent value="menu" className="mt-4">
                     <div className="space-y-2">
@@ -294,14 +384,6 @@ export default function Profile() {
                         <div className="flex items-center gap-3">
                           <Package className="w-5 h-5 text-gray-400" />
                           <span className="text-gray-700">주문/배송 조회</span>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-gray-400" />
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors">
-                        <div className="flex items-center gap-3">
-                          <Settings className="w-5 h-5 text-gray-400" />
-                          <span className="text-gray-700">개인정보 수정</span>
                         </div>
                         <ChevronRight className="w-5 h-5 text-gray-400" />
                       </div>

@@ -87,11 +87,15 @@ export default function Admin() {
     password: "",
     name: "",
     phone: "",
+    address: "",
+    bank: "",
+    accountNumber: "",
     isActive: true,
     isAdmin: false,
   });
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [showAddMemberForm, setShowAddMemberForm] = useState(false);
+  const [showEditMemberModal, setShowEditMemberModal] = useState(false);
 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewFormData, setReviewFormData] = useState({
@@ -692,7 +696,7 @@ export default function Admin() {
       if (data.success) {
         toast({ title: "성공", description: "회원이 추가되었습니다." });
         setShowAddMemberForm(false);
-        setMemberFormData({ email: "", password: "", name: "", phone: "", isActive: true, isAdmin: false });
+        setMemberFormData({ email: "", password: "", name: "", phone: "", address: "", bank: "", accountNumber: "", isActive: true, isAdmin: false });
         fetchMembers();
         fetchStats();
       } else {
@@ -718,6 +722,7 @@ export default function Admin() {
       if (data.success) {
         toast({ title: "성공", description: "회원 정보가 수정되었습니다." });
         setEditingMemberId(null);
+        setShowEditMemberModal(false);
         fetchMembers();
       }
     } catch (error) {
@@ -748,9 +753,13 @@ export default function Admin() {
       password: "",
       name: member.name,
       phone: member.phone || "",
+      address: (member as any).address || "",
+      bank: (member as any).bank || "",
+      accountNumber: (member as any).accountNumber || "",
       isActive: member.isActive ?? true,
       isAdmin: member.isAdmin ?? false,
     });
+    setShowEditMemberModal(true);
   };
 
   const handleCreateReview = async () => {
@@ -1472,6 +1481,46 @@ export default function Admin() {
                       onChange={(e) => setMemberFormData({ ...memberFormData, phone: e.target.value })}
                     />
                   </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">주소</label>
+                    <Input
+                      data-testid="input-member-address"
+                      placeholder="주소"
+                      value={memberFormData.address}
+                      onChange={(e) => setMemberFormData({ ...memberFormData, address: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">은행</label>
+                    <select
+                      className="w-full h-10 border border-gray-200 rounded-md px-3 bg-white"
+                      value={memberFormData.bank}
+                      onChange={(e) => setMemberFormData({ ...memberFormData, bank: e.target.value })}
+                    >
+                      <option value="">은행 선택</option>
+                      <option value="국민은행">국민은행</option>
+                      <option value="신한은행">신한은행</option>
+                      <option value="우리은행">우리은행</option>
+                      <option value="하나은행">하나은행</option>
+                      <option value="농협은행">농협은행</option>
+                      <option value="기업은행">기업은행</option>
+                      <option value="SC제일은행">SC제일은행</option>
+                      <option value="케이뱅크">케이뱅크</option>
+                      <option value="카카오뱅크">카카오뱅크</option>
+                      <option value="토스뱅크">토스뱅크</option>
+                      <option value="새마을금고">새마을금고</option>
+                      <option value="우체국">우체국</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">계좌번호</label>
+                    <Input
+                      data-testid="input-member-account"
+                      placeholder="계좌번호"
+                      value={memberFormData.accountNumber}
+                      onChange={(e) => setMemberFormData({ ...memberFormData, accountNumber: e.target.value })}
+                    />
+                  </div>
                 </div>
                 <div className="flex gap-4 mb-4">
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -1500,6 +1549,109 @@ export default function Admin() {
               </div>
             )}
 
+            {showEditMemberModal && editingMemberId && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                  <h3 className="font-bold text-lg mb-4">회원 정보 수정</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+                      <Input
+                        type="email"
+                        value={memberFormData.email}
+                        onChange={(e) => setMemberFormData({ ...memberFormData, email: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">새 비밀번호 (변경시에만 입력)</label>
+                      <Input
+                        type="password"
+                        placeholder="변경시에만 입력"
+                        value={memberFormData.password}
+                        onChange={(e) => setMemberFormData({ ...memberFormData, password: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                      <Input
+                        value={memberFormData.name}
+                        onChange={(e) => setMemberFormData({ ...memberFormData, name: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">전화번호</label>
+                      <Input
+                        value={memberFormData.phone}
+                        onChange={(e) => setMemberFormData({ ...memberFormData, phone: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">주소</label>
+                      <Input
+                        value={memberFormData.address}
+                        onChange={(e) => setMemberFormData({ ...memberFormData, address: e.target.value })}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">은행</label>
+                        <select
+                          className="w-full h-10 border border-gray-200 rounded-md px-3 bg-white"
+                          value={memberFormData.bank}
+                          onChange={(e) => setMemberFormData({ ...memberFormData, bank: e.target.value })}
+                        >
+                          <option value="">은행 선택</option>
+                          <option value="국민은행">국민은행</option>
+                          <option value="신한은행">신한은행</option>
+                          <option value="우리은행">우리은행</option>
+                          <option value="하나은행">하나은행</option>
+                          <option value="농협은행">농협은행</option>
+                          <option value="기업은행">기업은행</option>
+                          <option value="SC제일은행">SC제일은행</option>
+                          <option value="케이뱅크">케이뱅크</option>
+                          <option value="카카오뱅크">카카오뱅크</option>
+                          <option value="토스뱅크">토스뱅크</option>
+                          <option value="새마을금고">새마을금고</option>
+                          <option value="우체국">우체국</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">계좌번호</label>
+                        <Input
+                          value={memberFormData.accountNumber}
+                          onChange={(e) => setMemberFormData({ ...memberFormData, accountNumber: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={memberFormData.isActive}
+                          onChange={(e) => setMemberFormData({ ...memberFormData, isActive: e.target.checked })}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm">활성 회원</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={memberFormData.isAdmin}
+                          onChange={(e) => setMemberFormData({ ...memberFormData, isAdmin: e.target.checked })}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm">관리자 권한</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-6">
+                    <Button onClick={() => handleUpdateMember(editingMemberId)} className="bg-yellow-500 hover:bg-yellow-600">저장</Button>
+                    <Button variant="outline" onClick={() => { setShowEditMemberModal(false); setEditingMemberId(null); }}>취소</Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {members.length === 0 ? (
               <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-200">
                 <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
@@ -1524,225 +1676,171 @@ export default function Admin() {
                   <tbody className="divide-y divide-gray-100">
                     {members.map((member) => (
                       <tr key={member.id} className="hover:bg-gray-50">
-                        {editingMemberId === member.id ? (
-                          <>
-                            <td className="px-4 py-3">
-                              <Input
-                                value={memberFormData.name}
-                                onChange={(e) => setMemberFormData({ ...memberFormData, name: e.target.value })}
-                                className="h-8"
-                              />
-                            </td>
-                            <td className="px-4 py-3">
-                              <Input
-                                value={memberFormData.email}
-                                onChange={(e) => setMemberFormData({ ...memberFormData, email: e.target.value })}
-                                className="h-8"
-                              />
-                            </td>
-                            <td className="px-4 py-3">
-                              <Input
-                                value={memberFormData.phone}
-                                onChange={(e) => setMemberFormData({ ...memberFormData, phone: e.target.value })}
-                                className="h-8"
-                              />
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <label className="inline-flex items-center gap-1">
-                                <input
-                                  type="checkbox"
-                                  checked={memberFormData.isActive}
-                                  onChange={(e) => setMemberFormData({ ...memberFormData, isActive: e.target.checked })}
-                                />
-                                <span className="text-xs">활성</span>
-                              </label>
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <label className="inline-flex items-center gap-1">
-                                <input
-                                  type="checkbox"
-                                  checked={memberFormData.isAdmin}
-                                  onChange={(e) => setMemberFormData({ ...memberFormData, isAdmin: e.target.checked })}
-                                />
-                                <span className="text-xs">관리자</span>
-                              </label>
-                            </td>
-                            <td className="px-4 py-3 text-gray-500">-</td>
-                            <td className="px-4 py-3 text-right">
-                              <Button size="icon" variant="ghost" onClick={() => handleUpdateMember(member.id)} className="h-8 w-8 text-green-600">
-                                <Check className="w-4 h-4" />
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-gray-900">{member.name}</div>
+                          {(member as any).isFrozen && (
+                            <span className="inline-flex items-center gap-1 text-xs text-red-600">
+                              <Snowflake className="w-3 h-3" />
+                              동결됨
+                            </span>
+                          )}
+                          {(member as any).bank && (
+                            <div className="text-xs text-gray-500">{(member as any).bank}</div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">{member.email}</td>
+                        <td className="px-4 py-3 text-gray-600">{member.phone || "-"}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="font-bold text-amber-600">
+                            {((member as any).pointBalance || 0).toLocaleString()}P
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {member.isActive ? (
+                            <span className="inline-flex items-center gap-1 text-green-600">
+                              <CheckCircle className="w-4 h-4" />
+                              <span className="text-xs">활성</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-gray-400">
+                              <XCircle className="w-4 h-4" />
+                              <span className="text-xs">비활성</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {member.isAdmin ? (
+                            <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs">관리자</span>
+                          ) : (
+                            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">일반</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-gray-500 text-sm">
+                          {member.createdAt ? new Date(member.createdAt).toLocaleDateString('ko-KR') : "-"}
+                        </td>
+                        <td className="px-4 py-3 text-right relative">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              onClick={() => {
+                                setSelectedMemberForAction(member.id);
+                                setActionType("adjust");
+                                setAdjustAmount("");
+                              }} 
+                              className="h-8 w-8 text-amber-600"
+                              title="포인트 조정"
+                            >
+                              <Wallet className="w-4 h-4" />
+                            </Button>
+                            {(member as any).isFrozen ? (
+                              <Button 
+                                size="icon" 
+                                variant="ghost" 
+                                onClick={() => handleUnfreezeMember(member.id)} 
+                                className="h-8 w-8 text-blue-600"
+                                title="동결 해제"
+                              >
+                                <Unlock className="w-4 h-4" />
                               </Button>
-                              <Button size="icon" variant="ghost" onClick={() => setEditingMemberId(null)} className="h-8 w-8 text-gray-500">
-                                <X className="w-4 h-4" />
+                            ) : (
+                              <Button 
+                                size="icon" 
+                                variant="ghost" 
+                                onClick={() => {
+                                  setSelectedMemberForAction(member.id);
+                                  setActionType("freeze");
+                                  setFreezeReason("");
+                                }} 
+                                className="h-8 w-8 text-cyan-600"
+                                title="계정 동결"
+                              >
+                                <Snowflake className="w-4 h-4" />
                               </Button>
-                            </td>
-                          </>
-                        ) : (
-                          <>
-                            <td className="px-4 py-3">
-                              <div className="font-medium text-gray-900">{member.name}</div>
-                              {(member as any).isFrozen && (
-                                <span className="inline-flex items-center gap-1 text-xs text-red-600">
-                                  <Snowflake className="w-3 h-3" />
-                                  동결됨
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-gray-600">{member.email}</td>
-                            <td className="px-4 py-3 text-gray-600">{member.phone || "-"}</td>
-                            <td className="px-4 py-3 text-center">
-                              <span className="font-bold text-amber-600">
-                                {((member as any).pointBalance || 0).toLocaleString()}P
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              {member.isActive ? (
-                                <span className="inline-flex items-center gap-1 text-green-600">
-                                  <CheckCircle className="w-4 h-4" />
-                                  <span className="text-xs">활성</span>
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-gray-400">
-                                  <XCircle className="w-4 h-4" />
-                                  <span className="text-xs">비활성</span>
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              {member.isAdmin ? (
-                                <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs">관리자</span>
-                              ) : (
-                                <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">일반</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-gray-500 text-sm">
-                              {member.createdAt ? new Date(member.createdAt).toLocaleDateString('ko-KR') : "-"}
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <div className="flex items-center justify-end gap-1">
+                            )}
+                            <Button 
+                              data-testid={`button-edit-member-${member.id}`}
+                              size="icon" 
+                              variant="ghost" 
+                              onClick={() => startEditMember(member)} 
+                              className="h-8 w-8"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              data-testid={`button-delete-member-${member.id}`}
+                              size="icon" 
+                              variant="ghost" 
+                              onClick={() => handleDeleteMember(member.id)} 
+                              className="h-8 w-8 text-red-500"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+
+                          {selectedMemberForAction === member.id && actionType === "adjust" && (
+                            <div className="absolute right-4 mt-2 p-4 bg-white border rounded-lg shadow-lg z-10 w-64">
+                              <h4 className="font-bold text-sm mb-2">포인트 조정</h4>
+                              <Input
+                                type="number"
+                                placeholder="금액 (음수 가능)"
+                                value={adjustAmount}
+                                onChange={(e) => setAdjustAmount(e.target.value)}
+                                className="mb-2"
+                              />
+                              <div className="flex gap-2">
                                 <Button 
-                                  size="icon" 
-                                  variant="ghost" 
+                                  size="sm" 
+                                  className="bg-amber-500 hover:bg-amber-600"
+                                  onClick={() => handleAdjustPoints(member.id)}
+                                >
+                                  적용
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
                                   onClick={() => {
-                                    setSelectedMemberForAction(member.id);
-                                    setActionType("adjust");
-                                    setAdjustAmount("");
-                                  }} 
-                                  className="h-8 w-8 text-amber-600"
-                                  title="포인트 조정"
+                                    setSelectedMemberForAction(null);
+                                    setActionType(null);
+                                  }}
                                 >
-                                  <Wallet className="w-4 h-4" />
-                                </Button>
-                                {(member as any).isFrozen ? (
-                                  <Button 
-                                    size="icon" 
-                                    variant="ghost" 
-                                    onClick={() => handleUnfreezeMember(member.id)} 
-                                    className="h-8 w-8 text-blue-600"
-                                    title="동결 해제"
-                                  >
-                                    <Unlock className="w-4 h-4" />
-                                  </Button>
-                                ) : (
-                                  <Button 
-                                    size="icon" 
-                                    variant="ghost" 
-                                    onClick={() => {
-                                      setSelectedMemberForAction(member.id);
-                                      setActionType("freeze");
-                                      setFreezeReason("");
-                                    }} 
-                                    className="h-8 w-8 text-cyan-600"
-                                    title="계정 동결"
-                                  >
-                                    <Snowflake className="w-4 h-4" />
-                                  </Button>
-                                )}
-                                <Button 
-                                  data-testid={`button-edit-member-${member.id}`}
-                                  size="icon" 
-                                  variant="ghost" 
-                                  onClick={() => startEditMember(member)} 
-                                  className="h-8 w-8"
-                                >
-                                  <Pencil className="w-4 h-4" />
-                                </Button>
-                                <Button 
-                                  data-testid={`button-delete-member-${member.id}`}
-                                  size="icon" 
-                                  variant="ghost" 
-                                  onClick={() => handleDeleteMember(member.id)} 
-                                  className="h-8 w-8 text-red-500"
-                                >
-                                  <Trash2 className="w-4 h-4" />
+                                  취소
                                 </Button>
                               </div>
+                            </div>
+                          )}
 
-                              {selectedMemberForAction === member.id && actionType === "adjust" && (
-                                <div className="absolute right-4 mt-2 p-4 bg-white border rounded-lg shadow-lg z-10 w-64">
-                                  <h4 className="font-bold text-sm mb-2">포인트 조정</h4>
-                                  <Input
-                                    type="number"
-                                    placeholder="금액 (음수 가능)"
-                                    value={adjustAmount}
-                                    onChange={(e) => setAdjustAmount(e.target.value)}
-                                    className="mb-2"
-                                  />
-                                  <div className="flex gap-2">
-                                    <Button 
-                                      size="sm" 
-                                      className="bg-amber-500 hover:bg-amber-600"
-                                      onClick={() => handleAdjustPoints(member.id)}
-                                    >
-                                      적용
-                                    </Button>
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline"
-                                      onClick={() => {
-                                        setSelectedMemberForAction(null);
-                                        setActionType(null);
-                                      }}
-                                    >
-                                      취소
-                                    </Button>
-                                  </div>
-                                </div>
-                              )}
-
-                              {selectedMemberForAction === member.id && actionType === "freeze" && (
-                                <div className="absolute right-4 mt-2 p-4 bg-white border rounded-lg shadow-lg z-10 w-64">
-                                  <h4 className="font-bold text-sm mb-2">계정 동결</h4>
-                                  <Input
-                                    placeholder="동결 사유"
-                                    value={freezeReason}
-                                    onChange={(e) => setFreezeReason(e.target.value)}
-                                    className="mb-2"
-                                  />
-                                  <div className="flex gap-2">
-                                    <Button 
-                                      size="sm" 
-                                      variant="destructive"
-                                      onClick={() => handleFreezeMember(member.id)}
-                                    >
-                                      동결
-                                    </Button>
-                                    <Button 
-                                      size="sm" 
-                                      variant="outline"
-                                      onClick={() => {
-                                        setSelectedMemberForAction(null);
-                                        setActionType(null);
-                                      }}
-                                    >
-                                      취소
-                                    </Button>
-                                  </div>
-                                </div>
-                              )}
-                            </td>
-                          </>
-                        )}
+                          {selectedMemberForAction === member.id && actionType === "freeze" && (
+                            <div className="absolute right-4 mt-2 p-4 bg-white border rounded-lg shadow-lg z-10 w-64">
+                              <h4 className="font-bold text-sm mb-2">계정 동결</h4>
+                              <Input
+                                placeholder="동결 사유"
+                                value={freezeReason}
+                                onChange={(e) => setFreezeReason(e.target.value)}
+                                className="mb-2"
+                              />
+                              <div className="flex gap-2">
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive"
+                                  onClick={() => handleFreezeMember(member.id)}
+                                >
+                                  동결
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedMemberForAction(null);
+                                    setActionType(null);
+                                  }}
+                                >
+                                  취소
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
