@@ -16,16 +16,24 @@ function KakaoIcon({ className }: { className?: string }) {
 export function HomePopup() {
   const [isOpen, setIsOpen] = useState(false);
   const [dontShowFor24h, setDontShowFor24h] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    const dismissedUntil = localStorage.getItem(POPUP_STORAGE_KEY);
-    if (dismissedUntil) {
-      const dismissedTime = parseInt(dismissedUntil);
-      if (Date.now() < dismissedTime) {
-        return;
+    setIsClient(true);
+    
+    try {
+      const dismissedUntil = localStorage.getItem(POPUP_STORAGE_KEY);
+      if (dismissedUntil) {
+        const dismissedTime = parseInt(dismissedUntil, 10);
+        if (!isNaN(dismissedTime) && Date.now() < dismissedTime) {
+          return;
+        }
       }
+    } catch (e) {
+      console.log("localStorage not available");
     }
-    const timer = setTimeout(() => setIsOpen(true), 500);
+    
+    const timer = setTimeout(() => setIsOpen(true), 800);
     return () => clearTimeout(timer);
   }, []);
 
