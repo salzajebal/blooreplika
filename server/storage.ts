@@ -6,7 +6,9 @@ import {
   type Member, type InsertMember, members,
   type ChatConversation, type InsertChatConversation, chatConversations,
   type ChatMessage, type InsertChatMessage, chatMessages,
-  type Faq, type InsertFaq, faqs
+  type Faq, type InsertFaq, faqs,
+  type Review, type InsertReview, reviews,
+  type Notice, type InsertNotice, notices
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -59,6 +61,23 @@ export interface IStorage {
   createFaq(faq: InsertFaq): Promise<Faq>;
   updateFaq(id: string, faq: Partial<InsertFaq>): Promise<Faq | undefined>;
   deleteFaq(id: string): Promise<boolean>;
+  
+  // Reviews
+  getAllReviews(): Promise<Review[]>;
+  getVisibleReviews(): Promise<Review[]>;
+  getReview(id: string): Promise<Review | undefined>;
+  createReview(review: InsertReview): Promise<Review>;
+  updateReview(id: string, review: Partial<InsertReview>): Promise<Review | undefined>;
+  deleteReview(id: string): Promise<boolean>;
+  
+  // Notices
+  getAllNotices(): Promise<Notice[]>;
+  getVisibleNotices(): Promise<Notice[]>;
+  getNotice(id: string): Promise<Notice | undefined>;
+  createNotice(notice: InsertNotice): Promise<Notice>;
+  updateNotice(id: string, notice: Partial<InsertNotice>): Promise<Notice | undefined>;
+  deleteNotice(id: string): Promise<boolean>;
+  incrementNoticeViewCount(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -269,6 +288,83 @@ export class DatabaseStorage implements IStorage {
   async deleteFaq(id: string): Promise<boolean> {
     const result = await db.delete(faqs).where(eq(faqs.id, id)).returning();
     return result.length > 0;
+  }
+
+  // Reviews
+  async getAllReviews(): Promise<Review[]> {
+    return db.select().from(reviews).orderBy(desc(reviews.displayDate));
+  }
+
+  async getVisibleReviews(): Promise<Review[]> {
+    return db.select().from(reviews)
+      .where(eq(reviews.isVisible, true))
+      .orderBy(desc(reviews.displayDate));
+  }
+
+  async getReview(id: string): Promise<Review | undefined> {
+    const [review] = await db.select().from(reviews).where(eq(reviews.id, id));
+    return review;
+  }
+
+  async createReview(insertReview: InsertReview): Promise<Review> {
+    const [review] = await db.insert(reviews).values(insertReview).returning();
+    return review;
+  }
+
+  async updateReview(id: string, updateData: Partial<InsertReview>): Promise<Review | undefined> {
+    const [review] = await db.update(reviews)
+      .set(updateData)
+      .where(eq(reviews.id, id))
+      .returning();
+    return review;
+  }
+
+  async deleteReview(id: string): Promise<boolean> {
+    const result = await db.delete(reviews).where(eq(reviews.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Notices
+  async getAllNotices(): Promise<Notice[]> {
+    return db.select().from(notices).orderBy(desc(notices.isPinned), desc(notices.displayDate));
+  }
+
+  async getVisibleNotices(): Promise<Notice[]> {
+    return db.select().from(notices)
+      .where(eq(notices.isVisible, true))
+      .orderBy(desc(notices.isPinned), desc(notices.displayDate));
+  }
+
+  async getNotice(id: string): Promise<Notice | undefined> {
+    const [notice] = await db.select().from(notices).where(eq(notices.id, id));
+    return notice;
+  }
+
+  async createNotice(insertNotice: InsertNotice): Promise<Notice> {
+    const [notice] = await db.insert(notices).values(insertNotice).returning();
+    return notice;
+  }
+
+  async updateNotice(id: string, updateData: Partial<InsertNotice>): Promise<Notice | undefined> {
+    const [notice] = await db.update(notices)
+      .set(updateData)
+      .where(eq(notices.id, id))
+      .returning();
+    return notice;
+  }
+
+  async deleteNotice(id: string): Promise<boolean> {
+    const result = await db.delete(notices).where(eq(notices.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async incrementNoticeViewCount(id: string): Promise<void> {
+    const notice = await this.getNotice(id);
+    if (notice) {
+      await db.update(notices)
+        .set({ viewCount: (notice.viewCount || 0) + 1 })
+        .where(eq(notices.id, id));
+    }
   }
 }
 
