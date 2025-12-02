@@ -353,13 +353,31 @@ export async function registerRoutes(
         ],
         gift_gold: [
           "/images/gold_figurine_pig_lu_50eddba6.jpg",
-          "/images/gold_figurine_pig_lu_6943e4b6.jpg",
-          "/images/gold_figurine_pig_lu_9f84d1a3.jpg",
+          "/images/gold_turtle_longevity_symbol.png",
+          "/images/gold_dragon_figurine_majestic.png",
+          "/images/gold_snake_zodiac_figurine.png",
+          "/images/gold_toad_figurine_wealth.png",
+          "/images/gold_elephant_luck_figurine.png",
+          "/images/gold_buddha_meditation_statue.png",
+          "/images/gold_tiger_figurine_sculpture.png",
+          "/images/gold_carp_success_symbol.png",
+          "/images/gold_phoenix_bird_sculpture.png",
         ],
         event: [
           "/images/gold_coin_limited_ed_bf80ea77.jpg",
           "/images/gold_coin_limited_ed_e6f20c04.jpg",
           "/images/gold_coin_limited_ed_89ba9616.jpg",
+        ],
+        pure_jewelry: [
+          "/images/vca_alhambra_clover_necklace.png",
+          "/images/cartier_love_bracelet_gold.png",
+          "/images/tiffany_t_hoop_earrings.png",
+          "/images/chanel_coco_crush_ring.png",
+          "/images/bulgari_bzero1_spiral_ring.png",
+          "/images/lv_blossom_gold_bracelet.png",
+          "/images/chaumet_liens_pendant_necklace.png",
+          "/images/piaget_rose_gold_ring.png",
+          "/images/boucheron_serpent_ring_gold.png",
         ],
       };
       
@@ -446,16 +464,16 @@ export async function registerRoutes(
         { name: "순금 명함케이스", weight: "7.5g", purity: "99.9%", price: "1,250,000", category: "corporate", isBest: false, isNew: false, description: "순금 장식 명함케이스", imageUrl: getImageForCategory("corporate", 0) },
 
         // ==================== GIFT GOLD / 순금기념품 (10 items) ====================
-        { name: "순금 황금돼지 37.5g", weight: "37.5g", purity: "99.9%", price: "5,700,000", category: "gift_gold", isBest: true, isNew: true, description: "복을 부르는 황금돼지", imageUrl: getImageForCategory("gift_gold", 0) },
-        { name: "순금 거북이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,850,000", category: "gift_gold", isBest: false, isNew: false, description: "장수 기원 거북이", imageUrl: getImageForCategory("gift_gold", 1) },
-        { name: "순금 용 37.5g", weight: "37.5g", purity: "99.9%", price: "5,850,000", category: "gift_gold", isBest: true, isNew: false, description: "2024년 용의 해 기념", imageUrl: getImageForCategory("gift_gold", 2) },
-        { name: "순금 뱀 18.75g", weight: "18.75g", purity: "99.9%", price: "2,900,000", category: "gift_gold", isBest: false, isNew: true, description: "2025년 뱀의 해 기념", imageUrl: getImageForCategory("gift_gold", 0) },
-        { name: "순금 두꺼비 11.25g", weight: "11.25g", purity: "99.9%", price: "1,750,000", category: "gift_gold", isBest: false, isNew: false, description: "재물 행운 두꺼비", imageUrl: getImageForCategory("gift_gold", 1) },
-        { name: "순금 코끼리 18.75g", weight: "18.75g", purity: "99.9%", price: "2,880,000", category: "gift_gold", isBest: false, isNew: false, description: "행운의 코끼리", imageUrl: getImageForCategory("gift_gold", 2) },
-        { name: "순금 부처님 37.5g", weight: "37.5g", purity: "99.9%", price: "5,750,000", category: "gift_gold", isBest: false, isNew: false, description: "평화와 복을 기원", imageUrl: getImageForCategory("gift_gold", 0) },
-        { name: "순금 호랑이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,920,000", category: "gift_gold", isBest: false, isNew: true, description: "용맹한 호랑이 조각", imageUrl: getImageForCategory("gift_gold", 1) },
-        { name: "순금 잉어 11.25g", weight: "11.25g", purity: "99.9%", price: "1,780,000", category: "gift_gold", isBest: false, isNew: false, description: "출세 기원 잉어", imageUrl: getImageForCategory("gift_gold", 2) },
-        { name: "순금 봉황 37.5g", weight: "37.5g", purity: "99.9%", price: "5,900,000", category: "gift_gold", isBest: true, isNew: false, description: "부귀영화 봉황", imageUrl: getImageForCategory("gift_gold", 0) },
+        { name: "순금 황금돼지 37.5g", weight: "37.5g", purity: "99.9%", price: "5,700,000", category: "gift_gold", isBest: true, isNew: true, description: "복을 부르는 황금돼지", imageUrl: "/images/gold_figurine_pig_lu_50eddba6.jpg" },
+        { name: "순금 거북이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,850,000", category: "gift_gold", isBest: false, isNew: false, description: "장수 기원 거북이", imageUrl: "/images/gold_turtle_longevity_symbol.png" },
+        { name: "순금 용 37.5g", weight: "37.5g", purity: "99.9%", price: "5,850,000", category: "gift_gold", isBest: true, isNew: false, description: "2024년 용의 해 기념", imageUrl: "/images/gold_dragon_figurine_majestic.png" },
+        { name: "순금 뱀 18.75g", weight: "18.75g", purity: "99.9%", price: "2,900,000", category: "gift_gold", isBest: false, isNew: true, description: "2025년 뱀의 해 기념", imageUrl: "/images/gold_snake_zodiac_figurine.png" },
+        { name: "순금 두꺼비 11.25g", weight: "11.25g", purity: "99.9%", price: "1,750,000", category: "gift_gold", isBest: false, isNew: false, description: "재물 행운 두꺼비", imageUrl: "/images/gold_toad_figurine_wealth.png" },
+        { name: "순금 코끼리 18.75g", weight: "18.75g", purity: "99.9%", price: "2,880,000", category: "gift_gold", isBest: false, isNew: false, description: "행운의 코끼리", imageUrl: "/images/gold_elephant_luck_figurine.png" },
+        { name: "순금 부처님 37.5g", weight: "37.5g", purity: "99.9%", price: "5,750,000", category: "gift_gold", isBest: false, isNew: false, description: "평화와 복을 기원", imageUrl: "/images/gold_buddha_meditation_statue.png" },
+        { name: "순금 호랑이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,920,000", category: "gift_gold", isBest: false, isNew: true, description: "용맹한 호랑이 조각", imageUrl: "/images/gold_tiger_figurine_sculpture.png" },
+        { name: "순금 잉어 11.25g", weight: "11.25g", purity: "99.9%", price: "1,780,000", category: "gift_gold", isBest: false, isNew: false, description: "출세 기원 잉어", imageUrl: "/images/gold_carp_success_symbol.png" },
+        { name: "순금 봉황 37.5g", weight: "37.5g", purity: "99.9%", price: "5,900,000", category: "gift_gold", isBest: true, isNew: false, description: "부귀영화 봉황", imageUrl: "/images/gold_phoenix_bird_sculpture.png" },
 
         // ==================== EVENT / 이벤트 (6 items) ====================
         { name: "[이벤트] 2025 신년 기념 골드 코인 1돈", weight: "3.75g", purity: "99.9%", price: "520,000", category: "event", isBest: true, isNew: true, description: "2025년 한정판 코인", imageUrl: getImageForCategory("event", 0) },
@@ -761,6 +779,30 @@ export async function registerRoutes(
   
   app.post("/api/seed-luxury-jewelry", requireAdminAuth, async (req: Request, res: Response) => {
     try {
+      const brandImages: Record<string, string> = {
+        "반클리프": "/images/vca_alhambra_clover_necklace.png",
+        "까르띠에": "/images/cartier_love_bracelet_gold.png",
+        "티파니": "/images/tiffany_t_hoop_earrings.png",
+        "샤넬": "/images/chanel_coco_crush_ring.png",
+        "불가리": "/images/bulgari_bzero1_spiral_ring.png",
+        "루이비통": "/images/lv_blossom_gold_bracelet.png",
+        "쇼메": "/images/chaumet_liens_pendant_necklace.png",
+        "피아제": "/images/piaget_rose_gold_ring.png",
+        "부쉐론": "/images/boucheron_serpent_ring_gold.png",
+        "디올": "/images/chaumet_liens_pendant_necklace.png",
+        "그라프": "/images/tiffany_t_hoop_earrings.png",
+        "프레드": "/images/cartier_love_bracelet_gold.png",
+        "부첼라티": "/images/vca_alhambra_clover_necklace.png",
+        "키린": "/images/lv_blossom_gold_bracelet.png",
+      };
+      
+      const getImageForBrand = (name: string) => {
+        for (const [brand, image] of Object.entries(brandImages)) {
+          if (name.includes(brand)) return image;
+        }
+        return "/images/vca_alhambra_clover_necklace.png";
+      };
+
       const luxuryJewelry = [
         { name: "반클리프앤아펠 스위트 알함브라 화이트자개 목걸이", weight: "18K", purity: "750", price: "720,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Van Cleef & Arpels" },
         { name: "쇼메 트리옹프 드 쇼메 목걸이", weight: "18K", purity: "750", price: "1,360,000", category: "pure_jewelry", isBest: false, isNew: true, description: "CHAUMET" },
@@ -822,7 +864,8 @@ export async function registerRoutes(
       let createdCount = 0;
       for (const prod of luxuryJewelry) {
         try {
-          await storage.createProduct(prod);
+          const productWithImage = { ...prod, imageUrl: getImageForBrand(prod.name) };
+          await storage.createProduct(productWithImage);
           createdCount++;
         } catch (e) {
           console.error("Error creating luxury jewelry product:", prod.name, e);
