@@ -2,7 +2,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Heart } from "lucide-react";
-import { useRoute } from "wouter";
+import { useRoute, Link } from "wouter";
 import { useState, useEffect } from "react";
 import type { Product } from "@shared/schema";
 
@@ -82,9 +82,10 @@ export default function ProductList() {
         ) : products.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
             {products.map((product) => (
-              <div 
-                key={product.id} 
-                className="group bg-white border border-gray-100 hover:border-primary/50 hover:shadow-lg transition-all duration-300 relative flex flex-col"
+              <Link 
+                key={product.id}
+                href={`/product/${product.id}`}
+                className="group bg-white border border-gray-100 hover:border-primary/50 hover:shadow-lg transition-all duration-300 relative flex flex-col cursor-pointer"
                 data-testid={`card-product-${product.id}`}
               >
                 {/* Image Container */}
@@ -111,10 +112,10 @@ export default function ProductList() {
                   
                   {/* Hover Actions */}
                   <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex gap-2 justify-center bg-white/90 backdrop-blur-sm border-t border-gray-100">
-                    <Button size="icon" variant="outline" className="h-9 w-9 rounded-full hover:bg-primary hover:text-white hover:border-primary transition-colors">
+                    <Button size="icon" variant="outline" className="h-9 w-9 rounded-full hover:bg-primary hover:text-white hover:border-primary transition-colors" onClick={(e) => e.preventDefault()}>
                       <Heart className="w-4 h-4" />
                     </Button>
-                    <Button size="icon" variant="outline" className="h-9 w-9 rounded-full hover:bg-primary hover:text-white hover:border-primary transition-colors">
+                    <Button size="icon" variant="outline" className="h-9 w-9 rounded-full hover:bg-primary hover:text-white hover:border-primary transition-colors" onClick={(e) => e.preventDefault()}>
                       <ShoppingCart className="w-4 h-4" />
                     </Button>
                   </div>
@@ -136,7 +137,7 @@ export default function ProductList() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (
