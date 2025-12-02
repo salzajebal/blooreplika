@@ -1,4 +1,4 @@
-import { Search, User, ShoppingCart, Menu, Phone } from "lucide-react";
+import { Search, User, ShoppingCart, Menu } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -37,14 +37,19 @@ export function Header() {
 
       {/* Main Header */}
       <div className="container-custom py-6 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 group cursor-pointer">
-          <div className="w-10 h-10 bg-primary rounded-sm flex items-center justify-center text-white font-serif font-bold text-xl group-hover:bg-primary/90 transition-colors">
-            K
+        {/* Premium Logo */}
+        <Link href="/" className="flex items-center gap-3 group cursor-pointer">
+          <div className="relative w-12 h-12">
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600 rounded-lg shadow-lg group-hover:shadow-xl transition-shadow"></div>
+            <div className="absolute inset-[2px] bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-500 rounded-lg"></div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-2xl font-serif font-bold text-amber-900 drop-shadow-sm" style={{textShadow: '0 1px 2px rgba(255,255,255,0.5)'}}>金</span>
+            </div>
+            <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-gradient-to-br from-yellow-200 to-amber-300 rounded-full opacity-80"></div>
           </div>
           <div className="flex flex-col">
             <span className="text-xl font-bold tracking-tight text-gray-900 leading-none">한국공인금거래소</span>
-            <span className="text-[10px] text-primary font-medium tracking-widest uppercase mt-1">Korea Authorized Gold Exchange</span>
+            <span className="text-[10px] text-amber-600 font-medium tracking-widest uppercase mt-1">KOREA AUTHORIZED GOLD EXCHANGE</span>
           </div>
         </Link>
 
@@ -64,18 +69,12 @@ export function Header() {
 
         {/* Icons */}
         <div className="hidden md:flex items-center gap-4">
-          <div className="flex flex-col items-end mr-4">
-            <span className="text-xs text-gray-500">고객만족센터</span>
-            <span className="text-lg font-bold text-primary flex items-center gap-1">
-              <Phone className="w-4 h-4" /> 1544-0000
-            </span>
-          </div>
           <Button variant="ghost" size="icon" className="relative">
             <User className="w-6 h-6" />
           </Button>
           <Button variant="ghost" size="icon" className="relative">
             <ShoppingCart className="w-6 h-6" />
-            <span className="absolute top-0 right-0 bg-primary text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">0</span>
+            <span className="absolute top-0 right-0 bg-amber-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">0</span>
           </Button>
         </div>
 
