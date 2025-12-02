@@ -228,6 +228,7 @@ export const reviews = pgTable("reviews", {
 
 export const insertReviewSchema = createInsertSchema(reviews).omit({
   id: true,
+  createdAt: true,
 });
 
 export type InsertReview = z.infer<typeof insertReviewSchema>;
@@ -248,6 +249,8 @@ export const notices = pgTable("notices", {
 
 export const insertNoticeSchema = createInsertSchema(notices).omit({
   id: true,
+  viewCount: true,
+  createdAt: true,
 });
 
 export type InsertNotice = z.infer<typeof insertNoticeSchema>;
