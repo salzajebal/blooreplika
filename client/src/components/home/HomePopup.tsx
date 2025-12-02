@@ -14,18 +14,16 @@ function KakaoIcon({ className }: { className?: string }) {
 }
 
 export function HomePopup() {
-  const [isOpen, setIsOpen] = useState(false);
   const [dontShowFor24h, setDontShowFor24h] = useState(false);
-  const [isClient, setIsClient] = useState(false);
+  const [shouldShow, setShouldShow] = useState<boolean | null>(null);
 
   useEffect(() => {
-    setIsClient(true);
-    
     try {
       const dismissedUntil = localStorage.getItem(POPUP_STORAGE_KEY);
       if (dismissedUntil) {
         const dismissedTime = parseInt(dismissedUntil, 10);
         if (!isNaN(dismissedTime) && Date.now() < dismissedTime) {
+          setShouldShow(false);
           return;
         }
       }
@@ -33,19 +31,22 @@ export function HomePopup() {
       console.log("localStorage not available");
     }
     
-    const timer = setTimeout(() => setIsOpen(true), 800);
-    return () => clearTimeout(timer);
+    setShouldShow(true);
   }, []);
 
   const handleClose = () => {
     if (dontShowFor24h) {
-      const until = Date.now() + 24 * 60 * 60 * 1000;
-      localStorage.setItem(POPUP_STORAGE_KEY, until.toString());
+      try {
+        const until = Date.now() + 24 * 60 * 60 * 1000;
+        localStorage.setItem(POPUP_STORAGE_KEY, until.toString());
+      } catch (e) {
+        console.log("localStorage not available");
+      }
     }
-    setIsOpen(false);
+    setShouldShow(false);
   };
 
-  if (!isOpen) return null;
+  if (shouldShow !== true) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
