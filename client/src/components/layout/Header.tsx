@@ -1,13 +1,44 @@
-import { Search, User, Heart, Menu, Sparkles } from "lucide-react";
+import { Search, User, Heart, Menu, Sparkles, LogOut } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useWishlist } from "@/contexts/WishlistContext";
+import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export function Header() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { count } = useWishlist();
+  const { toast } = useToast();
+  const [memberName, setMemberName] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkLoginStatus = () => {
+      const name = localStorage.getItem("memberName");
+      setMemberName(name);
+    };
+    checkLoginStatus();
+    window.addEventListener("storage", checkLoginStatus);
+    const interval = setInterval(checkLoginStatus, 1000);
+    return () => {
+      window.removeEventListener("storage", checkLoginStatus);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("memberToken");
+    localStorage.removeItem("memberName");
+    localStorage.removeItem("memberEmail");
+    localStorage.removeItem("memberId");
+    setMemberName(null);
+    toast({
+      title: "로그아웃",
+      description: "성공적으로 로그아웃되었습니다.",
+    });
+    setLocation("/");
+  };
 
   const navItems = [
     { name: '금시세조회', path: '/gold-price' },
@@ -48,9 +79,25 @@ export function Header() {
             <Link href="/notices">공지사항</Link>
             <Link href="/reviews">고객후기</Link>
           </div>
-          <div className="flex gap-4">
-            <Link href="/login">로그인</Link>
-            <Link href="/signup">회원가입</Link>
+          <div className="flex gap-4 items-center">
+            {memberName ? (
+              <>
+                <Link href="/profile" className="text-amber-700 font-semibold flex items-center gap-1">
+                  <User className="w-3 h-3" />
+                  {memberName}님
+                </Link>
+                <Link href="/deposit" className="text-amber-600 hover:text-amber-700">입금신청</Link>
+                <button onClick={handleLogout} className="flex items-center gap-1 hover:text-gray-700">
+                  <LogOut className="w-3 h-3" />
+                  로그아웃
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login">로그인</Link>
+                <Link href="/signup">회원가입</Link>
+              </>
+            )}
             <Link href="/cart">장바구니</Link>
             <Link href="/support">고객센터</Link>
             <Link href="/admin" className="text-primary font-medium">관리자</Link>
@@ -119,6 +166,12 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side="right">
               <nav className="flex flex-col gap-4 mt-8">
+                {memberName && (
+                  <div className="text-lg font-bold text-amber-700 pb-4 border-b">
+                    <User className="w-5 h-5 inline mr-2" />
+                    {memberName}님
+                  </div>
+                )}
                 <Link href="/" className="text-lg font-medium">홈</Link>
                 {navItems.map((item) => (
                   <Link key={item.name} href={item.path} className="text-lg font-medium hover:text-primary">
@@ -128,7 +181,18 @@ export function Header() {
                 <Link href="/notices" className="text-lg font-medium hover:text-primary">공지사항</Link>
                 <Link href="/reviews" className="text-lg font-medium hover:text-primary">고객후기</Link>
                 <Link href="/support" className="text-lg font-medium hover:text-primary">고객센터</Link>
-                <Link href="/login" className="text-lg font-medium text-gray-500 mt-4 pt-4 border-t">로그인</Link>
+                {memberName ? (
+                  <>
+                    <Link href="/deposit" className="text-lg font-medium text-amber-600 mt-4 pt-4 border-t">입금신청</Link>
+                    <Link href="/profile" className="text-lg font-medium hover:text-primary">마이페이지</Link>
+                    <button onClick={handleLogout} className="text-lg font-medium text-gray-500 text-left flex items-center gap-2">
+                      <LogOut className="w-5 h-5" />
+                      로그아웃
+                    </button>
+                  </>
+                ) : (
+                  <Link href="/login" className="text-lg font-medium text-gray-500 mt-4 pt-4 border-t">로그인</Link>
+                )}
               </nav>
             </SheetContent>
           </Sheet>
