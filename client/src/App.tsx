@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { WishlistProvider } from "@/contexts/WishlistContext";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import ProductList from "@/pages/ProductList";
@@ -14,6 +15,8 @@ import Login from "@/pages/Login";
 import Support from "@/pages/Support";
 import Reviews from "@/pages/Reviews";
 import Notices from "@/pages/Notices";
+import Cart from "@/pages/Cart";
+import Profile from "@/pages/Profile";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 
 function Router() {
@@ -30,6 +33,8 @@ function Router() {
       <Route path="/support" component={Support} />
       <Route path="/reviews" component={Reviews} />
       <Route path="/notices" component={Notices} />
+      <Route path="/cart" component={Cart} />
+      <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -38,11 +43,13 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-        <ChatWidget />
-      </TooltipProvider>
+      <WishlistProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+          <ChatWidget />
+        </TooltipProvider>
+      </WishlistProvider>
     </QueryClientProvider>
   );
 }

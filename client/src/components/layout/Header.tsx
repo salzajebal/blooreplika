@@ -1,11 +1,13 @@
-import { Search, User, ShoppingCart, Menu, Sparkles } from "lucide-react";
+import { Search, User, Heart, Menu, Sparkles } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { useWishlist } from "@/contexts/WishlistContext";
 
 export function Header() {
   const [location] = useLocation();
+  const { count } = useWishlist();
 
   const navItems = [
     { name: '금시세조회', path: '/gold-price' },
@@ -70,13 +72,21 @@ export function Header() {
 
         {/* Icons */}
         <div className="hidden md:flex items-center gap-4">
-          <Button variant="ghost" size="icon" className="relative">
-            <User className="w-6 h-6" />
-          </Button>
-          <Button variant="ghost" size="icon" className="relative">
-            <ShoppingCart className="w-6 h-6" />
-            <span className="absolute top-0 right-0 bg-amber-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">0</span>
-          </Button>
+          <Link href="/profile">
+            <Button variant="ghost" size="icon" className="relative" data-testid="button-profile">
+              <User className="w-6 h-6" />
+            </Button>
+          </Link>
+          <Link href="/cart">
+            <Button variant="ghost" size="icon" className="relative" data-testid="button-cart">
+              <Heart className="w-6 h-6" />
+              {count > 0 && (
+                <span className="absolute top-0 right-0 bg-amber-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full" data-testid="text-cart-count">
+                  {count > 9 ? "9+" : count}
+                </span>
+              )}
+            </Button>
+          </Link>
         </div>
 
         {/* Mobile Menu */}

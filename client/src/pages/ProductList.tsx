@@ -5,6 +5,9 @@ import { ShoppingCart, Heart } from "lucide-react";
 import { useRoute, Link } from "wouter";
 import { useState, useEffect } from "react";
 import type { Product } from "@shared/schema";
+import { useWishlist } from "@/contexts/WishlistContext";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const DEFAULT_CATEGORIES = [
   { id: "gold_bar", name: "골드바", description: "한국공인금거래소가 보증하는 최고 품질의 순금 바" },
@@ -21,8 +24,30 @@ export default function ProductList() {
   const categoryId = match ? params.category : "all";
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toggleItem, isInWishlist } = useWishlist();
+  const { toast } = useToast();
   
   const categoryInfo = DEFAULT_CATEGORIES.find(c => c.id === categoryId) || { name: "전체 상품 목록", description: "한국공인금거래소가 보증하는 최고의 품질" };
+
+  const handleWishlistToggle = (e: React.MouseEvent, product: Product) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const wasInWishlist = isInWishlist(product.id);
+    toggleItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      imageUrl: product.imageUrl,
+      weight: product.weight,
+      purity: product.purity,
+    });
+    toast({
+      title: wasInWishlist ? "찜 목록에서 삭제" : "찜 목록에 추가",
+      description: wasInWishlist 
+        ? `${product.name}이(가) 삭제되었습니다.` 
+        : `${product.name}이(가) 찜 목록에 추가되었습니다.`,
+    });
+  };
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -112,10 +137,30 @@ export default function ProductList() {
                   
                   {/* Hover Actions */}
                   <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex gap-2 justify-center bg-white/90 backdrop-blur-sm border-t border-gray-100">
-                    <Button size="icon" variant="outline" className="h-9 w-9 rounded-full hover:bg-primary hover:text-white hover:border-primary transition-colors" onClick={(e) => e.preventDefault()}>
-                      <Heart className="w-4 h-4" />
+                    <Button 
+                      size="icon" 
+                      variant="outline" 
+                      className={cn(
+                        "h-9 w-9 rounded-full transition-colors",
+                        isInWishlist(product.id) 
+                          ? "bg-primary text-white border-primary" 
+                          : "hover:bg-primary hover:text-white hover:border-primary"
+                      )} 
+                      onClick={(e) => handleWishlistToggle(e, product)}
+                      data-testid={`button-wishlist-${product.id}`}
+                    >
+                      <Heart className={cn("w-4 h-4", isInWishlist(product.id) && "fill-current")} />
                     </Button>
-                    <Button size="icon" variant="outline" className="h-9 w-9 rounded-full hover:bg-primary hover:text-white hover:border-primary transition-colors" onClick={(e) => e.preventDefault()}>
+                    <Button 
+                      size="icon" 
+                      variant="outline" 
+                      className="h-9 w-9 rounded-full hover:bg-primary hover:text-white hover:border-primary transition-colors" 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleWishlistToggle(e, product);
+                      }}
+                      data-testid={`button-cart-${product.id}`}
+                    >
                       <ShoppingCart className="w-4 h-4" />
                     </Button>
                   </div>
