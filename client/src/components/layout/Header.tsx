@@ -12,6 +12,7 @@ export function Header() {
   const { count } = useWishlist();
   const { toast } = useToast();
   const [memberName, setMemberName] = useState<string | null>(null);
+  const [pointBalance, setPointBalance] = useState<number>(0);
 
   useEffect(() => {
     const checkLoginStatus = () => {
@@ -26,6 +27,32 @@ export function Header() {
       clearInterval(interval);
     };
   }, []);
+
+  useEffect(() => {
+    const fetchPointBalance = async () => {
+      const memberData = localStorage.getItem("kaggold_member");
+      if (!memberData) return;
+      
+      try {
+        const parsed = JSON.parse(memberData);
+        const res = await fetch("/api/members/me", {
+          headers: { Authorization: `Bearer ${parsed.token}` },
+        });
+        const data = await res.json();
+        if (data.success) {
+          setPointBalance(data.data.pointBalance || 0);
+        }
+      } catch (error) {
+        console.error("Error fetching point balance:", error);
+      }
+    };
+    
+    if (memberName) {
+      fetchPointBalance();
+      const interval = setInterval(fetchPointBalance, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [memberName]);
 
   const handleLogout = () => {
     localStorage.removeItem("memberToken");
@@ -85,6 +112,9 @@ export function Header() {
                 <Link href="/profile" className="text-amber-700 font-semibold flex items-center gap-1">
                   <User className="w-3 h-3" />
                   {memberName}님
+                </Link>
+                <Link href="/profile" className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold text-xs" data-testid="header-point-balance">
+                  {pointBalance.toLocaleString()}P
                 </Link>
                 <Link href="/deposit" className="text-amber-600 hover:text-amber-700">입금신청</Link>
                 <button onClick={handleLogout} className="flex items-center gap-1 hover:text-gray-700">
@@ -167,9 +197,14 @@ export function Header() {
             <SheetContent side="right">
               <nav className="flex flex-col gap-4 mt-8">
                 {memberName && (
-                  <div className="text-lg font-bold text-amber-700 pb-4 border-b">
-                    <User className="w-5 h-5 inline mr-2" />
-                    {memberName}님
+                  <div className="pb-4 border-b">
+                    <div className="text-lg font-bold text-amber-700 flex items-center">
+                      <User className="w-5 h-5 mr-2" />
+                      {memberName}님
+                    </div>
+                    <Link href="/profile" className="mt-2 inline-block bg-amber-100 text-amber-800 px-3 py-1 rounded font-bold text-sm" data-testid="mobile-point-balance">
+                      보유 포인트: {pointBalance.toLocaleString()}P
+                    </Link>
                   </div>
                 )}
                 <Link href="/" className="text-lg font-medium">홈</Link>

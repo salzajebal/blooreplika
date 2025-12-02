@@ -815,8 +815,12 @@ export async function registerRoutes(
           name: member.name,
           email: member.email,
           phone: member.phone,
+          address: member.address || null,
+          bank: member.bank || null,
+          accountNumber: member.accountNumber || null,
           pointBalance: member.pointBalance || 0,
-          isFrozen: member.isFrozen || false
+          isFrozen: member.isFrozen || false,
+          createdAt: member.createdAt
         }
       });
     } catch (error) {
