@@ -761,6 +761,10 @@ export default function Admin() {
 
   const handleUpdateReview = async (id: string) => {
     try {
+      console.log("=== FRONTEND: Starting review update ===");
+      console.log("Review ID:", id);
+      console.log("Form data:", reviewFormData);
+      
       const res = await fetchWithAuth(`/api/reviews/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -770,10 +774,23 @@ export default function Admin() {
         }),
       });
       const data = await res.json();
+      console.log("Server response:", data);
+      
       if (data.success) {
         toast({ title: "성공", description: "후기가 수정되었습니다." });
         setEditingReviewId(null);
-        fetchReviews();
+        
+        // Fetch reviews and log the result
+        console.log("Fetching reviews after update...");
+        const reviewsRes = await fetchWithAuth("/api/admin/reviews");
+        const reviewsData = await reviewsRes.json();
+        console.log("Reviews count after update:", reviewsData.data?.length);
+        console.log("Updated review still exists:", reviewsData.data?.some((r: any) => r.id === id));
+        
+        if (reviewsData.success) {
+          setReviews(reviewsData.data);
+          console.log("Reviews state updated. Count:", reviewsData.data.length);
+        }
       } else {
         console.error("Review update error:", data.error);
         toast({ title: "오류", description: formatErrorMessage(data.error) || "후기 수정에 실패했습니다.", variant: "destructive" });
