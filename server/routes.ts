@@ -8,24 +8,9 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-const uploadsDir = path.join(process.cwd(), "uploads", "reviews");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const reviewImageStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `review-${uniqueSuffix}${ext}`);
-  },
-});
-
+// Use memory storage to persist images in database (not ephemeral filesystem)
 const reviewImageUpload = multer({
-  storage: reviewImageStorage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (_req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
@@ -1352,9 +1337,9 @@ export async function registerRoutes(
 
   // ==================== FILE UPLOAD API ====================
   
-  // Upload review image (admin only)
+  // Upload review image (admin only) - now saves to database for persistence
   app.post("/api/admin/upload/review-image", requireAdminAuth, (req: Request, res: Response) => {
-    reviewImageUpload.single("image")(req, res, (err: any) => {
+    reviewImageUpload.single("image")(req, res, async (err: any) => {
       if (err instanceof multer.MulterError) {
         if (err.code === "LIMIT_FILE_SIZE") {
           return res.status(400).json({ success: false, error: "파일 크기는 5MB 이하여야 합니다." });
@@ -1368,9 +1353,43 @@ export async function registerRoutes(
         return res.status(400).json({ success: false, error: "이미지 파일을 선택해주세요." });
       }
       
-      const imageUrl = `/uploads/reviews/${req.file.filename}`;
-      res.json({ success: true, data: { imageUrl } });
+      try {
+        // Convert buffer to base64 and save to database
+        const base64Data = req.file.buffer.toString("base64");
+        const reviewImage = await storage.createReviewImage({
+          data: base64Data,
+          mimeType: req.file.mimetype,
+          originalName: req.file.originalname,
+        });
+        
+        // Return URL pointing to database image endpoint
+        const imageUrl = `/api/review-images/${reviewImage.id}`;
+        res.json({ success: true, data: { imageUrl, imageId: reviewImage.id } });
+      } catch (error) {
+        console.error("Error saving review image:", error);
+        res.status(500).json({ success: false, error: "이미지 저장에 실패했습니다." });
+      }
     });
+  });
+  
+  // Serve review images from database
+  app.get("/api/review-images/:id", async (req: Request, res: Response) => {
+    try {
+      const image = await storage.getReviewImage(req.params.id);
+      if (!image) {
+        return res.status(404).json({ success: false, error: "이미지를 찾을 수 없습니다." });
+      }
+      
+      // Convert base64 back to buffer and send
+      const buffer = Buffer.from(image.data, "base64");
+      res.setHeader("Content-Type", image.mimeType);
+      res.setHeader("Cache-Control", "public, max-age=31536000"); // Cache for 1 year
+      res.setHeader("ETag", `"${image.id}"`);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error serving review image:", error);
+      res.status(500).json({ success: false, error: "이미지를 불러올 수 없습니다." });
+    }
   });
 
   // ==================== REVIEWS API ====================
