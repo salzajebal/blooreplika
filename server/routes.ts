@@ -1448,29 +1448,50 @@ export async function registerRoutes(
   // Update review (admin only)
   app.put("/api/reviews/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      console.log("Updating review:", req.params.id, "with data:", JSON.stringify(req.body));
+      console.log("=== REVIEW UPDATE START ===");
+      console.log("Review ID:", req.params.id);
+      console.log("Request body:", JSON.stringify(req.body, null, 2));
+      
+      // First check if review exists
+      const existingReview = await storage.getReview(req.params.id);
+      if (!existingReview) {
+        console.log("Review not found:", req.params.id);
+        return res.status(404).json({ success: false, error: "후기를 찾을 수 없습니다." });
+      }
+      console.log("Existing review found:", existingReview.id, existingReview.title);
       
       // Validate and transform the request body
       const updateData: any = {};
       if (req.body.authorName !== undefined) updateData.authorName = req.body.authorName;
       if (req.body.productName !== undefined) updateData.productName = req.body.productName;
-      if (req.body.rating !== undefined) updateData.rating = req.body.rating;
+      if (req.body.rating !== undefined) updateData.rating = Number(req.body.rating);
       if (req.body.title !== undefined) updateData.title = req.body.title;
       if (req.body.content !== undefined) updateData.content = req.body.content;
       if (req.body.imageUrl !== undefined) updateData.imageUrl = req.body.imageUrl;
-      if (req.body.isVisible !== undefined) updateData.isVisible = req.body.isVisible;
+      if (req.body.isVisible !== undefined) updateData.isVisible = Boolean(req.body.isVisible);
       if (req.body.displayDate !== undefined) {
-        updateData.displayDate = new Date(req.body.displayDate);
+        const parsedDate = new Date(req.body.displayDate);
+        if (!isNaN(parsedDate.getTime())) {
+          updateData.displayDate = parsedDate;
+        } else {
+          console.error("Invalid displayDate:", req.body.displayDate);
+        }
       }
       
-      console.log("Processed update data:", JSON.stringify(updateData));
+      console.log("Processed update data:", JSON.stringify(updateData, null, 2));
       
       const review = await storage.updateReview(req.params.id, updateData);
+      console.log("Update result:", review ? `Success - ${review.id}` : "Failed - undefined returned");
+      
       if (!review) {
-        return res.status(404).json({ success: false, error: "후기를 찾을 수 없습니다." });
+        console.error("Update returned undefined for review:", req.params.id);
+        return res.status(500).json({ success: false, error: "후기 수정에 실패했습니다. (업데이트 실패)" });
       }
+      
+      console.log("=== REVIEW UPDATE SUCCESS ===");
       res.json({ success: true, data: review });
     } catch (error) {
+      console.error("=== REVIEW UPDATE ERROR ===");
       console.error("Error updating review:", error);
       res.status(500).json({ success: false, error: "후기 수정에 실패했습니다." });
     }
