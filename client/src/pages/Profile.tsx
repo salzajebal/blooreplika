@@ -546,10 +546,6 @@ export default function Profile() {
             <h2 className="font-bold text-gray-900 mb-4">고객 지원</h2>
             <div className="space-y-3 text-sm text-gray-600">
               <div className="flex justify-between">
-                <span>고객센터</span>
-                <span className="font-bold text-primary">1588-0000</span>
-              </div>
-              <div className="flex justify-between">
                 <span>운영시간</span>
                 <span>평일 09:00 - 18:00</span>
               </div>
@@ -560,7 +556,7 @@ export default function Profile() {
             </div>
             <Link href="/support">
               <Button variant="outline" className="w-full mt-4">
-                1:1 문의하기
+                고객센터 바로가기
               </Button>
             </Link>
           </div>
