@@ -3,9 +3,18 @@ import { useParams, Link } from "wouter";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart, Phone, MessageCircle, ChevronRight, Truck, Shield, Award, RotateCcw } from "lucide-react";
+import { ShoppingCart, Heart, MessageCircle, ChevronRight, Truck, Shield, Award, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useKakaoLink } from "@/hooks/use-kakao-link";
 import type { Product } from "@shared/schema";
+
+function KakaoIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+      <path d="M12 3C6.48 3 2 6.58 2 11c0 2.8 1.8 5.27 4.5 6.7-.15.53-.5 1.92-.57 2.22-.1.38.14.38.29.27.12-.08 1.85-1.22 2.6-1.72.72.11 1.47.17 2.18.17 5.52 0 10-3.58 10-8S17.52 3 12 3z"/>
+    </svg>
+  );
+}
 
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1610375461246-83df859d849d?w=800&h=800&fit=crop";
 
@@ -168,6 +177,7 @@ const PRODUCT_DETAILS: Record<string, { features: string[]; specs: { label: stri
 export default function ProductDetail() {
   const { id } = useParams();
   const { toast } = useToast();
+  const { openKakaoChat } = useKakaoLink();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
@@ -200,10 +210,7 @@ export default function ProductDetail() {
   };
 
   const handleBuyNow = () => {
-    toast({
-      title: "구매 상담 신청",
-      description: "담당자가 곧 연락드리겠습니다.",
-    });
+    openKakaoChat();
   };
 
   const handleInquiry = () => {
@@ -353,12 +360,12 @@ export default function ProductDetail() {
                 </Button>
                 <Button
                   size="lg"
-                  className="flex-1 h-14 bg-gradient-to-r from-gold-600 to-gold-700 hover:from-gold-700 hover:to-gold-800"
+                  className="flex-1 h-14 bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E]"
                   onClick={handleBuyNow}
                   data-testid="button-buy-now"
                 >
-                  <Phone className="w-5 h-5 mr-2" />
-                  구매 상담
+                  <KakaoIcon className="w-5 h-5 mr-2" />
+                  카카오톡문의
                 </Button>
                 <Button
                   variant="outline"
@@ -468,10 +475,11 @@ export default function ProductDetail() {
                 1:1 상담
               </Button>
               <Button
-                className="flex-1 h-12 bg-gradient-to-r from-gold-600 to-gold-700"
+                className="flex-1 h-12 bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E]"
                 onClick={handleBuyNow}
               >
-                구매 상담
+                <KakaoIcon className="w-4 h-4 mr-2" />
+                카카오톡문의
               </Button>
             </div>
           </div>
