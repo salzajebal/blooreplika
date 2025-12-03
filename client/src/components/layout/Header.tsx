@@ -101,36 +101,36 @@ export function Header() {
         </div>
       </div>
 
-      <div className="bg-[#f8f8f8] border-b border-gray-100 py-2 hidden md:block">
-        <div className="container-custom flex justify-between items-center text-xs text-gray-500">
-          <div className="flex gap-4">
-            <Link href="/notices">공지사항</Link>
-            <Link href="/reviews">고객후기</Link>
+      <div className="bg-[#f8f8f8] border-b border-gray-100 py-2.5 hidden md:block">
+        <div className="container-custom flex justify-between items-center text-sm text-gray-600">
+          <div className="flex gap-5">
+            <Link href="/notices" className="hover:text-amber-700 transition-colors">공지사항</Link>
+            <Link href="/reviews" className="hover:text-amber-700 transition-colors">고객후기</Link>
           </div>
-          <div className="flex gap-4 items-center">
+          <div className="flex gap-5 items-center">
             {memberName ? (
               <>
-                <Link href="/profile" className="text-amber-700 font-semibold flex items-center gap-1">
-                  <User className="w-3 h-3" />
+                <Link href="/profile" className="text-amber-700 font-semibold flex items-center gap-1.5 hover:text-amber-800">
+                  <User className="w-4 h-4" />
                   {memberName}님
                 </Link>
-                <Link href="/profile" className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold text-xs" data-testid="header-point-balance">
+                <Link href="/profile" className="bg-amber-100 text-amber-800 px-2.5 py-1 rounded font-bold text-sm" data-testid="header-point-balance">
                   {pointBalance.toLocaleString()}P
                 </Link>
-                <Link href="/deposit" className="text-amber-600 hover:text-amber-700">입금신청</Link>
-                <button onClick={handleLogout} className="flex items-center gap-1 hover:text-gray-700">
-                  <LogOut className="w-3 h-3" />
+                <Link href="/deposit" className="text-amber-600 hover:text-amber-700 font-medium">입금신청</Link>
+                <button onClick={handleLogout} className="flex items-center gap-1.5 hover:text-gray-800 transition-colors">
+                  <LogOut className="w-4 h-4" />
                   로그아웃
                 </button>
               </>
             ) : (
               <>
-                <Link href="/login">로그인</Link>
-                <Link href="/signup">회원가입</Link>
+                <Link href="/login" className="hover:text-amber-700 transition-colors">로그인</Link>
+                <Link href="/signup" className="hover:text-amber-700 transition-colors">회원가입</Link>
               </>
             )}
-            <Link href="/cart">장바구니</Link>
-            <Link href="/support">고객센터</Link>
+            <Link href="/cart" className="hover:text-amber-700 transition-colors">장바구니</Link>
+            <Link href="/support" className="hover:text-amber-700 transition-colors">고객센터</Link>
           </div>
         </div>
       </div>
