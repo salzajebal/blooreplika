@@ -408,10 +408,8 @@ export default function Profile() {
                     <div className="space-y-4">
                       <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                         <h3 className="font-bold text-amber-800 mb-2">입금 안내</h3>
-                        <div className="text-sm text-amber-700 space-y-1">
-                          <p>- 예금주: (주)한국골드금거래소</p>
-                          <p>- 국민은행: 123-456-789012</p>
-                          <p>- 입금자명은 반드시 신청서와 동일하게 입금해주세요.</p>
+                        <div className="text-sm text-amber-700">
+                          <p>입금 관련 상세 안내는 카카오톡 고객센터로 연락 바랍니다.</p>
                         </div>
                       </div>
 
