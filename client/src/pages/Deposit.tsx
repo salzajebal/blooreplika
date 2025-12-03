@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { MessageCircle, CheckCircle, Clock, XCircle, ExternalLink } from "lucide-react";
+import { MessageCircle, CheckCircle, Clock, XCircle, ExternalLink, Wallet } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface DepositRequest {
@@ -74,6 +74,25 @@ export default function Deposit() {
         return result.data || [];
       } catch {
         return [];
+      }
+    },
+    enabled: !!memberToken,
+  });
+
+  const { data: pointBalance = 0 } = useQuery<number>({
+    queryKey: ["/api/members/point-balance"],
+    queryFn: async () => {
+      try {
+        const res = await fetch("/api/members/point-balance", {
+          headers: {
+            "Authorization": `Bearer ${memberToken}`,
+          },
+        });
+        if (!res.ok) return 0;
+        const result = await res.json();
+        return result.data?.pointBalance || 0;
+      } catch {
+        return 0;
       }
     },
     enabled: !!memberToken,
@@ -178,6 +197,19 @@ export default function Deposit() {
       <main className="flex-1 py-6 md:py-12 px-4">
         <div className="container-custom max-w-4xl mx-auto">
           <h1 className="text-2xl md:text-3xl font-bold text-center mb-6 md:mb-8 text-gray-900">입금신청</h1>
+
+          <div className="mb-6 md:mb-8">
+            <div className="bg-gradient-to-r from-amber-500 to-yellow-500 rounded-2xl p-6 shadow-lg text-center">
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <Wallet className="w-8 h-8 text-white" />
+                <span className="text-white text-lg font-medium">내 보유 포인트</span>
+              </div>
+              <div className="text-4xl md:text-5xl font-bold text-white" data-testid="deposit-page-point-balance">
+                {pointBalance.toLocaleString()}P
+              </div>
+              <p className="text-amber-100 text-sm mt-2">입금신청 후 승인되면 포인트가 충전됩니다</p>
+            </div>
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
             <Card className="shadow-lg border-yellow-300">
