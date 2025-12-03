@@ -821,6 +821,21 @@ export default function Admin() {
 
   const startEditReview = (review: Review) => {
     setEditingReviewId(review.id);
+    
+    // Preserve the original displayDate exactly as stored
+    let displayDateForInput = new Date().toISOString().slice(0, 16);
+    if (review.displayDate) {
+      // Store the original ISO string to preserve it during edit
+      const originalDate = new Date(review.displayDate);
+      // Format for datetime-local input (YYYY-MM-DDTHH:mm)
+      const year = originalDate.getFullYear();
+      const month = String(originalDate.getMonth() + 1).padStart(2, '0');
+      const day = String(originalDate.getDate()).padStart(2, '0');
+      const hours = String(originalDate.getHours()).padStart(2, '0');
+      const minutes = String(originalDate.getMinutes()).padStart(2, '0');
+      displayDateForInput = `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+    
     setReviewFormData({
       authorName: review.authorName,
       productName: review.productName || "",
@@ -829,7 +844,7 @@ export default function Admin() {
       content: review.content,
       imageUrl: review.imageUrl || "",
       isVisible: review.isVisible ?? true,
-      displayDate: review.displayDate ? new Date(review.displayDate).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+      displayDate: displayDateForInput,
     });
   };
 
