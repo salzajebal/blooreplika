@@ -676,7 +676,18 @@ export default function Admin() {
       return;
     }
 
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "오류", description: "파일 크기는 5MB 이하여야 합니다.", variant: "destructive" });
+      return;
+    }
+
     setUploadingImage(true);
+    
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    
     try {
       const formData = new FormData();
       formData.append("image", file);
@@ -687,7 +698,10 @@ export default function Admin() {
           Authorization: `Bearer ${authToken}`,
         },
         body: formData,
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
       
       if (res.status === 401) {
         toast({ title: "세션 만료", description: "다시 로그인해주세요.", variant: "destructive" });
@@ -704,11 +718,18 @@ export default function Admin() {
       } else {
         toast({ title: "오류", description: data.error || "이미지 업로드에 실패했습니다.", variant: "destructive" });
       }
-    } catch (error) {
+    } catch (error: any) {
+      clearTimeout(timeoutId);
       console.error("Image upload error:", error);
-      toast({ title: "오류", description: "이미지 업로드에 실패했습니다.", variant: "destructive" });
+      if (error.name === 'AbortError') {
+        toast({ title: "오류", description: "업로드 시간이 초과되었습니다. 다시 시도해주세요.", variant: "destructive" });
+      } else {
+        toast({ title: "오류", description: "이미지 업로드에 실패했습니다.", variant: "destructive" });
+      }
     } finally {
       setUploadingImage(false);
+      // Reset file input
+      e.target.value = '';
     }
   };
 
