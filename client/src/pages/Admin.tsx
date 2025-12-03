@@ -112,6 +112,7 @@ export default function Admin() {
     isPinned: false,
     isVisible: true,
     displayDate: new Date().toISOString().slice(0, 16),
+    viewCount: 0,
   });
   const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
   const [showAddNoticeForm, setShowAddNoticeForm] = useState(false);
@@ -754,7 +755,7 @@ export default function Admin() {
       if (data.success) {
         toast({ title: "성공", description: "공지사항이 추가되었습니다." });
         setShowAddNoticeForm(false);
-        setNoticeFormData({ title: "", content: "", category: "general", isPinned: false, isVisible: true, displayDate: new Date().toISOString().slice(0, 16) });
+        setNoticeFormData({ title: "", content: "", category: "general", isPinned: false, isVisible: true, displayDate: new Date().toISOString().slice(0, 16), viewCount: 0 });
         fetchNotices();
       } else {
         console.error("Notice creation error:", data.error);
@@ -810,6 +811,7 @@ export default function Admin() {
       isPinned: notice.isPinned ?? false,
       isVisible: notice.isVisible ?? true,
       displayDate: notice.displayDate ? new Date(notice.displayDate).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16),
+      viewCount: notice.viewCount || 0,
     });
   };
 
@@ -2129,7 +2131,7 @@ export default function Admin() {
                 data-testid="button-add-notice"
                 onClick={() => {
                   setShowAddNoticeForm(true);
-                  setNoticeFormData({ title: "", content: "", category: "general", isPinned: false, isVisible: true, displayDate: new Date().toISOString().slice(0, 16) });
+                  setNoticeFormData({ title: "", content: "", category: "general", isPinned: false, isVisible: true, displayDate: new Date().toISOString().slice(0, 16), viewCount: 0 });
                 }}
                 className="bg-yellow-500 hover:bg-yellow-600"
               >
@@ -2172,6 +2174,16 @@ export default function Admin() {
                       value={noticeFormData.displayDate}
                       onChange={(e) => setNoticeFormData({ ...noticeFormData, displayDate: e.target.value })}
                       data-testid="input-notice-date"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">조회수</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={noticeFormData.viewCount}
+                      onChange={(e) => setNoticeFormData({ ...noticeFormData, viewCount: parseInt(e.target.value) || 0 })}
+                      data-testid="input-notice-viewcount"
                     />
                   </div>
                   <div className="md:col-span-2">
@@ -2264,7 +2276,15 @@ export default function Admin() {
                               className="h-8"
                             />
                           </td>
-                          <td className="px-4 py-3 text-gray-500 text-sm">{notice.viewCount || 0}</td>
+                          <td className="px-4 py-3">
+                            <Input
+                              type="number"
+                              min="0"
+                              value={noticeFormData.viewCount}
+                              onChange={(e) => setNoticeFormData({ ...noticeFormData, viewCount: parseInt(e.target.value) || 0 })}
+                              className="h-8 w-20"
+                            />
+                          </td>
                           <td className="px-4 py-3">
                             <div className="flex gap-2">
                               <label className="flex items-center gap-1">

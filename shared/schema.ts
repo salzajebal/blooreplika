@@ -257,7 +257,16 @@ export const insertNoticeSchema = createInsertSchema(notices, {
   createdAt: true,
 });
 
+export const updateNoticeSchema = createInsertSchema(notices, {
+  displayDate: z.union([z.string(), z.date()]).optional().transform(val => val ? new Date(val) : undefined),
+  viewCount: z.number().optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+}).partial();
+
 export type InsertNotice = z.infer<typeof insertNoticeSchema>;
+export type UpdateNotice = z.infer<typeof updateNoticeSchema>;
 export type Notice = typeof notices.$inferSelect;
 
 // Site settings table (key-value store for site configuration)
