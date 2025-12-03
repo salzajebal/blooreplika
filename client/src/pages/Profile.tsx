@@ -52,15 +52,15 @@ export default function Profile() {
   const [bankName, setBankName] = useState("");
   const [depositorName, setDepositorName] = useState("");
   
-  const isLoggedIn = localStorage.getItem("kaggold_member") !== null;
-  const memberData = isLoggedIn ? JSON.parse(localStorage.getItem("kaggold_member") || "{}") : null;
+  const memberToken = localStorage.getItem("memberToken");
+  const isLoggedIn = memberToken !== null;
 
   const { data: memberInfo, refetch: refetchMember } = useQuery<MemberInfo>({
     queryKey: ["member-info"],
     queryFn: async () => {
       const res = await fetch("/api/members/me", {
         headers: {
-          Authorization: `Bearer ${memberData?.token}`,
+          Authorization: `Bearer ${memberToken}`,
         },
       });
       const data = await res.json();
@@ -75,7 +75,7 @@ export default function Profile() {
     queryFn: async () => {
       const res = await fetch("/api/members/deposit-requests", {
         headers: {
-          Authorization: `Bearer ${memberData?.token}`,
+          Authorization: `Bearer ${memberToken}`,
         },
       });
       const data = await res.json();
@@ -90,7 +90,7 @@ export default function Profile() {
     queryFn: async () => {
       const res = await fetch("/api/members/point-transactions", {
         headers: {
-          Authorization: `Bearer ${memberData?.token}`,
+          Authorization: `Bearer ${memberToken}`,
         },
       });
       const data = await res.json();
@@ -106,7 +106,7 @@ export default function Profile() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${memberData?.token}`,
+          Authorization: `Bearer ${memberToken}`,
         },
         body: JSON.stringify(request),
       });
@@ -128,7 +128,10 @@ export default function Profile() {
   });
 
   const handleLogout = () => {
-    localStorage.removeItem("kaggold_member");
+    localStorage.removeItem("memberToken");
+    localStorage.removeItem("memberName");
+    localStorage.removeItem("memberEmail");
+    localStorage.removeItem("memberId");
     window.location.reload();
   };
 
@@ -227,9 +230,9 @@ export default function Profile() {
                   {isLoggedIn ? (
                     <>
                       <h1 className="text-lg md:text-2xl font-bold truncate" data-testid="text-profile-name">
-                        {memberInfo?.name || memberData?.name || "회원"}님
+                        {memberInfo?.name || localStorage.getItem("memberName") || "회원"}님
                       </h1>
-                      <p className="text-white/80 text-xs md:text-sm mt-1 truncate">{memberInfo?.email || memberData?.email}</p>
+                      <p className="text-white/80 text-xs md:text-sm mt-1 truncate">{memberInfo?.email || localStorage.getItem("memberEmail")}</p>
                     </>
                   ) : (
                     <>
