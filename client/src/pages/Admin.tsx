@@ -2168,12 +2168,23 @@ export default function Admin() {
                               className="w-4 h-4"
                             />
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            <Button size="icon" variant="ghost" onClick={() => handleUpdateReview(review.id)} className="h-8 w-8 text-green-600">
-                              <Check className="w-4 h-4" />
+                          <td className="px-4 py-3 text-right flex gap-2 justify-end">
+                            <Button 
+                              onClick={() => handleUpdateReview(review.id)} 
+                              className="h-8 bg-green-600 hover:bg-green-700 text-white px-3"
+                              data-testid="button-save-review-edit"
+                            >
+                              <Check className="w-4 h-4 mr-1" />
+                              저장
                             </Button>
-                            <Button size="icon" variant="ghost" onClick={() => setEditingReviewId(null)} className="h-8 w-8">
-                              <X className="w-4 h-4" />
+                            <Button 
+                              variant="outline" 
+                              onClick={() => setEditingReviewId(null)} 
+                              className="h-8 px-3"
+                              data-testid="button-cancel-review-edit"
+                            >
+                              <X className="w-4 h-4 mr-1" />
+                              취소
                             </Button>
                           </td>
                         </>
@@ -2409,12 +2420,23 @@ export default function Admin() {
                               </label>
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-right">
-                            <Button size="icon" variant="ghost" onClick={() => handleUpdateNotice(notice.id)} className="h-8 w-8 text-green-600">
-                              <Check className="w-4 h-4" />
+                          <td className="px-4 py-3 text-right flex gap-2 justify-end">
+                            <Button 
+                              onClick={() => handleUpdateNotice(notice.id)} 
+                              className="h-8 bg-green-600 hover:bg-green-700 text-white px-3"
+                              data-testid="button-save-notice-edit"
+                            >
+                              <Check className="w-4 h-4 mr-1" />
+                              저장
                             </Button>
-                            <Button size="icon" variant="ghost" onClick={() => setEditingNoticeId(null)} className="h-8 w-8">
-                              <X className="w-4 h-4" />
+                            <Button 
+                              variant="outline" 
+                              onClick={() => setEditingNoticeId(null)} 
+                              className="h-8 px-3"
+                              data-testid="button-cancel-notice-edit"
+                            >
+                              <X className="w-4 h-4 mr-1" />
+                              취소
                             </Button>
                           </td>
                         </>
