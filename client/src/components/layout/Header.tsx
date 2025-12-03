@@ -30,13 +30,12 @@ export function Header() {
 
   useEffect(() => {
     const fetchPointBalance = async () => {
-      const memberData = localStorage.getItem("kaggold_member");
-      if (!memberData) return;
+      const token = localStorage.getItem("memberToken");
+      if (!token) return;
       
       try {
-        const parsed = JSON.parse(memberData);
         const res = await fetch("/api/members/me", {
-          headers: { Authorization: `Bearer ${parsed.token}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
         if (data.success) {
@@ -49,7 +48,7 @@ export function Header() {
     
     if (memberName) {
       fetchPointBalance();
-      const interval = setInterval(fetchPointBalance, 30000);
+      const interval = setInterval(fetchPointBalance, 5000);
       return () => clearInterval(interval);
     }
   }, [memberName]);

@@ -80,10 +80,10 @@ export default function Deposit() {
   });
 
   const { data: pointBalance = 0 } = useQuery<number>({
-    queryKey: ["/api/members/point-balance"],
+    queryKey: ["/api/members/me", "pointBalance"],
     queryFn: async () => {
       try {
-        const res = await fetch("/api/members/point-balance", {
+        const res = await fetch("/api/members/me", {
           headers: {
             "Authorization": `Bearer ${memberToken}`,
           },
@@ -96,6 +96,7 @@ export default function Deposit() {
       }
     },
     enabled: !!memberToken,
+    refetchInterval: 5000,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
