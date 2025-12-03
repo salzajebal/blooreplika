@@ -707,8 +707,12 @@ export default function Admin() {
         toast({ title: "성공", description: "후기가 수정되었습니다." });
         setEditingReviewId(null);
         fetchReviews();
+      } else {
+        console.error("Review update error:", data.error);
+        toast({ title: "오류", description: formatErrorMessage(data.error) || "후기 수정에 실패했습니다.", variant: "destructive" });
       }
     } catch (error) {
+      console.error("Review update error:", error);
       toast({ title: "오류", description: "후기 수정에 실패했습니다.", variant: "destructive" });
     }
   };
@@ -721,8 +725,12 @@ export default function Admin() {
       if (data.success) {
         toast({ title: "성공", description: "후기가 삭제되었습니다." });
         fetchReviews();
+      } else {
+        console.error("Review delete error:", data.error);
+        toast({ title: "오류", description: formatErrorMessage(data.error) || "후기 삭제에 실패했습니다.", variant: "destructive" });
       }
     } catch (error) {
+      console.error("Review delete error:", error);
       toast({ title: "오류", description: "후기 삭제에 실패했습니다.", variant: "destructive" });
     }
   };
