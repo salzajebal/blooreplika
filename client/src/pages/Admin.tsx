@@ -9,7 +9,7 @@ import {
   LogOut, Users, Package, BarChart3, Eye, EyeOff,
   Lock, User, Mail, Phone, CheckCircle, XCircle,
   Star, FileText, Bell, Calendar,
-  Wallet, Clock, Snowflake, Unlock, Settings, Link2
+  Wallet, Clock, Snowflake, Unlock, Settings, Link2, Upload
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, Review, Notice } from "@shared/schema";
@@ -103,6 +103,7 @@ export default function Admin() {
   });
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [showAddReviewForm, setShowAddReviewForm] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const [notices, setNotices] = useState<Notice[]>([]);
   const [noticeFormData, setNoticeFormData] = useState({
@@ -664,6 +665,51 @@ export default function Admin() {
       return error.message;
     }
     return JSON.stringify(error);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!authToken) {
+      toast({ title: "오류", description: "로그인이 필요합니다.", variant: "destructive" });
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const res = await fetch("/api/admin/upload/review-image", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: formData,
+      });
+      
+      if (res.status === 401) {
+        toast({ title: "세션 만료", description: "다시 로그인해주세요.", variant: "destructive" });
+        setAuthToken(null);
+        setIsAuthenticated(false);
+        localStorage.removeItem("adminToken");
+        return;
+      }
+      
+      const data = await res.json();
+      if (data.success) {
+        setReviewFormData({ ...reviewFormData, imageUrl: data.data.imageUrl });
+        toast({ title: "성공", description: "이미지가 업로드되었습니다." });
+      } else {
+        toast({ title: "오류", description: data.error || "이미지 업로드에 실패했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      console.error("Image upload error:", error);
+      toast({ title: "오류", description: "이미지 업로드에 실패했습니다.", variant: "destructive" });
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleCreateReview = async () => {
@@ -1979,14 +2025,41 @@ export default function Admin() {
                       data-testid="input-review-content"
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">이미지 URL (선택)</label>
-                    <Input
-                      value={reviewFormData.imageUrl}
-                      onChange={(e) => setReviewFormData({ ...reviewFormData, imageUrl: e.target.value })}
-                      placeholder="https://..."
-                      data-testid="input-review-image"
-                    />
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">이미지</label>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center justify-center px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
+                          <Upload className="w-4 h-4 mr-2" />
+                          <span className="text-sm">{uploadingImage ? "업로드 중..." : "파일 선택"}</span>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/gif,image/webp"
+                            onChange={handleImageUpload}
+                            disabled={uploadingImage}
+                            className="hidden"
+                            data-testid="input-review-image-file"
+                          />
+                        </label>
+                        <span className="text-xs text-gray-500">또는 URL 직접 입력</span>
+                      </div>
+                      <Input
+                        value={reviewFormData.imageUrl}
+                        onChange={(e) => setReviewFormData({ ...reviewFormData, imageUrl: e.target.value })}
+                        placeholder="https://... 또는 파일 업로드"
+                        data-testid="input-review-image"
+                      />
+                      {reviewFormData.imageUrl && (
+                        <div className="mt-2">
+                          <img 
+                            src={reviewFormData.imageUrl} 
+                            alt="미리보기" 
+                            className="max-w-[200px] max-h-[150px] object-cover rounded border"
+                            onError={(e) => (e.currentTarget.style.display = 'none')}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <label className="flex items-center gap-2">

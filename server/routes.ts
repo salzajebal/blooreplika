@@ -4,6 +4,40 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertProductSchema, insertCategorySchema, insertMemberSchema, insertChatConversationSchema, insertChatMessageSchema, insertFaqSchema, insertReviewSchema, insertNoticeSchema } from "@shared/schema";
 import { z } from "zod";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+const uploadsDir = path.join(process.cwd(), "uploads", "reviews");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const reviewImageStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (_req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `review-${uniqueSuffix}${ext}`);
+  },
+});
+
+const reviewImageUpload = multer({
+  storage: reviewImageStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (_req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      cb(null, true);
+    } else {
+      cb(new Error("이미지 파일만 업로드 가능합니다. (jpg, png, gif, webp)"));
+    }
+  },
+});
 
 const chatClients = new Map<string, Set<WebSocket>>();
 
@@ -105,6 +139,10 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+  
+  // ==================== STATIC FILE SERVING FOR UPLOADS ====================
+  const express = await import("express");
+  app.use("/uploads", express.default.static(path.join(process.cwd(), "uploads")));
   
   // ==================== WEBSOCKET SETUP ====================
   const wss = new WebSocketServer({ server: httpServer, path: "/ws/chat" });
@@ -1310,6 +1348,29 @@ export async function registerRoutes(
       console.error("Error deleting FAQ:", error);
       res.status(500).json({ success: false, error: "FAQ 삭제에 실패했습니다." });
     }
+  });
+
+  // ==================== FILE UPLOAD API ====================
+  
+  // Upload review image (admin only)
+  app.post("/api/admin/upload/review-image", requireAdminAuth, (req: Request, res: Response) => {
+    reviewImageUpload.single("image")(req, res, (err: any) => {
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({ success: false, error: "파일 크기는 5MB 이하여야 합니다." });
+        }
+        return res.status(400).json({ success: false, error: err.message });
+      } else if (err) {
+        return res.status(400).json({ success: false, error: err.message });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: "이미지 파일을 선택해주세요." });
+      }
+      
+      const imageUrl = `/uploads/reviews/${req.file.filename}`;
+      res.json({ success: true, data: { imageUrl } });
+    });
   });
 
   // ==================== REVIEWS API ====================
