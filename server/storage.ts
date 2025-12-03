@@ -8,6 +8,7 @@ import {
   type ChatMessage, type InsertChatMessage, chatMessages,
   type Faq, type InsertFaq, faqs,
   type Review, type InsertReview, reviews,
+  type ReviewImage, type InsertReviewImage, reviewImages,
   type Notice, type InsertNotice, notices,
   type DepositRequest, type InsertDepositRequest, depositRequests,
   type PointTransaction, type InsertPointTransaction, pointTransactions,
@@ -72,6 +73,11 @@ export interface IStorage {
   createReview(review: InsertReview): Promise<Review>;
   updateReview(id: string, review: Partial<InsertReview>): Promise<Review | undefined>;
   deleteReview(id: string): Promise<boolean>;
+  
+  // Review Images
+  getReviewImage(id: string): Promise<ReviewImage | undefined>;
+  createReviewImage(image: InsertReviewImage): Promise<ReviewImage>;
+  deleteReviewImage(id: string): Promise<boolean>;
   
   // Notices
   getAllNotices(): Promise<Notice[]>;
@@ -347,6 +353,22 @@ export class DatabaseStorage implements IStorage {
 
   async deleteReview(id: string): Promise<boolean> {
     const result = await db.delete(reviews).where(eq(reviews.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Review Images
+  async getReviewImage(id: string): Promise<ReviewImage | undefined> {
+    const [image] = await db.select().from(reviewImages).where(eq(reviewImages.id, id));
+    return image;
+  }
+
+  async createReviewImage(insertImage: InsertReviewImage): Promise<ReviewImage> {
+    const [image] = await db.insert(reviewImages).values(insertImage).returning();
+    return image;
+  }
+
+  async deleteReviewImage(id: string): Promise<boolean> {
+    const result = await db.delete(reviewImages).where(eq(reviewImages.id, id)).returning();
     return result.length > 0;
   }
 
