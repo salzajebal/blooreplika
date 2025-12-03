@@ -74,7 +74,8 @@ export function Header() {
     { name: '돌선물', path: '/products/baby_ring' },
     { name: '순금기념품', path: '/products/jewelry' },
     { name: '순금주얼리', path: '/products/pure_jewelry' },
-    { name: '후기', path: '/reviews', hasIcon: true }
+    { name: '후기', path: '/reviews', hasIcon: true },
+    { name: '공지사항', path: '/notices', hasIcon: true }
   ];
 
   return (
