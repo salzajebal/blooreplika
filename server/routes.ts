@@ -1429,7 +1429,24 @@ export async function registerRoutes(
   // Update review (admin only)
   app.put("/api/reviews/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      const review = await storage.updateReview(req.params.id, req.body);
+      console.log("Updating review:", req.params.id, "with data:", JSON.stringify(req.body));
+      
+      // Validate and transform the request body
+      const updateData: any = {};
+      if (req.body.authorName !== undefined) updateData.authorName = req.body.authorName;
+      if (req.body.productName !== undefined) updateData.productName = req.body.productName;
+      if (req.body.rating !== undefined) updateData.rating = req.body.rating;
+      if (req.body.title !== undefined) updateData.title = req.body.title;
+      if (req.body.content !== undefined) updateData.content = req.body.content;
+      if (req.body.imageUrl !== undefined) updateData.imageUrl = req.body.imageUrl;
+      if (req.body.isVisible !== undefined) updateData.isVisible = req.body.isVisible;
+      if (req.body.displayDate !== undefined) {
+        updateData.displayDate = new Date(req.body.displayDate);
+      }
+      
+      console.log("Processed update data:", JSON.stringify(updateData));
+      
+      const review = await storage.updateReview(req.params.id, updateData);
       if (!review) {
         return res.status(404).json({ success: false, error: "후기를 찾을 수 없습니다." });
       }
