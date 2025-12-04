@@ -20,6 +20,7 @@ import Notices from "@/pages/Notices";
 import Cart from "@/pages/Cart";
 import Profile from "@/pages/Profile";
 import Deposit from "@/pages/Deposit";
+import Withdrawal from "@/pages/Withdrawal";
 
 function Router() {
   return (
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/cart" component={Cart} />
       <Route path="/profile" component={Profile} />
       <Route path="/deposit" component={Deposit} />
+      <Route path="/withdrawal" component={Withdrawal} />
       <Route component={NotFound} />
     </Switch>
   );

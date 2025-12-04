@@ -575,8 +575,10 @@ export class DatabaseStorage implements IStorage {
     const currentBalance = member.pointBalance || 0;
     if (currentBalance < request.amount) return undefined;
 
-    const newBalance = currentBalance - request.amount;
-    await this.updateMemberPoints(request.memberId, newBalance);
+    const updatedMember = await this.updateMemberPoints(request.memberId, -request.amount);
+    if (!updatedMember) return undefined;
+
+    const newBalance = updatedMember.pointBalance || 0;
 
     await this.createPointTransaction({
       memberId: request.memberId,
