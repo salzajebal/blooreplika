@@ -25,27 +25,48 @@ const conversationClients: Map<string, Set<WebSocket>> = new Map();
 const adminClients: Set<WebSocket> = new Set();
 
 const upgradedSockets = new WeakSet<any>();
+let isUpgradeHandlerRegistered = false;
 
 export function setupChatWebSocket(server: Server) {
   const wss = new WebSocketServer({ noServer: true });
 
-  server.on("upgrade", (request, socket, head) => {
-    const { pathname } = new URL(request.url || "", `http://${request.headers.host}`);
+  if (!isUpgradeHandlerRegistered) {
+    isUpgradeHandlerRegistered = true;
     
-    if (pathname === "/ws/chat") {
-      if (upgradedSockets.has(socket)) {
-        log("Duplicate upgrade attempt blocked", "chat");
-        socket.destroy();
-        return;
+    server.on("upgrade", (request, socket, head) => {
+      try {
+        const url = request.url || "";
+        let pathname = url;
+        
+        try {
+          const parsedUrl = new URL(url, `http://${request.headers.host || 'localhost'}`);
+          pathname = parsedUrl.pathname;
+        } catch {
+          pathname = url.split('?')[0];
+        }
+        
+        if (pathname === "/ws/chat") {
+          if (upgradedSockets.has(socket)) {
+            log("Duplicate upgrade attempt blocked", "chat");
+            try { socket.destroy(); } catch {}
+            return;
+          }
+          
+          upgradedSockets.add(socket);
+          
+          wss.handleUpgrade(request, socket, head, (ws) => {
+            wss.emit("connection", ws, request);
+          });
+        } else {
+          // Not our WebSocket path, destroy the socket to prevent hanging
+          try { socket.destroy(); } catch {}
+        }
+      } catch (error) {
+        log(`WebSocket upgrade error: ${error}`, "chat");
+        try { socket.destroy(); } catch {}
       }
-      
-      upgradedSockets.add(socket);
-      
-      wss.handleUpgrade(request, socket, head, (ws) => {
-        wss.emit("connection", ws, request);
-      });
-    }
-  });
+    });
+  }
 
   wss.on("connection", (ws: WebSocket) => {
     log("New WebSocket connection", "chat");
