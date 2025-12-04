@@ -78,22 +78,24 @@ export function HomePopup() {
           </div>
 
           <h2 className="text-2xl font-bold text-gray-900 mb-3 leading-tight">
-            안내 말씀드립니다
+            상담 안내
           </h2>
           
           <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-5 mb-6 border border-amber-100">
-            <p className="text-gray-700 leading-relaxed">
-              <span className="font-semibold text-amber-700">인력 부족</span>으로 인해<br/>
-              <span className="text-lg font-bold text-gray-900">2주간 실시간 채팅 상담</span>만<br/>
-              가능한 점 양해 부탁드립니다.
+            <p className="text-gray-700 leading-relaxed text-[15px]">
+              <span className="font-semibold text-amber-700">카카오톡 상담</span> 이용 중<br/>
+              간혹 <span className="font-bold text-gray-900">오류가 발생</span>할 수 있습니다.<br/><br/>
+              이 경우, 화면 <span className="font-bold text-amber-600">우측 하단</span>에 있는<br/>
+              <span className="text-lg font-bold text-gray-900">실시간 채팅 상담</span>을<br/>
+              이용해 주시기 바랍니다.
             </p>
           </div>
 
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="flex items-center gap-2 bg-yellow-400 text-gray-900 px-4 py-2.5 rounded-xl font-semibold shadow-md">
-              <KakaoIcon className="w-5 h-5" />
-              <span>카카오톡 문의</span>
+          <div className="flex items-center justify-center gap-2 bg-gray-100 rounded-xl px-4 py-3 mb-4">
+            <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center">
+              <MessageCircle className="w-4 h-4 text-black" />
             </div>
+            <span className="text-sm text-gray-600">우측 하단 채팅 버튼을 클릭하세요</span>
           </div>
 
           <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-4">
