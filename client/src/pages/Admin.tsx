@@ -9,10 +9,12 @@ import {
   LogOut, Users, Package, BarChart3, Eye, EyeOff,
   Lock, User, Mail, Phone, CheckCircle, XCircle,
   Star, FileText, Bell, Calendar,
-  Wallet, Clock, Snowflake, Unlock, Settings, Link2, Upload
+  Wallet, Clock, Snowflake, Unlock, Settings, Link2, Upload,
+  MessageCircle, Send, Circle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Product, Category, Member, Review, Notice } from "@shared/schema";
+import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage } from "@shared/schema";
+import { useRef, useCallback } from "react";
 
 const CATEGORY_OPTIONS = [
   { id: "gold_bar", name: "골드바" },
@@ -53,7 +55,7 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "members" | "deposits" | "reviews" | "notices" | "settings">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "members" | "deposits" | "reviews" | "notices" | "chat" | "settings">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   
   const [products, setProducts] = useState<Product[]>([]);
@@ -123,6 +125,15 @@ export default function Admin() {
   const [adminNote, setAdminNote] = useState("");
   const [adjustAmount, setAdjustAmount] = useState("");
   const [freezeReason, setFreezeReason] = useState("");
+
+  const [chatConversations, setChatConversations] = useState<ChatConversation[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [selectedConversation, setSelectedConversation] = useState<ChatConversation | null>(null);
+  const [newMessage, setNewMessage] = useState("");
+  const [chatSocket, setChatSocket] = useState<WebSocket | null>(null);
+  const [isChatConnected, setIsChatConnected] = useState(false);
+  const chatMessagesEndRef = useRef<HTMLDivElement>(null);
+  const chatSocketRef = useRef<WebSocket | null>(null);
   const [selectedMemberForAction, setSelectedMemberForAction] = useState<string | null>(null);
   const [actionType, setActionType] = useState<"adjust" | "freeze" | null>(null);
   
@@ -492,6 +503,156 @@ export default function Admin() {
       fetchDepositRequests();
     }
   }, [depositFilter, activeTab]);
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === "chat") {
+      connectChatWebSocket();
+      fetchChatConversations();
+    }
+    
+    return () => {
+      if (chatSocketRef.current) {
+        chatSocketRef.current.close();
+        chatSocketRef.current = null;
+        setChatSocket(null);
+        setIsChatConnected(false);
+      }
+    };
+  }, [isAuthenticated, activeTab]);
+
+  useEffect(() => {
+    if (chatMessagesEndRef.current) {
+      chatMessagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatMessages]);
+
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
+
+  const connectChatWebSocket = useCallback(() => {
+    if (chatSocketRef.current) {
+      chatSocketRef.current.close();
+      chatSocketRef.current = null;
+    }
+    
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws/chat`);
+    chatSocketRef.current = ws;
+
+    ws.onopen = () => {
+      setIsChatConnected(true);
+      ws.send(JSON.stringify({
+        type: "join",
+        senderType: "admin",
+        senderName: "관리자",
+      }));
+    };
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      
+      switch (data.type) {
+        case "conversations":
+          setChatConversations(data.data);
+          break;
+        case "history":
+          setChatMessages(data.data);
+          break;
+        case "message":
+          setChatMessages(prev => [...prev, data.data]);
+          fetchChatConversations();
+          break;
+        case "new_message":
+          fetchChatConversations();
+          break;
+        case "read":
+          break;
+      }
+    };
+
+    ws.onclose = () => {
+      setIsChatConnected(false);
+      if (activeTabRef.current === "chat" && chatSocketRef.current === ws) {
+        setTimeout(() => {
+          if (activeTabRef.current === "chat") {
+            connectChatWebSocket();
+          }
+        }, 3000);
+      }
+    };
+
+    ws.onerror = () => {
+      setIsChatConnected(false);
+    };
+
+    setChatSocket(ws);
+  }, []);
+
+  const fetchChatConversations = async () => {
+    try {
+      const res = await fetchWithAuth("/api/chat/conversations");
+      const data = await res.json();
+      if (data.success) {
+        setChatConversations(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+    }
+  };
+
+  const selectConversation = (conversation: ChatConversation) => {
+    setSelectedConversation(conversation);
+    setChatMessages([]);
+    
+    if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+      chatSocket.send(JSON.stringify({
+        type: "join",
+        conversationId: conversation.id,
+        senderType: "admin",
+        senderName: "관리자",
+      }));
+      
+      chatSocket.send(JSON.stringify({
+        type: "read",
+        conversationId: conversation.id,
+      }));
+    }
+  };
+
+  const sendChatMessage = () => {
+    if (!newMessage.trim() || !selectedConversation || !chatSocket) return;
+
+    if (chatSocket.readyState === WebSocket.OPEN) {
+      chatSocket.send(JSON.stringify({
+        type: "message",
+        conversationId: selectedConversation.id,
+        senderType: "admin",
+        senderName: "관리자",
+        message: newMessage.trim(),
+      }));
+      setNewMessage("");
+    }
+  };
+
+  const closeConversation = async (conversationId: string) => {
+    try {
+      const res = await fetchWithAuth(`/api/chat/conversations/${conversationId}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: "closed" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: "상담이 종료되었습니다." });
+        fetchChatConversations();
+        if (selectedConversation?.id === conversationId) {
+          setSelectedConversation(null);
+          setChatMessages([]);
+        }
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "상담 종료에 실패했습니다.", variant: "destructive" });
+    }
+  };
 
   const handleSeedData = async () => {
     try {
@@ -1089,6 +1250,20 @@ export default function Admin() {
           >
             <Bell className="w-4 h-4 md:mr-2" />
             <span className="hidden md:inline">공지 관리</span>
+          </Button>
+          <Button
+            data-testid="tab-chat"
+            variant={activeTab === "chat" ? "default" : "outline"}
+            onClick={() => setActiveTab("chat")}
+            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "chat" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
+          >
+            <MessageCircle className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">실시간 채팅</span>
+            {chatConversations.filter(c => c.status === "open").length > 0 && (
+              <span className="ml-1 md:ml-2 bg-green-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
+                {chatConversations.filter(c => c.status === "open").length}
+              </span>
+            )}
           </Button>
           <Button
             data-testid="tab-settings"
@@ -2523,6 +2698,167 @@ export default function Admin() {
                   <p>등록된 공지사항이 없습니다</p>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "chat" && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-4 md:p-6 border-b border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold flex items-center gap-2">
+                      <MessageCircle className="w-5 h-5 text-yellow-600" />
+                      실시간 1:1 상담
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">고객과 실시간으로 상담하세요.</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Circle className={`w-3 h-3 ${isChatConnected ? "text-green-500 fill-green-500" : "text-red-500 fill-red-500"}`} />
+                    <span className="text-sm text-gray-600">
+                      {isChatConnected ? "연결됨" : "연결 끊김"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex flex-col md:flex-row" style={{ height: "calc(100vh - 350px)", minHeight: "500px" }}>
+                <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-200 overflow-y-auto">
+                  <div className="p-3 bg-gray-50 border-b border-gray-200">
+                    <h4 className="font-semibold text-sm text-gray-700">상담 목록</h4>
+                  </div>
+                  {chatConversations.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <MessageCircle className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                      <p className="text-sm">아직 상담 요청이 없습니다</p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-gray-100">
+                      {chatConversations.map((conv) => (
+                        <div
+                          key={conv.id}
+                          data-testid={`chat-conversation-${conv.id}`}
+                          onClick={() => selectConversation(conv)}
+                          className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
+                            selectedConversation?.id === conv.id ? "bg-yellow-50 border-l-4 border-yellow-500" : ""
+                          }`}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-gray-900 truncate">
+                                  {conv.guestName || conv.memberId || "익명"}
+                                </span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                  conv.status === "open" 
+                                    ? "bg-green-100 text-green-700" 
+                                    : conv.status === "pending"
+                                    ? "bg-yellow-100 text-yellow-700"
+                                    : "bg-gray-100 text-gray-600"
+                                }`}>
+                                  {conv.status === "open" ? "진행중" : conv.status === "pending" ? "대기중" : "종료"}
+                                </span>
+                              </div>
+                              <p className="text-sm text-gray-600 truncate mt-1">{conv.subject}</p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                {conv.updatedAt ? new Date(conv.updatedAt).toLocaleString("ko-KR") : ""}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex-1 flex flex-col">
+                  {selectedConversation ? (
+                    <>
+                      <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                        <div>
+                          <h4 className="font-semibold text-gray-900">
+                            {selectedConversation.guestName || selectedConversation.memberId || "익명"}
+                          </h4>
+                          <p className="text-sm text-gray-600">{selectedConversation.subject}</p>
+                        </div>
+                        {selectedConversation.status !== "closed" && (
+                          <Button
+                            data-testid="button-close-conversation"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => closeConversation(selectedConversation.id)}
+                            className="text-red-600 border-red-200 hover:bg-red-50"
+                          >
+                            <X className="w-4 h-4 mr-1" />
+                            상담 종료
+                          </Button>
+                        )}
+                      </div>
+                      
+                      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-100">
+                        {chatMessages.map((msg) => (
+                          <div
+                            key={msg.id}
+                            data-testid={`chat-message-${msg.id}`}
+                            className={`flex ${msg.senderType === "admin" ? "justify-end" : "justify-start"}`}
+                          >
+                            <div className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                              msg.senderType === "admin" 
+                                ? "bg-yellow-500 text-black" 
+                                : "bg-white text-gray-900 border border-gray-200"
+                            }`}>
+                              <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                              <p className={`text-xs mt-1 ${
+                                msg.senderType === "admin" ? "text-yellow-900" : "text-gray-400"
+                              }`}>
+                                {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString("ko-KR") : ""}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                        <div ref={chatMessagesEndRef} />
+                      </div>
+                      
+                      {selectedConversation.status !== "closed" && (
+                        <div className="p-4 border-t border-gray-200 bg-white">
+                          <div className="flex gap-2">
+                            <Input
+                              data-testid="input-chat-message"
+                              value={newMessage}
+                              onChange={(e) => setNewMessage(e.target.value)}
+                              placeholder="메시지를 입력하세요..."
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  sendChatMessage();
+                                }
+                              }}
+                              className="flex-1"
+                            />
+                            <Button
+                              data-testid="button-send-message"
+                              onClick={sendChatMessage}
+                              disabled={!newMessage.trim() || !isChatConnected}
+                              className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                            >
+                              <Send className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex-1 flex items-center justify-center bg-gray-50">
+                      <div className="text-center text-gray-500">
+                        <MessageCircle className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                        <p className="font-medium">상담을 선택하세요</p>
+                        <p className="text-sm mt-1">왼쪽 목록에서 상담을 클릭하여 대화를 시작하세요</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}

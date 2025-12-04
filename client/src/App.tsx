@@ -1,10 +1,11 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { ChatWidget } from "@/components/layout/ChatWidget";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import ProductList from "@/pages/ProductList";
@@ -42,6 +43,14 @@ function Router() {
   );
 }
 
+function ChatWidgetWrapper() {
+  const [location] = useLocation();
+  if (location.startsWith("/admin")) {
+    return null;
+  }
+  return <ChatWidget />;
+}
+
 function App() {
   return (
     <ErrorBoundary>
@@ -50,6 +59,7 @@ function App() {
           <TooltipProvider>
             <Toaster />
             <Router />
+            <ChatWidgetWrapper />
           </TooltipProvider>
         </WishlistProvider>
       </QueryClientProvider>
