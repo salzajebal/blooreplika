@@ -46,6 +46,21 @@ interface AdminDepositRequest {
   processedAt?: string;
 }
 
+interface AdminWithdrawalRequest {
+  id: string;
+  memberId: string;
+  memberName: string;
+  memberEmail: string;
+  amount: number;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  status: "pending" | "approved" | "rejected";
+  adminNote?: string;
+  requestedAt: string;
+  processedAt?: string;
+}
+
 export default function Admin() {
   const { toast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -55,7 +70,7 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "members" | "deposits" | "reviews" | "notices" | "chat" | "settings">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "members" | "deposits" | "withdrawals" | "reviews" | "notices" | "chat" | "settings">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   
   const [products, setProducts] = useState<Product[]>([]);
@@ -123,6 +138,10 @@ export default function Admin() {
   const [depositRequests, setDepositRequests] = useState<AdminDepositRequest[]>([]);
   const [depositFilter, setDepositFilter] = useState<"all" | "pending">("pending");
   const [adminNote, setAdminNote] = useState("");
+
+  const [withdrawalRequests, setWithdrawalRequests] = useState<AdminWithdrawalRequest[]>([]);
+  const [withdrawalFilter, setWithdrawalFilter] = useState<"all" | "pending">("pending");
+  const [withdrawalAdminNote, setWithdrawalAdminNote] = useState("");
   const [adjustAmount, setAdjustAmount] = useState("");
   const [freezeReason, setFreezeReason] = useState("");
 
@@ -321,6 +340,59 @@ export default function Admin() {
     }
   };
 
+  const fetchWithdrawalRequests = async () => {
+    try {
+      const url = withdrawalFilter === "pending" 
+        ? "/api/admin/withdrawal-requests?status=pending" 
+        : "/api/admin/withdrawal-requests";
+      const res = await fetchWithAuth(url);
+      const data = await res.json();
+      if (data.success) {
+        setWithdrawalRequests(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching withdrawal requests:", error);
+    }
+  };
+
+  const handleApproveWithdrawal = async (id: string) => {
+    try {
+      const res = await fetchWithAuth(`/api/admin/withdrawal-requests/${id}/approve`, {
+        method: "POST",
+        body: JSON.stringify({ adminNote: withdrawalAdminNote }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "승인 완료", description: "출금신청이 승인되었습니다." });
+        fetchWithdrawalRequests();
+        setWithdrawalAdminNote("");
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "처리 중 오류가 발생했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleRejectWithdrawal = async (id: string) => {
+    try {
+      const res = await fetchWithAuth(`/api/admin/withdrawal-requests/${id}/reject`, {
+        method: "POST",
+        body: JSON.stringify({ adminNote: withdrawalAdminNote }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "거부 완료", description: "출금신청이 거부되었습니다." });
+        fetchWithdrawalRequests();
+        setWithdrawalAdminNote("");
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "처리 중 오류가 발생했습니다.", variant: "destructive" });
+    }
+  };
+
   const handleAdjustPoints = async (memberId: string) => {
     const amount = parseInt(adjustAmount);
     if (isNaN(amount) || amount === 0) {
@@ -421,6 +493,7 @@ export default function Admin() {
       fetchProducts();
       fetchMembers();
       fetchDepositRequests();
+      fetchWithdrawalRequests();
       fetchReviews();
       fetchNotices();
       fetchSiteSettings();
@@ -503,6 +576,12 @@ export default function Admin() {
       fetchDepositRequests();
     }
   }, [depositFilter, activeTab]);
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === "withdrawals") {
+      fetchWithdrawalRequests();
+    }
+  }, [withdrawalFilter, activeTab]);
 
   useEffect(() => {
     if (isAuthenticated && activeTab === "chat") {
@@ -1230,6 +1309,20 @@ export default function Admin() {
             {depositRequests.filter(d => d.status === "pending").length > 0 && (
               <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
                 {depositRequests.filter(d => d.status === "pending").length}
+              </span>
+            )}
+          </Button>
+          <Button
+            data-testid="tab-withdrawals"
+            variant={activeTab === "withdrawals" ? "default" : "outline"}
+            onClick={() => setActiveTab("withdrawals")}
+            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "withdrawals" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
+          >
+            <Wallet className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">출금관리</span>
+            {withdrawalRequests.filter(w => w.status === "pending").length > 0 && (
+              <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
+                {withdrawalRequests.filter(w => w.status === "pending").length}
               </span>
             )}
           </Button>
@@ -2153,6 +2246,134 @@ export default function Admin() {
                               size="sm"
                               variant="destructive"
                               onClick={() => handleRejectDeposit(request.id)}
+                            >
+                              <XCircle className="w-4 h-4 mr-1" />
+                              거부
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "withdrawals" && (
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">출금 신청 관리</h2>
+                <p className="text-gray-500 text-sm">
+                  {withdrawalFilter === "pending" 
+                    ? `대기 중인 신청 ${withdrawalRequests.length}건` 
+                    : `전체 ${withdrawalRequests.length}건`}
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <select
+                  className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
+                  value={withdrawalFilter}
+                  onChange={(e) => setWithdrawalFilter(e.target.value as "all" | "pending")}
+                >
+                  <option value="pending">대기중만 보기</option>
+                  <option value="all">전체 보기</option>
+                </select>
+                <Button variant="outline" onClick={fetchWithdrawalRequests}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  새로고침
+                </Button>
+              </div>
+            </div>
+
+            {withdrawalRequests.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                {withdrawalFilter === "pending" ? "대기 중인 출금 신청이 없습니다." : "출금 신청 내역이 없습니다."}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {withdrawalRequests.map((request) => (
+                  <div
+                    key={request.id}
+                    className={`p-4 border rounded-lg ${
+                      request.status === "pending"
+                        ? "border-yellow-300 bg-yellow-50"
+                        : request.status === "approved"
+                        ? "border-green-200 bg-green-50"
+                        : "border-red-200 bg-red-50"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="text-2xl font-bold text-gray-900">
+                            {request.amount.toLocaleString()}원
+                          </span>
+                          {request.status === "pending" ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                              <Clock className="w-3 h-3" />
+                              대기중
+                            </span>
+                          ) : request.status === "approved" ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                              <CheckCircle className="w-3 h-3" />
+                              승인됨
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                              <XCircle className="w-3 h-3" />
+                              거부됨
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p>
+                            <span className="font-medium">회원:</span> {request.memberName} ({request.memberEmail})
+                          </p>
+                          <p>
+                            <span className="font-medium">입금계좌:</span> {request.bankName} {request.accountNumber} (예금주: {request.accountHolder})
+                          </p>
+                          <p>
+                            <span className="font-medium">신청일:</span>{" "}
+                            {new Date(request.requestedAt).toLocaleString("ko-KR")}
+                          </p>
+                          {request.processedAt && (
+                            <p>
+                              <span className="font-medium">처리일:</span>{" "}
+                              {new Date(request.processedAt).toLocaleString("ko-KR")}
+                            </p>
+                          )}
+                          {request.adminNote && (
+                            <p className="text-amber-600">
+                              <span className="font-medium">관리자 메모:</span> {request.adminNote}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {request.status === "pending" && (
+                        <div className="flex flex-col gap-2 ml-4">
+                          <Input
+                            placeholder="관리자 메모 (선택)"
+                            className="w-48"
+                            value={withdrawalAdminNote}
+                            onChange={(e) => setWithdrawalAdminNote(e.target.value)}
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              className="bg-green-500 hover:bg-green-600"
+                              onClick={() => handleApproveWithdrawal(request.id)}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              승인
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleRejectWithdrawal(request.id)}
                             >
                               <XCircle className="w-4 h-4 mr-1" />
                               거부
