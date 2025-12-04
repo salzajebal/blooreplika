@@ -1,0 +1,156 @@
+2025-12-04 19:50:06.90
+09241880
+User
+at Server.emit (node:events:536:35)
+2025-12-04 19:50:06.90
+09241880
+User
+at Server.upgrade (/home/runner/workspace/dist/index.cjs:65:42831)
+2025-12-04 19:50:06.90
+09241880
+User
+at onParserExecuteCommon (node:_http_server:938:14)
+2025-12-04 19:50:06.92
+09241880
+System
+command finished with error [npm run start]: exit status 1
+2025-12-04 19:50:10.34
+09241880
+User
+> rest-express@1.0.0 start
+2025-12-04 19:50:10.34
+09241880
+User
+> NODE_ENV=production node dist/index.cjs
+2025-12-04 19:50:11.96
+09241880
+User
+2:20:11 PM [chat] Chat WebSocket server initialized
+2025-12-04 19:50:11.96
+09241880
+User
+[static] Checking paths: ["/home/runner/workspace/dist/public","/home/runner/workspace/public","/home/runner/workspace/dist/public","/home/runner/workspace/dist/public"]
+2025-12-04 19:50:11.96
+09241880
+User
+[static] Starting static file serving setup...
+2025-12-04 19:50:11.96
+09241880
+User
+[static] Found 6 items in /home/runner/workspace/dist/public: assets, favicon.png, images, index.html, og-image.png...
+2025-12-04 19:50:11.96
+09241880
+User
+[static] Current working directory: /home/runner/workspace
+2025-12-04 19:50:11.96
+09241880
+User
+[static] Path /home/runner/workspace/dist/public: EXISTS
+2025-12-04 19:50:11.96
+09241880
+User
+[static] Using build directory: /home/runner/workspace/dist/public
+2025-12-04 19:50:11.96
+09241880
+User
+[static] Assets folder has 20 files
+2025-12-04 19:50:11.96
+09241880
+User
+[static] Path /home/runner/workspace/public: NOT FOUND
+2025-12-04 19:50:11.96
+09241880
+User
+[static] Static file serving configured successfully
+2025-12-04 19:50:11.96
+09241880
+User
+[static] Path /home/runner/workspace/dist/public: EXISTS
+2025-12-04 19:50:11.96
+09241880
+User
+[static] Path /home/runner/workspace/dist/public: EXISTS
+2025-12-04 19:50:11.97
+09241880
+User
+2:20:11 PM [express] serving on port 5000
+2025-12-04 19:50:40.26
+f9e4c1f6
+System
+starting up user application
+2025-12-04 19:50:40.26
+f9e4c1f6
+System
+forwarding local port 5000 to external port 80 (mapped as 1104)
+2025-12-04 19:50:40.26
+f9e4c1f6
+System
+metasidecar: loaded enterprise status from environment is_enterprise=false
+2025-12-04 19:50:41.14
+f9e4c1f6
+User
+> rest-express@1.0.0 start
+2025-12-04 19:50:41.14
+f9e4c1f6
+User
+> NODE_ENV=production node dist/index.cjs
+2025-12-04 19:50:41.38
+f9e4c1f6
+User
+2:20:41 PM [chat] Chat WebSocket server initialized
+2025-12-04 19:50:41.39
+f9e4c1f6
+User
+[static] Starting static file serving setup...
+2025-12-04 19:50:41.39
+f9e4c1f6
+User
+[static] Current working directory: /home/runner/workspace
+2025-12-04 19:50:41.39
+f9e4c1f6
+User
+[static] Path /home/runner/workspace/dist/public: EXISTS
+2025-12-04 19:50:41.39
+f9e4c1f6
+User
+[static] Checking paths: ["/home/runner/workspace/dist/public","/home/runner/workspace/public","/home/runner/workspace/dist/public","/home/runner/workspace/dist/public"]
+2025-12-04 19:50:41.39
+f9e4c1f6
+User
+[static] Path /home/runner/workspace/dist/public: EXISTS
+2025-12-04 19:50:41.39
+f9e4c1f6
+User
+[static] Using build directory: /home/runner/workspace/dist/public
+2025-12-04 19:50:41.39
+f9e4c1f6
+User
+[static] Path /home/runner/workspace/public: NOT FOUND
+2025-12-04 19:50:41.39
+f9e4c1f6
+User
+[static] Assets folder has 20 files
+2025-12-04 19:50:41.39
+f9e4c1f6
+User
+[static] Path /home/runner/workspace/dist/public: EXISTS
+2025-12-04 19:50:41.39
+f9e4c1f6
+User
+[static] Found 6 items in /home/runner/workspace/dist/public: assets, favicon.png, images, index.html, og-image.png...
+2025-12-04 19:50:41.39
+f9e4c1f6
+User
+[static] Static file serving configured successfully
+2025-12-04 19:50:41.39
+f9e4c1f6
+User
+2:20:41 PM [express] serving on port 5000
+2025-12-04 19:51:10.19
+f9e4c1f6
+User
+2:21:10 PM [express] GET /api/members/me 401 in 3ms :: {"success":false,"error":"유효하지 않은 세션입니다."}
+2025-12-04 19:51:12.65
+f9e4c1f6
+User
+2:21:12 PM [express] GET /api/prices 200 in 2461ms :: {"success":true,"data":{"gold":{"buyPrice":"747,460","sellPrice":"687,663","trend":"down","change":"2,540"},"silver":{"buyPrice":"10,104","sellPrice":"8,588","trend":"down","change":"46"},"platinum":{"buyPrice":"164,489","sellPrice":"144,750","trend":"down","change":"511"}},"timestamp":"2025-12-04T14:21:12.655Z"}
