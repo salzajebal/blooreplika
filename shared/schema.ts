@@ -74,6 +74,33 @@ export const insertDepositRequestSchema = createInsertSchema(depositRequests).om
 export type InsertDepositRequest = z.infer<typeof insertDepositRequestSchema>;
 export type DepositRequest = typeof depositRequests.$inferSelect;
 
+// Withdrawal requests table (point withdrawal requests)
+export const withdrawalRequests = pgTable("withdrawal_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  memberId: varchar("member_id").notNull(),
+  memberName: text("member_name").notNull(),
+  memberEmail: text("member_email").notNull(),
+  amount: integer("amount").notNull(),
+  bankName: text("bank_name").notNull(),
+  accountNumber: text("account_number").notNull(),
+  accountHolder: text("account_holder").notNull(),
+  status: text("status").default("pending"), // pending, approved, rejected
+  adminNote: text("admin_note"),
+  requestedAt: timestamp("requested_at").defaultNow(),
+  processedAt: timestamp("processed_at"),
+  processedBy: varchar("processed_by"),
+});
+
+export const insertWithdrawalRequestSchema = createInsertSchema(withdrawalRequests).omit({
+  id: true,
+  requestedAt: true,
+  processedAt: true,
+  processedBy: true,
+});
+
+export type InsertWithdrawalRequest = z.infer<typeof insertWithdrawalRequestSchema>;
+export type WithdrawalRequest = typeof withdrawalRequests.$inferSelect;
+
 // Point transactions table (audit log for point changes)
 export const pointTransactions = pgTable("point_transactions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
