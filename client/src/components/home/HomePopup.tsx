@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, MessageCircle, Clock, Sparkles } from "lucide-react";
+import { X, MessageCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -91,16 +91,11 @@ export function HomePopup() {
             </p>
           </div>
 
-          <div className="flex items-center justify-center gap-2 bg-gray-100 rounded-xl px-4 py-3 mb-4">
+          <div className="flex items-center justify-center gap-2 bg-gray-100 rounded-xl px-4 py-3 mb-6">
             <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center">
               <MessageCircle className="w-4 h-4 text-black" />
             </div>
             <span className="text-sm text-gray-600">우측 하단 채팅 버튼을 클릭하세요</span>
-          </div>
-
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-500 mb-4">
-            <Clock className="w-4 h-4" />
-            <span>상담시간 평일 09:00 ~ 18:00</span>
           </div>
 
           <Button
