@@ -5,6 +5,16 @@ import { createServer } from "http";
 import path from "path";
 import { setupChatWebSocket } from "./chatSocket";
 
+// Global error handlers to prevent server crashes
+process.on('uncaughtException', (error) => {
+  console.error('[FATAL] Uncaught Exception:', error.message);
+  console.error(error.stack);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 const app = express();
 const httpServer = createServer(app);
 
@@ -74,12 +84,24 @@ app.use((req, res, next) => {
 (async () => {
   await registerRoutes(httpServer, app);
 
+  // Global error handler - must always return JSON
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
     const message = err.message || "Internal Server Error";
+    
+    console.error(`[ERROR] ${status}: ${message}`);
+    if (err.stack) {
+      console.error(err.stack);
+    }
 
-    res.status(status).json({ message });
-    throw err;
+    // Always return JSON response
+    if (!res.headersSent) {
+      res.status(status).json({ 
+        success: false, 
+        error: message,
+        message: message 
+      });
+    }
   });
 
   // importantly only setup vite in development and after

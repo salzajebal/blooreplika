@@ -1,6 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { createServer, type Server } from "http";
-import { WebSocketServer, WebSocket } from "ws";
+import { type Server } from "http";
 import { storage } from "./storage";
 import { insertProductSchema, insertCategorySchema, insertMemberSchema, insertChatConversationSchema, insertChatMessageSchema, insertFaqSchema, insertReviewSchema, insertNoticeSchema } from "@shared/schema";
 import { z } from "zod";
@@ -23,20 +22,6 @@ const reviewImageUpload = multer({
     }
   },
 });
-
-const chatClients = new Map<string, Set<WebSocket>>();
-
-function broadcastToConversation(conversationId: string, message: any) {
-  const clients = chatClients.get(conversationId);
-  if (clients) {
-    const messageStr = JSON.stringify(message);
-    clients.forEach(client => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(messageStr);
-      }
-    });
-  }
-}
 
 const ADMIN_USERNAME = "admin123";
 const ADMIN_PASSWORD = "admin123";
@@ -129,56 +114,7 @@ export async function registerRoutes(
   const express = await import("express");
   app.use("/uploads", express.default.static(path.join(process.cwd(), "uploads")));
   
-  // ==================== WEBSOCKET SETUP ====================
-  const wss = new WebSocketServer({ server: httpServer, path: "/ws/chat" });
-  
-  wss.on("connection", (ws, req) => {
-    let conversationId: string | null = null;
-    
-    ws.on("message", async (data) => {
-      try {
-        const message = JSON.parse(data.toString());
-        
-        if (message.type === "join" && message.conversationId) {
-          conversationId = message.conversationId as string;
-          if (!chatClients.has(conversationId)) {
-            chatClients.set(conversationId, new Set());
-          }
-          chatClients.get(conversationId)!.add(ws);
-          ws.send(JSON.stringify({ type: "joined", conversationId }));
-        }
-        
-        if (message.type === "message" && conversationId) {
-          const savedMessage = await storage.createMessage({
-            conversationId,
-            senderType: message.senderType,
-            senderName: message.senderName,
-            message: message.message,
-            isRead: false,
-          });
-          
-          broadcastToConversation(conversationId, {
-            type: "new_message",
-            data: savedMessage,
-          });
-        }
-      } catch (error) {
-        console.error("WebSocket message error:", error);
-      }
-    });
-    
-    ws.on("close", () => {
-      if (conversationId) {
-        const clients = chatClients.get(conversationId);
-        if (clients) {
-          clients.delete(ws);
-          if (clients.size === 0) {
-            chatClients.delete(conversationId);
-          }
-        }
-      }
-    });
-  });
+  // NOTE: WebSocket is handled in chatSocket.ts - do not create duplicate here
   
   // ==================== GOLD PRICES API ====================
   
