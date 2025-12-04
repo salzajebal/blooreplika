@@ -116,7 +116,6 @@ export function Header() {
                 <Link href="/profile" className="bg-amber-100 text-amber-800 px-2.5 py-1 rounded font-bold text-sm" data-testid="header-point-balance">
                   {pointBalance.toLocaleString()}P
                 </Link>
-                <Link href="/deposit" className="text-amber-600 hover:text-amber-700 font-medium">입금신청</Link>
                 <Link href="/withdrawal" className="text-blue-600 hover:text-blue-700 font-medium">출금신청</Link>
                 <button onClick={handleLogout} className="flex items-center gap-1.5 hover:text-gray-800 transition-colors">
                   <LogOut className="w-4 h-4" />
@@ -218,8 +217,7 @@ export function Header() {
                 <Link href="/support" className="text-lg font-medium hover:text-primary">고객센터</Link>
                 {memberName ? (
                   <>
-                    <Link href="/deposit" className="text-lg font-medium text-amber-600 mt-4 pt-4 border-t">입금신청</Link>
-                    <Link href="/withdrawal" className="text-lg font-medium text-blue-600">출금신청</Link>
+                    <Link href="/withdrawal" className="text-lg font-medium text-blue-600 mt-4 pt-4 border-t">출금신청</Link>
                     <Link href="/profile" className="text-lg font-medium hover:text-primary">마이페이지</Link>
                     <button onClick={handleLogout} className="text-lg font-medium text-gray-500 text-left flex items-center gap-2">
                       <LogOut className="w-5 h-5" />
