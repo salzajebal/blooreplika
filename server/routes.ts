@@ -1568,12 +1568,36 @@ export async function registerRoutes(
   // Update notice (admin only)
   app.put("/api/notices/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      const notice = await storage.updateNotice(req.params.id, req.body);
+      console.log("=== NOTICE UPDATE START ===");
+      console.log("Notice ID:", req.params.id);
+      console.log("Request body:", JSON.stringify(req.body, null, 2));
+      
+      // Validate and transform the request body
+      const updateData: any = {};
+      if (req.body.title !== undefined) updateData.title = req.body.title;
+      if (req.body.content !== undefined) updateData.content = req.body.content;
+      if (req.body.category !== undefined) updateData.category = req.body.category;
+      if (req.body.isPinned !== undefined) updateData.isPinned = Boolean(req.body.isPinned);
+      if (req.body.isVisible !== undefined) updateData.isVisible = Boolean(req.body.isVisible);
+      if (req.body.viewCount !== undefined) updateData.viewCount = Number(req.body.viewCount);
+      if (req.body.displayDate !== undefined) {
+        const parsedDate = new Date(req.body.displayDate);
+        if (!isNaN(parsedDate.getTime())) {
+          updateData.displayDate = parsedDate;
+        }
+      }
+      
+      console.log("Processed update data:", JSON.stringify(updateData, null, 2));
+      
+      const notice = await storage.updateNotice(req.params.id, updateData);
       if (!notice) {
         return res.status(404).json({ success: false, error: "공지사항을 찾을 수 없습니다." });
       }
+      
+      console.log("=== NOTICE UPDATE SUCCESS ===");
       res.json({ success: true, data: notice });
     } catch (error) {
+      console.error("=== NOTICE UPDATE ERROR ===");
       console.error("Error updating notice:", error);
       res.status(500).json({ success: false, error: "공지사항 수정에 실패했습니다." });
     }
