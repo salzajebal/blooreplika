@@ -3,9 +3,12 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import path from "path";
+import { setupChatWebSocket } from "./chatSocket";
 
 const app = express();
 const httpServer = createServer(app);
+
+setupChatWebSocket(httpServer);
 
 // Serve attached_assets folder for generated images
 app.use("/attached_assets", express.static(path.resolve(process.cwd(), "attached_assets")));

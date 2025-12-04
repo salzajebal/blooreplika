@@ -15,7 +15,7 @@ import {
   type SiteSetting, type InsertSiteSetting, siteSettings
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -52,12 +52,17 @@ export interface IStorage {
   
   // Chat
   getAllConversations(): Promise<ChatConversation[]>;
+  getAllChatConversations(): Promise<ChatConversation[]>;
   getConversation(id: string): Promise<ChatConversation | undefined>;
   createConversation(conversation: InsertChatConversation): Promise<ChatConversation>;
   updateConversationStatus(id: string, status: string): Promise<ChatConversation | undefined>;
+  updateChatConversation(id: string, data: Partial<InsertChatConversation> & { updatedAt?: Date }): Promise<ChatConversation | undefined>;
   getMessagesByConversation(conversationId: string): Promise<ChatMessage[]>;
+  getChatMessages(conversationId: string): Promise<ChatMessage[]>;
   createMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
   markMessagesAsRead(conversationId: string, senderType: string): Promise<void>;
+  getUnreadCount(conversationId: string, senderType: string): Promise<number>;
   
   // FAQ
   getAllFaqs(): Promise<Faq[]>;
@@ -268,6 +273,18 @@ export class DatabaseStorage implements IStorage {
     return conversation;
   }
 
+  async updateChatConversation(id: string, data: Partial<InsertChatConversation> & { updatedAt?: Date }): Promise<ChatConversation | undefined> {
+    const [conversation] = await db.update(chatConversations)
+      .set(data)
+      .where(eq(chatConversations.id, id))
+      .returning();
+    return conversation;
+  }
+
+  async getAllChatConversations(): Promise<ChatConversation[]> {
+    return this.getAllConversations();
+  }
+
   // Chat Messages
   async getMessagesByConversation(conversationId: string): Promise<ChatMessage[]> {
     return db.select().from(chatMessages)
@@ -283,6 +300,14 @@ export class DatabaseStorage implements IStorage {
     return message;
   }
 
+  async getChatMessages(conversationId: string): Promise<ChatMessage[]> {
+    return this.getMessagesByConversation(conversationId);
+  }
+
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    return this.createMessage(message);
+  }
+
   async markMessagesAsRead(conversationId: string, senderType: string): Promise<void> {
     const oppositeType = senderType === 'admin' ? 'user' : 'admin';
     await db.update(chatMessages)
@@ -291,6 +316,17 @@ export class DatabaseStorage implements IStorage {
         eq(chatMessages.conversationId, conversationId),
         eq(chatMessages.senderType, oppositeType)
       ));
+  }
+
+  async getUnreadCount(conversationId: string, senderType: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(chatMessages)
+      .where(and(
+        eq(chatMessages.conversationId, conversationId),
+        eq(chatMessages.senderType, senderType),
+        eq(chatMessages.isRead, false)
+      ));
+    return result[0]?.count || 0;
   }
 
   // FAQ
