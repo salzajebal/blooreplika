@@ -925,6 +925,82 @@ export async function registerRoutes(
     }
   });
 
+  // Create withdrawal request
+  app.post("/api/members/withdrawal-requests", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (!token) {
+      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
+    }
+    
+    const session = memberSessions.get(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+    }
+    
+    try {
+      const member = await storage.getMember(session.memberId);
+      if (!member) {
+        return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
+      }
+      
+      if (member.isFrozen) {
+        return res.status(403).json({ success: false, error: "계정이 동결되어 출금신청을 할 수 없습니다." });
+      }
+      
+      const { amount, bankName, accountNumber, accountHolder } = req.body;
+      
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ success: false, error: "유효한 금액을 입력해주세요." });
+      }
+      
+      const currentBalance = member.pointBalance || 0;
+      if (amount > currentBalance) {
+        return res.status(400).json({ success: false, error: "보유 포인트가 부족합니다." });
+      }
+      
+      if (!bankName || !accountNumber || !accountHolder) {
+        return res.status(400).json({ success: false, error: "은행명, 계좌번호, 예금주명을 모두 입력해주세요." });
+      }
+      
+      const request = await storage.createWithdrawalRequest({
+        memberId: member.id,
+        memberName: member.name,
+        memberEmail: member.email,
+        amount: parseInt(amount),
+        bankName,
+        accountNumber,
+        accountHolder,
+        status: "pending"
+      });
+      
+      res.status(201).json({ success: true, data: request, message: "출금신청이 접수되었습니다." });
+    } catch (error) {
+      console.error("Error creating withdrawal request:", error);
+      res.status(500).json({ success: false, error: "출금신청 처리 중 오류가 발생했습니다." });
+    }
+  });
+
+  // Get my withdrawal requests
+  app.get("/api/members/withdrawal-requests", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (!token) {
+      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
+    }
+    
+    const session = memberSessions.get(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+    }
+    
+    try {
+      const requests = await storage.getWithdrawalRequestsByMember(session.memberId);
+      res.json({ success: true, data: requests });
+    } catch (error) {
+      console.error("Error fetching withdrawal requests:", error);
+      res.status(500).json({ success: false, error: "출금신청 목록을 불러올 수 없습니다." });
+    }
+  });
+
   // Get my point transactions
   app.get("/api/members/point-transactions", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
@@ -992,6 +1068,55 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error rejecting deposit request:", error);
       res.status(500).json({ success: false, error: "입금신청 거부 처리 중 오류가 발생했습니다." });
+    }
+  });
+
+  // ==================== ADMIN WITHDRAWAL MANAGEMENT ====================
+  
+  // Get all withdrawal requests (admin)
+  app.get("/api/admin/withdrawal-requests", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const status = req.query.status as string;
+      let requests;
+      if (status === "pending") {
+        requests = await storage.getPendingWithdrawalRequests();
+      } else {
+        requests = await storage.getAllWithdrawalRequests();
+      }
+      res.json({ success: true, data: requests });
+    } catch (error) {
+      console.error("Error fetching withdrawal requests:", error);
+      res.status(500).json({ success: false, error: "출금신청 목록을 불러올 수 없습니다." });
+    }
+  });
+
+  // Approve withdrawal request (admin)
+  app.post("/api/admin/withdrawal-requests/:id/approve", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { adminNote } = req.body;
+      const request = await storage.approveWithdrawalRequest(req.params.id, adminNote);
+      if (!request) {
+        return res.status(404).json({ success: false, error: "출금신청을 찾을 수 없거나 이미 처리되었습니다. 또는 잔액이 부족합니다." });
+      }
+      res.json({ success: true, data: request, message: "출금신청이 승인되었습니다." });
+    } catch (error) {
+      console.error("Error approving withdrawal request:", error);
+      res.status(500).json({ success: false, error: "출금신청 승인 처리 중 오류가 발생했습니다." });
+    }
+  });
+
+  // Reject withdrawal request (admin)
+  app.post("/api/admin/withdrawal-requests/:id/reject", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { adminNote } = req.body;
+      const request = await storage.rejectWithdrawalRequest(req.params.id, adminNote);
+      if (!request) {
+        return res.status(404).json({ success: false, error: "출금신청을 찾을 수 없거나 이미 처리되었습니다." });
+      }
+      res.json({ success: true, data: request, message: "출금신청이 거부되었습니다." });
+    } catch (error) {
+      console.error("Error rejecting withdrawal request:", error);
+      res.status(500).json({ success: false, error: "출금신청 거부 처리 중 오류가 발생했습니다." });
     }
   });
 
