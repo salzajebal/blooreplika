@@ -81,13 +81,21 @@ export function HomePopup() {
             상담 안내
           </h2>
           
-          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-5 mb-6 border border-amber-100">
+          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-5 mb-4 border border-amber-100">
             <p className="text-gray-700 leading-relaxed text-[15px]">
               <span className="font-semibold text-amber-700">카카오톡 상담</span> 이용 중<br/>
               간혹 <span className="font-bold text-gray-900">오류가 발생</span>할 수 있습니다.<br/><br/>
               이 경우, 화면 <span className="font-bold text-amber-600">우측 하단</span>에 있는<br/>
               <span className="text-lg font-bold text-gray-900">실시간 채팅 상담</span>을<br/>
               이용해 주시기 바랍니다.
+            </p>
+          </div>
+
+          <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-2xl p-4 mb-6 border border-red-200">
+            <p className="text-red-700 leading-relaxed text-[14px] font-medium">
+              <span className="font-bold">📞 전화상담 안내</span><br/>
+              <span className="text-red-600">2주간 전화상담이 불가합니다.</span><br/>
+              <span className="text-gray-600 text-[13px]">카카오톡 또는 실시간 채팅을 이용해 주세요.</span>
             </p>
           </div>
 
