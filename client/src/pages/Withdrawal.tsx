@@ -13,44 +13,17 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 interface WithdrawalRequest {
   id: string;
   amount: number;
-  bankName: string;
-  accountNumber: string;
-  accountHolder: string;
   status: string;
   requestedAt: string;
   adminNote?: string;
 }
-
-const BANK_OPTIONS = [
-  "KB국민은행",
-  "신한은행",
-  "우리은행",
-  "하나은행",
-  "SC제일은행",
-  "씨티은행",
-  "농협은행",
-  "기업은행",
-  "수협은행",
-  "케이뱅크",
-  "카카오뱅크",
-  "토스뱅크",
-  "새마을금고",
-  "신협",
-  "우체국",
-  "기타",
-];
 
 export default function Withdrawal() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    amount: "",
-    bankName: "",
-    accountNumber: "",
-    accountHolder: "",
-  });
+  const [amount, setAmount] = useState("");
 
   const memberToken = localStorage.getItem("memberToken");
   const memberName = localStorage.getItem("memberName");
@@ -119,8 +92,8 @@ export default function Withdrawal() {
       return;
     }
 
-    const amount = parseInt(formData.amount);
-    if (isNaN(amount) || amount < 10000) {
+    const amountValue = parseInt(amount);
+    if (isNaN(amountValue) || amountValue < 10000) {
       toast({
         title: "금액 오류",
         description: "최소 10,000원 이상 출금 가능합니다.",
@@ -129,19 +102,10 @@ export default function Withdrawal() {
       return;
     }
 
-    if (amount > pointBalance) {
+    if (amountValue > pointBalance) {
       toast({
         title: "잔액 부족",
         description: "보유 포인트보다 많은 금액은 출금할 수 없습니다.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!formData.bankName || !formData.accountNumber || !formData.accountHolder) {
-      toast({
-        title: "입력 오류",
-        description: "은행명, 계좌번호, 예금주명을 모두 입력해주세요.",
         variant: "destructive",
       });
       return;
@@ -156,19 +120,16 @@ export default function Withdrawal() {
           "Authorization": `Bearer ${memberToken}`,
         },
         body: JSON.stringify({
-          amount,
-          bankName: formData.bankName,
-          accountNumber: formData.accountNumber,
-          accountHolder: formData.accountHolder,
+          amount: amountValue,
         }),
       });
 
       if (res.ok) {
         toast({
           title: "신청 완료",
-          description: "출금신청이 완료되었습니다. 관리자 승인 후 입금됩니다.",
+          description: "출금신청이 완료되었습니다. 관리자 승인 후 처리됩니다.",
         });
-        setFormData({ amount: "", bankName: "", accountNumber: "", accountHolder: "" });
+        setAmount("");
         queryClient.invalidateQueries({ queryKey: ["/api/members/withdrawal-requests"] });
         queryClient.invalidateQueries({ queryKey: ["/api/members/me"] });
       } else {
@@ -259,23 +220,17 @@ export default function Withdrawal() {
                     </h4>
                     <ul className="text-sm text-blue-700 space-y-2 list-disc list-inside">
                       <li>최소 출금 금액은 <span className="font-bold">10,000원</span>입니다.</li>
-                      <li>출금 신청 후 영업일 기준 <span className="font-bold">1~3일</span> 소요됩니다.</li>
-                      <li>본인 명의 계좌만 등록 가능합니다.</li>
-                      <li>계좌정보가 정확한지 확인해주세요.</li>
+                      <li>출금 신청 후 관리자 승인이 필요합니다.</li>
+                      <li>승인 후 처리됩니다.</li>
                     </ul>
                   </div>
                   
                   <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
                     <h4 className="font-medium text-amber-800 mb-2">출금 처리 안내</h4>
                     <p className="text-sm text-amber-700">
-                      출금 신청 후 관리자 승인이 완료되면 등록하신 계좌로 입금됩니다.
+                      출금 신청 후 관리자 승인이 완료되면 처리됩니다.
                       승인 여부는 아래 '출금신청 내역'에서 확인하실 수 있습니다.
                     </p>
-                  </div>
-
-                  <div className="text-sm text-gray-500 text-center">
-                    <p>영업시간: 평일 09:00 ~ 18:00</p>
-                    <p>주말/공휴일은 출금 처리가 되지 않습니다.</p>
                   </div>
                 </div>
               </CardContent>
@@ -288,7 +243,7 @@ export default function Withdrawal() {
                   출금신청서 작성
                 </CardTitle>
                 <CardDescription>
-                  출금받으실 계좌 정보를 입력해주세요
+                  출금할 금액을 입력해주세요
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -299,79 +254,33 @@ export default function Withdrawal() {
                       id="amount"
                       type="number"
                       placeholder="최소 10,000원"
-                      value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
                       required
                       min="10000"
                       max={pointBalance}
                       step="1000"
-                      className="h-11"
+                      className="h-11 text-lg"
                       data-testid="input-withdrawal-amount"
                     />
-                    {formData.amount && (
+                    {amount && (
                       <p className="text-sm text-amber-600">
-                        {parseInt(formData.amount).toLocaleString()}원
-                        {parseInt(formData.amount) > pointBalance && (
+                        {parseInt(amount).toLocaleString()}원
+                        {parseInt(amount) > pointBalance && (
                           <span className="text-red-500 ml-2">(잔액 초과)</span>
                         )}
                       </p>
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="bankName" className="text-gray-700 font-medium">은행명</Label>
-                    <select
-                      id="bankName"
-                      value={formData.bankName}
-                      onChange={(e) => setFormData({ ...formData, bankName: e.target.value })}
-                      required
-                      className="w-full h-11 px-3 rounded-md border border-input bg-background ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                      data-testid="select-bank-name"
-                    >
-                      <option value="">은행을 선택하세요</option>
-                      {BANK_OPTIONS.map((bank) => (
-                        <option key={bank} value={bank}>{bank}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="accountNumber" className="text-gray-700 font-medium">계좌번호</Label>
-                    <Input
-                      id="accountNumber"
-                      type="text"
-                      placeholder="'-' 없이 숫자만 입력"
-                      value={formData.accountNumber}
-                      onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value.replace(/[^0-9]/g, '') })}
-                      required
-                      className="h-11"
-                      data-testid="input-account-number"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="accountHolder" className="text-gray-700 font-medium">예금주명</Label>
-                    <Input
-                      id="accountHolder"
-                      type="text"
-                      placeholder="예금주 성함"
-                      value={formData.accountHolder}
-                      onChange={(e) => setFormData({ ...formData, accountHolder: e.target.value })}
-                      required
-                      className="h-11"
-                      data-testid="input-account-holder"
-                    />
-                  </div>
-
-                  <div className="p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
+                  <div className="p-4 bg-blue-50 rounded-lg text-sm text-blue-700">
                     <p className="font-medium mb-2 flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      출금 전 확인사항
+                      <CheckCircle className="w-4 h-4 text-blue-500" />
+                      출금 안내
                     </p>
                     <ul className="list-disc list-inside space-y-1">
-                      <li>본인 명의 계좌만 등록 가능합니다.</li>
-                      <li>계좌번호와 예금주명이 정확한지 확인해주세요.</li>
-                      <li>잘못된 정보 입력 시 입금이 지연될 수 있습니다.</li>
+                      <li>출금 신청 후 관리자 승인 후 처리됩니다.</li>
+                      <li>승인 여부는 아래 내역에서 확인하실 수 있습니다.</li>
                     </ul>
                   </div>
 
@@ -414,12 +323,6 @@ export default function Withdrawal() {
                         <div>
                           <div className="text-lg font-bold text-gray-900">
                             {request.amount.toLocaleString()}원
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {request.bankName} {request.accountNumber}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            예금주: {request.accountHolder}
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
                             {new Date(request.requestedAt).toLocaleString("ko-KR")}

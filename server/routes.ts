@@ -947,7 +947,7 @@ export async function registerRoutes(
         return res.status(403).json({ success: false, error: "계정이 동결되어 출금신청을 할 수 없습니다." });
       }
       
-      const { amount, bankName, accountNumber, accountHolder } = req.body;
+      const { amount } = req.body;
       
       if (!amount || amount <= 0) {
         return res.status(400).json({ success: false, error: "유효한 금액을 입력해주세요." });
@@ -958,18 +958,11 @@ export async function registerRoutes(
         return res.status(400).json({ success: false, error: "보유 포인트가 부족합니다." });
       }
       
-      if (!bankName || !accountNumber || !accountHolder) {
-        return res.status(400).json({ success: false, error: "은행명, 계좌번호, 예금주명을 모두 입력해주세요." });
-      }
-      
       const request = await storage.createWithdrawalRequest({
         memberId: member.id,
         memberName: member.name,
         memberEmail: member.email,
         amount: parseInt(amount),
-        bankName,
-        accountNumber,
-        accountHolder,
         status: "pending"
       });
       

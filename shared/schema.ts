@@ -81,9 +81,9 @@ export const withdrawalRequests = pgTable("withdrawal_requests", {
   memberName: text("member_name").notNull(),
   memberEmail: text("member_email").notNull(),
   amount: integer("amount").notNull(),
-  bankName: text("bank_name").notNull(),
-  accountNumber: text("account_number").notNull(),
-  accountHolder: text("account_holder").notNull(),
+  bankName: text("bank_name"),
+  accountNumber: text("account_number"),
+  accountHolder: text("account_holder"),
   status: text("status").default("pending"), // pending, approved, rejected
   adminNote: text("admin_note"),
   requestedAt: timestamp("requested_at").defaultNow(),

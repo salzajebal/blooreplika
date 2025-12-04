@@ -2333,9 +2333,6 @@ export default function Admin() {
                             <span className="font-medium">회원:</span> {request.memberName} ({request.memberEmail})
                           </p>
                           <p>
-                            <span className="font-medium">입금계좌:</span> {request.bankName} {request.accountNumber} (예금주: {request.accountHolder})
-                          </p>
-                          <p>
                             <span className="font-medium">신청일:</span>{" "}
                             {new Date(request.requestedAt).toLocaleString("ko-KR")}
                           </p>
