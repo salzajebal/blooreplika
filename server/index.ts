@@ -13,6 +13,11 @@ setupChatWebSocket(httpServer);
 // Serve attached_assets folder for generated images
 app.use("/attached_assets", express.static(path.resolve(process.cwd(), "attached_assets")));
 
+// Handle favicon.ico requests by redirecting to favicon.png
+app.get("/favicon.ico", (_req, res) => {
+  res.redirect(301, "/favicon.png");
+});
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
