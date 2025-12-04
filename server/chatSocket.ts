@@ -24,8 +24,28 @@ const clients: Map<WebSocket, ChatClient> = new Map();
 const conversationClients: Map<string, Set<WebSocket>> = new Map();
 const adminClients: Set<WebSocket> = new Set();
 
+const upgradedSockets = new WeakSet<any>();
+
 export function setupChatWebSocket(server: Server) {
-  const wss = new WebSocketServer({ server, path: "/ws/chat" });
+  const wss = new WebSocketServer({ noServer: true });
+
+  server.on("upgrade", (request, socket, head) => {
+    const { pathname } = new URL(request.url || "", `http://${request.headers.host}`);
+    
+    if (pathname === "/ws/chat") {
+      if (upgradedSockets.has(socket)) {
+        log("Duplicate upgrade attempt blocked", "chat");
+        socket.destroy();
+        return;
+      }
+      
+      upgradedSockets.add(socket);
+      
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit("connection", ws, request);
+      });
+    }
+  });
 
   wss.on("connection", (ws: WebSocket) => {
     log("New WebSocket connection", "chat");
