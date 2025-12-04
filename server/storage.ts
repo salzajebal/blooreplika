@@ -11,6 +11,7 @@ import {
   type ReviewImage, type InsertReviewImage, reviewImages,
   type Notice, type InsertNotice, notices,
   type DepositRequest, type InsertDepositRequest, depositRequests,
+  type WithdrawalRequest, type InsertWithdrawalRequest, withdrawalRequests,
   type PointTransaction, type InsertPointTransaction, pointTransactions,
   type SiteSetting, type InsertSiteSetting, siteSettings
 } from "@shared/schema";
@@ -101,6 +102,15 @@ export interface IStorage {
   createDepositRequest(request: InsertDepositRequest): Promise<DepositRequest>;
   approveDepositRequest(id: string, adminNote?: string): Promise<DepositRequest | undefined>;
   rejectDepositRequest(id: string, adminNote?: string): Promise<DepositRequest | undefined>;
+  
+  // Withdrawal Requests
+  getAllWithdrawalRequests(): Promise<WithdrawalRequest[]>;
+  getPendingWithdrawalRequests(): Promise<WithdrawalRequest[]>;
+  getWithdrawalRequestsByMember(memberId: string): Promise<WithdrawalRequest[]>;
+  getWithdrawalRequest(id: string): Promise<WithdrawalRequest | undefined>;
+  createWithdrawalRequest(request: InsertWithdrawalRequest): Promise<WithdrawalRequest>;
+  approveWithdrawalRequest(id: string, adminNote?: string): Promise<WithdrawalRequest | undefined>;
+  rejectWithdrawalRequest(id: string, adminNote?: string): Promise<WithdrawalRequest | undefined>;
   
   // Point Transactions
   getPointTransactionsByMember(memberId: string): Promise<PointTransaction[]>;
@@ -523,6 +533,84 @@ export class DatabaseStorage implements IStorage {
         processedAt: new Date() 
       })
       .where(eq(depositRequests.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  // Withdrawal Requests
+  async getAllWithdrawalRequests(): Promise<WithdrawalRequest[]> {
+    return db.select().from(withdrawalRequests).orderBy(desc(withdrawalRequests.requestedAt));
+  }
+
+  async getPendingWithdrawalRequests(): Promise<WithdrawalRequest[]> {
+    return db.select().from(withdrawalRequests)
+      .where(eq(withdrawalRequests.status, "pending"))
+      .orderBy(desc(withdrawalRequests.requestedAt));
+  }
+
+  async getWithdrawalRequestsByMember(memberId: string): Promise<WithdrawalRequest[]> {
+    return db.select().from(withdrawalRequests)
+      .where(eq(withdrawalRequests.memberId, memberId))
+      .orderBy(desc(withdrawalRequests.requestedAt));
+  }
+
+  async getWithdrawalRequest(id: string): Promise<WithdrawalRequest | undefined> {
+    const [request] = await db.select().from(withdrawalRequests).where(eq(withdrawalRequests.id, id));
+    return request;
+  }
+
+  async createWithdrawalRequest(insertRequest: InsertWithdrawalRequest): Promise<WithdrawalRequest> {
+    const [request] = await db.insert(withdrawalRequests).values(insertRequest).returning();
+    return request;
+  }
+
+  async approveWithdrawalRequest(id: string, adminNote?: string): Promise<WithdrawalRequest | undefined> {
+    const request = await this.getWithdrawalRequest(id);
+    if (!request || request.status !== "pending") return undefined;
+
+    const member = await this.getMember(request.memberId);
+    if (!member) return undefined;
+
+    const currentBalance = member.pointBalance || 0;
+    if (currentBalance < request.amount) return undefined;
+
+    const newBalance = currentBalance - request.amount;
+    await this.updateMemberPoints(request.memberId, newBalance);
+
+    await this.createPointTransaction({
+      memberId: request.memberId,
+      type: "withdrawal_approved",
+      amount: -request.amount,
+      balanceAfter: newBalance,
+      description: `출금 승인: ${request.amount.toLocaleString()}원`,
+      relatedId: id,
+      createdBy: "admin"
+    });
+
+    const [updated] = await db.update(withdrawalRequests)
+      .set({ 
+        status: "approved", 
+        adminNote,
+        processedAt: new Date() 
+      })
+      .where(eq(withdrawalRequests.id, id))
+      .returning();
+    
+    return updated;
+  }
+
+  async rejectWithdrawalRequest(id: string, adminNote?: string): Promise<WithdrawalRequest | undefined> {
+    const request = await this.getWithdrawalRequest(id);
+    if (!request || request.status !== "pending") return undefined;
+
+    const [updated] = await db.update(withdrawalRequests)
+      .set({ 
+        status: "rejected", 
+        adminNote,
+        processedAt: new Date() 
+      })
+      .where(eq(withdrawalRequests.id, id))
       .returning();
     
     return updated;
