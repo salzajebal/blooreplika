@@ -138,14 +138,20 @@ export function ChatWidget() {
 
   if (!isOpen) {
     return (
-      <button
-        data-testid="button-open-chat"
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group"
-      >
-        <MessageCircle className="w-6 h-6 text-black group-hover:scale-110 transition-transform" />
-        <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></span>
-      </button>
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+        <div className="bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg max-w-[180px] text-center animate-pulse">
+          <p className="font-medium">카카오톡 오류 시</p>
+          <p>여기를 클릭해주세요!</p>
+        </div>
+        <button
+          data-testid="button-open-chat"
+          onClick={() => setIsOpen(true)}
+          className="w-14 h-14 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center group"
+        >
+          <MessageCircle className="w-6 h-6 text-black group-hover:scale-110 transition-transform" />
+          <span className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></span>
+        </button>
+      </div>
     );
   }
 
