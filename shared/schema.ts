@@ -280,6 +280,23 @@ export const insertReviewImageSchema = createInsertSchema(reviewImages).omit({
 export type InsertReviewImage = z.infer<typeof insertReviewImageSchema>;
 export type ReviewImage = typeof reviewImages.$inferSelect;
 
+// Product Images table (stores product images in database for persistence)
+export const productImages = pgTable("product_images", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  data: text("data").notNull(), // Base64 encoded image data
+  mimeType: text("mime_type").notNull(),
+  originalName: text("original_name"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertProductImageSchema = createInsertSchema(productImages).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertProductImage = z.infer<typeof insertProductImageSchema>;
+export type ProductImage = typeof productImages.$inferSelect;
+
 // Notices table (announcements)
 export const notices = pgTable("notices", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
