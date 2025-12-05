@@ -91,6 +91,7 @@ export default function Admin() {
     isNew: false,
     description: "",
     imageUrl: "",
+    imageUrls: [] as string[],
   });
 
   const [memberFormData, setMemberFormData] = useState({
@@ -759,7 +760,7 @@ export default function Admin() {
       if (data.success) {
         toast({ title: "성공", description: "상품이 추가되었습니다." });
         setShowAddForm(false);
-        setFormData({ name: "", weight: "", purity: "", price: "", category: "gold_bar", isBest: false, isNew: false, description: "", imageUrl: "" });
+        setFormData({ name: "", weight: "", purity: "", price: "", category: "gold_bar", isBest: false, isNew: false, description: "", imageUrl: "", imageUrls: [] });
         fetchProducts();
         fetchStats();
       } else {
@@ -807,6 +808,7 @@ export default function Admin() {
 
   const startEdit = (product: Product) => {
     setEditingId(product.id);
+    const existingUrls = product.imageUrls || [];
     setFormData({
       name: product.name,
       weight: product.weight,
@@ -817,6 +819,7 @@ export default function Admin() {
       isNew: product.isNew || false,
       description: product.description || "",
       imageUrl: product.imageUrl || "",
+      imageUrls: existingUrls.length > 0 ? existingUrls : (product.imageUrl ? [product.imageUrl] : []),
     });
     setShowEditProductModal(true);
   };
@@ -1024,7 +1027,11 @@ export default function Admin() {
       
       const data = await res.json();
       if (data.success) {
-        setFormData(prev => ({ ...prev, imageUrl: data.data.imageUrl }));
+        setFormData(prev => ({
+          ...prev,
+          imageUrls: [...prev.imageUrls, data.data.imageUrl],
+          imageUrl: prev.imageUrl || data.data.imageUrl,
+        }));
         toast({ title: "성공", description: "상품 이미지가 업로드되었습니다." });
       } else {
         toast({ title: "오류", description: data.error || "이미지 업로드에 실패했습니다.", variant: "destructive" });
@@ -1042,6 +1049,17 @@ export default function Admin() {
       // Reset file input
       e.target.value = '';
     }
+  };
+
+  const handleRemoveProductImage = (index: number) => {
+    setFormData(prev => {
+      const newImageUrls = prev.imageUrls.filter((_, i) => i !== index);
+      return {
+        ...prev,
+        imageUrls: newImageUrls,
+        imageUrl: newImageUrls[0] || "",
+      };
+    });
   };
 
   const handleCreateReview = async () => {
@@ -1582,14 +1600,14 @@ export default function Admin() {
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
                   </select>
-                  <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">상품 이미지</label>
+                  <div className="col-span-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">상품 이미지 (최대 10장)</label>
                     <div className="flex items-center gap-2">
                       <input
                         type="file"
                         accept="image/*"
                         onChange={handleProductImageUpload}
-                        disabled={uploadingProductImage}
+                        disabled={uploadingProductImage || formData.imageUrls.length >= 10}
                         className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100 disabled:opacity-50"
                         data-testid="input-product-image-file"
                       />
@@ -1600,22 +1618,30 @@ export default function Admin() {
                         </div>
                       )}
                     </div>
-                    {formData.imageUrl && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <img
-                          src={formData.imageUrl}
-                          alt="상품 미리보기"
-                          className="w-20 h-20 object-cover rounded border border-gray-200"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setFormData({ ...formData, imageUrl: "" })}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                    <p className="text-xs text-gray-400 mt-1">{formData.imageUrls.length}/10장</p>
+                    {formData.imageUrls.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {formData.imageUrls.map((url, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={url}
+                              alt={`상품 미리보기 ${index + 1}`}
+                              className="w-20 h-20 object-cover rounded border border-gray-200"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              onClick={() => handleRemoveProductImage(index)}
+                              className="absolute -top-2 -right-2 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                            {index === 0 && (
+                              <span className="absolute bottom-1 left-1 bg-yellow-500 text-white text-xs px-1 py-0.5 rounded text-[10px]">대표</span>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -1827,32 +1853,39 @@ export default function Admin() {
                     </div>
 
                     <div className="mb-6">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">상품 이미지</label>
-                      <div className="flex items-start gap-4">
-                        {formData.imageUrl && (
-                          <div className="relative">
-                            <img
-                              src={formData.imageUrl}
-                              alt="상품 이미지"
-                              className="w-32 h-32 object-cover rounded-lg border border-gray-200"
-                            />
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="icon"
-                              onClick={() => setFormData({ ...formData, imageUrl: "" })}
-                              className="absolute -top-2 -right-2 h-6 w-6"
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">상품 이미지 (최대 10장)</label>
+                      <div className="space-y-4">
+                        {formData.imageUrls.length > 0 && (
+                          <div className="flex flex-wrap gap-3">
+                            {formData.imageUrls.map((url, index) => (
+                              <div key={index} className="relative group">
+                                <img
+                                  src={url}
+                                  alt={`상품 이미지 ${index + 1}`}
+                                  className="w-24 h-24 object-cover rounded-lg border border-gray-200"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="icon"
+                                  onClick={() => handleRemoveProductImage(index)}
+                                  className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                                {index === 0 && (
+                                  <span className="absolute bottom-1 left-1 bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded">대표</span>
+                                )}
+                              </div>
+                            ))}
                           </div>
                         )}
-                        <div className="flex-1">
+                        <div>
                           <input
                             type="file"
                             accept="image/*"
                             onChange={handleProductImageUpload}
-                            disabled={uploadingProductImage}
+                            disabled={uploadingProductImage || formData.imageUrls.length >= 10}
                             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100 disabled:opacity-50"
                             data-testid="input-edit-product-image"
                           />
@@ -1862,7 +1895,7 @@ export default function Admin() {
                               <span>업로드 중...</span>
                             </div>
                           )}
-                          <p className="text-xs text-gray-400 mt-1">최대 5MB, JPG/PNG/GIF 지원</p>
+                          <p className="text-xs text-gray-400 mt-1">최대 5MB, JPG/PNG/GIF 지원 | {formData.imageUrls.length}/10장</p>
                         </div>
                       </div>
                     </div>
