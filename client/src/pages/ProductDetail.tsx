@@ -256,7 +256,7 @@ export default function ProductDetail() {
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
       
-      <main className="flex-1 pb-24 lg:pb-0">
+      <main className="flex-1 pb-28 lg:pb-0">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
           <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-500 mb-4 sm:mb-8 overflow-x-auto whitespace-nowrap">
             <Link href="/" className="hover:text-primary shrink-0">홈</Link>
@@ -320,18 +320,14 @@ export default function ProductDetail() {
                 <p className="text-xs sm:text-sm text-gray-500 mt-1">VAT 포함 / 무료 배송</p>
               </div>
 
-              <div className="space-y-2 sm:space-y-3 text-sm">
-                <div className="flex items-center justify-center lg:justify-start gap-3">
-                  <span className="w-16 sm:w-20 text-gray-500 text-right lg:text-left">중량</span>
-                  <span className="font-medium">{product.weight}</span>
-                </div>
-                <div className="flex items-center justify-center lg:justify-start gap-3">
-                  <span className="w-16 sm:w-20 text-gray-500 text-right lg:text-left">순도</span>
-                  <span className="font-medium">{product.purity}</span>
-                </div>
-                <div className="flex items-center justify-center lg:justify-start gap-3">
-                  <span className="w-16 sm:w-20 text-gray-500 text-right lg:text-left">보증</span>
-                  <span className="font-medium text-primary">한국금거래소 정품 보증</span>
+              <div className="bg-gray-50 rounded-lg p-3 sm:p-4 text-sm">
+                <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+                  <span className="text-gray-500">중량</span>
+                  <span className="font-medium text-right lg:text-left">{product.weight}</span>
+                  <span className="text-gray-500">순도</span>
+                  <span className="font-medium text-right lg:text-left">{product.purity}</span>
+                  <span className="text-gray-500">보증</span>
+                  <span className="font-medium text-primary text-right lg:text-left">한국금거래소 정품 보증</span>
                 </div>
               </div>
 
@@ -475,8 +471,8 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 sm:p-4 lg:hidden z-40 safe-area-inset-bottom">
-            <div className="flex gap-2 sm:gap-3 max-w-lg mx-auto">
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 lg:hidden z-40" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+            <div className="flex gap-2 sm:gap-3 max-w-lg mx-auto p-3 sm:p-4">
               <Button
                 variant="outline"
                 className="flex-1 h-11 sm:h-12 text-sm"
