@@ -130,6 +130,7 @@ export const products = pgTable("products", {
   purity: text("purity").notNull(),
   price: text("price").notNull(),
   imageUrl: text("image_url"),
+  imageUrls: text("image_urls").array().default([]),
   category: text("category").notNull(),
   isBest: boolean("is_best").default(false),
   isNew: boolean("is_new").default(false),
