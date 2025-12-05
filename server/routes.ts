@@ -1446,6 +1446,61 @@ export async function registerRoutes(
     }
   });
 
+  // Upload product image (admin only) - saves to database for persistence
+  app.post("/api/admin/upload/product-image", requireAdminAuth, (req: Request, res: Response) => {
+    reviewImageUpload.single("image")(req, res, async (err: any) => {
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({ success: false, error: "파일 크기는 5MB 이하여야 합니다." });
+        }
+        return res.status(400).json({ success: false, error: err.message });
+      } else if (err) {
+        return res.status(400).json({ success: false, error: err.message });
+      }
+      
+      if (!req.file) {
+        return res.status(400).json({ success: false, error: "이미지 파일을 선택해주세요." });
+      }
+      
+      try {
+        // Convert buffer to base64 and save to database
+        const base64Data = req.file.buffer.toString("base64");
+        const productImage = await storage.createProductImage({
+          data: base64Data,
+          mimeType: req.file.mimetype,
+          originalName: req.file.originalname,
+        });
+        
+        // Return URL pointing to database image endpoint
+        const imageUrl = `/api/product-images/${productImage.id}`;
+        res.json({ success: true, data: { imageUrl, imageId: productImage.id } });
+      } catch (error) {
+        console.error("Error saving product image:", error);
+        res.status(500).json({ success: false, error: "이미지 저장에 실패했습니다." });
+      }
+    });
+  });
+  
+  // Serve product images from database
+  app.get("/api/product-images/:id", async (req: Request, res: Response) => {
+    try {
+      const image = await storage.getProductImage(req.params.id);
+      if (!image) {
+        return res.status(404).json({ success: false, error: "이미지를 찾을 수 없습니다." });
+      }
+      
+      // Convert base64 back to buffer and send
+      const buffer = Buffer.from(image.data, "base64");
+      res.setHeader("Content-Type", image.mimeType);
+      res.setHeader("Cache-Control", "public, max-age=31536000"); // Cache for 1 year
+      res.setHeader("ETag", `"${image.id}"`);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error serving product image:", error);
+      res.status(500).json({ success: false, error: "이미지를 불러올 수 없습니다." });
+    }
+  });
+
   // ==================== REVIEWS API ====================
   
   // Get all reviews (public - visible only)
