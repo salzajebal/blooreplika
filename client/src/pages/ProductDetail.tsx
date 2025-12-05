@@ -181,6 +181,7 @@ export default function ProductDetail() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -269,17 +270,27 @@ export default function ProductDetail() {
             <div className="space-y-4">
               <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
                 <img
-                  src={product.imageUrl || DEFAULT_IMAGE}
+                  src={
+                    product.imageUrls && product.imageUrls.length > 0
+                      ? product.imageUrls[selectedImageIndex] || product.imageUrls[0]
+                      : product.imageUrl || DEFAULT_IMAGE
+                  }
                   alt={product.name}
                   className="w-full h-full object-contain p-8"
                 />
               </div>
-              <div className="flex gap-2 justify-center">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="w-20 h-20 bg-gray-50 rounded border border-gray-200 overflow-hidden cursor-pointer hover:border-primary transition-colors">
+              <div className="flex gap-2 justify-center flex-wrap">
+                {(product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls : [product.imageUrl || DEFAULT_IMAGE]).map((url, index) => (
+                  <div 
+                    key={index} 
+                    className={`w-20 h-20 bg-gray-50 rounded border overflow-hidden cursor-pointer transition-colors ${
+                      selectedImageIndex === index ? 'border-primary border-2' : 'border-gray-200 hover:border-primary'
+                    }`}
+                    onClick={() => setSelectedImageIndex(index)}
+                  >
                     <img
-                      src={product.imageUrl || DEFAULT_IMAGE}
-                      alt={`${product.name} ${i}`}
+                      src={url || DEFAULT_IMAGE}
+                      alt={`${product.name} ${index + 1}`}
                       className="w-full h-full object-contain p-2"
                     />
                   </div>
