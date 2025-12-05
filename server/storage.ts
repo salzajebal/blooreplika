@@ -9,6 +9,7 @@ import {
   type Faq, type InsertFaq, faqs,
   type Review, type InsertReview, reviews,
   type ReviewImage, type InsertReviewImage, reviewImages,
+  type ProductImage, type InsertProductImage, productImages,
   type Notice, type InsertNotice, notices,
   type DepositRequest, type InsertDepositRequest, depositRequests,
   type WithdrawalRequest, type InsertWithdrawalRequest, withdrawalRequests,
@@ -84,6 +85,11 @@ export interface IStorage {
   getReviewImage(id: string): Promise<ReviewImage | undefined>;
   createReviewImage(image: InsertReviewImage): Promise<ReviewImage>;
   deleteReviewImage(id: string): Promise<boolean>;
+  
+  // Product Images
+  getProductImage(id: string): Promise<ProductImage | undefined>;
+  createProductImage(image: InsertProductImage): Promise<ProductImage>;
+  deleteProductImage(id: string): Promise<boolean>;
   
   // Notices
   getAllNotices(): Promise<Notice[]>;
@@ -415,6 +421,22 @@ export class DatabaseStorage implements IStorage {
 
   async deleteReviewImage(id: string): Promise<boolean> {
     const result = await db.delete(reviewImages).where(eq(reviewImages.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Product Images
+  async getProductImage(id: string): Promise<ProductImage | undefined> {
+    const [image] = await db.select().from(productImages).where(eq(productImages.id, id));
+    return image;
+  }
+
+  async createProductImage(insertImage: InsertProductImage): Promise<ProductImage> {
+    const [image] = await db.insert(productImages).values(insertImage).returning();
+    return image;
+  }
+
+  async deleteProductImage(id: string): Promise<boolean> {
+    const result = await db.delete(productImages).where(eq(productImages.id, id)).returning();
     return result.length > 0;
   }
 
