@@ -256,19 +256,19 @@ export default function ProductDetail() {
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
       
-      <main className="flex-1">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <nav className="flex items-center gap-2 text-sm text-gray-500 mb-8">
-            <Link href="/" className="hover:text-primary">홈</Link>
-            <ChevronRight className="w-4 h-4" />
-            <Link href="/products" className="hover:text-primary">상품</Link>
-            <ChevronRight className="w-4 h-4" />
-            <span className="text-gray-900">{product.name}</span>
+      <main className="flex-1 pb-24 lg:pb-0">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+          <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-500 mb-4 sm:mb-8 overflow-x-auto whitespace-nowrap">
+            <Link href="/" className="hover:text-primary shrink-0">홈</Link>
+            <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+            <Link href="/products" className="hover:text-primary shrink-0">상품</Link>
+            <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+            <span className="text-gray-900 truncate">{product.name}</span>
           </nav>
 
-          <div className="grid lg:grid-cols-2 gap-12">
-            <div className="space-y-4">
-              <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
+          <div className="grid lg:grid-cols-2 gap-6 lg:gap-12">
+            <div className="space-y-3 sm:space-y-4">
+              <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 max-w-md mx-auto lg:max-w-none">
                 <img
                   src={
                     product.imageUrls && product.imageUrls.length > 0
@@ -276,14 +276,14 @@ export default function ProductDetail() {
                       : product.imageUrl || DEFAULT_IMAGE
                   }
                   alt={product.name}
-                  className="w-full h-full object-contain p-8"
+                  className="w-full h-full object-contain p-4 sm:p-8"
                 />
               </div>
-              <div className="flex gap-2 justify-center flex-wrap">
+              <div className="flex gap-2 justify-center flex-wrap px-2">
                 {(product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls : [product.imageUrl || DEFAULT_IMAGE]).map((url, index) => (
                   <div 
                     key={index} 
-                    className={`w-20 h-20 bg-gray-50 rounded border overflow-hidden cursor-pointer transition-colors ${
+                    className={`w-16 h-16 sm:w-20 sm:h-20 bg-gray-50 rounded border overflow-hidden cursor-pointer transition-colors shrink-0 ${
                       selectedImageIndex === index ? 'border-primary border-2' : 'border-gray-200 hover:border-primary'
                     }`}
                     onClick={() => setSelectedImageIndex(index)}
@@ -291,16 +291,16 @@ export default function ProductDetail() {
                     <img
                       src={url || DEFAULT_IMAGE}
                       alt={`${product.name} ${index + 1}`}
-                      className="w-full h-full object-contain p-2"
+                      className="w-full h-full object-contain p-1 sm:p-2"
                     />
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="space-y-6">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
+            <div className="space-y-4 sm:space-y-6 px-1">
+              <div className="text-center lg:text-left">
+                <div className="flex items-center justify-center lg:justify-start gap-2 mb-2">
                   {product.isBest && (
                     <span className="bg-gray-900 text-white text-xs px-2 py-1 font-bold">BEST</span>
                   )}
@@ -308,34 +308,34 @@ export default function ProductDetail() {
                     <span className="bg-red-600 text-white text-xs px-2 py-1 font-bold">NEW</span>
                   )}
                 </div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">{product.name}</h1>
-                <p className="text-gray-600">{product.description}</p>
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 break-keep">{product.name}</h1>
+                <p className="text-sm sm:text-base text-gray-600">{product.description}</p>
               </div>
 
-              <div className="border-t border-b border-gray-100 py-6">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-primary">{product.price}</span>
-                  <span className="text-lg text-gray-500">원</span>
+              <div className="border-t border-b border-gray-100 py-4 sm:py-6 text-center lg:text-left">
+                <div className="flex items-baseline justify-center lg:justify-start gap-2">
+                  <span className="text-2xl sm:text-3xl font-bold text-primary">{product.price}</span>
+                  <span className="text-base sm:text-lg text-gray-500">원</span>
                 </div>
-                <p className="text-sm text-gray-500 mt-1">VAT 포함 / 무료 배송</p>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">VAT 포함 / 무료 배송</p>
               </div>
 
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center gap-3">
-                  <span className="w-20 text-gray-500">중량</span>
+              <div className="space-y-2 sm:space-y-3 text-sm">
+                <div className="flex items-center justify-center lg:justify-start gap-3">
+                  <span className="w-16 sm:w-20 text-gray-500 text-right lg:text-left">중량</span>
                   <span className="font-medium">{product.weight}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="w-20 text-gray-500">순도</span>
+                <div className="flex items-center justify-center lg:justify-start gap-3">
+                  <span className="w-16 sm:w-20 text-gray-500 text-right lg:text-left">순도</span>
                   <span className="font-medium">{product.purity}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="w-20 text-gray-500">보증</span>
+                <div className="flex items-center justify-center lg:justify-start gap-3">
+                  <span className="w-16 sm:w-20 text-gray-500 text-right lg:text-left">보증</span>
                   <span className="font-medium text-primary">한국금거래소 정품 보증</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center lg:justify-start gap-4">
                 <span className="text-gray-500 text-sm">수량</span>
                 <div className="flex items-center border border-gray-200 rounded">
                   <button
@@ -358,7 +358,7 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              <div className="flex gap-3">
+              <div className="hidden lg:flex gap-3">
                 <Button
                   variant="outline"
                   size="lg"
@@ -389,54 +389,54 @@ export default function ProductDetail() {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-4 gap-4 pt-4 border-t border-gray-100">
+              <div className="grid grid-cols-4 gap-2 sm:gap-4 pt-4 border-t border-gray-100">
                 <div className="text-center">
-                  <Truck className="w-6 h-6 mx-auto text-gold-600 mb-1" />
-                  <span className="text-xs text-gray-600">무료배송</span>
+                  <Truck className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-gold-600 mb-1" />
+                  <span className="text-[10px] sm:text-xs text-gray-600">무료배송</span>
                 </div>
                 <div className="text-center">
-                  <Shield className="w-6 h-6 mx-auto text-gold-600 mb-1" />
-                  <span className="text-xs text-gray-600">정품보증</span>
+                  <Shield className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-gold-600 mb-1" />
+                  <span className="text-[10px] sm:text-xs text-gray-600">정품보증</span>
                 </div>
                 <div className="text-center">
-                  <Award className="w-6 h-6 mx-auto text-gold-600 mb-1" />
-                  <span className="text-xs text-gray-600">품질인증</span>
+                  <Award className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-gold-600 mb-1" />
+                  <span className="text-[10px] sm:text-xs text-gray-600">품질인증</span>
                 </div>
                 <div className="text-center">
-                  <RotateCcw className="w-6 h-6 mx-auto text-gold-600 mb-1" />
-                  <span className="text-xs text-gray-600">교환/반품</span>
+                  <RotateCcw className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-gold-600 mb-1" />
+                  <span className="text-[10px] sm:text-xs text-gray-600">교환/반품</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="mt-16 border-t border-gray-200 pt-12">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 pb-4 border-b-2 border-primary inline-block">
+          <div className="mt-8 sm:mt-16 border-t border-gray-200 pt-8 sm:pt-12">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 pb-3 sm:pb-4 border-b-2 border-primary inline-block">
               상품 상세 정보
             </h2>
             
-            <div className="grid md:grid-cols-2 gap-8 mb-12">
+            <div className="grid md:grid-cols-2 gap-6 sm:gap-8 mb-8 sm:mb-12">
               <div>
-                <h3 className="font-bold text-gray-900 mb-4">상품 특징</h3>
-                <ul className="space-y-3">
+                <h3 className="font-bold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">상품 특징</h3>
+                <ul className="space-y-2 sm:space-y-3">
                   {details.features.map((feature, i) => (
-                    <li key={i} className="flex items-start gap-2 text-gray-700">
-                      <span className="text-primary mt-1">✓</span>
-                      <span>{feature}</span>
+                    <li key={i} className="flex items-start gap-2 text-gray-700 text-sm">
+                      <span className="text-primary mt-0.5 shrink-0">✓</span>
+                      <span className="break-keep">{feature}</span>
                     </li>
                   ))}
                 </ul>
               </div>
               
               <div>
-                <h3 className="font-bold text-gray-900 mb-4">상품 스펙</h3>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <table className="w-full">
+                <h3 className="font-bold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">상품 스펙</h3>
+                <div className="bg-gray-50 rounded-lg p-3 sm:p-4">
+                  <table className="w-full text-sm">
                     <tbody>
                       {details.specs.map((spec, i) => (
                         <tr key={i} className="border-b border-gray-200 last:border-0">
-                          <td className="py-3 text-gray-500 w-24">{spec.label}</td>
-                          <td className="py-3 font-medium text-gray-900">{spec.value}</td>
+                          <td className="py-2 sm:py-3 text-gray-500 w-20 sm:w-24">{spec.label}</td>
+                          <td className="py-2 sm:py-3 font-medium text-gray-900">{spec.value}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -445,14 +445,14 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            <div className="bg-gold-50 rounded-lg p-6 mb-12">
-              <h3 className="font-bold text-gray-900 mb-3">안내사항</h3>
-              <p className="text-gray-700 leading-relaxed">{details.notice}</p>
+            <div className="bg-gold-50 rounded-lg p-4 sm:p-6 mb-8 sm:mb-12">
+              <h3 className="font-bold text-gray-900 mb-2 sm:mb-3 text-sm sm:text-base">안내사항</h3>
+              <p className="text-gray-700 leading-relaxed text-sm break-keep">{details.notice}</p>
             </div>
 
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="font-bold text-gray-900 mb-4">배송 및 교환/반품 안내</h3>
-              <div className="grid md:grid-cols-2 gap-6 text-sm text-gray-600">
+            <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
+              <h3 className="font-bold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">배송 및 교환/반품 안내</h3>
+              <div className="grid md:grid-cols-2 gap-4 sm:gap-6 text-xs sm:text-sm text-gray-600">
                 <div>
                   <h4 className="font-medium text-gray-900 mb-2">배송 안내</h4>
                   <ul className="space-y-1">
@@ -475,21 +475,21 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 lg:hidden z-40">
-            <div className="flex gap-3 max-w-lg mx-auto">
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 sm:p-4 lg:hidden z-40 safe-area-inset-bottom">
+            <div className="flex gap-2 sm:gap-3 max-w-lg mx-auto">
               <Button
                 variant="outline"
-                className="flex-1 h-12"
+                className="flex-1 h-11 sm:h-12 text-sm"
                 onClick={handleInquiry}
               >
-                <MessageCircle className="w-4 h-4 mr-2" />
+                <MessageCircle className="w-4 h-4 mr-1.5 sm:mr-2" />
                 1:1 상담
               </Button>
               <Button
-                className="flex-1 h-12 bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E]"
+                className="flex-1 h-11 sm:h-12 text-sm bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E]"
                 onClick={handleBuyNow}
               >
-                <KakaoIcon className="w-4 h-4 mr-2" />
+                <KakaoIcon className="w-4 h-4 mr-1.5 sm:mr-2" />
                 카카오톡문의
               </Button>
             </div>
