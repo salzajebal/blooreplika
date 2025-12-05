@@ -119,3 +119,24 @@ Preferred communication style: Simple, everyday language.
 - Replit deployment with automatic domain detection for OpenGraph images
 - Environment-specific meta tag updates via custom Vite plugin
 - Static file serving in production mode
+
+## Mobile Responsive Design
+
+**Responsive Layout System:**
+- Mobile-first responsive breakpoints: sm (640px), md (768px), lg (1024px), xl (1280px)
+- Safe area insets for iOS devices (notch, home indicator)
+- Dynamic viewport height (dvh) for better mobile browser compatibility
+- Touch-optimized interaction targets with touch-manipulation
+
+**Mobile-Optimized Components:**
+- Header: Compact logo, hamburger menu for navigation, simplified top bar
+- Hero: Responsive typography scaling, stacked layouts on mobile, optimized carousel controls
+- ProductGrid: Responsive grid (2/3/4 columns), smaller badges and buttons on mobile
+- PriceBoard: Single-column layout on mobile, compact pricing cards
+- ChatWidget: Full-screen on mobile, responsive input fields
+- HomePopup: Responsive sizing with proper padding
+
+**Typography Scaling:**
+- Text sizes scale from mobile to desktop using responsive Tailwind classes
+- Korean text uses break-keep for proper word wrapping
+- Line heights and spacing optimized for readability on small screens

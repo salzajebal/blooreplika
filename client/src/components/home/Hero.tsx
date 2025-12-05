@@ -56,122 +56,122 @@ function PriceModal() {
   }, []);
 
   const renderTrendIcon = (trend: string) => {
-    if (trend === "up") return <ArrowUp className="w-5 h-5 text-red-500" />;
-    if (trend === "down") return <ArrowDown className="w-5 h-5 text-blue-500" />;
-    return <Minus className="w-5 h-5 text-gray-500" />;
+    if (trend === "up") return <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />;
+    if (trend === "down") return <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />;
+    return <Minus className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />;
   };
 
   const renderTrendText = (trend: string, change: string) => {
-    if (trend === "up") return <span className="text-red-500 font-bold">+{change}원 ▲</span>;
-    if (trend === "down") return <span className="text-blue-500 font-bold">-{change}원 ▼</span>;
-    return <span className="text-gray-500">변동없음</span>;
+    if (trend === "up") return <span className="text-red-500 font-bold text-xs sm:text-sm">+{change}원 ▲</span>;
+    if (trend === "down") return <span className="text-blue-500 font-bold text-xs sm:text-sm">-{change}원 ▼</span>;
+    return <span className="text-gray-500 text-xs sm:text-sm">변동없음</span>;
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center pb-4 border-b border-gray-200">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Clock className="w-4 h-4" />
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 pb-3 sm:pb-4 border-b border-gray-200">
+        <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+          <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
           <span>{format(currentTime, "yyyy년 MM월 dd일 HH:mm:ss", { locale: ko })}</span>
         </div>
         <button 
           onClick={fetchPrices}
-          className="flex items-center gap-1 text-sm text-primary hover:underline"
+          className="flex items-center gap-1 text-xs sm:text-sm text-primary hover:underline self-end sm:self-auto"
         >
-          <RefreshCw className="w-4 h-4" />
+          <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4" />
           새로고침
         </button>
       </div>
 
       {loading ? (
-        <div className="py-12 text-center text-gray-500">시세 정보를 불러오는 중...</div>
+        <div className="py-8 sm:py-12 text-center text-gray-500 text-sm">시세 정보를 불러오는 중...</div>
       ) : prices ? (
-        <div className="space-y-4">
-          <div className="bg-gradient-to-r from-yellow-50 to-amber-50 p-5 rounded-lg border border-yellow-200">
-            <div className="flex justify-between items-start mb-4">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="bg-gradient-to-r from-yellow-50 to-amber-50 p-4 sm:p-5 rounded-lg border border-yellow-200">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-0 mb-3 sm:mb-4">
               <div>
-                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <span className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm">Au</span>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <span className="w-7 h-7 sm:w-8 sm:h-8 bg-primary rounded-full flex items-center justify-center text-white text-xs sm:text-sm">Au</span>
                   순금 (Gold)
                 </h3>
-                <p className="text-sm text-gray-500 mt-1">24K / 999.9 / 3.75g (1돈) 기준</p>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">24K / 999.9 / 3.75g (1돈) 기준</p>
               </div>
               <div className="flex items-center gap-1">
                 {renderTrendIcon(prices.gold.trend)}
                 {renderTrendText(prices.gold.trend, prices.gold.change)}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white p-4 rounded-md border border-yellow-100">
-                <p className="text-sm text-gray-500 mb-1">살 때 (Buy)</p>
-                <p className="text-2xl font-bold text-red-600">{prices.gold.buyPrice}<span className="text-sm font-normal text-gray-500">원</span></p>
-                <p className="text-xs text-gray-400 mt-1">VAT 별도</p>
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
+              <div className="bg-white p-3 sm:p-4 rounded-md border border-yellow-100">
+                <p className="text-xs sm:text-sm text-gray-500 mb-1">살 때 (Buy)</p>
+                <p className="text-lg sm:text-2xl font-bold text-red-600">{prices.gold.buyPrice}<span className="text-xs sm:text-sm font-normal text-gray-500">원</span></p>
+                <p className="text-[10px] sm:text-xs text-gray-400 mt-1">VAT 별도</p>
               </div>
-              <div className="bg-white p-4 rounded-md border border-yellow-100">
-                <p className="text-sm text-gray-500 mb-1">팔 때 (Sell)</p>
-                <p className="text-2xl font-bold text-blue-600">{prices.gold.sellPrice}<span className="text-sm font-normal text-gray-500">원</span></p>
-                <p className="text-xs text-gray-400 mt-1">순금 기준</p>
+              <div className="bg-white p-3 sm:p-4 rounded-md border border-yellow-100">
+                <p className="text-xs sm:text-sm text-gray-500 mb-1">팔 때 (Sell)</p>
+                <p className="text-lg sm:text-2xl font-bold text-blue-600">{prices.gold.sellPrice}<span className="text-xs sm:text-sm font-normal text-gray-500">원</span></p>
+                <p className="text-[10px] sm:text-xs text-gray-400 mt-1">순금 기준</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-gray-50 to-slate-50 p-5 rounded-lg border border-gray-200">
-            <div className="flex justify-between items-start mb-4">
+          <div className="bg-gradient-to-r from-gray-50 to-slate-50 p-4 sm:p-5 rounded-lg border border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-0 mb-3 sm:mb-4">
               <div>
-                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <span className="w-8 h-8 bg-gray-400 rounded-full flex items-center justify-center text-white text-sm">Ag</span>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <span className="w-7 h-7 sm:w-8 sm:h-8 bg-gray-400 rounded-full flex items-center justify-center text-white text-xs sm:text-sm">Ag</span>
                   실버 (Silver)
                 </h3>
-                <p className="text-sm text-gray-500 mt-1">999.9 / 3.75g (1돈) 기준</p>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">999.9 / 3.75g (1돈) 기준</p>
               </div>
               <div className="flex items-center gap-1">
                 {renderTrendIcon(prices.silver.trend)}
                 {renderTrendText(prices.silver.trend, prices.silver.change)}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white p-4 rounded-md border border-gray-100">
-                <p className="text-sm text-gray-500 mb-1">살 때 (Buy)</p>
-                <p className="text-2xl font-bold text-red-600">{prices.silver.buyPrice}<span className="text-sm font-normal text-gray-500">원</span></p>
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
+              <div className="bg-white p-3 sm:p-4 rounded-md border border-gray-100">
+                <p className="text-xs sm:text-sm text-gray-500 mb-1">살 때 (Buy)</p>
+                <p className="text-lg sm:text-2xl font-bold text-red-600">{prices.silver.buyPrice}<span className="text-xs sm:text-sm font-normal text-gray-500">원</span></p>
               </div>
-              <div className="bg-white p-4 rounded-md border border-gray-100">
-                <p className="text-sm text-gray-500 mb-1">팔 때 (Sell)</p>
-                <p className="text-2xl font-bold text-blue-600">{prices.silver.sellPrice}<span className="text-sm font-normal text-gray-500">원</span></p>
+              <div className="bg-white p-3 sm:p-4 rounded-md border border-gray-100">
+                <p className="text-xs sm:text-sm text-gray-500 mb-1">팔 때 (Sell)</p>
+                <p className="text-lg sm:text-2xl font-bold text-blue-600">{prices.silver.sellPrice}<span className="text-xs sm:text-sm font-normal text-gray-500">원</span></p>
               </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-slate-50 to-zinc-50 p-5 rounded-lg border border-slate-200">
-            <div className="flex justify-between items-start mb-4">
+          <div className="bg-gradient-to-r from-slate-50 to-zinc-50 p-4 sm:p-5 rounded-lg border border-slate-200">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 sm:gap-0 mb-3 sm:mb-4">
               <div>
-                <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                  <span className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center text-white text-sm">Pt</span>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <span className="w-7 h-7 sm:w-8 sm:h-8 bg-slate-600 rounded-full flex items-center justify-center text-white text-xs sm:text-sm">Pt</span>
                   백금 (Platinum)
                 </h3>
-                <p className="text-sm text-gray-500 mt-1">999.9 / 3.75g (1돈) 기준</p>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">999.9 / 3.75g (1돈) 기준</p>
               </div>
               <div className="flex items-center gap-1">
                 {renderTrendIcon(prices.platinum.trend)}
                 {renderTrendText(prices.platinum.trend, prices.platinum.change)}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white p-4 rounded-md border border-slate-100">
-                <p className="text-sm text-gray-500 mb-1">살 때 (Buy)</p>
-                <p className="text-2xl font-bold text-red-600">{prices.platinum.buyPrice}<span className="text-sm font-normal text-gray-500">원</span></p>
+            <div className="grid grid-cols-2 gap-2 sm:gap-4">
+              <div className="bg-white p-3 sm:p-4 rounded-md border border-slate-100">
+                <p className="text-xs sm:text-sm text-gray-500 mb-1">살 때 (Buy)</p>
+                <p className="text-lg sm:text-2xl font-bold text-red-600">{prices.platinum.buyPrice}<span className="text-xs sm:text-sm font-normal text-gray-500">원</span></p>
               </div>
-              <div className="bg-white p-4 rounded-md border border-slate-100">
-                <p className="text-sm text-gray-500 mb-1">팔 때 (Sell)</p>
-                <p className="text-2xl font-bold text-blue-600">{prices.platinum.sellPrice}<span className="text-sm font-normal text-gray-500">원</span></p>
+              <div className="bg-white p-3 sm:p-4 rounded-md border border-slate-100">
+                <p className="text-xs sm:text-sm text-gray-500 mb-1">팔 때 (Sell)</p>
+                <p className="text-lg sm:text-2xl font-bold text-blue-600">{prices.platinum.sellPrice}<span className="text-xs sm:text-sm font-normal text-gray-500">원</span></p>
               </div>
             </div>
           </div>
         </div>
       ) : (
-        <div className="py-12 text-center text-gray-500">시세 정보를 불러올 수 없습니다.</div>
+        <div className="py-8 sm:py-12 text-center text-gray-500 text-sm">시세 정보를 불러올 수 없습니다.</div>
       )}
 
-      <div className="bg-gray-50 p-4 rounded-lg text-xs text-gray-500 space-y-1">
+      <div className="bg-gray-50 p-3 sm:p-4 rounded-lg text-[10px] sm:text-xs text-gray-500 space-y-1">
         <p>• 상기 시세는 한국골드금거래소 기준이며, 실제 거래 시 차이가 있을 수 있습니다.</p>
         <p>• 살 때 가격은 VAT(부가세) 별도이며, 대량 거래 시 별도 문의바랍니다.</p>
         <p>• 국제 금 시세 변동에 따라 실시간으로 변경될 수 있습니다.</p>
@@ -206,7 +206,7 @@ export function Hero() {
   };
 
   return (
-    <section className="relative w-full min-h-[550px] overflow-hidden bg-gradient-to-br from-stone-900 via-amber-950 to-stone-900">
+    <section className="relative w-full min-h-[420px] sm:min-h-[480px] md:min-h-[550px] overflow-hidden bg-gradient-to-br from-stone-900 via-amber-950 to-stone-900">
       <div className="absolute inset-0">
         <img 
           src={heroBg} 
@@ -216,7 +216,7 @@ export function Hero() {
         <div className="absolute inset-0 bg-gradient-to-r from-stone-900/90 via-stone-900/60 to-transparent"></div>
       </div>
 
-      <div className="container-custom relative h-full py-16">
+      <div className="container-custom relative h-full py-8 sm:py-12 md:py-16">
         <div className="relative overflow-hidden">
           <div 
             className="flex transition-transform duration-700 ease-in-out"
@@ -224,65 +224,66 @@ export function Hero() {
           >
             <div className="w-full flex-shrink-0">
               <div className="max-w-3xl animate-in fade-in slide-in-from-left-8 duration-1000">
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="inline-flex items-center gap-2 py-2 px-4 bg-amber-700/80 text-amber-100 text-sm font-medium tracking-wide rounded-full">
-                    <Sparkles className="w-4 h-4" />
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                  <span className="inline-flex items-center gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-3 sm:px-4 bg-amber-700/80 text-amber-100 text-xs sm:text-sm font-medium tracking-wide rounded-full">
+                    <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
                     창립 2주년 기념
                   </span>
                 </div>
                 
-                <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight mb-4">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight mb-3 sm:mb-4 break-keep">
                   한국골드금거래소
                   <br />
                   <span className="text-amber-400">2주년 특별가 안내</span>
                 </h1>
                 
-                <p className="text-stone-300 text-lg mb-10 max-w-xl leading-relaxed">
+                <p className="text-stone-300 text-sm sm:text-base md:text-lg mb-6 sm:mb-8 md:mb-10 max-w-xl leading-relaxed break-keep">
                   고객님의 성원에 감사드리며, 창립 2주년을 맞아
-                  <br />
+                  <br className="hidden sm:block" />
+                  <span className="sm:hidden"> </span>
                   특별한 가격으로 금 · 은 상품을 안내해 드립니다.
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
-                  <div className="bg-stone-800/60 backdrop-blur-sm border border-amber-700/30 rounded-xl p-6 hover:border-amber-600/50 transition-all">
-                    <div className="flex items-center gap-3 mb-4">
-                      <span className="w-11 h-11 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center text-stone-900 text-base font-bold shadow-lg">Au</span>
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 mb-6 sm:mb-8 md:mb-10">
+                  <div className="bg-stone-800/60 backdrop-blur-sm border border-amber-700/30 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 hover:border-amber-600/50 transition-all">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                      <span className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 bg-gradient-to-br from-amber-500 to-amber-600 rounded-full flex items-center justify-center text-stone-900 text-xs sm:text-sm md:text-base font-bold shadow-lg">Au</span>
                       <div>
-                        <p className="text-amber-400/80 text-sm">순금 Gold / 1돈</p>
-                        <p className="text-white font-medium">24K 999.9</p>
+                        <p className="text-amber-400/80 text-[10px] sm:text-xs md:text-sm">순금 Gold / 1돈</p>
+                        <p className="text-white font-medium text-xs sm:text-sm md:text-base">24K 999.9</p>
                       </div>
                     </div>
-                    <div className="flex items-end gap-2">
-                      <span className="text-4xl font-bold text-white">750,000</span>
-                      <span className="text-amber-400 text-lg font-medium mb-1">원</span>
+                    <div className="flex items-end gap-1 sm:gap-2">
+                      <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white">750,000</span>
+                      <span className="text-amber-400 text-sm sm:text-base md:text-lg font-medium mb-0.5 sm:mb-1">원</span>
                     </div>
-                    <p className="text-stone-400 text-sm mt-2">VAT 별도 / 돈당 기준</p>
+                    <p className="text-stone-400 text-[10px] sm:text-xs md:text-sm mt-1 sm:mt-2">VAT 별도 / 돈당 기준</p>
                   </div>
 
-                  <div className="bg-stone-800/60 backdrop-blur-sm border border-gray-500/30 rounded-xl p-6 hover:border-gray-400/50 transition-all">
-                    <div className="flex items-center gap-3 mb-4">
-                      <span className="w-11 h-11 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center text-stone-800 text-base font-bold shadow-lg">Ag</span>
+                  <div className="bg-stone-800/60 backdrop-blur-sm border border-gray-500/30 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 hover:border-gray-400/50 transition-all">
+                    <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                      <span className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 bg-gradient-to-br from-gray-400 to-gray-500 rounded-full flex items-center justify-center text-stone-800 text-xs sm:text-sm md:text-base font-bold shadow-lg">Ag</span>
                       <div>
-                        <p className="text-gray-400 text-sm">실버 Silver / 1돈</p>
-                        <p className="text-white font-medium">999.9</p>
+                        <p className="text-gray-400 text-[10px] sm:text-xs md:text-sm">실버 Silver / 1돈</p>
+                        <p className="text-white font-medium text-xs sm:text-sm md:text-base">999.9</p>
                       </div>
                     </div>
-                    <div className="flex items-end gap-2">
-                      <span className="text-4xl font-bold text-white">10,150</span>
-                      <span className="text-gray-400 text-lg font-medium mb-1">원</span>
+                    <div className="flex items-end gap-1 sm:gap-2">
+                      <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white">10,150</span>
+                      <span className="text-gray-400 text-sm sm:text-base md:text-lg font-medium mb-0.5 sm:mb-1">원</span>
                     </div>
-                    <p className="text-stone-400 text-sm mt-2">VAT 별도 / 돈당 기준</p>
+                    <p className="text-stone-400 text-[10px] sm:text-xs md:text-sm mt-1 sm:mt-2">VAT 별도 / 돈당 기준</p>
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <Button 
                     size="lg" 
-                    className="bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-medium border-none rounded-lg px-8 h-14 text-base shadow-lg"
+                    className="bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-medium border-none rounded-lg px-5 sm:px-6 md:px-8 h-11 sm:h-12 md:h-14 text-sm sm:text-base shadow-lg w-full sm:w-auto"
                     onClick={handleKakaoClick}
                     data-testid="button-kakao-inquiry"
                   >
-                    <KakaoIcon className="w-5 h-5 mr-2" />
+                    <KakaoIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                     카카오톡 문의하기
                   </Button>
                   
@@ -291,16 +292,16 @@ export function Hero() {
                       <Button 
                         size="lg" 
                         variant="outline" 
-                        className="border border-stone-500 text-stone-300 hover:bg-stone-700 hover:text-white rounded-lg px-8 h-14 text-base"
+                        className="border border-stone-500 text-stone-300 hover:bg-stone-700 hover:text-white rounded-lg px-5 sm:px-6 md:px-8 h-11 sm:h-12 md:h-14 text-sm sm:text-base w-full sm:w-auto"
                         data-testid="button-check-price"
                       >
                         실시간 시세 조회
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="max-w-[95vw] sm:max-w-lg md:max-w-2xl max-h-[85vh] overflow-y-auto mx-2">
                       <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                          <TrendingUp className="w-6 h-6 text-primary" />
+                        <DialogTitle className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                          <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                           실시간 귀금속 시세
                         </DialogTitle>
                       </DialogHeader>
@@ -309,7 +310,7 @@ export function Hero() {
                   </Dialog>
                 </div>
 
-                <p className="mt-8 text-stone-500 text-sm">
+                <p className="mt-5 sm:mt-6 md:mt-8 text-stone-500 text-xs sm:text-sm">
                   * 이벤트 특별가는 별도 문의를 통해 안내받으실 수 있습니다.
                 </p>
               </div>
@@ -330,45 +331,45 @@ export function Hero() {
                 </div>
               </div>
               <div className="max-w-3xl relative z-10">
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="inline-flex items-center gap-2 py-2 px-4 bg-amber-700/80 text-amber-100 text-sm font-medium tracking-wide rounded-full">
-                    <Shield className="w-4 h-4" />
+                <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                  <span className="inline-flex items-center gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-3 sm:px-4 bg-amber-700/80 text-amber-100 text-xs sm:text-sm font-medium tracking-wide rounded-full">
+                    <Shield className="w-3 h-3 sm:w-4 sm:h-4" />
                     신뢰와 전통
                   </span>
                 </div>
                 
-                <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight mb-6">
+                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white leading-tight mb-4 sm:mb-6 break-keep">
                   한국골드금거래소가
                   <br />
                   <span className="text-amber-400">저렴히 판매할 수 있는 이유</span>
                 </h1>
                 
-                <div className="bg-stone-800/60 backdrop-blur-sm border border-amber-700/30 rounded-xl p-6 md:p-8 mb-8">
-                  <p className="text-stone-200 text-base md:text-lg leading-relaxed mb-6">
+                <div className="bg-stone-800/60 backdrop-blur-sm border border-amber-700/30 rounded-lg sm:rounded-xl p-4 sm:p-6 md:p-8 mb-4 sm:mb-6 md:mb-8">
+                  <p className="text-stone-200 text-sm sm:text-base md:text-lg leading-relaxed mb-4 sm:mb-6 break-keep">
                     저희 한국골드금거래소는 <span className="text-amber-400 font-bold">1884년</span>부터 가족 대대로 귀금속 주얼리를 취급하던 기업입니다.
                   </p>
                   
-                  <p className="text-stone-300 text-base leading-relaxed mb-6">
+                  <p className="text-stone-300 text-xs sm:text-sm md:text-base leading-relaxed mb-4 sm:mb-6 break-keep">
                     금을 취급하는 정말 많은 업체가 있지만 대부분 당일매입 후 당일 판매를 합니다. 하지만 금은 한정적인 자산이며 현시점, 금값은 최근 폭등하였습니다.
                   </p>
                   
-                  <p className="text-stone-300 text-base leading-relaxed mb-6">
-                    매번 그랬듯 한국골드금거래소는 <span className="text-amber-400 font-semibold">싸게 판매를 원칙</span>으로 하여 항상 매번 <span className="text-amber-400 font-semibold">최소 판매 6개월 전부터 10kg 이상 현물을 매입</span>합니다. 당시 매입시세는 지금보다 훨씬 낮은 가치겠죠.
+                  <p className="text-stone-300 text-xs sm:text-sm md:text-base leading-relaxed mb-4 sm:mb-6 break-keep">
+                    매번 그랬듯 한국골드금거래소는 <span className="text-amber-400 font-semibold">싸게 판매를 원칙</span>으로 하여 항상 매번 <span className="text-amber-400 font-semibold">최소 판매 6개월 전부터 10kg 이상 현물을 매입</span>합니다.
                   </p>
                   
-                  <p className="text-stone-200 text-base leading-relaxed">
+                  <p className="text-stone-200 text-xs sm:text-sm md:text-base leading-relaxed break-keep">
                     그렇기 때문에 현재 금값이 치솟아도, 세공비, 인건비 포함하여 시세보다 저렴하게 판매할 수 있는 최고 장점의 <span className="text-amber-400 font-bold">"이유"</span>입니다.
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-r from-red-900/40 to-amber-900/40 backdrop-blur-sm border border-red-500/30 rounded-xl p-5 md:p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Shield className="w-6 h-6 text-red-400" />
+                <div className="bg-gradient-to-r from-red-900/40 to-amber-900/40 backdrop-blur-sm border border-red-500/30 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6">
+                  <div className="flex items-start gap-3 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                      <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-red-400" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-white mb-2">10배 배상 보장</h3>
-                      <p className="text-stone-300 text-base leading-relaxed">
+                      <h3 className="text-lg sm:text-xl font-bold text-white mb-1 sm:mb-2">10배 배상 보장</h3>
+                      <p className="text-stone-300 text-xs sm:text-sm md:text-base leading-relaxed break-keep">
                         저희 물건이 가품일시 이유불문 <span className="text-red-400 font-bold">10배 배상</span>을 자신있게 약속드립니다.
                       </p>
                     </div>
@@ -379,13 +380,13 @@ export function Hero() {
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-4 mt-8">
+        <div className="flex items-center justify-center gap-3 sm:gap-4 mt-6 sm:mt-8">
           <button
             onClick={prevSlide}
-            className="w-10 h-10 rounded-full bg-stone-700/50 hover:bg-stone-600/50 flex items-center justify-center text-white transition-colors"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-stone-700/50 hover:bg-stone-600/50 flex items-center justify-center text-white transition-colors touch-manipulation"
             aria-label="Previous slide"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
           
           <div className="flex gap-2">
@@ -393,10 +394,10 @@ export function Hero() {
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
-                className={`w-3 h-3 rounded-full transition-all ${
+                className={`h-2 sm:h-3 rounded-full transition-all touch-manipulation ${
                   currentSlide === index 
-                    ? 'bg-amber-500 w-8' 
-                    : 'bg-stone-600 hover:bg-stone-500'
+                    ? 'bg-amber-500 w-6 sm:w-8' 
+                    : 'bg-stone-600 hover:bg-stone-500 w-2 sm:w-3'
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
@@ -405,10 +406,10 @@ export function Hero() {
 
           <button
             onClick={nextSlide}
-            className="w-10 h-10 rounded-full bg-stone-700/50 hover:bg-stone-600/50 flex items-center justify-center text-white transition-colors"
+            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-stone-700/50 hover:bg-stone-600/50 flex items-center justify-center text-white transition-colors touch-manipulation"
             aria-label="Next slide"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </div>

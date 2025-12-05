@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart, ChevronRight } from "lucide-react";
+import { ShoppingCart, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
-import type { Product, Category } from "@shared/schema";
+import type { Product } from "@shared/schema";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
 
@@ -69,14 +69,13 @@ export function ProductGrid() {
   const filteredProducts = products;
 
   return (
-    <section className="py-16">
-      {/* Category Tabs */}
-      <div className="mb-10">
-        <div className="flex flex-wrap justify-center gap-2 mb-8">
+    <section className="py-8 sm:py-12 md:py-16">
+      <div className="mb-6 sm:mb-8 md:mb-10">
+        <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-6 sm:mb-8 px-1">
           <button 
             onClick={() => setActiveCategory("all")}
             className={cn(
-              "px-6 py-3 rounded-full text-sm font-bold transition-all border",
+              "px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-full text-xs sm:text-sm font-bold transition-all border touch-manipulation",
               activeCategory === "all" 
                 ? "bg-primary text-white border-primary shadow-md" 
                 : "bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary"
@@ -90,7 +89,7 @@ export function ProductGrid() {
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
               className={cn(
-                "px-6 py-3 rounded-full text-sm font-bold transition-all border",
+                "px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-full text-xs sm:text-sm font-bold transition-all border touch-manipulation",
                 activeCategory === cat.id 
                   ? "bg-primary text-white border-primary shadow-md" 
                   : "bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary"
@@ -103,36 +102,33 @@ export function ProductGrid() {
         </div>
       </div>
 
-      {/* Header for selected category */}
-      <div className="flex justify-between items-end mb-8 pb-4 border-b border-gray-100">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2 sm:gap-4 mb-6 sm:mb-8 pb-3 sm:pb-4 border-b border-gray-100">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">
             {activeCategory === "all" ? "전체 상품" : DEFAULT_CATEGORIES.find(c => c.id === activeCategory)?.name}
           </h2>
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 text-xs sm:text-sm break-keep">
             한국골드금거래소가 보증하는 정품 {activeCategory === "all" ? "귀금속" : DEFAULT_CATEGORIES.find(c => c.id === activeCategory)?.name} 모음
           </p>
         </div>
-        <div className="text-sm text-gray-500">
-          총 <span className="font-bold text-primary" data-testid="text-product-count">{filteredProducts.length}</span>개의 상품이 있습니다.
+        <div className="text-xs sm:text-sm text-gray-500">
+          총 <span className="font-bold text-primary" data-testid="text-product-count">{filteredProducts.length}</span>개의 상품
         </div>
       </div>
 
-      {/* Product Grid */}
       {loading ? (
-        <div className="py-20 text-center">
-          <div className="text-gray-500">상품을 불러오는 중...</div>
+        <div className="py-12 sm:py-20 text-center">
+          <div className="text-gray-500 text-sm">상품을 불러오는 중...</div>
         </div>
       ) : filteredProducts.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 md:gap-6">
           {filteredProducts.map((product) => (
             <Link 
               key={product.id} 
               href={`/product/${product.id}`}
-              className="group bg-white border border-gray-100 hover:border-primary/50 hover:shadow-lg transition-all duration-300 relative flex flex-col cursor-pointer"
+              className="group bg-white border border-gray-100 hover:border-primary/50 hover:shadow-lg transition-all duration-300 relative flex flex-col cursor-pointer rounded-lg overflow-hidden"
               data-testid={`card-product-${product.id}`}
             >
-              {/* Image Container */}
               <div className="aspect-square bg-gray-50 relative overflow-hidden">
                 <img 
                   src={product.imageUrl || DEFAULT_IMAGE} 
@@ -140,27 +136,25 @@ export function ProductGrid() {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 
-                {/* Badges */}
-                <div className="absolute top-2 left-2 flex flex-col gap-1">
+                <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 flex flex-col gap-0.5 sm:gap-1">
                   {product.isBest && (
-                    <span className="bg-gray-900 text-white text-[10px] px-2 py-1 font-bold uppercase tracking-wider inline-block text-center">
+                    <span className="bg-gray-900 text-white text-[8px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 sm:py-1 font-bold uppercase tracking-wider inline-block text-center">
                       Best
                     </span>
                   )}
                   {product.isNew && (
-                    <span className="bg-red-600 text-white text-[10px] px-2 py-1 font-bold uppercase tracking-wider inline-block text-center">
+                    <span className="bg-red-600 text-white text-[8px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 sm:py-1 font-bold uppercase tracking-wider inline-block text-center">
                       New
                     </span>
                   )}
                 </div>
                 
-                {/* Hover Actions */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex gap-2 justify-center bg-white/90 backdrop-blur-sm border-t border-gray-100">
+                <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300 flex gap-1.5 sm:gap-2 justify-center bg-white/90 backdrop-blur-sm border-t border-gray-100">
                   <Button 
                     size="icon" 
                     variant="outline" 
                     className={cn(
-                      "h-9 w-9 rounded-full transition-colors",
+                      "h-7 w-7 sm:h-9 sm:w-9 rounded-full transition-colors",
                       isInWishlist(product.id) 
                         ? "bg-primary text-white border-primary" 
                         : "hover:bg-primary hover:text-white hover:border-primary"
@@ -168,36 +162,35 @@ export function ProductGrid() {
                     onClick={(e) => handleWishlistToggle(e, product)}
                     data-testid={`button-wishlist-${product.id}`}
                   >
-                    <Heart className={cn("w-4 h-4", isInWishlist(product.id) && "fill-current")} />
+                    <Heart className={cn("w-3 h-3 sm:w-4 sm:h-4", isInWishlist(product.id) && "fill-current")} />
                   </Button>
                   <Button 
                     size="icon" 
                     variant="outline" 
-                    className="h-9 w-9 rounded-full hover:bg-primary hover:text-white hover:border-primary transition-colors" 
+                    className="h-7 w-7 sm:h-9 sm:w-9 rounded-full hover:bg-primary hover:text-white hover:border-primary transition-colors" 
                     onClick={(e) => {
                       e.preventDefault();
                       handleWishlistToggle(e, product);
                     }}
                     data-testid={`button-cart-${product.id}`}
                   >
-                    <ShoppingCart className="w-4 h-4" />
+                    <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
                 </div>
               </div>
               
-              {/* Product Info */}
-              <div className="p-4 text-center flex-1 flex flex-col justify-between">
+              <div className="p-2 sm:p-3 md:p-4 text-center flex-1 flex flex-col justify-between">
                 <div>
-                  <div className="text-xs text-gray-500 mb-1">{product.purity} / {product.weight}</div>
-                  <h3 className="font-bold text-gray-900 mb-3 group-hover:text-primary transition-colors line-clamp-2 h-10 flex items-center justify-center text-sm">
+                  <div className="text-[10px] sm:text-xs text-gray-500 mb-0.5 sm:mb-1">{product.purity} / {product.weight}</div>
+                  <h3 className="font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-2 h-8 sm:h-10 flex items-center justify-center text-xs sm:text-sm">
                     {product.name}
                   </h3>
                 </div>
                 
-                <div className="pt-3 border-t border-dashed border-gray-100 w-full">
-                  <div className="flex justify-center items-baseline gap-1">
-                    <span className="text-lg font-bold text-primary">{product.price}</span>
-                    <span className="text-xs text-gray-500">원</span>
+                <div className="pt-2 sm:pt-3 border-t border-dashed border-gray-100 w-full mt-1 sm:mt-2">
+                  <div className="flex justify-center items-baseline gap-0.5 sm:gap-1">
+                    <span className="text-sm sm:text-base md:text-lg font-bold text-primary">{product.price}</span>
+                    <span className="text-[10px] sm:text-xs text-gray-500">원</span>
                   </div>
                 </div>
               </div>
@@ -205,10 +198,10 @@ export function ProductGrid() {
           ))}
         </div>
       ) : (
-        <div className="py-20 text-center bg-gray-50 border border-dashed border-gray-200 rounded-lg">
-          <p className="text-gray-500 mb-4">해당 카테고리에 등록된 상품이 없습니다.</p>
-          <p className="text-sm text-gray-400">관리자 페이지에서 상품을 추가해주세요.</p>
-          <a href="/admin" className="inline-block mt-4 text-primary hover:underline text-sm">
+        <div className="py-12 sm:py-20 text-center bg-gray-50 border border-dashed border-gray-200 rounded-lg">
+          <p className="text-gray-500 mb-3 sm:mb-4 text-sm">해당 카테고리에 등록된 상품이 없습니다.</p>
+          <p className="text-xs sm:text-sm text-gray-400">관리자 페이지에서 상품을 추가해주세요.</p>
+          <a href="/admin" className="inline-block mt-3 sm:mt-4 text-primary hover:underline text-xs sm:text-sm">
             관리자 페이지 바로가기 →
           </a>
         </div>
