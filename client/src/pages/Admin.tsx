@@ -78,6 +78,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditProductModal, setShowEditProductModal] = useState(false);
   const [productFilter, setProductFilter] = useState("all");
   
   const [formData, setFormData] = useState({
@@ -780,6 +781,7 @@ export default function Admin() {
       if (data.success) {
         toast({ title: "성공", description: "상품이 수정되었습니다." });
         setEditingId(null);
+        setShowEditProductModal(false);
         fetchProducts();
       }
     } catch (error) {
@@ -816,6 +818,7 @@ export default function Admin() {
       description: product.description || "",
       imageUrl: product.imageUrl || "",
     });
+    setShowEditProductModal(true);
   };
 
   const handleCreateMember = async () => {
@@ -1675,115 +1678,214 @@ export default function Admin() {
                   <tbody className="divide-y divide-gray-100">
                     {filteredProducts.map((product) => (
                       <tr key={product.id} className="hover:bg-gray-50">
-                        {editingId === product.id ? (
-                          <>
-                            <td className="px-4 py-3">
-                              <Input
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="h-8"
+                        <td className="px-4 py-3 font-medium text-gray-900">
+                          <div className="flex items-center gap-3">
+                            {product.imageUrl && (
+                              <img 
+                                src={product.imageUrl} 
+                                alt={product.name} 
+                                className="w-10 h-10 object-cover rounded border border-gray-200"
                               />
-                            </td>
-                            <td className="px-4 py-3">
-                              <Input
-                                value={formData.weight}
-                                onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                                className="h-8 w-24"
-                              />
-                            </td>
-                            <td className="px-4 py-3">
-                              <Input
-                                value={formData.purity}
-                                onChange={(e) => setFormData({ ...formData, purity: e.target.value })}
-                                className="h-8 w-24"
-                              />
-                            </td>
-                            <td className="px-4 py-3">
-                              <Input
-                                value={formData.price}
-                                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                                className="h-8 w-32"
-                              />
-                            </td>
-                            <td className="px-4 py-3">
-                              <select
-                                className="border border-gray-200 rounded-md px-2 py-1 text-sm"
-                                value={formData.category}
-                                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                              >
-                                {CATEGORY_OPTIONS.map((cat) => (
-                                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                ))}
-                              </select>
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <label className="inline-flex items-center gap-1 mr-2">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.isBest}
-                                  onChange={(e) => setFormData({ ...formData, isBest: e.target.checked })}
-                                />
-                                <span className="text-xs">Best</span>
-                              </label>
-                              <label className="inline-flex items-center gap-1">
-                                <input
-                                  type="checkbox"
-                                  checked={formData.isNew}
-                                  onChange={(e) => setFormData({ ...formData, isNew: e.target.checked })}
-                                />
-                                <span className="text-xs">New</span>
-                              </label>
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <Button size="icon" variant="ghost" onClick={() => handleUpdate(product.id)} className="h-8 w-8 text-green-600">
-                                <Check className="w-4 h-4" />
-                              </Button>
-                              <Button size="icon" variant="ghost" onClick={() => setEditingId(null)} className="h-8 w-8 text-gray-500">
-                                <X className="w-4 h-4" />
-                              </Button>
-                            </td>
-                          </>
-                        ) : (
-                          <>
-                            <td className="px-4 py-3 font-medium text-gray-900">{product.name}</td>
-                            <td className="px-4 py-3 text-gray-600">{product.weight}</td>
-                            <td className="px-4 py-3 text-gray-600">{product.purity}</td>
-                            <td className="px-4 py-3 text-yellow-600 font-bold">{product.price}원</td>
-                            <td className="px-4 py-3">
-                              <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
-                                {CATEGORY_OPTIONS.find(c => c.id === product.category)?.name || product.category}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              {product.isBest && <span className="bg-gray-900 text-white px-2 py-0.5 rounded text-[10px] mr-1">Best</span>}
-                              {product.isNew && <span className="bg-red-600 text-white px-2 py-0.5 rounded text-[10px]">New</span>}
-                            </td>
-                            <td className="px-4 py-3 text-right">
-                              <Button 
-                                data-testid={`button-edit-product-${product.id}`}
-                                size="icon" 
-                                variant="ghost" 
-                                onClick={() => startEdit(product)} 
-                                className="h-8 w-8"
-                              >
-                                <Pencil className="w-4 h-4" />
-                              </Button>
-                              <Button 
-                                data-testid={`button-delete-product-${product.id}`}
-                                size="icon" 
-                                variant="ghost" 
-                                onClick={() => handleDelete(product.id)} 
-                                className="h-8 w-8 text-red-500"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </td>
-                          </>
-                        )}
+                            )}
+                            <span>{product.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">{product.weight}</td>
+                        <td className="px-4 py-3 text-gray-600">{product.purity}</td>
+                        <td className="px-4 py-3 text-yellow-600 font-bold">{product.price}원</td>
+                        <td className="px-4 py-3">
+                          <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
+                            {CATEGORY_OPTIONS.find(c => c.id === product.category)?.name || product.category}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {product.isBest && <span className="bg-gray-900 text-white px-2 py-0.5 rounded text-[10px] mr-1">Best</span>}
+                          {product.isNew && <span className="bg-red-600 text-white px-2 py-0.5 rounded text-[10px]">New</span>}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Button 
+                            data-testid={`button-edit-product-${product.id}`}
+                            size="icon" 
+                            variant="ghost" 
+                            onClick={() => startEdit(product)} 
+                            className="h-8 w-8"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            data-testid={`button-delete-product-${product.id}`}
+                            size="icon" 
+                            variant="ghost" 
+                            onClick={() => handleDelete(product.id)} 
+                            className="h-8 w-8 text-red-500"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* 상품 수정 모달 */}
+            {showEditProductModal && editingId && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                  <div className="p-6 border-b border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-xl font-bold text-gray-900">상품 수정</h3>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => {
+                          setShowEditProductModal(false);
+                          setEditingId(null);
+                        }}
+                      >
+                        <X className="w-5 h-5" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">상품명 *</label>
+                        <Input
+                          placeholder="상품명"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">무게</label>
+                        <Input
+                          placeholder="무게 (예: 100g)"
+                          value={formData.weight}
+                          onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">순도</label>
+                        <Input
+                          placeholder="순도 (예: 999.9‰)"
+                          value={formData.purity}
+                          onChange={(e) => setFormData({ ...formData, purity: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">가격 *</label>
+                        <Input
+                          placeholder="가격 (예: 15,100,000)"
+                          value={formData.price}
+                          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+                        <select
+                          className="w-full border border-gray-200 rounded-md px-3 py-2"
+                          value={formData.category}
+                          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                        >
+                          {CATEGORY_OPTIONS.map((cat) => (
+                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-6 pt-6">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.isBest}
+                            onChange={(e) => setFormData({ ...formData, isBest: e.target.checked })}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm">Best 상품</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={formData.isNew}
+                            onChange={(e) => setFormData({ ...formData, isNew: e.target.checked })}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm">New 상품</span>
+                        </label>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">상품 설명</label>
+                      <Textarea
+                        placeholder="상품 설명 (선택)"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">상품 이미지</label>
+                      <div className="flex items-start gap-4">
+                        {formData.imageUrl && (
+                          <div className="relative">
+                            <img
+                              src={formData.imageUrl}
+                              alt="상품 이미지"
+                              className="w-32 h-32 object-cover rounded-lg border border-gray-200"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              onClick={() => setFormData({ ...formData, imageUrl: "" })}
+                              className="absolute -top-2 -right-2 h-6 w-6"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleProductImageUpload}
+                            disabled={uploadingProductImage}
+                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100 disabled:opacity-50"
+                            data-testid="input-edit-product-image"
+                          />
+                          {uploadingProductImage && (
+                            <div className="flex items-center gap-2 text-sm text-gray-500 mt-2">
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                              <span>업로드 중...</span>
+                            </div>
+                          )}
+                          <p className="text-xs text-gray-400 mt-1">최대 5MB, JPG/PNG/GIF 지원</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-4 border-t border-gray-200">
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          setShowEditProductModal(false);
+                          setEditingId(null);
+                        }}
+                      >
+                        취소
+                      </Button>
+                      <Button 
+                        onClick={() => editingId && handleUpdate(editingId)}
+                        className="bg-yellow-500 hover:bg-yellow-600"
+                      >
+                        저장
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
