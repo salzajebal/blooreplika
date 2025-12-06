@@ -11,6 +11,13 @@ export function Footer() {
             한국골드금거래소는 투명하고 공정한 귀금속 거래 문화를 선도합니다.
             최고 품질의 골드바와 실버바를 합리적인 가격에 만나보세요.
           </p>
+          <div className="text-[10px] sm:text-xs space-y-1 text-gray-500">
+            <p><span className="text-gray-400">상호:</span> 한국골드금거래소</p>
+            <p><span className="text-gray-400">사업자등록번호:</span> 754-29-01752</p>
+            <p><span className="text-gray-400">대표:</span> 임정재</p>
+            <p><span className="text-gray-400">주소:</span> 대전광역시 서구 남선로 39-15</p>
+            <p><span className="text-gray-400">업종:</span> 도매 및 소매업, 전자상거래 소매업</p>
+          </div>
         </div>
 
         <div>
