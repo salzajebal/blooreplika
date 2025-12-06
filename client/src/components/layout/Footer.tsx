@@ -15,7 +15,6 @@ export function Footer() {
             <p><span className="text-gray-400">상호:</span> 한국골드금거래소</p>
             <p><span className="text-gray-400">사업자등록번호:</span> 754-29-01752</p>
             <p><span className="text-gray-400">대표:</span> 임정재</p>
-            <p><span className="text-gray-400">주소:</span> 대전광역시 서구 남선로 39-15</p>
             <p><span className="text-gray-400">업종:</span> 도매 및 소매업, 전자상거래 소매업</p>
           </div>
         </div>
