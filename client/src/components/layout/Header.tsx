@@ -102,7 +102,11 @@ export function Header() {
 
       <div className="bg-[#f8f8f8] border-b border-gray-100 py-2 sm:py-2.5 hidden md:block">
         <div className="container-custom flex justify-between items-center text-sm text-gray-600">
-          <div className="flex gap-5">
+          <div className="flex gap-4 items-center">
+            <span className="text-xs text-gray-500">대전광역시 서구 남선로 39-15</span>
+            <span className="text-gray-300">|</span>
+            <span className="text-xs text-gray-500">사업자등록번호: 754-29-01752</span>
+            <span className="text-gray-300">|</span>
             <Link href="/notices" className="hover:text-amber-700 transition-colors">공지사항</Link>
             <Link href="/reviews" className="hover:text-amber-700 transition-colors">고객후기</Link>
           </div>
