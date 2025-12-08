@@ -56,6 +56,8 @@ export interface IStorage {
   getAllConversations(): Promise<ChatConversation[]>;
   getAllChatConversations(): Promise<ChatConversation[]>;
   getConversation(id: string): Promise<ChatConversation | undefined>;
+  getConversationByMemberId(memberId: string): Promise<ChatConversation | undefined>;
+  getOrCreateConversationForMember(memberId: string, memberName: string): Promise<ChatConversation>;
   createConversation(conversation: InsertChatConversation): Promise<ChatConversation>;
   updateConversationStatus(id: string, status: string): Promise<ChatConversation | undefined>;
   updateChatConversation(id: string, data: Partial<InsertChatConversation> & { updatedAt?: Date }): Promise<ChatConversation | undefined>;
@@ -274,6 +276,26 @@ export class DatabaseStorage implements IStorage {
   async getConversation(id: string): Promise<ChatConversation | undefined> {
     const [conversation] = await db.select().from(chatConversations).where(eq(chatConversations.id, id));
     return conversation;
+  }
+
+  async getConversationByMemberId(memberId: string): Promise<ChatConversation | undefined> {
+    const [conversation] = await db.select().from(chatConversations)
+      .where(eq(chatConversations.memberId, memberId))
+      .orderBy(desc(chatConversations.updatedAt))
+      .limit(1);
+    return conversation;
+  }
+
+  async getOrCreateConversationForMember(memberId: string, memberName: string): Promise<ChatConversation> {
+    const existing = await this.getConversationByMemberId(memberId);
+    if (existing) {
+      return existing;
+    }
+    return this.createConversation({
+      memberId,
+      subject: `${memberName}님의 1:1 상담`,
+      status: 'open',
+    });
   }
 
   async createConversation(insertConversation: InsertChatConversation): Promise<ChatConversation> {
