@@ -1327,6 +1327,61 @@ export async function registerRoutes(
     }
   });
 
+  // Get or create member chat conversation (member only)
+  app.get("/api/chat/member/conversation", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (!token) {
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+    }
+    
+    const session = memberSessions.get(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+    }
+    
+    try {
+      const conversation = await storage.getOrCreateConversationForMember(session.memberId, session.name);
+      const messages = await storage.getMessagesByConversation(conversation.id);
+      res.json({ success: true, data: { conversation, messages } });
+    } catch (error) {
+      console.error("Error getting member conversation:", error);
+      res.status(500).json({ success: false, error: "채팅 기록을 불러올 수 없습니다." });
+    }
+  });
+
+  // Send message as member (member only)
+  app.post("/api/chat/member/messages", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (!token) {
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+    }
+    
+    const session = memberSessions.get(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+    }
+    
+    try {
+      const { message } = req.body;
+      if (!message) {
+        return res.status(400).json({ success: false, error: "메시지를 입력해주세요." });
+      }
+      
+      const conversation = await storage.getOrCreateConversationForMember(session.memberId, session.name);
+      const chatMessage = await storage.createMessage({
+        conversationId: conversation.id,
+        senderType: 'user',
+        senderName: session.name,
+        message,
+      });
+      
+      res.status(201).json({ success: true, data: chatMessage });
+    } catch (error) {
+      console.error("Error sending member message:", error);
+      res.status(500).json({ success: false, error: "메시지 전송에 실패했습니다." });
+    }
+  });
+
   // ==================== FAQ API ====================
   
   // Get all FAQs (public)
