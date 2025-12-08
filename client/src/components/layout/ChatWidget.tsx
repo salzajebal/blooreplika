@@ -145,7 +145,7 @@ export function ChatWidget() {
 
   const goToLogin = () => {
     setIsOpen(false);
-    navigate("/member/login");
+    navigate("/login");
   };
 
   if (!isOpen) {
@@ -231,7 +231,7 @@ export function ChatWidget() {
           <p className="text-xs text-gray-400 mt-4">
             아직 회원이 아니신가요?{" "}
             <button 
-              onClick={() => { setIsOpen(false); navigate("/member/signup"); }}
+              onClick={() => { setIsOpen(false); navigate("/signup"); }}
               className="text-yellow-600 underline"
             >
               회원가입
