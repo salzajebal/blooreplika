@@ -791,11 +791,22 @@ export default function Admin() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("정말로 이 상품을 삭제하시겠습니까?")) return;
+    console.log("handleDelete called for product:", id);
+    console.log("Current authToken:", authToken ? "exists" : "null");
+    
+    if (!window.confirm("정말로 이 상품을 삭제하시겠습니까?")) {
+      console.log("Delete cancelled by user");
+      return;
+    }
+    
+    console.log("Sending DELETE request...");
     
     try {
       const res = await fetchWithAuth(`/api/products/${id}`, { method: "DELETE" });
+      console.log("DELETE response status:", res.status);
       const data = await res.json();
+      console.log("DELETE response data:", data);
+      
       if (data.success) {
         toast({ title: "성공", description: "상품이 삭제되었습니다." });
         fetchProducts();
