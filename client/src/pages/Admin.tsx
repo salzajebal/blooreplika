@@ -800,8 +800,12 @@ export default function Admin() {
         toast({ title: "성공", description: "상품이 삭제되었습니다." });
         fetchProducts();
         fetchStats();
+      } else {
+        console.error("Product delete error:", data.error);
+        toast({ title: "오류", description: data.error || "상품 삭제에 실패했습니다.", variant: "destructive" });
       }
     } catch (error) {
+      console.error("Product delete error:", error);
       toast({ title: "오류", description: "상품 삭제에 실패했습니다.", variant: "destructive" });
     }
   };
