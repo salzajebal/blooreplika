@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { X, MessageCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -41,32 +40,32 @@ export function HomePopup() {
   if (shouldShow !== true) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 safe-area-inset">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm safe-area-inset">
       <div 
-        className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-[95vw] sm:max-w-sm w-full overflow-hidden animate-in zoom-in-95 duration-300"
+        className="relative bg-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-[95vw] sm:max-w-sm w-full overflow-hidden"
         data-testid="home-popup"
       >
         <div className="absolute top-0 left-0 right-0 h-24 sm:h-32 bg-gradient-to-br from-amber-400 via-yellow-500 to-amber-600"></div>
-        <div className="absolute top-0 left-0 right-0 h-24 sm:h-32 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.1%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-30"></div>
         
         <button
           onClick={handleClose}
-          className="absolute top-3 right-3 sm:top-4 sm:right-4 p-1.5 sm:p-2 rounded-full bg-white/20 hover:bg-white/40 transition-colors z-10 touch-manipulation"
+          className="absolute top-3 right-3 sm:top-4 sm:right-4 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/20 hover:bg-white/40 transition-colors z-10 touch-manipulation flex items-center justify-center"
           data-testid="button-close-popup"
+          aria-label="닫기"
         >
-          <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <span className="text-white text-xl font-light leading-none">×</span>
         </button>
 
         <div className="relative pt-4 sm:pt-6 pb-1 sm:pb-2 px-4 sm:px-6 text-center">
           <div className="inline-flex items-center gap-1 sm:gap-1.5 bg-white/90 backdrop-blur rounded-full px-3 sm:px-4 py-1 sm:py-1.5 shadow-lg mb-3 sm:mb-4">
-            <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-amber-500" />
+            <span className="text-amber-500 text-sm">✨</span>
             <span className="text-xs sm:text-sm font-bold text-amber-700">공지사항</span>
           </div>
         </div>
 
         <div className="relative px-4 sm:px-8 pt-2 sm:pt-4 pb-4 sm:pb-8 text-center">
-          <div className="w-14 h-14 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-xl sm:rounded-2xl shadow-xl flex items-center justify-center transform rotate-3 hover:rotate-0 transition-transform">
-            <MessageCircle className="w-7 h-7 sm:w-10 sm:h-10 text-white" />
+          <div className="w-14 h-14 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-xl sm:rounded-2xl shadow-xl flex items-center justify-center">
+            <span className="text-white text-2xl sm:text-3xl">💬</span>
           </div>
 
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-3 leading-tight">
@@ -93,7 +92,7 @@ export function HomePopup() {
 
           <div className="flex items-center justify-center gap-2 bg-gray-100 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 mb-4 sm:mb-6">
             <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center flex-shrink-0">
-              <MessageCircle className="w-3 h-3 sm:w-4 sm:h-4 text-black" />
+              <span className="text-black text-xs sm:text-sm">💬</span>
             </div>
             <span className="text-xs sm:text-sm text-gray-600">우측 하단 채팅 버튼을 클릭하세요</span>
           </div>
