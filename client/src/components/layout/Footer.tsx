@@ -17,6 +17,12 @@ export function Footer() {
             <p><span className="text-gray-400">대표:</span> 임정재</p>
             <p><span className="text-gray-400">업종:</span> 도매 및 소매업, 전자상거래 소매업</p>
           </div>
+          <div className="mt-4 p-3 bg-gray-800/50 rounded-lg border border-gray-700">
+            <p className="text-[10px] sm:text-xs text-gray-400 leading-relaxed break-keep">
+              🔒 저희 쇼핑몰은 고객님의 안전한 거래를 위해<br/>
+              <span className="text-amber-500 font-semibold">구매안전서비스(에스크로)</span>를 제공합니다.
+            </p>
+          </div>
         </div>
 
         <div>
