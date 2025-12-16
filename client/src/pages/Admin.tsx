@@ -610,20 +610,26 @@ export default function Admin() {
   }, [withdrawalFilter, activeTab]);
 
   useEffect(() => {
-    if (isAuthenticated && activeTab === "chat") {
+    if (isAuthenticated && !chatSocketRef.current) {
       connectChatWebSocket();
       fetchChatConversations();
     }
     
     return () => {
-      if (chatSocketRef.current) {
+      if (chatSocketRef.current && !isAuthenticated) {
         chatSocketRef.current.close();
         chatSocketRef.current = null;
         setChatSocket(null);
         setIsChatConnected(false);
       }
     };
-  }, [isAuthenticated, activeTab]);
+  }, [isAuthenticated]);
+  
+  useEffect(() => {
+    if (isAuthenticated && activeTab === "chat") {
+      fetchChatConversations();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     if (chatMessagesEndRef.current) {
@@ -666,7 +672,7 @@ export default function Admin() {
         case "message":
           setChatMessages(prev => [...prev, data.data]);
           fetchChatConversations();
-          if (data.data.senderType === "member") {
+          if (data.data.senderType === "user" || data.data.senderType === "member") {
             playNotificationSound();
             setChatNotification({
               show: true,
@@ -679,7 +685,7 @@ export default function Admin() {
           break;
         case "new_message":
           fetchChatConversations();
-          if (data.data && data.data.senderType === "member") {
+          if (data.data && (data.data.senderType === "user" || data.data.senderType === "member")) {
             playNotificationSound();
             setChatNotification({
               show: true,
@@ -697,9 +703,10 @@ export default function Admin() {
 
     ws.onclose = () => {
       setIsChatConnected(false);
-      if (activeTabRef.current === "chat" && chatSocketRef.current === ws) {
+      if (chatSocketRef.current === ws) {
+        chatSocketRef.current = null;
         setTimeout(() => {
-          if (activeTabRef.current === "chat") {
+          if (isAuthenticated) {
             connectChatWebSocket();
           }
         }, 3000);
