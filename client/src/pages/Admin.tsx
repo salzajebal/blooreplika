@@ -10,11 +10,34 @@ import {
   Lock, User, Mail, Phone, CheckCircle, XCircle,
   Star, FileText, Bell, Calendar,
   Wallet, Clock, Snowflake, Unlock, Settings, Link2, Upload,
-  MessageCircle, Send, Circle
+  MessageCircle, Send, Circle, Volume2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage } from "@shared/schema";
 import { useRef, useCallback } from "react";
+
+const playNotificationSound = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+    oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+    oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+    
+    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.4);
+  } catch (e) {
+    console.log("Audio notification not supported");
+  }
+};
 
 const CATEGORY_OPTIONS = [
   { id: "gold_bar", name: "골드바" },
@@ -148,6 +171,7 @@ export default function Admin() {
   const [freezeReason, setFreezeReason] = useState("");
 
   const [chatConversations, setChatConversations] = useState<ChatConversation[]>([]);
+  const [chatNotification, setChatNotification] = useState<{show: boolean; memberName: string; message: string; conversationId: string} | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<ChatConversation | null>(null);
   const [newMessage, setNewMessage] = useState("");
@@ -642,9 +666,29 @@ export default function Admin() {
         case "message":
           setChatMessages(prev => [...prev, data.data]);
           fetchChatConversations();
+          if (data.data.senderType === "member") {
+            playNotificationSound();
+            setChatNotification({
+              show: true,
+              memberName: data.data.senderName || "고객",
+              message: data.data.message,
+              conversationId: data.data.conversationId,
+            });
+            setTimeout(() => setChatNotification(null), 5000);
+          }
           break;
         case "new_message":
           fetchChatConversations();
+          if (data.data && data.data.senderType === "member") {
+            playNotificationSound();
+            setChatNotification({
+              show: true,
+              memberName: data.data.senderName || "고객",
+              message: data.data.message || "새 메시지가 도착했습니다.",
+              conversationId: data.data.conversationId,
+            });
+            setTimeout(() => setChatNotification(null), 5000);
+          }
           break;
         case "read":
           break;
@@ -1348,8 +1392,50 @@ export default function Admin() {
     );
   }
 
+  const handleNotificationClick = (conversationId: string) => {
+    setActiveTab("chat");
+    const conversation = chatConversations.find(c => c.id === conversationId);
+    if (conversation) {
+      selectConversation(conversation);
+    }
+    setChatNotification(null);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 font-sans">
+      {chatNotification && chatNotification.show && (
+        <div 
+          className="fixed top-4 right-4 z-[200] animate-in slide-in-from-right duration-300 cursor-pointer"
+          onClick={() => handleNotificationClick(chatNotification.conversationId)}
+        >
+          <div className="bg-white rounded-xl shadow-2xl border-l-4 border-yellow-500 p-4 max-w-sm">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <MessageCircle className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <p className="font-bold text-gray-900 text-sm">새 채팅 메시지</p>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setChatNotification(null); }}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <p className="text-xs text-yellow-600 font-medium mb-1">{chatNotification.memberName}님</p>
+                <p className="text-sm text-gray-600 truncate">{chatNotification.message}</p>
+                <p className="text-xs text-gray-400 mt-2">클릭하여 확인하기</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+              <Volume2 className="w-3 h-3" />
+              <span>알림음 재생됨</span>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="bg-gray-900 text-white">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-3">
