@@ -44,6 +44,16 @@ interface PointTransaction {
   createdAt: string;
 }
 
+interface Order {
+  id: string;
+  productName: string;
+  quantity: number;
+  totalPrice: number;
+  status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
+  paymentStatus: "pending" | "paid" | "refunded";
+  orderedAt: string;
+}
+
 export default function Profile() {
   const { count } = useWishlist();
   const queryClient = useQueryClient();
@@ -89,6 +99,21 @@ export default function Profile() {
     queryKey: ["point-transactions"],
     queryFn: async () => {
       const res = await fetch("/api/members/point-transactions", {
+        headers: {
+          Authorization: `Bearer ${memberToken}`,
+        },
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      return data.data;
+    },
+    enabled: isLoggedIn,
+  });
+
+  const { data: memberOrders } = useQuery<Order[]>({
+    queryKey: ["member-orders"],
+    queryFn: async () => {
+      const res = await fetch("/api/members/orders", {
         headers: {
           Authorization: `Bearer ${memberToken}`,
         },
@@ -274,7 +299,7 @@ export default function Profile() {
                   </Link>
                   <div className="text-center p-2 md:p-4 bg-gray-50 rounded-lg">
                     <Package className="w-6 h-6 md:w-8 md:h-8 text-primary mx-auto mb-1 md:mb-2" />
-                    <div className="text-lg md:text-2xl font-bold text-gray-900">0</div>
+                    <div className="text-lg md:text-2xl font-bold text-gray-900" data-testid="text-order-count">{memberOrders?.length || 0}</div>
                     <div className="text-[10px] md:text-xs text-gray-500">주문 내역</div>
                   </div>
                   <div className="text-center p-2 md:p-4 bg-gradient-to-br from-amber-50 to-yellow-50 rounded-lg border border-amber-200">
@@ -287,8 +312,9 @@ export default function Profile() {
                 </div>
 
                 <Tabs defaultValue="info" className="w-full">
-                  <TabsList className="w-full grid grid-cols-4 h-auto">
+                  <TabsList className="w-full grid grid-cols-5 h-auto">
                     <TabsTrigger value="info" className="text-xs md:text-sm py-2 px-1 md:px-3">내 정보</TabsTrigger>
+                    <TabsTrigger value="orders" className="text-xs md:text-sm py-2 px-1 md:px-3">주문내역</TabsTrigger>
                     <TabsTrigger value="menu" className="text-xs md:text-sm py-2 px-1 md:px-3">메뉴</TabsTrigger>
                     <TabsTrigger value="deposit" className="text-xs md:text-sm py-2 px-1 md:px-3">입금신청</TabsTrigger>
                     <TabsTrigger value="points" className="text-xs md:text-sm py-2 px-1 md:px-3">포인트</TabsTrigger>
@@ -368,6 +394,59 @@ export default function Profile() {
                           </div>
                         </div>
                       </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="orders" className="mt-4">
+                    <div className="space-y-4">
+                      <h3 className="font-bold text-gray-900">주문 내역</h3>
+                      {memberOrders && memberOrders.length > 0 ? (
+                        <div className="space-y-3">
+                          {memberOrders.map((order) => (
+                            <div key={order.id} className="bg-white border border-gray-200 rounded-lg p-4" data-testid={`order-item-${order.id}`}>
+                              <div className="flex justify-between items-start mb-2">
+                                <div>
+                                  <h4 className="font-medium text-gray-900">{order.productName}</h4>
+                                  <p className="text-sm text-gray-500">수량: {order.quantity}개</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-bold text-primary">{order.totalPrice.toLocaleString()}원</p>
+                                  <p className="text-xs text-gray-400">{new Date(order.orderedAt).toLocaleDateString("ko-KR")}</p>
+                                </div>
+                              </div>
+                              <div className="flex gap-2 mt-3">
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  order.status === "delivered" ? "bg-green-100 text-green-700" :
+                                  order.status === "shipped" ? "bg-blue-100 text-blue-700" :
+                                  order.status === "confirmed" ? "bg-yellow-100 text-yellow-700" :
+                                  order.status === "cancelled" ? "bg-red-100 text-red-700" :
+                                  "bg-gray-100 text-gray-700"
+                                }`}>
+                                  {order.status === "pending" && "대기중"}
+                                  {order.status === "confirmed" && "확인됨"}
+                                  {order.status === "shipped" && "배송중"}
+                                  {order.status === "delivered" && "배송완료"}
+                                  {order.status === "cancelled" && "취소됨"}
+                                </span>
+                                <span className={`text-xs px-2 py-1 rounded-full ${
+                                  order.paymentStatus === "paid" ? "bg-green-100 text-green-700" :
+                                  order.paymentStatus === "refunded" ? "bg-red-100 text-red-700" :
+                                  "bg-amber-100 text-amber-700"
+                                }`}>
+                                  {order.paymentStatus === "pending" && "결제 대기"}
+                                  {order.paymentStatus === "paid" && "결제 완료"}
+                                  {order.paymentStatus === "refunded" && "환불됨"}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-500">
+                          <Package className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                          <p>주문 내역이 없습니다.</p>
+                        </div>
+                      )}
                     </div>
                   </TabsContent>
 
