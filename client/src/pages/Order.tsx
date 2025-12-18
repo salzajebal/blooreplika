@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useKakaoLink } from "@/hooks/use-kakao-link";
+import { KakaoConfirmDialog } from "@/components/KakaoConfirmDialog";
 import { CheckCircle, Package, User, MapPin, MessageCircle } from "lucide-react";
 import type { Product } from "@shared/schema";
 
@@ -23,7 +24,7 @@ export default function Order() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { kakaoLink, openKakaoChat } = useKakaoLink();
+  const { kakaoLink, openKakaoChat, showConfirmDialog, confirmAndOpenKakao, closeConfirmDialog } = useKakaoLink();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -294,11 +295,17 @@ export default function Order() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header />
-      
-      <main className="flex-1 py-6 sm:py-10">
-        <div className="max-w-4xl mx-auto px-4">
+    <>
+      <KakaoConfirmDialog 
+        open={showConfirmDialog} 
+        onConfirm={confirmAndOpenKakao} 
+        onCancel={closeConfirmDialog} 
+      />
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <Header />
+        
+        <main className="flex-1 py-6 sm:py-10">
+          <div className="max-w-4xl mx-auto px-4">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8 text-center">
             주문서 작성
           </h1>
@@ -499,6 +506,7 @@ export default function Order() {
       </main>
 
       <Footer />
-    </div>
+      </div>
+    </>
   );
 }

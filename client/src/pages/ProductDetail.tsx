@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, Heart, MessageCircle, ChevronRight, Truck, Shield, Award, RotateCcw, ShoppingBag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useKakaoLink } from "@/hooks/use-kakao-link";
+import { KakaoConfirmDialog } from "@/components/KakaoConfirmDialog";
 import type { Product } from "@shared/schema";
 
 function KakaoIcon({ className }: { className?: string }) {
@@ -178,7 +179,7 @@ export default function ProductDetail() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { openKakaoChat } = useKakaoLink();
+  const { openKakaoChat, showConfirmDialog, confirmAndOpenKakao, closeConfirmDialog } = useKakaoLink();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
@@ -254,8 +255,14 @@ export default function ProductDetail() {
   const details = PRODUCT_DETAILS[product.category] || PRODUCT_DETAILS.gold_bar;
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <Header />
+    <>
+      <KakaoConfirmDialog 
+        open={showConfirmDialog} 
+        onConfirm={confirmAndOpenKakao} 
+        onCancel={closeConfirmDialog} 
+      />
+      <div className="min-h-screen flex flex-col bg-white">
+        <Header />
       
       <main className="flex-1 pb-28 lg:pb-0">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
@@ -504,6 +511,7 @@ export default function ProductDetail() {
       </main>
 
       <Footer />
-    </div>
+      </div>
+    </>
   );
 }

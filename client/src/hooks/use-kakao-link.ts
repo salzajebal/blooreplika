@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const DEFAULT_KAKAO_LINK = "https://open.kakao.com/o/samplelink";
 
 export function useKakaoLink() {
   const [kakaoLink, setKakaoLink] = useState(DEFAULT_KAKAO_LINK);
   const [loading, setLoading] = useState(true);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   useEffect(() => {
     const fetchKakaoLink = async () => {
@@ -24,9 +25,25 @@ export function useKakaoLink() {
     fetchKakaoLink();
   }, []);
 
-  const openKakaoChat = () => {
-    window.open(kakaoLink, "_blank");
-  };
+  const openKakaoChat = useCallback(() => {
+    setShowConfirmDialog(true);
+  }, []);
 
-  return { kakaoLink, loading, openKakaoChat };
+  const confirmAndOpenKakao = useCallback(() => {
+    window.open(kakaoLink, "_blank");
+    setShowConfirmDialog(false);
+  }, [kakaoLink]);
+
+  const closeConfirmDialog = useCallback(() => {
+    setShowConfirmDialog(false);
+  }, []);
+
+  return { 
+    kakaoLink, 
+    loading, 
+    openKakaoChat, 
+    showConfirmDialog, 
+    confirmAndOpenKakao, 
+    closeConfirmDialog 
+  };
 }

@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, MessageCircle, HelpCircle, FileText, Bell } from "lucide-react";
 import type { Faq } from "@shared/schema";
 import { useKakaoLink } from "@/hooks/use-kakao-link";
+import { KakaoConfirmDialog } from "@/components/KakaoConfirmDialog";
 
 const FAQ_CATEGORIES = [
   { id: "order", name: "주문/배송" },
@@ -30,7 +31,7 @@ export default function Support() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const [faqs, setFaqs] = useState<typeof DEFAULT_FAQS>(DEFAULT_FAQS);
-  const { kakaoLink } = useKakaoLink();
+  const { openKakaoChat, showConfirmDialog, confirmAndOpenKakao, closeConfirmDialog } = useKakaoLink();
 
   useEffect(() => {
     const fetchFaqs = async () => {
@@ -52,11 +53,17 @@ export default function Support() {
     : faqs.filter(faq => faq.category === activeCategory);
 
   return (
-    <div className="min-h-screen bg-white font-sans">
-      <Header />
-      
-      <main className="container-custom py-12">
-        <div className="text-center mb-12">
+    <>
+      <KakaoConfirmDialog 
+        open={showConfirmDialog} 
+        onConfirm={confirmAndOpenKakao} 
+        onCancel={closeConfirmDialog} 
+      />
+      <div className="min-h-screen bg-white font-sans">
+        <Header />
+        
+        <main className="container-custom py-12">
+          <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-gray-900 mb-4" data-testid="text-support-title">고객센터</h1>
           <p className="text-gray-500">한국골드금거래소에 대해 궁금한 점을 확인하세요</p>
         </div>
@@ -67,17 +74,15 @@ export default function Support() {
             <h3 className="font-bold text-gray-900 mb-2">자주묻는질문</h3>
             <p className="text-sm text-gray-500">FAQ에서 빠르게 답변을 찾아보세요</p>
           </div>
-          <a 
-            href={kakaoLink || "#"} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="bg-yellow-50 border border-yellow-300 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer block"
-            onClick={(e) => !kakaoLink && e.preventDefault()}
+          <button 
+            onClick={openKakaoChat}
+            className="bg-yellow-50 border border-yellow-300 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer block w-full"
+            data-testid="button-kakao-support"
           >
             <MessageCircle className="w-10 h-10 text-yellow-600 mx-auto mb-3" />
             <h3 className="font-bold text-gray-900 mb-2">카카오톡 문의</h3>
             <p className="text-sm text-gray-500">카카오톡으로 상담하세요</p>
-          </a>
+          </button>
           <div className="bg-green-50 border border-green-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer">
             <FileText className="w-10 h-10 text-green-600 mx-auto mb-3" />
             <h3 className="font-bold text-gray-900 mb-2">공지사항</h3>
@@ -155,6 +160,7 @@ export default function Support() {
       </main>
       
       <Footer />
-    </div>
+      </div>
+    </>
   );
 }
