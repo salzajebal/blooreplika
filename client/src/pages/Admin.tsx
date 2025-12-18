@@ -13,7 +13,8 @@ import {
   MessageCircle, Send, Circle, Volume2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage } from "@shared/schema";
+import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage, Order } from "@shared/schema";
+import { ShoppingCart } from "lucide-react";
 import { useRef, useCallback } from "react";
 
 const playNotificationSound = () => {
@@ -93,7 +94,7 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "members" | "deposits" | "withdrawals" | "reviews" | "notices" | "chat" | "settings">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "members" | "orders" | "deposits" | "withdrawals" | "reviews" | "notices" | "chat" | "settings">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   
   const [products, setProducts] = useState<Product[]>([]);
@@ -169,6 +170,10 @@ export default function Admin() {
   const [withdrawalAdminNote, setWithdrawalAdminNote] = useState("");
   const [adjustAmount, setAdjustAmount] = useState("");
   const [freezeReason, setFreezeReason] = useState("");
+
+  const [adminOrders, setAdminOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [orderFilter, setOrderFilter] = useState<"all" | "pending" | "confirmed" | "shipped" | "delivered" | "cancelled">("all");
 
   const [chatConversations, setChatConversations] = useState<ChatConversation[]>([]);
   const [chatNotification, setChatNotification] = useState<{show: boolean; memberName: string; message: string; conversationId: string} | null>(null);
@@ -419,6 +424,57 @@ export default function Admin() {
     }
   };
 
+  const fetchOrders = async () => {
+    setOrdersLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/orders");
+      const data = await res.json();
+      if (data.success) {
+        setAdminOrders(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+    try {
+      const res = await fetchWithAuth(`/api/admin/orders/${orderId}`, {
+        method: "PUT",
+        body: JSON.stringify({ status }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "완료", description: "주문 상태가 업데이트되었습니다." });
+        fetchOrders();
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "처리 중 오류가 발생했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleUpdatePaymentStatus = async (orderId: string, paymentStatus: string) => {
+    try {
+      const res = await fetchWithAuth(`/api/admin/orders/${orderId}`, {
+        method: "PUT",
+        body: JSON.stringify({ paymentStatus }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "완료", description: "결제 상태가 업데이트되었습니다." });
+        fetchOrders();
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "처리 중 오류가 발생했습니다.", variant: "destructive" });
+    }
+  };
+
   const handleAdjustPoints = async (memberId: string) => {
     const amount = parseInt(adjustAmount);
     if (isNaN(amount) || amount === 0) {
@@ -608,6 +664,12 @@ export default function Admin() {
       fetchWithdrawalRequests();
     }
   }, [withdrawalFilter, activeTab]);
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === "orders") {
+      fetchOrders();
+    }
+  }, [orderFilter, activeTab, isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated && !chatSocketRef.current) {
@@ -1494,6 +1556,20 @@ export default function Admin() {
           >
             <Users className="w-4 h-4 md:mr-2" />
             <span className="hidden md:inline">회원 관리</span>
+          </Button>
+          <Button
+            data-testid="tab-orders"
+            variant={activeTab === "orders" ? "default" : "outline"}
+            onClick={() => setActiveTab("orders")}
+            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "orders" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
+          >
+            <ShoppingCart className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">주문 관리</span>
+            {adminOrders.filter(o => o.status === "pending").length > 0 && (
+              <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
+                {adminOrders.filter(o => o.status === "pending").length}
+              </span>
+            )}
           </Button>
           <Button
             data-testid="tab-deposits"
@@ -2465,6 +2541,138 @@ export default function Admin() {
                         </div>
                       </div>
                     )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "orders" && (
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">주문 관리</h2>
+                <p className="text-gray-500 text-sm">
+                  {orderFilter === "all" 
+                    ? `전체 ${adminOrders.length}건` 
+                    : `${orderFilter} 상태 ${adminOrders.filter(o => o.status === orderFilter).length}건`}
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <select
+                  className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
+                  value={orderFilter}
+                  onChange={(e) => setOrderFilter(e.target.value as typeof orderFilter)}
+                >
+                  <option value="all">전체 보기</option>
+                  <option value="pending">대기중</option>
+                  <option value="confirmed">확인됨</option>
+                  <option value="shipped">배송중</option>
+                  <option value="delivered">배송완료</option>
+                  <option value="cancelled">취소됨</option>
+                </select>
+                <Button variant="outline" onClick={fetchOrders}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  새로고침
+                </Button>
+              </div>
+            </div>
+
+            {ordersLoading ? (
+              <div className="text-center py-12 text-gray-500">주문 내역을 불러오는 중...</div>
+            ) : adminOrders.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">주문 내역이 없습니다.</div>
+            ) : (
+              <div className="space-y-4">
+                {adminOrders
+                  .filter(order => orderFilter === "all" || order.status === orderFilter)
+                  .map((order) => (
+                  <div
+                    key={order.id}
+                    className={`p-4 border rounded-lg ${
+                      order.status === "pending"
+                        ? "border-yellow-300 bg-yellow-50"
+                        : order.status === "confirmed"
+                        ? "border-blue-300 bg-blue-50"
+                        : order.status === "shipped"
+                        ? "border-purple-300 bg-purple-50"
+                        : order.status === "delivered"
+                        ? "border-green-300 bg-green-50"
+                        : order.status === "cancelled"
+                        ? "border-red-300 bg-red-50"
+                        : "border-gray-200"
+                    }`}
+                  >
+                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                      <div className="space-y-2 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-lg">{order.orderNumber}</span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            order.status === "pending" ? "bg-yellow-200 text-yellow-800" :
+                            order.status === "confirmed" ? "bg-blue-200 text-blue-800" :
+                            order.status === "shipped" ? "bg-purple-200 text-purple-800" :
+                            order.status === "delivered" ? "bg-green-200 text-green-800" :
+                            order.status === "cancelled" ? "bg-red-200 text-red-800" :
+                            "bg-gray-200 text-gray-800"
+                          }`}>
+                            {order.status === "pending" ? "대기중" :
+                             order.status === "confirmed" ? "확인됨" :
+                             order.status === "shipped" ? "배송중" :
+                             order.status === "delivered" ? "배송완료" :
+                             order.status === "cancelled" ? "취소됨" : order.status}
+                          </span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            order.paymentStatus === "pending" ? "bg-orange-200 text-orange-800" :
+                            order.paymentStatus === "paid" ? "bg-green-200 text-green-800" :
+                            order.paymentStatus === "refunded" ? "bg-gray-200 text-gray-800" :
+                            "bg-gray-200 text-gray-800"
+                          }`}>
+                            {order.paymentStatus === "pending" ? "결제 대기" :
+                             order.paymentStatus === "paid" ? "결제 완료" :
+                             order.paymentStatus === "refunded" ? "환불됨" : order.paymentStatus}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          <p><strong>상품:</strong> {order.productName}</p>
+                          <p><strong>수량:</strong> {order.quantity}개 | <strong>총액:</strong> {Number(order.totalAmount).toLocaleString()}원</p>
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          <p><strong>주문자:</strong> {order.memberName} ({order.memberEmail})</p>
+                          <p><strong>연락처:</strong> {order.memberPhone}</p>
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          <p><strong>배송지:</strong> {order.shippingName} ({order.shippingPhone})</p>
+                          <p>{order.shippingAddress} {order.shippingAddressDetail}</p>
+                          {order.shippingMemo && <p><strong>배송 메모:</strong> {order.shippingMemo}</p>}
+                        </div>
+                        <p className="text-xs text-gray-400">
+                          주문일시: {order.createdAt ? new Date(order.createdAt).toLocaleString("ko-KR") : "-"}
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <select
+                          className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-yellow-500"
+                          value={order.status || "pending"}
+                          onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
+                        >
+                          <option value="pending">대기중</option>
+                          <option value="confirmed">확인됨</option>
+                          <option value="shipped">배송중</option>
+                          <option value="delivered">배송완료</option>
+                          <option value="cancelled">취소됨</option>
+                        </select>
+                        <select
+                          className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-yellow-500"
+                          value={order.paymentStatus || "pending"}
+                          onChange={(e) => handleUpdatePaymentStatus(order.id, e.target.value)}
+                        >
+                          <option value="pending">결제 대기</option>
+                          <option value="paid">결제 완료</option>
+                          <option value="refunded">환불됨</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
