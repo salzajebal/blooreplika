@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart, MessageCircle, ChevronRight, Truck, Shield, Award, RotateCcw } from "lucide-react";
+import { ShoppingCart, Heart, MessageCircle, ChevronRight, Truck, Shield, Award, RotateCcw, ShoppingBag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useKakaoLink } from "@/hooks/use-kakao-link";
 import type { Product } from "@shared/schema";
@@ -176,6 +176,7 @@ const PRODUCT_DETAILS: Record<string, { features: string[]; specs: { label: stri
 
 export default function ProductDetail() {
   const { id } = useParams();
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { openKakaoChat } = useKakaoLink();
   const [product, setProduct] = useState<Product | null>(null);
@@ -211,7 +212,7 @@ export default function ProductDetail() {
   };
 
   const handleBuyNow = () => {
-    openKakaoChat();
+    setLocation(`/order/${id}?quantity=${quantity}`);
   };
 
   const handleInquiry = () => {
@@ -367,12 +368,21 @@ export default function ProductDetail() {
                 </Button>
                 <Button
                   size="lg"
-                  className="flex-1 h-14 bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E]"
+                  className="flex-1 h-14 bg-primary hover:bg-primary/90"
                   onClick={handleBuyNow}
                   data-testid="button-buy-now"
                 >
+                  <ShoppingBag className="w-5 h-5 mr-2" />
+                  주문하기
+                </Button>
+                <Button
+                  size="lg"
+                  className="h-14 bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E]"
+                  onClick={openKakaoChat}
+                  data-testid="button-kakao-inquiry"
+                >
                   <KakaoIcon className="w-5 h-5 mr-2" />
-                  카카오톡문의
+                  상담
                 </Button>
                 <Button
                   variant="outline"
@@ -475,18 +485,18 @@ export default function ProductDetail() {
             <div className="flex gap-2 sm:gap-3 max-w-lg mx-auto p-3 sm:p-4">
               <Button
                 variant="outline"
-                className="flex-1 h-11 sm:h-12 text-sm"
-                onClick={handleInquiry}
+                className="h-11 sm:h-12 text-sm bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] border-[#FEE500]"
+                onClick={openKakaoChat}
               >
-                <MessageCircle className="w-4 h-4 mr-1.5 sm:mr-2" />
-                1:1 상담
+                <KakaoIcon className="w-4 h-4 mr-1" />
+                상담
               </Button>
               <Button
-                className="flex-1 h-11 sm:h-12 text-sm bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E]"
+                className="flex-1 h-11 sm:h-12 text-sm bg-primary hover:bg-primary/90"
                 onClick={handleBuyNow}
               >
-                <KakaoIcon className="w-4 h-4 mr-1.5 sm:mr-2" />
-                카카오톡문의
+                <ShoppingBag className="w-4 h-4 mr-1.5 sm:mr-2" />
+                주문하기
               </Button>
             </div>
           </div>

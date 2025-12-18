@@ -343,3 +343,38 @@ export const insertSiteSettingSchema = createInsertSchema(siteSettings);
 
 export type InsertSiteSetting = z.infer<typeof insertSiteSettingSchema>;
 export type SiteSetting = typeof siteSettings.$inferSelect;
+
+// Orders table (product orders)
+export const orders = pgTable("orders", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderNumber: text("order_number").notNull().unique(),
+  memberId: varchar("member_id"),
+  memberName: text("member_name").notNull(),
+  memberEmail: text("member_email").notNull(),
+  memberPhone: text("member_phone").notNull(),
+  shippingName: text("shipping_name").notNull(),
+  shippingPhone: text("shipping_phone").notNull(),
+  shippingAddress: text("shipping_address").notNull(),
+  shippingAddressDetail: text("shipping_address_detail"),
+  shippingZipcode: text("shipping_zipcode"),
+  shippingMemo: text("shipping_memo"),
+  productId: varchar("product_id").notNull(),
+  productName: text("product_name").notNull(),
+  productPrice: text("product_price").notNull(),
+  quantity: integer("quantity").default(1),
+  totalAmount: text("total_amount").notNull(),
+  status: text("status").default("pending"), // pending, confirmed, shipped, delivered, cancelled
+  paymentStatus: text("payment_status").default("pending"), // pending, paid, refunded
+  adminNote: text("admin_note"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertOrderSchema = createInsertSchema(orders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
+export type Order = typeof orders.$inferSelect;

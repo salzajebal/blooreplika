@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { type Server } from "http";
 import { storage } from "./storage";
-import { insertProductSchema, insertCategorySchema, insertMemberSchema, insertChatConversationSchema, insertChatMessageSchema, insertFaqSchema, insertReviewSchema, insertNoticeSchema } from "@shared/schema";
+import { insertProductSchema, insertCategorySchema, insertMemberSchema, insertChatConversationSchema, insertChatMessageSchema, insertFaqSchema, insertReviewSchema, insertNoticeSchema, insertOrderSchema } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
@@ -1930,6 +1930,132 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating site setting:", error);
       res.status(500).json({ success: false, error: "설정 저장에 실패했습니다." });
+    }
+  });
+
+  // ==================== ORDERS API ====================
+  
+  // Create order
+  app.post("/api/orders", async (req: Request, res: Response) => {
+    try {
+      const {
+        memberId,
+        memberName,
+        memberEmail,
+        memberPhone,
+        shippingName,
+        shippingPhone,
+        shippingZipcode,
+        shippingAddress,
+        shippingAddressDetail,
+        shippingMemo,
+        productId,
+        productName,
+        productPrice,
+        quantity,
+        totalAmount,
+      } = req.body;
+      
+      if (!memberName || !memberEmail || !memberPhone) {
+        return res.status(400).json({ success: false, error: "주문자 정보를 입력해주세요." });
+      }
+      
+      if (!shippingName || !shippingPhone || !shippingAddress) {
+        return res.status(400).json({ success: false, error: "배송지 정보를 입력해주세요." });
+      }
+      
+      if (!productId || !productName || !productPrice || !totalAmount) {
+        return res.status(400).json({ success: false, error: "상품 정보가 필요합니다." });
+      }
+      
+      const orderNumber = `ORD${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+      
+      const orderData = {
+        orderNumber,
+        memberId: memberId || null,
+        memberName: String(memberName).trim(),
+        memberEmail: String(memberEmail).trim(),
+        memberPhone: String(memberPhone).trim(),
+        shippingName: String(shippingName).trim(),
+        shippingPhone: String(shippingPhone).trim(),
+        shippingAddress: String(shippingAddress).trim(),
+        shippingAddressDetail: shippingAddressDetail ? String(shippingAddressDetail).trim() : null,
+        shippingZipcode: shippingZipcode ? String(shippingZipcode).trim() : null,
+        shippingMemo: shippingMemo ? String(shippingMemo).trim() : null,
+        productId: String(productId),
+        productName: String(productName),
+        productPrice: String(productPrice),
+        quantity: parseInt(quantity) || 1,
+        totalAmount: String(totalAmount),
+        status: "pending",
+        paymentStatus: "pending",
+      };
+      
+      const validationResult = insertOrderSchema.safeParse(orderData);
+      if (!validationResult.success) {
+        console.error("Order validation error:", validationResult.error);
+        return res.status(400).json({ success: false, error: "주문 정보가 올바르지 않습니다." });
+      }
+      
+      const order = await storage.createOrder(validationResult.data);
+      
+      res.status(201).json({ success: true, data: order });
+    } catch (error) {
+      console.error("Error creating order:", error);
+      res.status(500).json({ success: false, error: "주문 처리 중 오류가 발생했습니다." });
+    }
+  });
+
+  // Get all orders (admin only)
+  app.get("/api/admin/orders", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const orders = await storage.getAllOrders();
+      res.json({ success: true, data: orders });
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ success: false, error: "주문 목록을 불러올 수 없습니다." });
+    }
+  });
+
+  // Update order status (admin only)
+  app.put("/api/admin/orders/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { status, paymentStatus, adminNote } = req.body;
+      const order = await storage.updateOrder(req.params.id, {
+        ...(status && { status }),
+        ...(paymentStatus && { paymentStatus }),
+        ...(adminNote !== undefined && { adminNote }),
+      });
+      
+      if (!order) {
+        return res.status(404).json({ success: false, error: "주문을 찾을 수 없습니다." });
+      }
+      
+      res.json({ success: true, data: order });
+    } catch (error) {
+      console.error("Error updating order:", error);
+      res.status(500).json({ success: false, error: "주문 수정 중 오류가 발생했습니다." });
+    }
+  });
+
+  // Get member's orders
+  app.get("/api/members/orders", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (!token) {
+      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
+    }
+    
+    const session = memberSessions.get(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+    }
+    
+    try {
+      const orders = await storage.getOrdersByMember(session.memberId);
+      res.json({ success: true, data: orders });
+    } catch (error) {
+      console.error("Error fetching member orders:", error);
+      res.status(500).json({ success: false, error: "주문 목록을 불러올 수 없습니다." });
     }
   });
 

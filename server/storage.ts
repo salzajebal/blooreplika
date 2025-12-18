@@ -14,7 +14,8 @@ import {
   type DepositRequest, type InsertDepositRequest, depositRequests,
   type WithdrawalRequest, type InsertWithdrawalRequest, withdrawalRequests,
   type PointTransaction, type InsertPointTransaction, pointTransactions,
-  type SiteSetting, type InsertSiteSetting, siteSettings
+  type SiteSetting, type InsertSiteSetting, siteSettings,
+  type Order, type InsertOrder, orders
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -133,6 +134,14 @@ export interface IStorage {
   getSiteSetting(key: string): Promise<SiteSetting | undefined>;
   getAllSiteSettings(): Promise<SiteSetting[]>;
   setSiteSetting(key: string, value: string, description?: string): Promise<SiteSetting>;
+  
+  // Orders
+  getAllOrders(): Promise<Order[]>;
+  getOrdersByMember(memberId: string): Promise<Order[]>;
+  getOrder(id: string): Promise<Order | undefined>;
+  getOrderByNumber(orderNumber: string): Promise<Order | undefined>;
+  createOrder(order: InsertOrder): Promise<Order>;
+  updateOrder(id: string, order: Partial<InsertOrder>): Promise<Order | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -746,6 +755,38 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return setting;
     }
+  }
+
+  // Orders
+  async getAllOrders(): Promise<Order[]> {
+    return db.select().from(orders).orderBy(desc(orders.createdAt));
+  }
+
+  async getOrdersByMember(memberId: string): Promise<Order[]> {
+    return db.select().from(orders).where(eq(orders.memberId, memberId)).orderBy(desc(orders.createdAt));
+  }
+
+  async getOrder(id: string): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order;
+  }
+
+  async getOrderByNumber(orderNumber: string): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber));
+    return order;
+  }
+
+  async createOrder(insertOrder: InsertOrder): Promise<Order> {
+    const [order] = await db.insert(orders).values(insertOrder).returning();
+    return order;
+  }
+
+  async updateOrder(id: string, updateData: Partial<InsertOrder>): Promise<Order | undefined> {
+    const [order] = await db.update(orders)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(orders.id, id))
+      .returning();
+    return order;
   }
 }
 

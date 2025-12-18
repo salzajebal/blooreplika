@@ -21,6 +21,7 @@ import Cart from "@/pages/Cart";
 import Profile from "@/pages/Profile";
 import Deposit from "@/pages/Deposit";
 import Withdrawal from "@/pages/Withdrawal";
+import Order from "@/pages/Order";
 
 function Router() {
   return (
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/deposit" component={Deposit} />
       <Route path="/withdrawal" component={Withdrawal} />
+      <Route path="/order/:id" component={Order} />
       <Route component={NotFound} />
     </Switch>
   );
