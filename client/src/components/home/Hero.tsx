@@ -292,7 +292,7 @@ export function Hero() {
                   </span>
                 )}
               </div>
-              <p className="text-stone-400 text-[10px] sm:text-xs md:text-sm mt-1 sm:mt-2">VAT 별도 / 돈당 기준</p>
+              <p className="text-stone-400 text-[10px] sm:text-xs md:text-sm mt-1 sm:mt-2">VAT 포함 / 돈당 기준</p>
             </div>
 
             <div className="bg-stone-800/60 backdrop-blur-sm border border-gray-500/30 rounded-lg sm:rounded-xl p-4 sm:p-5 md:p-6 hover:border-gray-400/50 transition-all">
@@ -314,7 +314,7 @@ export function Hero() {
                   </span>
                 )}
               </div>
-              <p className="text-stone-400 text-[10px] sm:text-xs md:text-sm mt-1 sm:mt-2">VAT 별도 / 돈당 기준</p>
+              <p className="text-stone-400 text-[10px] sm:text-xs md:text-sm mt-1 sm:mt-2">VAT 포함 / 돈당 기준</p>
             </div>
           </div>
 
