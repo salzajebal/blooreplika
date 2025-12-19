@@ -48,10 +48,10 @@ interface Order {
   id: string;
   productName: string;
   quantity: number;
-  totalPrice: number;
+  totalAmount: string;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   paymentStatus: "pending" | "paid" | "refunded";
-  orderedAt: string;
+  createdAt: string;
 }
 
 export default function Profile() {
@@ -410,8 +410,8 @@ export default function Profile() {
                                   <p className="text-sm text-gray-500">수량: {order.quantity}개</p>
                                 </div>
                                 <div className="text-right">
-                                  <p className="font-bold text-primary">{order.totalPrice.toLocaleString()}원</p>
-                                  <p className="text-xs text-gray-400">{new Date(order.orderedAt).toLocaleDateString("ko-KR")}</p>
+                                  <p className="font-bold text-primary">{Number(order.totalAmount || 0).toLocaleString()}원</p>
+                                  <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleDateString("ko-KR")}</p>
                                 </div>
                               </div>
                               <div className="flex gap-2 mt-3">
