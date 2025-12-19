@@ -50,11 +50,23 @@ function requireAdminAuth(req: Request, res: Response, next: Function) {
   next();
 }
 
+// Gold price cache - shared across all requests within 30 seconds
+let cachedPrices: any = null;
+let lastPriceUpdate: number = 0;
+const PRICE_CACHE_DURATION = 30000; // 30 seconds
+
 // Gold price fetch function - Korean market real-time prices
 // Based on 한국금거래소 (Korea Gold Exchange) consumer prices
 async function fetchGoldPrices() {
-  const now = new Date();
-  const hourOffset = now.getHours() + now.getMinutes() / 60;
+  const now = Date.now();
+  
+  // Return cached prices if still valid (within 30 seconds)
+  if (cachedPrices && (now - lastPriceUpdate) < PRICE_CACHE_DURATION) {
+    return cachedPrices;
+  }
+  
+  const currentDate = new Date();
+  const hourOffset = currentDate.getHours() + currentDate.getMinutes() / 60;
   
   // Base prices in KRW per 3.75g (1돈) - 한국금거래소 소비자가격 (VAT포함)
   // 2025.12.19 기준 실시간 시세
@@ -84,7 +96,7 @@ async function fetchGoldPrices() {
   const platinumSell = Math.round(platinumBuy * 0.813); // 판매가: 살 때의 약 81.3% (326,000/401,000)
   const platinumChange = Math.round((fluctuation * 0.9 + microFluctuation) * basePlatinumBuy);
   
-  return {
+  cachedPrices = {
     gold: {
       buyPrice: goldBuy.toLocaleString(),
       sellPrice: goldSell.toLocaleString(),
@@ -104,6 +116,9 @@ async function fetchGoldPrices() {
       change: Math.abs(platinumChange).toLocaleString(),
     },
   };
+  
+  lastPriceUpdate = now;
+  return cachedPrices;
 }
 
 export async function registerRoutes(
