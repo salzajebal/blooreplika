@@ -225,11 +225,6 @@ export function Hero() {
             <p className="text-gray-600">
               구입 전 충분한 고민 후 상담을 부탁드립니다.
             </p>
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3">
-              <p className="text-amber-800 text-sm">
-                상담 시간: 평일 09:00 ~ 18:00
-              </p>
-            </div>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex gap-2 mt-4">
