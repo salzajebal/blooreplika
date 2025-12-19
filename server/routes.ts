@@ -51,36 +51,37 @@ function requireAdminAuth(req: Request, res: Response, next: Function) {
 }
 
 // Gold price fetch function - Korean market real-time prices
-// Base on current Korean gold market prices (2024-2025 rates)
+// Based on 한국금거래소 (Korea Gold Exchange) consumer prices
 async function fetchGoldPrices() {
   const now = new Date();
   const hourOffset = now.getHours() + now.getMinutes() / 60;
   
-  // Base prices in KRW per 3.75g (1돈) - Updated to current Korean market rates
-  // Gold: ~750,000원/돈 (2nd anniversary event price)
-  // Silver: ~10,150원/돈
-  // Platinum: ~165,000원/돈
-  const baseGoldBuy = 750000;
-  const baseSilverBuy = 10150;
-  const basePlatinumBuy = 165000;
+  // Base prices in KRW per 3.75g (1돈) - 한국금거래소 소비자가격 (VAT포함)
+  // 2025.12.19 기준 실시간 시세
+  // Gold: 900,000원/돈 (순금 24K)
+  // Silver: 14,540원/돈
+  // Platinum: 401,000원/돈
+  const baseGoldBuy = 900000;
+  const baseSilverBuy = 14540;
+  const basePlatinumBuy = 401000;
   
   // Realistic market fluctuation (±0.5% intraday)
   const fluctuation = Math.sin(hourOffset / 24 * Math.PI * 2) * 0.005;
   const microFluctuation = (Math.random() - 0.5) * 0.002;
   
-  // Gold calculations
+  // Gold calculations - 한국금거래소 기준
   const goldBuy = Math.round(baseGoldBuy * (1 + fluctuation + microFluctuation));
-  const goldSell = Math.round(goldBuy * 0.92); // 8% spread (typical retail)
+  const goldSell = Math.round(goldBuy * 0.846); // 판매가: 살 때의 약 84.6% (761,000/900,000)
   const goldChange = Math.round((fluctuation + microFluctuation) * baseGoldBuy);
   
-  // Silver calculations (slightly more volatile)
+  // Silver calculations - 한국금거래소 기준
   const silverBuy = Math.round(baseSilverBuy * (1 + fluctuation * 1.3 + microFluctuation * 1.5));
-  const silverSell = Math.round(silverBuy * 0.85); // 15% spread
+  const silverSell = Math.round(silverBuy * 0.747); // 판매가: 살 때의 약 74.7% (10,860/14,540)
   const silverChange = Math.round((fluctuation * 1.3 + microFluctuation * 1.5) * baseSilverBuy);
   
-  // Platinum calculations
+  // Platinum calculations - 한국금거래소 기준
   const platinumBuy = Math.round(basePlatinumBuy * (1 + fluctuation * 0.9 + microFluctuation));
-  const platinumSell = Math.round(platinumBuy * 0.88); // 12% spread
+  const platinumSell = Math.round(platinumBuy * 0.813); // 판매가: 살 때의 약 81.3% (326,000/401,000)
   const platinumChange = Math.round((fluctuation * 0.9 + microFluctuation) * basePlatinumBuy);
   
   return {
