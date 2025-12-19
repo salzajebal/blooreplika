@@ -46,6 +46,7 @@ interface PointTransaction {
 
 interface Order {
   id: string;
+  orderNumber: string;
   productName: string;
   quantity: number;
   totalAmount: string;
@@ -404,6 +405,10 @@ export default function Profile() {
                         <div className="space-y-3">
                           {memberOrders.map((order) => (
                             <div key={order.id} className="bg-white border border-gray-200 rounded-lg p-4" data-testid={`order-item-${order.id}`}>
+                              <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
+                                <span className="text-xs font-mono bg-gray-100 px-2 py-1 rounded text-gray-600">주문번호: {order.orderNumber}</span>
+                                <span className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleDateString("ko-KR")}</span>
+                              </div>
                               <div className="flex justify-between items-start mb-2">
                                 <div>
                                   <h4 className="font-medium text-gray-900">{order.productName}</h4>
@@ -411,7 +416,6 @@ export default function Profile() {
                                 </div>
                                 <div className="text-right">
                                   <p className="font-bold text-primary">{Number(order.totalAmount || 0).toLocaleString()}원</p>
-                                  <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleDateString("ko-KR")}</p>
                                 </div>
                               </div>
                               <div className="flex gap-2 mt-3">
