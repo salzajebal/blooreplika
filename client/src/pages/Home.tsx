@@ -7,6 +7,7 @@ import { HomePopup } from "@/components/home/HomePopup";
 import { Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { useKakaoLink } from "@/hooks/use-kakao-link";
+import { useLivePrices } from "@/hooks/use-live-prices";
 
 function KakaoIcon({ className }: { className?: string }) {
   return (
@@ -18,6 +19,7 @@ function KakaoIcon({ className }: { className?: string }) {
 
 export default function Home() {
   const { openKakaoChat } = useKakaoLink();
+  const { prices } = useLivePrices();
   const handleKakaoClick = () => {
     openKakaoChat();
   };
@@ -44,7 +46,7 @@ export default function Home() {
               GOLD BAR
             </span>
             <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">순금 골드바</h3>
-            <p className="text-amber-800 text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2">900,000원<span className="text-xs sm:text-sm md:text-base font-normal text-stone-600">/돈</span></p>
+            <p className="text-amber-800 text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2">{prices?.gold?.buyPrice || "900,000"}원<span className="text-xs sm:text-sm md:text-base font-normal text-stone-600">/돈</span></p>
             <span className="text-amber-700 text-xs sm:text-sm flex items-center gap-1 font-medium">
               <KakaoIcon className="w-3 h-3 sm:w-4 sm:h-4" />
               카카오톡 문의
@@ -59,7 +61,7 @@ export default function Home() {
               SILVER BAR
             </span>
             <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-1 sm:mb-2">순은 실버바</h3>
-            <p className="text-gray-800 text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2">14,540원<span className="text-xs sm:text-sm md:text-base font-normal text-stone-600">/돈</span></p>
+            <p className="text-gray-800 text-lg sm:text-xl md:text-2xl font-bold mb-1 sm:mb-2">{prices?.silver?.buyPrice || "14,540"}원<span className="text-xs sm:text-sm md:text-base font-normal text-stone-600">/돈</span></p>
             <span className="text-gray-600 text-xs sm:text-sm flex items-center gap-1 font-medium">
               <KakaoIcon className="w-3 h-3 sm:w-4 sm:h-4" />
               카카오톡 문의
@@ -84,11 +86,11 @@ export default function Home() {
               <div className="flex flex-wrap justify-center gap-3 sm:gap-4 md:gap-6 mb-4 sm:mb-6">
                 <div className="bg-stone-900/50 border border-stone-600 rounded-lg px-4 sm:px-6 py-3 sm:py-4">
                   <p className="text-amber-400 text-xs sm:text-sm mb-0.5 sm:mb-1">순금 (1돈)</p>
-                  <p className="text-xl sm:text-2xl font-bold">900,000<span className="text-sm sm:text-base font-normal text-stone-400">원</span></p>
+                  <p className="text-xl sm:text-2xl font-bold">{prices?.gold?.buyPrice || "900,000"}<span className="text-sm sm:text-base font-normal text-stone-400">원</span></p>
                 </div>
                 <div className="bg-stone-900/50 border border-stone-600 rounded-lg px-4 sm:px-6 py-3 sm:py-4">
                   <p className="text-gray-400 text-xs sm:text-sm mb-0.5 sm:mb-1">순은 (1돈)</p>
-                  <p className="text-xl sm:text-2xl font-bold">14,540<span className="text-sm sm:text-base font-normal text-stone-400">원</span></p>
+                  <p className="text-xl sm:text-2xl font-bold">{prices?.silver?.buyPrice || "14,540"}<span className="text-sm sm:text-base font-normal text-stone-400">원</span></p>
                 </div>
               </div>
               <button 
