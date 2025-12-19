@@ -111,10 +111,15 @@ export default function Profile() {
     enabled: isLoggedIn,
   });
 
+  const memberId = localStorage.getItem("memberId");
+  
   const { data: memberOrders } = useQuery<Order[]>({
-    queryKey: ["member-orders"],
+    queryKey: ["member-orders", memberId],
     queryFn: async () => {
-      const res = await fetch("/api/members/orders", {
+      const params = new URLSearchParams();
+      if (memberId) params.append("memberId", memberId);
+      
+      const res = await fetch(`/api/members/orders?${params.toString()}`, {
         headers: {
           Authorization: `Bearer ${memberToken}`,
         },
@@ -123,7 +128,7 @@ export default function Profile() {
       if (!data.success) throw new Error(data.error);
       return data.data;
     },
-    enabled: isLoggedIn,
+    enabled: isLoggedIn && !!memberId,
   });
 
   const depositMutation = useMutation({

@@ -2041,17 +2041,29 @@ export async function registerRoutes(
   // Get member's orders
   app.get("/api/members/orders", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token) {
+    const memberIdFromQuery = req.query.memberId as string;
+    
+    let memberId: string | null = null;
+    
+    // Try to get memberId from session first
+    if (token) {
+      const session = memberSessions.get(token);
+      if (session) {
+        memberId = session.memberId;
+      }
+    }
+    
+    // Fallback to memberId from query parameter if session expired
+    if (!memberId && memberIdFromQuery) {
+      memberId = memberIdFromQuery;
+    }
+    
+    if (!memberId) {
       return res.status(401).json({ success: false, error: "인증이 필요합니다." });
     }
     
-    const session = memberSessions.get(token);
-    if (!session) {
-      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
-    }
-    
     try {
-      const orders = await storage.getOrdersByMember(session.memberId);
+      const orders = await storage.getOrdersByMember(memberId);
       res.json({ success: true, data: orders });
     } catch (error) {
       console.error("Error fetching member orders:", error);
