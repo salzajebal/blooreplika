@@ -262,14 +262,14 @@ export function Hero() {
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white leading-tight mb-3 sm:mb-4 break-keep">
             한국골드금거래소
             <br />
-            <span className="text-amber-400">2주년 특별가 안내</span>
+            <span className="text-amber-400">실시간 시세 안내</span>
           </h1>
           
           <p className="text-stone-300 text-sm sm:text-base md:text-lg mb-6 sm:mb-8 md:mb-10 max-w-xl leading-relaxed break-keep">
             고객님의 성원에 감사드리며, 창립 2주년을 맞아
             <br className="hidden sm:block" />
             <span className="sm:hidden"> </span>
-            특별한 가격으로 금 · 은 상품을 안내해 드립니다.
+            금 · 은 상품을 안내해 드립니다.
           </p>
 
           <div className="grid grid-cols-2 gap-3 sm:gap-4 md:gap-5 mb-6 sm:mb-8 md:mb-10">
@@ -353,7 +353,7 @@ export function Hero() {
           </div>
 
           <p className="mt-5 sm:mt-6 md:mt-8 text-stone-500 text-xs sm:text-sm">
-            * 이벤트 특별가는 별도 문의를 통해 안내받으실 수 있습니다.
+            * 시세는 실시간으로 변동되며, 최종 가격은 주문 시점 기준으로 적용됩니다.
           </p>
         </div>
       </div>
