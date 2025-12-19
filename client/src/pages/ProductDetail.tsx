@@ -7,6 +7,7 @@ import { ShoppingCart, Heart, MessageCircle, ChevronRight, Truck, Shield, Award,
 import { useToast } from "@/hooks/use-toast";
 import { useKakaoLink } from "@/hooks/use-kakao-link";
 import { KakaoConfirmDialog } from "@/components/KakaoConfirmDialog";
+import { useLivePrices } from "@/hooks/use-live-prices";
 import type { Product } from "@shared/schema";
 
 function KakaoIcon({ className }: { className?: string }) {
@@ -180,6 +181,7 @@ export default function ProductDetail() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { openKakaoChat, showConfirmDialog, confirmAndOpenKakao, closeConfirmDialog } = useKakaoLink();
+  const { calculateProductPrice } = useLivePrices();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
@@ -322,7 +324,9 @@ export default function ProductDetail() {
 
               <div className="border-t border-b border-gray-100 py-4 sm:py-6 text-center lg:text-left">
                 <div className="flex items-baseline justify-center lg:justify-start gap-2">
-                  <span className="text-2xl sm:text-3xl font-bold text-primary">{product.price}</span>
+                  <span className="text-2xl sm:text-3xl font-bold text-primary" data-testid="price-product-detail">
+                    {calculateProductPrice(product.category, product.weight) || product.price}
+                  </span>
                   <span className="text-base sm:text-lg text-gray-500">원</span>
                 </div>
                 <p className="text-xs sm:text-sm text-gray-500 mt-1">VAT 포함 / 무료 배송</p>

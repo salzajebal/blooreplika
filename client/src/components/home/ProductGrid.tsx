@@ -6,6 +6,7 @@ import { Link } from "wouter";
 import type { Product } from "@shared/schema";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
+import { useLivePrices } from "@/hooks/use-live-prices";
 
 const DEFAULT_CATEGORIES = [
   { id: "gold_bar", name: "골드바" },
@@ -23,6 +24,7 @@ export function ProductGrid() {
   const [loading, setLoading] = useState(true);
   const { toggleItem, isInWishlist } = useWishlist();
   const { toast } = useToast();
+  const { calculateProductPrice } = useLivePrices();
 
   const handleWishlistToggle = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
@@ -189,7 +191,9 @@ export function ProductGrid() {
                 
                 <div className="pt-2 sm:pt-3 border-t border-dashed border-gray-100 w-full mt-1 sm:mt-2">
                   <div className="flex justify-center items-baseline gap-0.5 sm:gap-1">
-                    <span className="text-sm sm:text-base md:text-lg font-bold text-primary">{product.price}</span>
+                    <span className="text-sm sm:text-base md:text-lg font-bold text-primary" data-testid={`price-product-${product.id}`}>
+                      {calculateProductPrice(product.category, product.weight) || product.price}
+                    </span>
                     <span className="text-[10px] sm:text-xs text-gray-500">원</span>
                   </div>
                 </div>

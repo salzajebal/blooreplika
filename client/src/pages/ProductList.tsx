@@ -8,6 +8,7 @@ import type { Product } from "@shared/schema";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { useLivePrices } from "@/hooks/use-live-prices";
 
 const DEFAULT_CATEGORIES = [
   { id: "gold_bar", name: "골드바", description: "한국골드금거래소가 보증하는 최고 품질의 순금 바" },
@@ -26,6 +27,7 @@ export default function ProductList() {
   const [loading, setLoading] = useState(true);
   const { toggleItem, isInWishlist } = useWishlist();
   const { toast } = useToast();
+  const { calculateProductPrice } = useLivePrices();
   
   const categoryInfo = DEFAULT_CATEGORIES.find(c => c.id === categoryId) || { name: "전체 상품 목록", description: "한국골드금거래소가 보증하는 최고의 품질" };
 
@@ -177,7 +179,9 @@ export default function ProductList() {
                   
                   <div className="pt-3 border-t border-dashed border-gray-100 w-full">
                     <div className="flex justify-center items-baseline gap-1">
-                      <span className="text-lg font-bold text-primary">{product.price}</span>
+                      <span className="text-lg font-bold text-primary" data-testid={`price-product-${product.id}`}>
+                        {calculateProductPrice(product.category, product.weight) || product.price}
+                      </span>
                       <span className="text-xs text-gray-500">원</span>
                     </div>
                   </div>
