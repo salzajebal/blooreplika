@@ -255,7 +255,7 @@ export function Hero() {
           <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
             <span className="inline-flex items-center gap-1.5 sm:gap-2 py-1.5 sm:py-2 px-3 sm:px-4 bg-amber-700/80 text-amber-100 text-xs sm:text-sm font-medium tracking-wide rounded-full">
               <Sparkles className="w-3 h-3 sm:w-4 sm:h-4" />
-              창립 2주년 기념
+              한국금거래소 공식
             </span>
           </div>
           
@@ -266,7 +266,7 @@ export function Hero() {
           </h1>
           
           <p className="text-stone-300 text-sm sm:text-base md:text-lg mb-6 sm:mb-8 md:mb-10 max-w-xl leading-relaxed break-keep">
-            고객님의 성원에 감사드리며, 창립 2주년을 맞아
+            고객님의 성원에 감사드리며,
             <br className="hidden sm:block" />
             <span className="sm:hidden"> </span>
             금 · 은 상품을 안내해 드립니다.
@@ -283,7 +283,7 @@ export function Hero() {
               </div>
               <div className="flex items-end gap-1 sm:gap-2">
                 <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white" data-testid="price-gold-live">
-                  {livePrices?.gold?.buyPrice || "750,000"}
+                  {livePrices?.gold?.buyPrice || "900,000"}
                 </span>
                 <span className="text-amber-400 text-sm sm:text-base md:text-lg font-medium mb-0.5 sm:mb-1">원</span>
                 {livePrices?.gold?.trend && (
@@ -305,7 +305,7 @@ export function Hero() {
               </div>
               <div className="flex items-end gap-1 sm:gap-2">
                 <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white" data-testid="price-silver-live">
-                  {livePrices?.silver?.buyPrice || "10,150"}
+                  {livePrices?.silver?.buyPrice || "14,540"}
                 </span>
                 <span className="text-gray-400 text-sm sm:text-base md:text-lg font-medium mb-0.5 sm:mb-1">원</span>
                 {livePrices?.silver?.trend && (

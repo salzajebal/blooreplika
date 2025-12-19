@@ -83,18 +83,18 @@ export function Header() {
         <div className="container-custom flex justify-center items-center gap-2 sm:gap-4 relative">
           <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-amber-300" />
           <span className="font-medium tracking-wide text-xs sm:text-sm md:text-base flex items-center gap-1 sm:gap-2">
-            <span className="hidden xs:inline">창립</span> 2주년 기념 특별가
+            한국금거래소 실시간 시세
           </span>
           <span className="hidden md:inline-flex items-center gap-1 text-amber-200 text-sm">
             |
-            <span className="font-semibold text-white ml-2">금 750,000원</span>
+            <span className="font-semibold text-white ml-2">금 900,000원</span>
             <span className="text-amber-300">/돈</span>
             <span className="mx-2">·</span>
-            <span className="font-semibold text-white">은 10,150원</span>
+            <span className="font-semibold text-white">은 14,540원</span>
             <span className="text-amber-300">/돈</span>
           </span>
           <span className="hidden lg:inline text-amber-300 text-xs ml-2">
-            (별도문의)
+            (VAT포함)
           </span>
           <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 text-amber-300" />
         </div>
