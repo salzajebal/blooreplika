@@ -183,6 +183,25 @@ function PriceModal() {
 export function Hero() {
   const [, setLocation] = useLocation();
   const { openKakaoChat, showConfirmDialog, confirmAndOpenKakao, closeConfirmDialog } = useKakaoLink();
+  const [livePrices, setLivePrices] = useState<PriceResponse | null>(null);
+
+  useEffect(() => {
+    const fetchLivePrices = async () => {
+      try {
+        const res = await fetch("/api/prices");
+        const data = await res.json();
+        if (data.success) {
+          setLivePrices(data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching live prices:", error);
+      }
+    };
+
+    fetchLivePrices();
+    const interval = setInterval(fetchLivePrices, 30000); // Update every 30 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   const handleKakaoClick = () => {
     openKakaoChat();
@@ -268,8 +287,15 @@ export function Hero() {
                 </div>
               </div>
               <div className="flex items-end gap-1 sm:gap-2">
-                <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white">750,000</span>
+                <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white" data-testid="price-gold-live">
+                  {livePrices?.gold?.buyPrice || "750,000"}
+                </span>
                 <span className="text-amber-400 text-sm sm:text-base md:text-lg font-medium mb-0.5 sm:mb-1">원</span>
+                {livePrices?.gold?.trend && (
+                  <span className={`text-xs sm:text-sm font-bold mb-0.5 sm:mb-1 ${livePrices.gold.trend === "up" ? "text-red-400" : livePrices.gold.trend === "down" ? "text-blue-400" : "text-gray-400"}`}>
+                    {livePrices.gold.trend === "up" ? "▲" : livePrices.gold.trend === "down" ? "▼" : ""}
+                  </span>
+                )}
               </div>
               <p className="text-stone-400 text-[10px] sm:text-xs md:text-sm mt-1 sm:mt-2">VAT 별도 / 돈당 기준</p>
             </div>
@@ -283,8 +309,15 @@ export function Hero() {
                 </div>
               </div>
               <div className="flex items-end gap-1 sm:gap-2">
-                <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white">10,150</span>
+                <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-white" data-testid="price-silver-live">
+                  {livePrices?.silver?.buyPrice || "10,150"}
+                </span>
                 <span className="text-gray-400 text-sm sm:text-base md:text-lg font-medium mb-0.5 sm:mb-1">원</span>
+                {livePrices?.silver?.trend && (
+                  <span className={`text-xs sm:text-sm font-bold mb-0.5 sm:mb-1 ${livePrices.silver.trend === "up" ? "text-red-400" : livePrices.silver.trend === "down" ? "text-blue-400" : "text-gray-400"}`}>
+                    {livePrices.silver.trend === "up" ? "▲" : livePrices.silver.trend === "down" ? "▼" : ""}
+                  </span>
+                )}
               </div>
               <p className="text-stone-400 text-[10px] sm:text-xs md:text-sm mt-1 sm:mt-2">VAT 별도 / 돈당 기준</p>
             </div>
