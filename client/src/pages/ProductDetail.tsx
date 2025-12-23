@@ -325,7 +325,9 @@ export default function ProductDetail() {
               <div className="border-t border-b border-gray-100 py-4 sm:py-6 text-center lg:text-left">
                 <div className="flex items-baseline justify-center lg:justify-start gap-2">
                   <span className="text-2xl sm:text-3xl font-bold text-primary" data-testid="price-product-detail">
-                    {calculateProductPrice(product.category, product.weight) || product.price}
+                    {product.price && product.price !== "시세 적용" && product.price !== "0" 
+                      ? product.price 
+                      : (calculateProductPrice(product.category, product.weight) || product.price)}
                   </span>
                   <span className="text-base sm:text-lg text-gray-500">원</span>
                 </div>
