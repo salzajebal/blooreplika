@@ -724,9 +724,7 @@ export async function registerRoutes(
     }
   });
 
-  // Member login
-  const memberSessions: Map<string, { memberId: string; email: string; name: string }> = new Map();
-  
+  // Member login - uses database-based sessions for persistence
   app.post("/api/members/login", async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
@@ -744,8 +742,13 @@ export async function registerRoutes(
         return res.status(401).json({ success: false, error: "비밀번호가 일치하지 않습니다." });
       }
       
-      const token = Math.random().toString(36).substring(2);
-      memberSessions.set(token, { memberId: member.id, email: member.email, name: member.name });
+      const token = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+      await storage.createMemberSession({
+        token,
+        memberId: member.id,
+        email: member.email,
+        name: member.name
+      });
       
       res.json({ 
         success: true, 
@@ -764,17 +767,21 @@ export async function registerRoutes(
       res.status(500).json({ success: false, error: "로그인 처리 중 오류가 발생했습니다." });
     }
   });
+  
+  // Helper function to get member from session token
+  async function getMemberFromToken(token: string | undefined): Promise<{ memberId: string; email: string; name: string } | null> {
+    if (!token) return null;
+    const session = await storage.getMemberSession(token);
+    if (!session) return null;
+    return { memberId: session.memberId, email: session.email, name: session.name };
+  }
 
   // Get member info (for logged-in member)
   app.get("/api/members/me", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
-    }
-    
-    const session = memberSessions.get(token);
+    const session = await getMemberFromToken(token);
     if (!session) {
-      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+      return res.status(401).json({ success: false, error: "인증이 필요합니다. 다시 로그인해주세요." });
     }
     
     try {
@@ -809,13 +816,9 @@ export async function registerRoutes(
   // Create deposit request
   app.post("/api/members/deposit-requests", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
-    }
-    
-    const session = memberSessions.get(token);
+    const session = await getMemberFromToken(token);
     if (!session) {
-      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+      return res.status(401).json({ success: false, error: "인증이 필요합니다. 다시 로그인해주세요." });
     }
     
     try {
@@ -859,13 +862,9 @@ export async function registerRoutes(
   // Get my deposit requests
   app.get("/api/members/deposit-requests", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
-    }
-    
-    const session = memberSessions.get(token);
+    const session = await getMemberFromToken(token);
     if (!session) {
-      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+      return res.status(401).json({ success: false, error: "인증이 필요합니다. 다시 로그인해주세요." });
     }
     
     try {
@@ -880,13 +879,9 @@ export async function registerRoutes(
   // Create withdrawal request
   app.post("/api/members/withdrawal-requests", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
-    }
-    
-    const session = memberSessions.get(token);
+    const session = await getMemberFromToken(token);
     if (!session) {
-      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+      return res.status(401).json({ success: false, error: "인증이 필요합니다. 다시 로그인해주세요." });
     }
     
     try {
@@ -928,13 +923,9 @@ export async function registerRoutes(
   // Get my withdrawal requests
   app.get("/api/members/withdrawal-requests", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
-    }
-    
-    const session = memberSessions.get(token);
+    const session = await getMemberFromToken(token);
     if (!session) {
-      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+      return res.status(401).json({ success: false, error: "인증이 필요합니다. 다시 로그인해주세요." });
     }
     
     try {
@@ -949,13 +940,9 @@ export async function registerRoutes(
   // Get my point transactions
   app.get("/api/members/point-transactions", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
-    }
-    
-    const session = memberSessions.get(token);
+    const session = await getMemberFromToken(token);
     if (!session) {
-      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+      return res.status(401).json({ success: false, error: "인증이 필요합니다. 다시 로그인해주세요." });
     }
     
     try {
@@ -1346,13 +1333,9 @@ export async function registerRoutes(
   // Get or create member chat conversation (member only)
   app.get("/api/chat/member/conversation", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token) {
-      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
-    }
-    
-    const session = memberSessions.get(token);
+    const session = await getMemberFromToken(token);
     if (!session) {
-      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다. 다시 로그인해주세요." });
     }
     
     try {
@@ -1368,13 +1351,9 @@ export async function registerRoutes(
   // Send message as member (member only)
   app.post("/api/chat/member/messages", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token) {
-      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
-    }
-    
-    const session = memberSessions.get(token);
+    const session = await getMemberFromToken(token);
     if (!session) {
-      return res.status(401).json({ success: false, error: "유효하지 않은 세션입니다." });
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다. 다시 로그인해주세요." });
     }
     
     try {
@@ -2063,7 +2042,7 @@ export async function registerRoutes(
     
     // Try to get memberId from session first
     if (token) {
-      const session = memberSessions.get(token);
+      const session = await getMemberFromToken(token);
       if (session) {
         memberId = session.memberId;
       }
@@ -2075,7 +2054,7 @@ export async function registerRoutes(
     }
     
     if (!memberId) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
+      return res.status(401).json({ success: false, error: "인증이 필요합니다. 다시 로그인해주세요." });
     }
     
     try {

@@ -4,6 +4,7 @@ import {
   type Category, type InsertCategory, categories,
   type GoldPrice, type InsertGoldPrice, goldPrices,
   type Member, type InsertMember, members,
+  type MemberSession, type InsertMemberSession, memberSessions,
   type ChatConversation, type InsertChatConversation, chatConversations,
   type ChatMessage, type InsertChatMessage, chatMessages,
   type Faq, type InsertFaq, faqs,
@@ -52,6 +53,12 @@ export interface IStorage {
   updateMember(id: string, member: Partial<InsertMember>): Promise<Member | undefined>;
   deleteMember(id: string): Promise<boolean>;
   updateMemberLastLogin(id: string): Promise<void>;
+  
+  // Member Sessions
+  getMemberSession(token: string): Promise<MemberSession | undefined>;
+  createMemberSession(session: InsertMemberSession): Promise<MemberSession>;
+  deleteMemberSession(token: string): Promise<boolean>;
+  deleteMemberSessionsByMemberId(memberId: string): Promise<void>;
   
   // Chat
   getAllConversations(): Promise<ChatConversation[]>;
@@ -275,6 +282,26 @@ export class DatabaseStorage implements IStorage {
     await db.update(members)
       .set({ lastLoginAt: new Date() })
       .where(eq(members.id, id));
+  }
+
+  // Member Sessions
+  async getMemberSession(token: string): Promise<MemberSession | undefined> {
+    const results = await db.select().from(memberSessions).where(eq(memberSessions.token, token));
+    return results[0];
+  }
+
+  async createMemberSession(session: InsertMemberSession): Promise<MemberSession> {
+    const results = await db.insert(memberSessions).values(session).returning();
+    return results[0];
+  }
+
+  async deleteMemberSession(token: string): Promise<boolean> {
+    const result = await db.delete(memberSessions).where(eq(memberSessions.token, token)).returning();
+    return result.length > 0;
+  }
+
+  async deleteMemberSessionsByMemberId(memberId: string): Promise<void> {
+    await db.delete(memberSessions).where(eq(memberSessions.memberId, memberId));
   }
 
   // Chat Conversations

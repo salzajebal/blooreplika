@@ -47,6 +47,21 @@ export const insertMemberSchema = createInsertSchema(members).omit({
 export type InsertMember = z.infer<typeof insertMemberSchema>;
 export type Member = typeof members.$inferSelect;
 
+// Member sessions table (persistent login sessions)
+export const memberSessions = pgTable("member_sessions", {
+  token: varchar("token").primaryKey(),
+  memberId: varchar("member_id").notNull(),
+  email: text("email").notNull(),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+});
+
+export const insertMemberSessionSchema = createInsertSchema(memberSessions);
+
+export type InsertMemberSession = z.infer<typeof insertMemberSessionSchema>;
+export type MemberSession = typeof memberSessions.$inferSelect;
+
 // Deposit requests table (point charging requests)
 export const depositRequests = pgTable("deposit_requests", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
