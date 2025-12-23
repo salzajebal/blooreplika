@@ -10,12 +10,13 @@ import {
   Lock, User, Mail, Phone, CheckCircle, XCircle,
   Star, FileText, Bell, Calendar,
   Wallet, Clock, Snowflake, Unlock, Settings, Link2, Upload,
-  MessageCircle, Send, Circle, Volume2
+  MessageCircle, Send, Circle, Volume2, Calculator
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage, Order } from "@shared/schema";
 import { ShoppingCart } from "lucide-react";
 import { useRef, useCallback } from "react";
+import { useLivePrices } from "@/hooks/use-live-prices";
 
 const playNotificationSound = () => {
   try {
@@ -87,6 +88,7 @@ interface AdminWithdrawalRequest {
 
 export default function Admin() {
   const { toast } = useToast();
+  const { prices, calculateProductPrice } = useLivePrices();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
@@ -859,6 +861,21 @@ export default function Admin() {
       }
     } catch (error) {
       toast({ title: "오류", description: "데이터 생성에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleAutoCalculatePrice = () => {
+    if (!formData.weight || !prices) {
+      toast({ title: "알림", description: "무게를 입력하고 시세를 불러온 후 계산해주세요.", variant: "destructive" });
+      return;
+    }
+    
+    const calculatedPrice = calculateProductPrice(formData.category, formData.weight);
+    if (calculatedPrice) {
+      setFormData({ ...formData, price: calculatedPrice });
+      toast({ title: "성공", description: `시세 기준 자동 계산: ${calculatedPrice}원` });
+    } else {
+      toast({ title: "오류", description: "가격 계산에 실패했습니다. 무게 형식을 확인해주세요. (예: 37.5g)", variant: "destructive" });
     }
   };
 
@@ -1768,12 +1785,24 @@ export default function Admin() {
                     value={formData.purity}
                     onChange={(e) => setFormData({ ...formData, purity: e.target.value })}
                   />
-                  <Input
-                    data-testid="input-product-price"
-                    placeholder="가격 (예: 15,100,000)"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  />
+                  <div className="flex gap-2">
+                    <Input
+                      data-testid="input-product-price"
+                      placeholder="가격 (예: 15,100,000)"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      className="flex-1"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleAutoCalculatePrice}
+                      className="shrink-0"
+                      title="실시간 시세 기준 자동 계산"
+                    >
+                      <Calculator className="w-4 h-4" />
+                    </Button>
+                  </div>
                   <select
                     data-testid="select-product-category"
                     className="border border-gray-200 rounded-md px-3 py-2"
@@ -1986,11 +2015,23 @@ export default function Admin() {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">가격 *</label>
-                        <Input
-                          placeholder="가격 (예: 15,100,000)"
-                          value={formData.price}
-                          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                        />
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="가격 (예: 15,100,000)"
+                            value={formData.price}
+                            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleAutoCalculatePrice}
+                            className="shrink-0"
+                            title="실시간 시세 기준 자동 계산"
+                          >
+                            <Calculator className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>

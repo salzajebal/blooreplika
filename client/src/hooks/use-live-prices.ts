@@ -62,7 +62,7 @@ export function useLivePrices() {
 
     let pricePerDon = 0;
 
-    if (category === "gold_bar" || category === "jewelry" || category === "baby_ring" || category === "gift_gold" || category === "corporate") {
+    if (category === "gold_bar" || category === "jewelry" || category === "baby_ring" || category === "gift_gold" || category === "corporate" || category === "pure_jewelry") {
       const goldPrice = parseInt(prices.gold.buyPrice.replace(/,/g, ""), 10);
       pricePerDon = goldPrice;
     } else if (category === "silver_bar") {
