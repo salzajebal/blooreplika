@@ -192,9 +192,7 @@ export function ProductGrid() {
                 <div className="pt-2 sm:pt-3 border-t border-dashed border-gray-100 w-full mt-1 sm:mt-2">
                   <div className="flex justify-center items-baseline gap-0.5 sm:gap-1">
                     <span className="text-sm sm:text-base md:text-lg font-bold text-primary" data-testid={`price-product-${product.id}`}>
-                      {product.price && product.price !== "시세 적용" && product.price !== "0" 
-                        ? product.price 
-                        : (calculateProductPrice(product.category, product.weight) || product.price)}
+                      {calculateProductPrice(product.category, product.weight) || product.price}
                     </span>
                     <span className="text-[10px] sm:text-xs text-gray-500">원</span>
                   </div>
