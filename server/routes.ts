@@ -65,53 +65,39 @@ async function fetchGoldPrices() {
     return cachedPrices;
   }
   
-  const currentDate = new Date();
-  const hourOffset = currentDate.getHours() + currentDate.getMinutes() / 60;
+  // 한국금거래소 실시간 시세 (VAT포함) - 2025.12.24 기준
+  // 매수가 (내가 살 때) / 매도가 (내가 팔 때)
+  // Gold 24K: 929,000원/돈 (매수), 782,000원/돈 (매도)
+  // Silver: 16,080원/돈 (매수), 11,800원/돈 (매도)
+  // Platinum: 479,000원/돈 (매수), 389,000원/돈 (매도)
+  const baseGoldBuy = 929000;
+  const baseGoldSell = 782000;
+  const baseSilverBuy = 16080;
+  const baseSilverSell = 11800;
+  const basePlatinumBuy = 479000;
+  const basePlatinumSell = 389000;
   
-  // Base prices in KRW per 3.75g (1돈) - 한국금거래소 소비자가격 (VAT포함)
-  // 2025.12.19 기준 실시간 시세
-  // Gold: 900,000원/돈 (순금 24K)
-  // Silver: 14,540원/돈
-  // Platinum: 401,000원/돈
-  const baseGoldBuy = 900000;
-  const baseSilverBuy = 14540;
-  const basePlatinumBuy = 401000;
-  
-  // Realistic market fluctuation (±0.5% intraday)
-  const fluctuation = Math.sin(hourOffset / 24 * Math.PI * 2) * 0.005;
-  const microFluctuation = (Math.random() - 0.5) * 0.002;
-  
-  // Gold calculations - 한국금거래소 기준
-  const goldBuy = Math.round(baseGoldBuy * (1 + fluctuation + microFluctuation));
-  const goldSell = Math.round(goldBuy * 0.846); // 판매가: 살 때의 약 84.6% (761,000/900,000)
-  const goldChange = Math.round((fluctuation + microFluctuation) * baseGoldBuy);
-  
-  // Silver calculations - 한국금거래소 기준
-  const silverBuy = Math.round(baseSilverBuy * (1 + fluctuation * 1.3 + microFluctuation * 1.5));
-  const silverSell = Math.round(silverBuy * 0.747); // 판매가: 살 때의 약 74.7% (10,860/14,540)
-  const silverChange = Math.round((fluctuation * 1.3 + microFluctuation * 1.5) * baseSilverBuy);
-  
-  // Platinum calculations - 한국금거래소 기준
-  const platinumBuy = Math.round(basePlatinumBuy * (1 + fluctuation * 0.9 + microFluctuation));
-  const platinumSell = Math.round(platinumBuy * 0.813); // 판매가: 살 때의 약 81.3% (326,000/401,000)
-  const platinumChange = Math.round((fluctuation * 0.9 + microFluctuation) * basePlatinumBuy);
+  // 전일대비 변동 (한국금거래소 기준)
+  const goldChange = -7000;  // -0.75% 하락
+  const silverChange = 610;   // +3.79% 상승
+  const platinumChange = 36000; // +7.52% 상승
   
   cachedPrices = {
     gold: {
-      buyPrice: goldBuy.toLocaleString(),
-      sellPrice: goldSell.toLocaleString(),
+      buyPrice: baseGoldBuy.toLocaleString(),
+      sellPrice: baseGoldSell.toLocaleString(),
       trend: goldChange >= 0 ? "up" : "down",
       change: Math.abs(goldChange).toLocaleString(),
     },
     silver: {
-      buyPrice: silverBuy.toLocaleString(),
-      sellPrice: silverSell.toLocaleString(),
+      buyPrice: baseSilverBuy.toLocaleString(),
+      sellPrice: baseSilverSell.toLocaleString(),
       trend: silverChange >= 0 ? "up" : "down",
       change: Math.abs(silverChange).toLocaleString(),
     },
     platinum: {
-      buyPrice: platinumBuy.toLocaleString(),
-      sellPrice: platinumSell.toLocaleString(),
+      buyPrice: basePlatinumBuy.toLocaleString(),
+      sellPrice: basePlatinumSell.toLocaleString(),
       trend: platinumChange >= 0 ? "up" : "down",
       change: Math.abs(platinumChange).toLocaleString(),
     },
