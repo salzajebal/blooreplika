@@ -63,7 +63,7 @@ export default function Support() {
       <main className="container-custom py-12">
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-gray-900 mb-4" data-testid="text-support-title">고객센터</h1>
-          <p className="text-gray-500">CDAMDONG에 대해 궁금한 점을 확인하세요</p>
+          <p className="text-gray-500">청담동에디션에 대해 궁금한 점을 확인하세요</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">

@@ -98,7 +98,7 @@ export function Header() {
       <div className="bg-black text-white py-2">
         <div className="container mx-auto px-4 flex justify-between items-center text-xs">
           <div className="flex gap-4 items-center">
-            <span className="hidden md:inline">LUXURY REPLICA FASHION</span>
+            <span className="hidden md:inline">CHEONGDAM-DONG EDITION</span>
           </div>
           <div className="flex gap-3 md:gap-4 items-center">
             {memberName ? (
@@ -128,9 +128,12 @@ export function Header() {
       <div className="border-b border-gray-200">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-4">
           <Link href="/" className="flex-shrink-0" data-testid="link-home">
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-black">
-              CDAMDONG
-            </h1>
+            <div className="flex flex-col items-center">
+              <span className="text-[10px] md:text-xs tracking-[0.3em] text-gray-500 font-light">CHEONGDAM-DONG</span>
+              <h1 className="text-lg md:text-xl font-serif font-semibold tracking-wider text-black" style={{ fontFamily: "'Playfair Display', serif" }}>
+                청담동에디션
+              </h1>
+            </div>
           </Link>
 
           <form onSubmit={handleSearch} className="hidden lg:flex items-center flex-1 max-w-lg mx-8">

@@ -7,13 +7,16 @@ export function Footer() {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           <div className="col-span-1 md:col-span-2">
-            <h3 className="text-white font-bold text-xl mb-4">CDAMDONG</h3>
+            <div className="mb-4">
+              <span className="text-[10px] tracking-[0.3em] text-gray-500 font-light block">CHEONGDAM-DONG</span>
+              <h3 className="text-white font-serif text-xl" style={{ fontFamily: "'Playfair Display', serif" }}>청담동에디션</h3>
+            </div>
             <p className="text-sm leading-relaxed mb-6 max-w-md">
               최상급 퀄리티의 명품 레플리카를 합리적인 가격에 만나보세요.
               고객 만족을 최우선으로 생각하는 프리미엄 쇼핑몰입니다.
             </p>
             <div className="text-xs space-y-1 text-gray-500">
-              <p><span className="text-gray-400">상호:</span> CDAMDONG</p>
+              <p><span className="text-gray-400">상호:</span> 청담동에디션</p>
               <p><span className="text-gray-400">사업자등록번호:</span> 000-00-00000</p>
               <p><span className="text-gray-400">통신판매번호:</span> 2025-서울강남-0000</p>
               <p><span className="text-gray-400">대표:</span> 홍길동</p>
@@ -53,7 +56,7 @@ export function Footer() {
         </div>
 
         <div className="pt-8 border-t border-gray-800 text-xs text-center md:text-left flex flex-col md:flex-row justify-between items-center gap-4">
-          <p>Copyright &copy; 2025 CDAMDONG. All rights reserved.</p>
+          <p>Copyright &copy; 2025 청담동에디션. All rights reserved.</p>
           <div className="flex gap-4 text-gray-600">
             <span>Escrow</span>
             <span>SSL</span>
