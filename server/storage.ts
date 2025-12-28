@@ -2,7 +2,8 @@ import {
   type User, type InsertUser, users,
   type Product, type InsertProduct, products,
   type Category, type InsertCategory, categories,
-  type GoldPrice, type InsertGoldPrice, goldPrices,
+  type Subcategory, type InsertSubcategory, subcategories,
+  type Brand, type InsertBrand, brands,
   type Member, type InsertMember, members,
   type MemberSession, type InsertMemberSession, memberSessions,
   type ChatConversation, type InsertChatConversation, chatConversations,
@@ -12,11 +13,16 @@ import {
   type ReviewImage, type InsertReviewImage, reviewImages,
   type ProductImage, type InsertProductImage, productImages,
   type Notice, type InsertNotice, notices,
-  type DepositRequest, type InsertDepositRequest, depositRequests,
-  type WithdrawalRequest, type InsertWithdrawalRequest, withdrawalRequests,
+  type Banner, type InsertBanner, banners,
+  type Popup, type InsertPopup, popups,
+  type BlogPost, type InsertBlogPost, blogPosts,
+  type Order, type InsertOrder, orders,
+  type OrderItem, type InsertOrderItem, orderItems,
+  type CartItem, type InsertCartItem, cartItems,
+  type WishlistItem, type InsertWishlistItem, wishlistItems,
+  type Coupon, type InsertCoupon, coupons,
   type PointTransaction, type InsertPointTransaction, pointTransactions,
-  type SiteSetting, type InsertSiteSetting, siteSettings,
-  type Order, type InsertOrder, orders
+  type SiteSetting, type InsertSiteSetting, siteSettings
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql } from "drizzle-orm";
@@ -29,7 +35,7 @@ export interface IStorage {
   
   // Products
   getAllProducts(): Promise<Product[]>;
-  getProductsByCategory(category: string): Promise<Product[]>;
+  getProductsByCategory(categoryId: string): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
@@ -40,10 +46,22 @@ export interface IStorage {
   getCategory(id: string): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
   updateCategory(id: string, category: Partial<InsertCategory>): Promise<Category | undefined>;
+  deleteCategory(id: string): Promise<boolean>;
   
-  // Gold Prices
-  getGoldPrices(): Promise<GoldPrice[]>;
-  updateGoldPrice(metalType: string, data: Omit<InsertGoldPrice, 'metalType'>): Promise<GoldPrice>;
+  // Subcategories
+  getAllSubcategories(): Promise<Subcategory[]>;
+  getSubcategoriesByCategoryId(categoryId: string): Promise<Subcategory[]>;
+  getSubcategory(id: string): Promise<Subcategory | undefined>;
+  createSubcategory(subcategory: InsertSubcategory): Promise<Subcategory>;
+  updateSubcategory(id: string, subcategory: Partial<InsertSubcategory>): Promise<Subcategory | undefined>;
+  deleteSubcategory(id: string): Promise<boolean>;
+  
+  // Brands
+  getAllBrands(): Promise<Brand[]>;
+  getBrand(id: string): Promise<Brand | undefined>;
+  createBrand(brand: InsertBrand): Promise<Brand>;
+  updateBrand(id: string, brand: Partial<InsertBrand>): Promise<Brand | undefined>;
+  deleteBrand(id: string): Promise<boolean>;
   
   // Members
   getAllMembers(): Promise<Member[]>;
@@ -110,23 +128,67 @@ export interface IStorage {
   deleteNotice(id: string): Promise<boolean>;
   incrementNoticeViewCount(id: string): Promise<void>;
   
-  // Deposit Requests
-  getAllDepositRequests(): Promise<DepositRequest[]>;
-  getPendingDepositRequests(): Promise<DepositRequest[]>;
-  getDepositRequestsByMember(memberId: string): Promise<DepositRequest[]>;
-  getDepositRequest(id: string): Promise<DepositRequest | undefined>;
-  createDepositRequest(request: InsertDepositRequest): Promise<DepositRequest>;
-  approveDepositRequest(id: string, adminNote?: string): Promise<DepositRequest | undefined>;
-  rejectDepositRequest(id: string, adminNote?: string): Promise<DepositRequest | undefined>;
+  // Banners
+  getAllBanners(): Promise<Banner[]>;
+  getActiveBanners(): Promise<Banner[]>;
+  getBanner(id: string): Promise<Banner | undefined>;
+  createBanner(banner: InsertBanner): Promise<Banner>;
+  updateBanner(id: string, banner: Partial<InsertBanner>): Promise<Banner | undefined>;
+  deleteBanner(id: string): Promise<boolean>;
   
-  // Withdrawal Requests
-  getAllWithdrawalRequests(): Promise<WithdrawalRequest[]>;
-  getPendingWithdrawalRequests(): Promise<WithdrawalRequest[]>;
-  getWithdrawalRequestsByMember(memberId: string): Promise<WithdrawalRequest[]>;
-  getWithdrawalRequest(id: string): Promise<WithdrawalRequest | undefined>;
-  createWithdrawalRequest(request: InsertWithdrawalRequest): Promise<WithdrawalRequest>;
-  approveWithdrawalRequest(id: string, adminNote?: string): Promise<WithdrawalRequest | undefined>;
-  rejectWithdrawalRequest(id: string, adminNote?: string): Promise<WithdrawalRequest | undefined>;
+  // Popups
+  getAllPopups(): Promise<Popup[]>;
+  getActivePopups(): Promise<Popup[]>;
+  getPopup(id: string): Promise<Popup | undefined>;
+  createPopup(popup: InsertPopup): Promise<Popup>;
+  updatePopup(id: string, popup: Partial<InsertPopup>): Promise<Popup | undefined>;
+  deletePopup(id: string): Promise<boolean>;
+  
+  // Blog Posts
+  getAllBlogPosts(): Promise<BlogPost[]>;
+  getVisibleBlogPosts(): Promise<BlogPost[]>;
+  getBlogPost(id: string): Promise<BlogPost | undefined>;
+  createBlogPost(blogPost: InsertBlogPost): Promise<BlogPost>;
+  updateBlogPost(id: string, blogPost: Partial<InsertBlogPost>): Promise<BlogPost | undefined>;
+  deleteBlogPost(id: string): Promise<boolean>;
+  
+  // Orders
+  getAllOrders(): Promise<Order[]>;
+  getOrdersByMember(memberId: string): Promise<Order[]>;
+  getOrder(id: string): Promise<Order | undefined>;
+  getOrderByNumber(orderNumber: string): Promise<Order | undefined>;
+  createOrder(order: InsertOrder): Promise<Order>;
+  updateOrder(id: string, order: Partial<InsertOrder>): Promise<Order | undefined>;
+  
+  // Order Items
+  getOrderItemsByOrder(orderId: string): Promise<OrderItem[]>;
+  getOrderItem(id: string): Promise<OrderItem | undefined>;
+  createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem>;
+  deleteOrderItem(id: string): Promise<boolean>;
+  
+  // Cart Items
+  getCartItemsByMember(memberId: string): Promise<CartItem[]>;
+  getCartItem(id: string): Promise<CartItem | undefined>;
+  createCartItem(cartItem: InsertCartItem): Promise<CartItem>;
+  updateCartItem(id: string, cartItem: Partial<InsertCartItem>): Promise<CartItem | undefined>;
+  deleteCartItem(id: string): Promise<boolean>;
+  clearCartByMember(memberId: string): Promise<void>;
+  
+  // Wishlist Items
+  getWishlistItemsByMember(memberId: string): Promise<WishlistItem[]>;
+  getWishlistItem(id: string): Promise<WishlistItem | undefined>;
+  createWishlistItem(wishlistItem: InsertWishlistItem): Promise<WishlistItem>;
+  deleteWishlistItem(id: string): Promise<boolean>;
+  deleteWishlistItemByMemberAndProduct(memberId: string, productId: string): Promise<boolean>;
+  
+  // Coupons
+  getAllCoupons(): Promise<Coupon[]>;
+  getActiveCoupons(): Promise<Coupon[]>;
+  getCoupon(id: string): Promise<Coupon | undefined>;
+  getCouponByCode(code: string): Promise<Coupon | undefined>;
+  createCoupon(coupon: InsertCoupon): Promise<Coupon>;
+  updateCoupon(id: string, coupon: Partial<InsertCoupon>): Promise<Coupon | undefined>;
+  deleteCoupon(id: string): Promise<boolean>;
   
   // Point Transactions
   getPointTransactionsByMember(memberId: string): Promise<PointTransaction[]>;
@@ -141,14 +203,6 @@ export interface IStorage {
   getSiteSetting(key: string): Promise<SiteSetting | undefined>;
   getAllSiteSettings(): Promise<SiteSetting[]>;
   setSiteSetting(key: string, value: string, description?: string): Promise<SiteSetting>;
-  
-  // Orders
-  getAllOrders(): Promise<Order[]>;
-  getOrdersByMember(memberId: string): Promise<Order[]>;
-  getOrder(id: string): Promise<Order | undefined>;
-  getOrderByNumber(orderNumber: string): Promise<Order | undefined>;
-  createOrder(order: InsertOrder): Promise<Order>;
-  updateOrder(id: string, order: Partial<InsertOrder>): Promise<Order | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -173,8 +227,8 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(products).orderBy(desc(products.createdAt));
   }
 
-  async getProductsByCategory(category: string): Promise<Product[]> {
-    return db.select().from(products).where(eq(products.category, category)).orderBy(desc(products.createdAt));
+  async getProductsByCategory(categoryId: string): Promise<Product[]> {
+    return db.select().from(products).where(eq(products.categoryId, categoryId)).orderBy(desc(products.createdAt));
   }
 
   async getProduct(id: string): Promise<Product | undefined> {
@@ -202,7 +256,7 @@ export class DatabaseStorage implements IStorage {
 
   // Categories
   async getAllCategories(): Promise<Category[]> {
-    return db.select().from(categories);
+    return db.select().from(categories).orderBy(categories.sortOrder);
   }
 
   async getCategory(id: string): Promise<Category | undefined> {
@@ -223,26 +277,71 @@ export class DatabaseStorage implements IStorage {
     return category;
   }
 
-  // Gold Prices
-  async getGoldPrices(): Promise<GoldPrice[]> {
-    return db.select().from(goldPrices);
+  async deleteCategory(id: string): Promise<boolean> {
+    const result = await db.delete(categories).where(eq(categories.id, id)).returning();
+    return result.length > 0;
   }
 
-  async updateGoldPrice(metalType: string, data: Omit<InsertGoldPrice, 'metalType'>): Promise<GoldPrice> {
-    const [existing] = await db.select().from(goldPrices).where(eq(goldPrices.metalType, metalType));
-    
-    if (existing) {
-      const [updated] = await db.update(goldPrices)
-        .set({ ...data, updatedAt: new Date() })
-        .where(eq(goldPrices.metalType, metalType))
-        .returning();
-      return updated;
-    } else {
-      const [created] = await db.insert(goldPrices)
-        .values({ metalType, ...data })
-        .returning();
-      return created;
-    }
+  // Subcategories
+  async getAllSubcategories(): Promise<Subcategory[]> {
+    return db.select().from(subcategories).orderBy(subcategories.sortOrder);
+  }
+
+  async getSubcategoriesByCategoryId(categoryId: string): Promise<Subcategory[]> {
+    return db.select().from(subcategories)
+      .where(eq(subcategories.categoryId, categoryId))
+      .orderBy(subcategories.sortOrder);
+  }
+
+  async getSubcategory(id: string): Promise<Subcategory | undefined> {
+    const [subcategory] = await db.select().from(subcategories).where(eq(subcategories.id, id));
+    return subcategory;
+  }
+
+  async createSubcategory(insertSubcategory: InsertSubcategory): Promise<Subcategory> {
+    const [subcategory] = await db.insert(subcategories).values(insertSubcategory).returning();
+    return subcategory;
+  }
+
+  async updateSubcategory(id: string, updateData: Partial<InsertSubcategory>): Promise<Subcategory | undefined> {
+    const [subcategory] = await db.update(subcategories)
+      .set(updateData)
+      .where(eq(subcategories.id, id))
+      .returning();
+    return subcategory;
+  }
+
+  async deleteSubcategory(id: string): Promise<boolean> {
+    const result = await db.delete(subcategories).where(eq(subcategories.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Brands
+  async getAllBrands(): Promise<Brand[]> {
+    return db.select().from(brands).orderBy(brands.sortOrder);
+  }
+
+  async getBrand(id: string): Promise<Brand | undefined> {
+    const [brand] = await db.select().from(brands).where(eq(brands.id, id));
+    return brand;
+  }
+
+  async createBrand(insertBrand: InsertBrand): Promise<Brand> {
+    const [brand] = await db.insert(brands).values(insertBrand).returning();
+    return brand;
+  }
+
+  async updateBrand(id: string, updateData: Partial<InsertBrand>): Promise<Brand | undefined> {
+    const [brand] = await db.update(brands)
+      .set(updateData)
+      .where(eq(brands.id, id))
+      .returning();
+    return brand;
+  }
+
+  async deleteBrand(id: string): Promise<boolean> {
+    const result = await db.delete(brands).where(eq(brands.id, id)).returning();
+    return result.length > 0;
   }
 
   // Members
@@ -405,13 +504,13 @@ export class DatabaseStorage implements IStorage {
 
   // FAQ
   async getAllFaqs(): Promise<Faq[]> {
-    return db.select().from(faqs).where(eq(faqs.isActive, true)).orderBy(faqs.order);
+    return db.select().from(faqs).where(eq(faqs.isActive, true)).orderBy(faqs.sortOrder);
   }
 
   async getFaqsByCategory(category: string): Promise<Faq[]> {
     return db.select().from(faqs)
       .where(and(eq(faqs.category, category), eq(faqs.isActive, true)))
-      .orderBy(faqs.order);
+      .orderBy(faqs.sortOrder);
   }
 
   async createFaq(insertFaq: InsertFaq): Promise<Faq> {
@@ -541,161 +640,263 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Deposit Requests
-  async getAllDepositRequests(): Promise<DepositRequest[]> {
-    return db.select().from(depositRequests).orderBy(desc(depositRequests.requestedAt));
+  // Banners
+  async getAllBanners(): Promise<Banner[]> {
+    return db.select().from(banners).orderBy(banners.sortOrder);
   }
 
-  async getPendingDepositRequests(): Promise<DepositRequest[]> {
-    return db.select().from(depositRequests)
-      .where(eq(depositRequests.status, "pending"))
-      .orderBy(desc(depositRequests.requestedAt));
+  async getActiveBanners(): Promise<Banner[]> {
+    return db.select().from(banners)
+      .where(eq(banners.isActive, true))
+      .orderBy(banners.sortOrder);
   }
 
-  async getDepositRequestsByMember(memberId: string): Promise<DepositRequest[]> {
-    return db.select().from(depositRequests)
-      .where(eq(depositRequests.memberId, memberId))
-      .orderBy(desc(depositRequests.requestedAt));
+  async getBanner(id: string): Promise<Banner | undefined> {
+    const [banner] = await db.select().from(banners).where(eq(banners.id, id));
+    return banner;
   }
 
-  async getDepositRequest(id: string): Promise<DepositRequest | undefined> {
-    const [request] = await db.select().from(depositRequests).where(eq(depositRequests.id, id));
-    return request;
+  async createBanner(insertBanner: InsertBanner): Promise<Banner> {
+    const [banner] = await db.insert(banners).values(insertBanner).returning();
+    return banner;
   }
 
-  async createDepositRequest(insertRequest: InsertDepositRequest): Promise<DepositRequest> {
-    const [request] = await db.insert(depositRequests).values(insertRequest).returning();
-    return request;
-  }
-
-  async approveDepositRequest(id: string, adminNote?: string): Promise<DepositRequest | undefined> {
-    const request = await this.getDepositRequest(id);
-    if (!request || request.status !== "pending") return undefined;
-
-    const member = await this.getMember(request.memberId);
-    if (!member) return undefined;
-
-    const newBalance = (member.pointBalance || 0) + request.amount;
-
-    await db.update(members)
-      .set({ pointBalance: newBalance })
-      .where(eq(members.id, request.memberId));
-
-    await db.insert(pointTransactions).values({
-      memberId: request.memberId,
-      type: "deposit_approved",
-      amount: request.amount,
-      balanceAfter: newBalance,
-      description: `입금 승인: ${request.amount.toLocaleString()}원`,
-      relatedId: id,
-    });
-
-    const [updated] = await db.update(depositRequests)
-      .set({ 
-        status: "approved", 
-        adminNote,
-        processedAt: new Date() 
-      })
-      .where(eq(depositRequests.id, id))
+  async updateBanner(id: string, updateData: Partial<InsertBanner>): Promise<Banner | undefined> {
+    const [banner] = await db.update(banners)
+      .set(updateData)
+      .where(eq(banners.id, id))
       .returning();
-    
-    return updated;
+    return banner;
   }
 
-  async rejectDepositRequest(id: string, adminNote?: string): Promise<DepositRequest | undefined> {
-    const request = await this.getDepositRequest(id);
-    if (!request || request.status !== "pending") return undefined;
+  async deleteBanner(id: string): Promise<boolean> {
+    const result = await db.delete(banners).where(eq(banners.id, id)).returning();
+    return result.length > 0;
+  }
 
-    const [updated] = await db.update(depositRequests)
-      .set({ 
-        status: "rejected", 
-        adminNote,
-        processedAt: new Date() 
-      })
-      .where(eq(depositRequests.id, id))
+  // Popups
+  async getAllPopups(): Promise<Popup[]> {
+    return db.select().from(popups).orderBy(desc(popups.createdAt));
+  }
+
+  async getActivePopups(): Promise<Popup[]> {
+    return db.select().from(popups)
+      .where(eq(popups.isActive, true))
+      .orderBy(desc(popups.createdAt));
+  }
+
+  async getPopup(id: string): Promise<Popup | undefined> {
+    const [popup] = await db.select().from(popups).where(eq(popups.id, id));
+    return popup;
+  }
+
+  async createPopup(insertPopup: InsertPopup): Promise<Popup> {
+    const [popup] = await db.insert(popups).values(insertPopup).returning();
+    return popup;
+  }
+
+  async updatePopup(id: string, updateData: Partial<InsertPopup>): Promise<Popup | undefined> {
+    const [popup] = await db.update(popups)
+      .set(updateData)
+      .where(eq(popups.id, id))
       .returning();
-    
-    return updated;
+    return popup;
   }
 
-  // Withdrawal Requests
-  async getAllWithdrawalRequests(): Promise<WithdrawalRequest[]> {
-    return db.select().from(withdrawalRequests).orderBy(desc(withdrawalRequests.requestedAt));
+  async deletePopup(id: string): Promise<boolean> {
+    const result = await db.delete(popups).where(eq(popups.id, id)).returning();
+    return result.length > 0;
   }
 
-  async getPendingWithdrawalRequests(): Promise<WithdrawalRequest[]> {
-    return db.select().from(withdrawalRequests)
-      .where(eq(withdrawalRequests.status, "pending"))
-      .orderBy(desc(withdrawalRequests.requestedAt));
+  // Blog Posts
+  async getAllBlogPosts(): Promise<BlogPost[]> {
+    return db.select().from(blogPosts).orderBy(desc(blogPosts.createdAt));
   }
 
-  async getWithdrawalRequestsByMember(memberId: string): Promise<WithdrawalRequest[]> {
-    return db.select().from(withdrawalRequests)
-      .where(eq(withdrawalRequests.memberId, memberId))
-      .orderBy(desc(withdrawalRequests.requestedAt));
+  async getVisibleBlogPosts(): Promise<BlogPost[]> {
+    return db.select().from(blogPosts)
+      .where(eq(blogPosts.isVisible, true))
+      .orderBy(desc(blogPosts.createdAt));
   }
 
-  async getWithdrawalRequest(id: string): Promise<WithdrawalRequest | undefined> {
-    const [request] = await db.select().from(withdrawalRequests).where(eq(withdrawalRequests.id, id));
-    return request;
+  async getBlogPost(id: string): Promise<BlogPost | undefined> {
+    const [blogPost] = await db.select().from(blogPosts).where(eq(blogPosts.id, id));
+    return blogPost;
   }
 
-  async createWithdrawalRequest(insertRequest: InsertWithdrawalRequest): Promise<WithdrawalRequest> {
-    const [request] = await db.insert(withdrawalRequests).values(insertRequest).returning();
-    return request;
+  async createBlogPost(insertBlogPost: InsertBlogPost): Promise<BlogPost> {
+    const [blogPost] = await db.insert(blogPosts).values(insertBlogPost).returning();
+    return blogPost;
   }
 
-  async approveWithdrawalRequest(id: string, adminNote?: string): Promise<WithdrawalRequest | undefined> {
-    const request = await this.getWithdrawalRequest(id);
-    if (!request || request.status !== "pending") return undefined;
-
-    const member = await this.getMember(request.memberId);
-    if (!member) return undefined;
-
-    const currentBalance = member.pointBalance || 0;
-    if (currentBalance < request.amount) return undefined;
-
-    const updatedMember = await this.updateMemberPoints(request.memberId, -request.amount);
-    if (!updatedMember) return undefined;
-
-    const newBalance = updatedMember.pointBalance || 0;
-
-    await this.createPointTransaction({
-      memberId: request.memberId,
-      type: "withdrawal_approved",
-      amount: -request.amount,
-      balanceAfter: newBalance,
-      description: `출금 승인: ${request.amount.toLocaleString()}원`,
-      relatedId: id,
-      createdBy: "admin"
-    });
-
-    const [updated] = await db.update(withdrawalRequests)
-      .set({ 
-        status: "approved", 
-        adminNote,
-        processedAt: new Date() 
-      })
-      .where(eq(withdrawalRequests.id, id))
+  async updateBlogPost(id: string, updateData: Partial<InsertBlogPost>): Promise<BlogPost | undefined> {
+    const [blogPost] = await db.update(blogPosts)
+      .set(updateData)
+      .where(eq(blogPosts.id, id))
       .returning();
-    
-    return updated;
+    return blogPost;
   }
 
-  async rejectWithdrawalRequest(id: string, adminNote?: string): Promise<WithdrawalRequest | undefined> {
-    const request = await this.getWithdrawalRequest(id);
-    if (!request || request.status !== "pending") return undefined;
+  async deleteBlogPost(id: string): Promise<boolean> {
+    const result = await db.delete(blogPosts).where(eq(blogPosts.id, id)).returning();
+    return result.length > 0;
+  }
 
-    const [updated] = await db.update(withdrawalRequests)
-      .set({ 
-        status: "rejected", 
-        adminNote,
-        processedAt: new Date() 
-      })
-      .where(eq(withdrawalRequests.id, id))
+  // Orders
+  async getAllOrders(): Promise<Order[]> {
+    return db.select().from(orders).orderBy(desc(orders.createdAt));
+  }
+
+  async getOrdersByMember(memberId: string): Promise<Order[]> {
+    return db.select().from(orders).where(eq(orders.memberId, memberId)).orderBy(desc(orders.createdAt));
+  }
+
+  async getOrder(id: string): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order;
+  }
+
+  async getOrderByNumber(orderNumber: string): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber));
+    return order;
+  }
+
+  async createOrder(insertOrder: InsertOrder): Promise<Order> {
+    const [order] = await db.insert(orders).values(insertOrder).returning();
+    return order;
+  }
+
+  async updateOrder(id: string, updateData: Partial<InsertOrder>): Promise<Order | undefined> {
+    const [order] = await db.update(orders)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(eq(orders.id, id))
       .returning();
-    
-    return updated;
+    return order;
+  }
+
+  // Order Items
+  async getOrderItemsByOrder(orderId: string): Promise<OrderItem[]> {
+    return db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+  }
+
+  async getOrderItem(id: string): Promise<OrderItem | undefined> {
+    const [orderItem] = await db.select().from(orderItems).where(eq(orderItems.id, id));
+    return orderItem;
+  }
+
+  async createOrderItem(insertOrderItem: InsertOrderItem): Promise<OrderItem> {
+    const [orderItem] = await db.insert(orderItems).values(insertOrderItem).returning();
+    return orderItem;
+  }
+
+  async deleteOrderItem(id: string): Promise<boolean> {
+    const result = await db.delete(orderItems).where(eq(orderItems.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Cart Items
+  async getCartItemsByMember(memberId: string): Promise<CartItem[]> {
+    return db.select().from(cartItems)
+      .where(eq(cartItems.memberId, memberId))
+      .orderBy(desc(cartItems.createdAt));
+  }
+
+  async getCartItem(id: string): Promise<CartItem | undefined> {
+    const [cartItem] = await db.select().from(cartItems).where(eq(cartItems.id, id));
+    return cartItem;
+  }
+
+  async createCartItem(insertCartItem: InsertCartItem): Promise<CartItem> {
+    const [cartItem] = await db.insert(cartItems).values(insertCartItem).returning();
+    return cartItem;
+  }
+
+  async updateCartItem(id: string, updateData: Partial<InsertCartItem>): Promise<CartItem | undefined> {
+    const [cartItem] = await db.update(cartItems)
+      .set(updateData)
+      .where(eq(cartItems.id, id))
+      .returning();
+    return cartItem;
+  }
+
+  async deleteCartItem(id: string): Promise<boolean> {
+    const result = await db.delete(cartItems).where(eq(cartItems.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async clearCartByMember(memberId: string): Promise<void> {
+    await db.delete(cartItems).where(eq(cartItems.memberId, memberId));
+  }
+
+  // Wishlist Items
+  async getWishlistItemsByMember(memberId: string): Promise<WishlistItem[]> {
+    return db.select().from(wishlistItems)
+      .where(eq(wishlistItems.memberId, memberId))
+      .orderBy(desc(wishlistItems.createdAt));
+  }
+
+  async getWishlistItem(id: string): Promise<WishlistItem | undefined> {
+    const [wishlistItem] = await db.select().from(wishlistItems).where(eq(wishlistItems.id, id));
+    return wishlistItem;
+  }
+
+  async createWishlistItem(insertWishlistItem: InsertWishlistItem): Promise<WishlistItem> {
+    const [wishlistItem] = await db.insert(wishlistItems).values(insertWishlistItem).returning();
+    return wishlistItem;
+  }
+
+  async deleteWishlistItem(id: string): Promise<boolean> {
+    const result = await db.delete(wishlistItems).where(eq(wishlistItems.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async deleteWishlistItemByMemberAndProduct(memberId: string, productId: string): Promise<boolean> {
+    const result = await db.delete(wishlistItems)
+      .where(and(
+        eq(wishlistItems.memberId, memberId),
+        eq(wishlistItems.productId, productId)
+      ))
+      .returning();
+    return result.length > 0;
+  }
+
+  // Coupons
+  async getAllCoupons(): Promise<Coupon[]> {
+    return db.select().from(coupons).orderBy(desc(coupons.createdAt));
+  }
+
+  async getActiveCoupons(): Promise<Coupon[]> {
+    return db.select().from(coupons)
+      .where(eq(coupons.isActive, true))
+      .orderBy(desc(coupons.createdAt));
+  }
+
+  async getCoupon(id: string): Promise<Coupon | undefined> {
+    const [coupon] = await db.select().from(coupons).where(eq(coupons.id, id));
+    return coupon;
+  }
+
+  async getCouponByCode(code: string): Promise<Coupon | undefined> {
+    const [coupon] = await db.select().from(coupons).where(eq(coupons.code, code));
+    return coupon;
+  }
+
+  async createCoupon(insertCoupon: InsertCoupon): Promise<Coupon> {
+    const [coupon] = await db.insert(coupons).values(insertCoupon).returning();
+    return coupon;
+  }
+
+  async updateCoupon(id: string, updateData: Partial<InsertCoupon>): Promise<Coupon | undefined> {
+    const [coupon] = await db.update(coupons)
+      .set(updateData)
+      .where(eq(coupons.id, id))
+      .returning();
+    return coupon;
+  }
+
+  async deleteCoupon(id: string): Promise<boolean> {
+    const result = await db.delete(coupons).where(eq(coupons.id, id)).returning();
+    return result.length > 0;
   }
 
   // Point Transactions
@@ -782,38 +983,6 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return setting;
     }
-  }
-
-  // Orders
-  async getAllOrders(): Promise<Order[]> {
-    return db.select().from(orders).orderBy(desc(orders.createdAt));
-  }
-
-  async getOrdersByMember(memberId: string): Promise<Order[]> {
-    return db.select().from(orders).where(eq(orders.memberId, memberId)).orderBy(desc(orders.createdAt));
-  }
-
-  async getOrder(id: string): Promise<Order | undefined> {
-    const [order] = await db.select().from(orders).where(eq(orders.id, id));
-    return order;
-  }
-
-  async getOrderByNumber(orderNumber: string): Promise<Order | undefined> {
-    const [order] = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber));
-    return order;
-  }
-
-  async createOrder(insertOrder: InsertOrder): Promise<Order> {
-    const [order] = await db.insert(orders).values(insertOrder).returning();
-    return order;
-  }
-
-  async updateOrder(id: string, updateData: Partial<InsertOrder>): Promise<Order | undefined> {
-    const [order] = await db.update(orders)
-      .set({ ...updateData, updatedAt: new Date() })
-      .where(eq(orders.id, id))
-      .returning();
-    return order;
   }
 }
 

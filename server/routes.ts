@@ -1,16 +1,33 @@
 import type { Express, Request, Response } from "express";
 import { type Server } from "http";
 import { storage } from "./storage";
-import { insertProductSchema, insertCategorySchema, insertMemberSchema, insertChatConversationSchema, insertChatMessageSchema, insertFaqSchema, insertReviewSchema, insertNoticeSchema, insertOrderSchema } from "@shared/schema";
+import { 
+  insertProductSchema, 
+  insertCategorySchema, 
+  insertSubcategorySchema,
+  insertBrandSchema,
+  insertMemberSchema, 
+  insertChatConversationSchema, 
+  insertChatMessageSchema, 
+  insertFaqSchema, 
+  insertReviewSchema, 
+  insertNoticeSchema, 
+  insertOrderSchema,
+  insertBannerSchema,
+  insertPopupSchema,
+  insertCartItemSchema,
+  insertWishlistItemSchema,
+  insertBlogPostSchema,
+  insertCouponSchema
+} from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
 
-// Use memory storage to persist images in database (not ephemeral filesystem)
 const reviewImageUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -50,61 +67,11 @@ function requireAdminAuth(req: Request, res: Response, next: Function) {
   next();
 }
 
-// Gold price cache - shared across all requests within 30 seconds
-let cachedPrices: any = null;
-let lastPriceUpdate: number = 0;
-const PRICE_CACHE_DURATION = 30000; // 30 seconds
-
-// Gold price fetch function - Korean market real-time prices
-// Based on 한국금거래소 (Korea Gold Exchange) consumer prices
-async function fetchGoldPrices() {
-  const now = Date.now();
-  
-  // Return cached prices if still valid (within 30 seconds)
-  if (cachedPrices && (now - lastPriceUpdate) < PRICE_CACHE_DURATION) {
-    return cachedPrices;
-  }
-  
-  // 한국금거래소 실시간 시세 (VAT포함) - 2025.12.24 기준
-  // 매수가 (내가 살 때) / 매도가 (내가 팔 때)
-  // Gold 24K: 929,000원/돈 (매수), 782,000원/돈 (매도)
-  // Silver: 16,080원/돈 (매수), 11,800원/돈 (매도)
-  // Platinum: 479,000원/돈 (매수), 389,000원/돈 (매도)
-  const baseGoldBuy = 929000;
-  const baseGoldSell = 782000;
-  const baseSilverBuy = 16080;
-  const baseSilverSell = 11800;
-  const basePlatinumBuy = 479000;
-  const basePlatinumSell = 389000;
-  
-  // 전일대비 변동 (한국금거래소 기준)
-  const goldChange = -7000;  // -0.75% 하락
-  const silverChange = 610;   // +3.79% 상승
-  const platinumChange = 36000; // +7.52% 상승
-  
-  cachedPrices = {
-    gold: {
-      buyPrice: baseGoldBuy.toLocaleString(),
-      sellPrice: baseGoldSell.toLocaleString(),
-      trend: goldChange >= 0 ? "up" : "down",
-      change: Math.abs(goldChange).toLocaleString(),
-    },
-    silver: {
-      buyPrice: baseSilverBuy.toLocaleString(),
-      sellPrice: baseSilverSell.toLocaleString(),
-      trend: silverChange >= 0 ? "up" : "down",
-      change: Math.abs(silverChange).toLocaleString(),
-    },
-    platinum: {
-      buyPrice: basePlatinumBuy.toLocaleString(),
-      sellPrice: basePlatinumSell.toLocaleString(),
-      trend: platinumChange >= 0 ? "up" : "down",
-      change: Math.abs(platinumChange).toLocaleString(),
-    },
-  };
-  
-  lastPriceUpdate = now;
-  return cachedPrices;
+async function getMemberFromToken(token: string | undefined): Promise<{ memberId: string; email: string; name: string } | null> {
+  if (!token) return null;
+  const session = await storage.getMemberSession(token);
+  if (!session) return null;
+  return { memberId: session.memberId, email: session.email, name: session.name };
 }
 
 export async function registerRoutes(
@@ -112,44 +79,19 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
-  // ==================== STATIC FILE SERVING FOR UPLOADS ====================
   const express = await import("express");
   app.use("/uploads", express.default.static(path.join(process.cwd(), "uploads")));
   
-  // NOTE: WebSocket is handled in chatSocket.ts - do not create duplicate here
-  
-  // ==================== GOLD PRICES API ====================
-  
-  // Get real-time gold prices
-  app.get("/api/prices", async (req: Request, res: Response) => {
-    try {
-      const prices = await fetchGoldPrices();
-      
-      // Update database with latest prices
-      await storage.updateGoldPrice("gold", prices.gold);
-      await storage.updateGoldPrice("silver", prices.silver);
-      await storage.updateGoldPrice("platinum", prices.platinum);
-      
-      res.json({
-        success: true,
-        data: prices,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      console.error("Error fetching prices:", error);
-      res.status(500).json({ success: false, error: "Failed to fetch prices" });
-    }
-  });
-  
   // ==================== PRODUCTS API ====================
   
-  // Get all products
   app.get("/api/products", async (req: Request, res: Response) => {
     try {
-      const { category } = req.query;
+      const { category, categoryId, brandId, subcategoryId } = req.query;
       let productList;
       
-      if (category && category !== "all") {
+      if (categoryId && categoryId !== "all") {
+        productList = await storage.getProductsByCategory(categoryId as string);
+      } else if (category && category !== "all") {
         productList = await storage.getProductsByCategory(category as string);
       } else {
         productList = await storage.getAllProducts();
@@ -162,7 +104,6 @@ export async function registerRoutes(
     }
   });
   
-  // Get single product
   app.get("/api/products/:id", async (req: Request, res: Response) => {
     try {
       const product = await storage.getProduct(req.params.id);
@@ -176,7 +117,6 @@ export async function registerRoutes(
     }
   });
   
-  // Create product (Admin - Protected)
   app.post("/api/products", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const validatedData = insertProductSchema.parse(req.body);
@@ -191,7 +131,6 @@ export async function registerRoutes(
     }
   });
   
-  // Update product (Admin - Protected)
   app.patch("/api/products/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const partialSchema = insertProductSchema.partial();
@@ -210,7 +149,6 @@ export async function registerRoutes(
     }
   });
   
-  // Delete product (Admin - Protected)
   app.delete("/api/products/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const success = await storage.deleteProduct(req.params.id);
@@ -226,7 +164,6 @@ export async function registerRoutes(
   
   // ==================== CATEGORIES API ====================
   
-  // Get all categories
   app.get("/api/categories", async (req: Request, res: Response) => {
     try {
       const categoryList = await storage.getAllCategories();
@@ -236,8 +173,20 @@ export async function registerRoutes(
       res.status(500).json({ success: false, error: "Failed to fetch categories" });
     }
   });
+
+  app.get("/api/categories/:id", async (req: Request, res: Response) => {
+    try {
+      const category = await storage.getCategory(req.params.id);
+      if (!category) {
+        return res.status(404).json({ success: false, error: "Category not found" });
+      }
+      res.json({ success: true, data: category });
+    } catch (error) {
+      console.error("Error fetching category:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch category" });
+    }
+  });
   
-  // Create category (Admin - Protected)
   app.post("/api/categories", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const validatedData = insertCategorySchema.parse(req.body);
@@ -251,477 +200,789 @@ export async function registerRoutes(
       res.status(500).json({ success: false, error: "Failed to create category" });
     }
   });
-  
-  // ==================== SEED DATA ====================
-  
-  // Reset and seed comprehensive product data (Admin - Protected)
-  app.post("/api/seed-full", requireAdminAuth, async (req: Request, res: Response) => {
+
+  app.put("/api/categories/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      // Delete all existing products first
-      const existingProducts = await storage.getAllProducts();
-      for (const product of existingProducts) {
-        await storage.deleteProduct(product.id);
+      const partialSchema = insertCategorySchema.partial();
+      const validatedData = partialSchema.parse(req.body);
+      const category = await storage.updateCategory(req.params.id, validatedData);
+      if (!category) {
+        return res.status(404).json({ success: false, error: "Category not found" });
       }
-
-      // Seed categories
-      const categoryData = [
-        { id: "gold_bar", name: "골드바", description: "한국골드금거래소가 보증하는 최고 품질의 순금 바", count: 15 },
-        { id: "silver_bar", name: "실버바", description: "투자 가치가 높은 고순도 실버바 컬렉션", count: 8 },
-        { id: "baby_ring", name: "돌반지/돌팔찌", description: "소중한 아이의 첫 생일을 축하하는 순금 선물", count: 10 },
-        { id: "jewelry", name: "순금제품", description: "품격 있는 디자인의 고순도 순금 주얼리", count: 12 },
-        { id: "diamond", name: "다이아몬드", description: "영원히 변치 않는 가치, 최상급 다이아몬드", count: 8 },
-        { id: "corporate", name: "기업선물", description: "임직원 및 VIP를 위한 품격 있는 기업 전용 선물", count: 10 },
-        { id: "gift_gold", name: "순금기념품", description: "특별한 날을 기념하는 소장가치 높은 순금 기념품", count: 10 },
-        { id: "event", name: "이벤트", description: "한국골드금거래소의 특별한 혜택과 기획 상품", count: 6 },
-      ];
-      
-      for (const cat of categoryData) {
-        try {
-          await storage.createCategory(cat);
-        } catch (e) {
-          // Ignore duplicate errors
-        }
-      }
-      
-      // Image URLs by category
-      const categoryImages: Record<string, string[]> = {
-        gold_bar: [
-          "/images/gold_bar_investment__387f2a88.jpg",
-          "/images/gold_bar_investment__88b39b22.jpg",
-          "/images/gold_bar_investment__e8df734a.jpg",
-          "/images/gold_bar_investment__5310ba8d.jpg",
-          "/images/gold_bar_investment__dd21ba3e.jpg",
-        ],
-        silver_bar: [
-          "/images/silver_bar_precious__13a68013.jpg",
-          "/images/silver_bar_precious__407c7ecf.jpg",
-          "/images/silver_bar_precious__0359b3bd.jpg",
-        ],
-        baby_ring: [
-          "/images/baby_gold_ring_jewel_8be0fd1f.jpg",
-          "/images/baby_gold_ring_jewel_482fc739.jpg",
-          "/images/baby_gold_ring_jewel_0ce8422b.jpg",
-        ],
-        jewelry: [
-          "/images/gold_necklace_bracel_7734c76c.jpg",
-          "/images/gold_necklace_bracel_71b2e33d.jpg",
-          "/images/gold_necklace_bracel_be16df58.jpg",
-          "/images/gold_necklace_bracel_022f2625.jpg",
-        ],
-        diamond: [
-          "/images/diamond_ring_solitai_9d0dd718.jpg",
-          "/images/diamond_ring_solitai_2a941a5b.jpg",
-          "/images/diamond_ring_solitai_993ab741.jpg",
-        ],
-        corporate: [
-          "/images/gold_corporate_gift__38c38353.jpg",
-          "/images/gold_corporate_gift__013daad3.jpg",
-          "/images/gold_corporate_gift__58fc1a8c.jpg",
-        ],
-        gift_gold: [
-          "/images/gold_figurine_pig_lu_50eddba6.jpg",
-          "/images/gold_turtle_longevity_symbol.png",
-          "/images/gold_dragon_figurine_majestic.png",
-          "/images/gold_snake_zodiac_figurine.png",
-          "/images/gold_toad_figurine_wealth.png",
-          "/images/gold_elephant_luck_figurine.png",
-          "/images/gold_buddha_meditation_statue.png",
-          "/images/gold_tiger_figurine_sculpture.png",
-          "/images/gold_carp_success_symbol.png",
-          "/images/gold_phoenix_bird_sculpture.png",
-        ],
-        event: [
-          "/images/gold_coin_limited_ed_bf80ea77.jpg",
-          "/images/gold_coin_limited_ed_e6f20c04.jpg",
-          "/images/gold_coin_limited_ed_89ba9616.jpg",
-        ],
-        pure_jewelry: [
-          "/images/vca_alhambra_clover_necklace.png",
-          "/images/cartier_love_bracelet_gold.png",
-          "/images/tiffany_t_hoop_earrings.png",
-          "/images/chanel_coco_crush_ring.png",
-          "/images/bulgari_bzero1_spiral_ring.png",
-          "/images/lv_blossom_gold_bracelet.png",
-          "/images/chaumet_liens_pendant_necklace.png",
-          "/images/piaget_rose_gold_ring.png",
-          "/images/boucheron_serpent_ring_gold.png",
-        ],
-      };
-      
-      const getImageForCategory = (category: string, index: number) => {
-        const images = categoryImages[category] || categoryImages.gold_bar;
-        return images[index % images.length];
-      };
-
-      // Comprehensive product data based on real Korean gold exchange offerings
-      const productData = [
-        // ==================== GOLD BARS (15 items) ====================
-        { name: "한국금거래소 골드바 1kg", weight: "1000g", purity: "999.9‰", price: "149,800,000", category: "gold_bar", isBest: true, isNew: false, description: "LBMA 인증 국제 공인 순금 바", imageUrl: getImageForCategory("gold_bar", 0) },
-        { name: "한국금거래소 골드바 500g", weight: "500g", purity: "999.9‰", price: "75,200,000", category: "gold_bar", isBest: true, isNew: false, description: "투자용 대형 순금 바", imageUrl: getImageForCategory("gold_bar", 1) },
-        { name: "한국금거래소 골드바 100g", weight: "100g", purity: "999.9‰", price: "15,100,000", category: "gold_bar", isBest: true, isNew: false, description: "가장 인기있는 투자용 골드바", imageUrl: getImageForCategory("gold_bar", 2) },
-        { name: "한국금거래소 골드바 50g", weight: "50g", purity: "999.9‰", price: "7,580,000", category: "gold_bar", isBest: false, isNew: true, description: "중량 투자 입문용 골드바", imageUrl: getImageForCategory("gold_bar", 3) },
-        { name: "한국금거래소 골드바 37.5g (10돈)", weight: "37.5g", purity: "999.9‰", price: "5,620,000", category: "gold_bar", isBest: true, isNew: false, description: "전통 10돈 순금 바", imageUrl: getImageForCategory("gold_bar", 4) },
-        { name: "한국금거래소 골드바 30g", weight: "30g", purity: "999.9‰", price: "4,530,000", category: "gold_bar", isBest: false, isNew: false, description: "선물용 순금 바", imageUrl: getImageForCategory("gold_bar", 0) },
-        { name: "한국금거래소 골드바 18.75g (5돈)", weight: "18.75g", purity: "999.9‰", price: "2,850,000", category: "gold_bar", isBest: false, isNew: false, description: "5돈 순금 바", imageUrl: getImageForCategory("gold_bar", 1) },
-        { name: "한국금거래소 골드바 10g", weight: "10g", purity: "999.9‰", price: "1,550,000", category: "gold_bar", isBest: false, isNew: true, description: "소액 투자 입문용", imageUrl: getImageForCategory("gold_bar", 2) },
-        { name: "한국금거래소 골드바 5g", weight: "5g", purity: "999.9‰", price: "785,000", category: "gold_bar", isBest: false, isNew: true, description: "소형 투자용 골드바", imageUrl: getImageForCategory("gold_bar", 3) },
-        { name: "한국금거래소 골드바 3.75g (1돈)", weight: "3.75g", purity: "999.9‰", price: "590,000", category: "gold_bar", isBest: false, isNew: false, description: "1돈 순금 바", imageUrl: getImageForCategory("gold_bar", 4) },
-        { name: "한국금거래소 골드바 1g", weight: "1g", purity: "999.9‰", price: "165,000", category: "gold_bar", isBest: false, isNew: true, description: "미니 골드바 선물용", imageUrl: getImageForCategory("gold_bar", 0) },
-        { name: "LS-Nikko 동제련 골드바 1kg", weight: "1000g", purity: "999.9‰", price: "150,500,000", category: "gold_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 순금", imageUrl: getImageForCategory("gold_bar", 1) },
-        { name: "LS-Nikko 동제련 골드바 100g", weight: "100g", purity: "999.9‰", price: "15,250,000", category: "gold_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 순금", imageUrl: getImageForCategory("gold_bar", 2) },
-        { name: "PAMP 스위스 골드바 100g", weight: "100g", purity: "999.9‰", price: "15,450,000", category: "gold_bar", isBest: false, isNew: false, description: "스위스 PAMP 정제", imageUrl: getImageForCategory("gold_bar", 3) },
-        { name: "PAMP 스위스 골드바 50g", weight: "50g", purity: "999.9‰", price: "7,780,000", category: "gold_bar", isBest: false, isNew: true, description: "스위스 PAMP 정제", imageUrl: getImageForCategory("gold_bar", 4) },
-
-        // ==================== SILVER BARS (8 items) ====================
-        { name: "한국금거래소 실버바 1kg", weight: "1000g", purity: "999.9‰", price: "1,850,000", category: "silver_bar", isBest: true, isNew: false, description: "투자용 대형 실버바", imageUrl: "/images/silver_bar_1kg.png" },
-        { name: "한국금거래소 실버바 500g", weight: "500g", purity: "999.9‰", price: "950,000", category: "silver_bar", isBest: false, isNew: false, description: "중형 투자용 실버바", imageUrl: "/images/silver_bar_500g.png" },
-        { name: "한국금거래소 실버바 100g", weight: "100g", purity: "999.9‰", price: "195,000", category: "silver_bar", isBest: true, isNew: true, description: "인기 투자용 실버바", imageUrl: "/images/silver_bar_100g.png" },
-        { name: "한국금거래소 실버바 50g", weight: "50g", purity: "999.9‰", price: "105,000", category: "silver_bar", isBest: false, isNew: false, description: "소형 투자용 실버바", imageUrl: "/images/silver_bar_50g.png" },
-        { name: "한국금거래소 실버바 37.5g", weight: "37.5g", purity: "999.9‰", price: "82,000", category: "silver_bar", isBest: false, isNew: false, description: "10돈 실버바", imageUrl: "/images/silver_bar_50g.png" },
-        { name: "한국금거래소 실버바 10g", weight: "10g", purity: "999.9‰", price: "25,000", category: "silver_bar", isBest: false, isNew: true, description: "미니 실버바", imageUrl: "/images/silver_bar_10g.png" },
-        { name: "LS-Nikko 실버바 1kg", weight: "1000g", purity: "999.9‰", price: "1,870,000", category: "silver_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 은", imageUrl: "/images/silver_bar_1kg.png" },
-        { name: "LS-Nikko 실버바 100g", weight: "100g", purity: "999.9‰", price: "198,000", category: "silver_bar", isBest: false, isNew: false, description: "LS-Nikko 정제 은", imageUrl: "/images/silver_bar_100g.png" },
-
-        // ==================== BABY RINGS / 돌반지 (10 items) ====================
-        { name: "순금 뽀로로 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "285,000", category: "baby_ring", isBest: true, isNew: false, description: "뽀로로 캐릭터 돌반지", imageUrl: "/images/pororo_gold_baby_ring.png" },
-        { name: "순금 왕관 돌반지 3.75g", weight: "3.75g", purity: "99.9%", price: "540,000", category: "baby_ring", isBest: true, isNew: true, description: "왕관 모양 프리미엄 돌반지", imageUrl: "/images/crown_gold_baby_ring.png" },
-        { name: "순금 하트 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "290,000", category: "baby_ring", isBest: false, isNew: false, description: "하트 모양 돌반지", imageUrl: "/images/heart_gold_baby_ring.png" },
-        { name: "순금 별 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "288,000", category: "baby_ring", isBest: false, isNew: false, description: "별 모양 돌반지", imageUrl: "/images/star_gold_baby_ring.png" },
-        { name: "순금 토끼 돌반지 3.75g", weight: "3.75g", purity: "99.9%", price: "545,000", category: "baby_ring", isBest: false, isNew: true, description: "토끼 모양 돌반지", imageUrl: "/images/bunny_gold_baby_ring.png" },
-        { name: "순금 코끼리 돌팔찌 3.75g", weight: "3.75g", purity: "99.9%", price: "560,000", category: "baby_ring", isBest: true, isNew: false, description: "코끼리 모양 돌팔찌", imageUrl: "/images/elephant_gold_baby_bracelet.png" },
-        { name: "순금 클로버 돌팔찌 5.625g", weight: "5.625g", purity: "99.9%", price: "820,000", category: "baby_ring", isBest: false, isNew: false, description: "네잎클로버 돌팔찌", imageUrl: "/images/clover_gold_baby_bracelet.png" },
-        { name: "순금 공주 돌반지 세트", weight: "5.625g", purity: "99.9%", price: "850,000", category: "baby_ring", isBest: false, isNew: true, description: "반지+팔찌 세트", imageUrl: "/images/princess_gold_jewelry_set.png" },
-        { name: "순금 왕자 돌반지 세트", weight: "5.625g", purity: "99.9%", price: "850,000", category: "baby_ring", isBest: false, isNew: true, description: "반지+팔찌 세트", imageUrl: "/images/prince_gold_jewelry_set.png" },
-        { name: "순금 곰돌이 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "295,000", category: "baby_ring", isBest: false, isNew: false, description: "곰돌이 캐릭터 돌반지", imageUrl: "/images/teddy_bear_baby_ring.png" },
-
-        // ==================== JEWELRY / 순금제품 (12 items) ====================
-        { name: "순금 체인 목걸이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,750,000", category: "jewelry", isBest: true, isNew: false, description: "클래식 체인 목걸이", imageUrl: getImageForCategory("jewelry", 0) },
-        { name: "순금 팔찌 37.5g (10돈)", weight: "37.5g", purity: "99.9%", price: "5,450,000", category: "jewelry", isBest: true, isNew: true, description: "두꺼운 체인 팔찌", imageUrl: getImageForCategory("jewelry", 1) },
-        { name: "순금 대나무 체인 목걸이 37.5g", weight: "37.5g", purity: "99.9%", price: "5,520,000", category: "jewelry", isBest: false, isNew: false, description: "대나무 마디 체인", imageUrl: getImageForCategory("jewelry", 2) },
-        { name: "순금 로프 목걸이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,780,000", category: "jewelry", isBest: false, isNew: false, description: "로프 꼬임 디자인", imageUrl: getImageForCategory("jewelry", 3) },
-        { name: "순금 뱅글 팔찌 18.75g", weight: "18.75g", purity: "99.9%", price: "2,820,000", category: "jewelry", isBest: false, isNew: true, description: "원형 뱅글 팔찌", imageUrl: getImageForCategory("jewelry", 0) },
-        { name: "순금 커프 팔찌 15g", weight: "15g", purity: "99.9%", price: "2,280,000", category: "jewelry", isBest: false, isNew: false, description: "오픈형 커프 팔찌", imageUrl: getImageForCategory("jewelry", 1) },
-        { name: "순금 하트 펜던트 3.75g", weight: "3.75g", purity: "99.9%", price: "580,000", category: "jewelry", isBest: false, isNew: false, description: "하트 모양 펜던트", imageUrl: getImageForCategory("jewelry", 2) },
-        { name: "순금 십자가 펜던트 7.5g", weight: "7.5g", purity: "99.9%", price: "1,150,000", category: "jewelry", isBest: false, isNew: true, description: "십자가 펜던트", imageUrl: getImageForCategory("jewelry", 3) },
-        { name: "순금 반지 3.75g", weight: "3.75g", purity: "99.9%", price: "565,000", category: "jewelry", isBest: false, isNew: false, description: "심플 순금 반지", imageUrl: getImageForCategory("jewelry", 0) },
-        { name: "순금 커플링 세트 7.5g", weight: "7.5g", purity: "99.9%", price: "1,180,000", category: "jewelry", isBest: true, isNew: true, description: "커플 반지 2개 세트", imageUrl: getImageForCategory("jewelry", 1) },
-        { name: "순금 귀걸이 3.75g", weight: "3.75g", purity: "99.9%", price: "590,000", category: "jewelry", isBest: false, isNew: false, description: "드롭형 귀걸이", imageUrl: getImageForCategory("jewelry", 2) },
-        { name: "순금 브로치 7.5g", weight: "7.5g", purity: "99.9%", price: "1,180,000", category: "jewelry", isBest: false, isNew: false, description: "꽃 모양 브로치", imageUrl: getImageForCategory("jewelry", 3) },
-
-        // ==================== DIAMOND (8 items) ====================
-        { name: "1캐럿 다이아몬드 솔리테어 링", weight: "1.02ct", purity: "GIA F/VS2", price: "12,500,000", category: "diamond", isBest: true, isNew: false, description: "GIA 인증 1캐럿 링", imageUrl: getImageForCategory("diamond", 0) },
-        { name: "0.7캐럿 다이아몬드 링", weight: "0.71ct", purity: "GIA G/VS1", price: "7,800,000", category: "diamond", isBest: true, isNew: true, description: "GIA 인증 0.7캐럿", imageUrl: getImageForCategory("diamond", 1) },
-        { name: "0.5캐럿 다이아몬드 웨딩링", weight: "0.5ct", purity: "GIA E/SI1", price: "4,200,000", category: "diamond", isBest: false, isNew: false, description: "웨딩 다이아몬드 링", imageUrl: getImageForCategory("diamond", 2) },
-        { name: "0.3캐럿 다이아몬드 반지", weight: "0.31ct", purity: "GIA F/VS2", price: "2,100,000", category: "diamond", isBest: false, isNew: false, description: "데일리 다이아몬드", imageUrl: getImageForCategory("diamond", 0) },
-        { name: "화이트골드 다이아몬드 목걸이 0.5ct", weight: "0.5ct", purity: "18K WG", price: "3,850,000", category: "diamond", isBest: false, isNew: true, description: "18K 화이트골드 목걸이", imageUrl: getImageForCategory("diamond", 1) },
-        { name: "다이아몬드 테니스 팔찌 3ct", weight: "3.0ct", purity: "18K WG", price: "15,800,000", category: "diamond", isBest: false, isNew: false, description: "테니스 브레이슬릿", imageUrl: getImageForCategory("diamond", 2) },
-        { name: "다이아몬드 귀걸이 0.4ct", weight: "0.4ct", purity: "18K WG", price: "2,400,000", category: "diamond", isBest: false, isNew: true, description: "스터드 귀걸이", imageUrl: getImageForCategory("diamond", 0) },
-        { name: "다이아몬드 프로포즈 링 0.5ct", weight: "0.5ct", purity: "Pt950", price: "4,800,000", category: "diamond", isBest: true, isNew: false, description: "플래티넘 프로포즈 링", imageUrl: getImageForCategory("diamond", 1) },
-
-        // ==================== CORPORATE GIFTS (10 items) ====================
-        { name: "순금 감사패 (우드 케이스) 37.5g", weight: "37.5g", purity: "99.9%", price: "5,800,000", category: "corporate", isBest: true, isNew: false, description: "고급 우드 케이스 포함", imageUrl: getImageForCategory("corporate", 0) },
-        { name: "순금 행운의 열쇠 3.75g", weight: "3.75g", purity: "99.9%", price: "550,000", category: "corporate", isBest: true, isNew: false, description: "성공 기원 열쇠", imageUrl: getImageForCategory("corporate", 1) },
-        { name: "순금 VIP 명패 18.75g", weight: "18.75g", purity: "99.9%", price: "2,850,000", category: "corporate", isBest: false, isNew: true, description: "VIP 고객 명패", imageUrl: getImageForCategory("corporate", 2) },
-        { name: "순금 우수사원상 7.5g", weight: "7.5g", purity: "99.9%", price: "1,150,000", category: "corporate", isBest: false, isNew: false, description: "우수사원 포상용", imageUrl: getImageForCategory("corporate", 0) },
-        { name: "순금 창립기념 메달 15g", weight: "15g", purity: "99.9%", price: "2,320,000", category: "corporate", isBest: false, isNew: true, description: "창립기념 메달", imageUrl: getImageForCategory("corporate", 1) },
-        { name: "기업 로고 순금 뱃지 3.75g", weight: "3.75g", purity: "99.9%", price: "580,000", category: "corporate", isBest: false, isNew: true, description: "맞춤 로고 제작 가능", imageUrl: getImageForCategory("corporate", 2) },
-        { name: "순금 근속패 11.25g", weight: "11.25g", purity: "99.9%", price: "1,720,000", category: "corporate", isBest: false, isNew: false, description: "10년 근속 기념패", imageUrl: getImageForCategory("corporate", 0) },
-        { name: "순금 골프공 마커 1.875g", weight: "1.875g", purity: "99.9%", price: "295,000", category: "corporate", isBest: false, isNew: false, description: "골프 기념품", imageUrl: getImageForCategory("corporate", 1) },
-        { name: "순금 볼펜 세트", weight: "3.75g", purity: "99.9%", price: "680,000", category: "corporate", isBest: false, isNew: true, description: "순금 장식 볼펜", imageUrl: getImageForCategory("corporate", 2) },
-        { name: "순금 명함케이스", weight: "7.5g", purity: "99.9%", price: "1,250,000", category: "corporate", isBest: false, isNew: false, description: "순금 장식 명함케이스", imageUrl: getImageForCategory("corporate", 0) },
-
-        // ==================== GIFT GOLD / 순금기념품 (10 items) ====================
-        { name: "순금 황금돼지 37.5g", weight: "37.5g", purity: "99.9%", price: "5,700,000", category: "gift_gold", isBest: true, isNew: true, description: "복을 부르는 황금돼지", imageUrl: "/images/gold_pig_figurine.png" },
-        { name: "순금 거북이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,850,000", category: "gift_gold", isBest: false, isNew: false, description: "장수 기원 거북이", imageUrl: "/images/gold_turtle_new.png" },
-        { name: "순금 용 37.5g", weight: "37.5g", purity: "99.9%", price: "5,850,000", category: "gift_gold", isBest: true, isNew: false, description: "2024년 용의 해 기념", imageUrl: "/images/gold_dragon_new.png" },
-        { name: "순금 뱀 18.75g", weight: "18.75g", purity: "99.9%", price: "2,900,000", category: "gift_gold", isBest: false, isNew: true, description: "2025년 뱀의 해 기념", imageUrl: "/images/gold_snake_new.png" },
-        { name: "순금 두꺼비 11.25g", weight: "11.25g", purity: "99.9%", price: "1,750,000", category: "gift_gold", isBest: false, isNew: false, description: "재물 행운 두꺼비", imageUrl: "/images/gold_toad_new.png" },
-        { name: "순금 코끼리 18.75g", weight: "18.75g", purity: "99.9%", price: "2,880,000", category: "gift_gold", isBest: false, isNew: false, description: "행운의 코끼리", imageUrl: "/images/gold_elephant_new.png" },
-        { name: "순금 부처님 37.5g", weight: "37.5g", purity: "99.9%", price: "5,750,000", category: "gift_gold", isBest: false, isNew: false, description: "평화와 복을 기원", imageUrl: "/images/gold_buddha_new.png" },
-        { name: "순금 호랑이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,920,000", category: "gift_gold", isBest: false, isNew: true, description: "용맹한 호랑이 조각", imageUrl: "/images/gold_tiger_new.png" },
-        { name: "순금 잉어 11.25g", weight: "11.25g", purity: "99.9%", price: "1,780,000", category: "gift_gold", isBest: false, isNew: false, description: "출세 기원 잉어", imageUrl: "/images/gold_carp_new.png" },
-        { name: "순금 봉황 37.5g", weight: "37.5g", purity: "99.9%", price: "5,900,000", category: "gift_gold", isBest: true, isNew: false, description: "부귀영화 봉황", imageUrl: "/images/gold_phoenix_new.png" },
-
-        // ==================== EVENT / 이벤트 (6 items) ====================
-        { name: "[이벤트] 2025 신년 기념 골드 코인 1돈", weight: "3.75g", purity: "99.9%", price: "520,000", category: "event", isBest: true, isNew: true, description: "2025년 한정판 코인", imageUrl: getImageForCategory("event", 0) },
-        { name: "[특가] 골드바 10g + 실버바 100g 세트", weight: "110g", purity: "99.9%", price: "1,720,000", category: "event", isBest: true, isNew: false, description: "세트 할인 상품", imageUrl: getImageForCategory("event", 1) },
-        { name: "[한정] 럭키백 순금 1돈", weight: "3.75g", purity: "99.9%", price: "550,000", category: "event", isBest: false, isNew: true, description: "랜덤 디자인 순금", imageUrl: getImageForCategory("event", 2) },
-        { name: "[이벤트] 결혼기념 골드바 세트", weight: "7.5g", purity: "99.9%", price: "1,180,000", category: "event", isBest: false, isNew: true, description: "커플 각인 서비스", imageUrl: "/attached_assets/generated_images/wedding_gold_bar_gift_set.png" },
-        { name: "[특가] 돌반지 + 돌팔찌 세트", weight: "7.5g", purity: "99.9%", price: "1,100,000", category: "event", isBest: false, isNew: false, description: "돌잔치 세트 할인", imageUrl: getImageForCategory("event", 1) },
-        { name: "[한정] 설날 특선 황금 복주머니", weight: "3.75g", purity: "99.9%", price: "580,000", category: "event", isBest: true, isNew: true, description: "설날 한정 기획상품", imageUrl: getImageForCategory("event", 2) },
-      ];
-      
-      let createdCount = 0;
-      for (const prod of productData) {
-        try {
-          await storage.createProduct(prod);
-          createdCount++;
-        } catch (e) {
-          console.error("Error creating product:", prod.name, e);
-        }
-      }
-      
-      res.json({ success: true, message: `${createdCount}개의 상품이 생성되었습니다.` });
+      res.json({ success: true, data: category });
     } catch (error) {
-      console.error("Error seeding data:", error);
-      res.status(500).json({ success: false, error: "Failed to seed data" });
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error updating category:", error);
+      res.status(500).json({ success: false, error: "Failed to update category" });
     }
   });
 
-  // Seed initial data (Admin - Protected)
-  app.post("/api/seed", requireAdminAuth, async (req: Request, res: Response) => {
+  app.delete("/api/categories/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      // Seed categories
-      const categoryData = [
-        { id: "gold_bar", name: "골드바", description: "한국골드금거래소가 보증하는 최고 품질의 순금 바", count: 6 },
-        { id: "silver_bar", name: "실버바", description: "투자 가치가 높은 고순도 실버바 컬렉션", count: 2 },
-        { id: "baby_ring", name: "돌반지/돌팔찌", description: "소중한 아이의 첫 생일을 축하하는 순금 선물", count: 2 },
-        { id: "jewelry", name: "순금제품", description: "품격 있는 디자인의 고순도 순금 주얼리", count: 3 },
-        { id: "diamond", name: "다이아몬드", description: "영원히 변치 않는 가치, 최상급 다이아몬드", count: 3 },
-        { id: "corporate", name: "기업선물", description: "임직원 및 VIP를 위한 품격 있는 기업 전용 선물", count: 3 },
-        { id: "gift_gold", name: "순금기념품", description: "특별한 날을 기념하는 소장가치 높은 순금 기념품", count: 2 },
-        { id: "event", name: "이벤트", description: "한국골드금거래소의 특별한 혜택과 기획 상품", count: 2 },
-      ];
-      
-      for (const cat of categoryData) {
-        try {
-          await storage.createCategory(cat);
-        } catch (e) {
-          // Ignore duplicate errors
-        }
+      const success = await storage.deleteCategory(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "Category not found" });
       }
-      
-      // Seed products
-      const productData = [
-        // Gold Bars
-        { name: "한국골드금거래소 골드바 1,000g", weight: "1000g", purity: "999.9‰", price: "149,800,000", category: "gold_bar", isBest: true, isNew: false },
-        { name: "한국골드금거래소 골드바 100g", weight: "100g", purity: "999.9‰", price: "15,100,000", category: "gold_bar", isBest: true, isNew: false },
-        { name: "한국골드금거래소 골드바 10g", weight: "10g", purity: "999.9‰", price: "1,550,000", category: "gold_bar", isBest: false, isNew: true },
-        { name: "한국골드금거래소 골드바 37.5g", weight: "37.5g", purity: "999.9‰", price: "5,620,000", category: "gold_bar", isBest: true, isNew: false },
-        { name: "LS-Nikko 동제련 골드바 100g", weight: "100g", purity: "999.9‰", price: "15,250,000", category: "gold_bar", isBest: false, isNew: false },
-        { name: "LS-Nikko 동제련 골드바 1000g", weight: "1000g", purity: "999.9‰", price: "150,500,000", category: "gold_bar", isBest: false, isNew: false },
-        
-        // Silver Bars
-        { name: "한국골드금거래소 실버바 1,000g", weight: "1000g", purity: "999.9‰", price: "1,850,000", category: "silver_bar", isBest: true, isNew: false },
-        { name: "한국골드금거래소 실버바 100g", weight: "100g", purity: "999.9‰", price: "195,000", category: "silver_bar", isBest: false, isNew: true },
-        
-        // Baby Rings
-        { name: "순금 뽀르띠 돌반지 1.875g", weight: "1.875g", purity: "99.9%", price: "285,000", category: "baby_ring", isBest: true, isNew: false },
-        { name: "순금 왕관 돌반지 3.75g", weight: "3.75g", purity: "99.9%", price: "540,000", category: "baby_ring", isBest: false, isNew: true },
-        
-        // Jewelry
-        { name: "순금 체인 목걸이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,750,000", category: "jewelry", isBest: true, isNew: false },
-        { name: "순금 팔찌 37.5g (10돈)", weight: "37.5g", purity: "99.9%", price: "5,450,000", category: "jewelry", isBest: false, isNew: true },
-        { name: "순금 대나무 체인 목걸이 37.5g", weight: "37.5g", purity: "99.9%", price: "5,520,000", category: "jewelry", isBest: false, isNew: false },
-        
-        // Diamonds
-        { name: "1캐럿 다이아몬드 솔리테어 링", weight: "1.02ct", purity: "GIA F/VS2", price: "12,500,000", category: "diamond", isBest: true, isNew: false },
-        { name: "화이트골드 다이아몬드 목걸이", weight: "0.5ct", purity: "18K WG", price: "3,850,000", category: "diamond", isBest: false, isNew: true },
-        { name: "5부 다이아몬드 웨딩 링", weight: "0.5ct", purity: "GIA E/SI1", price: "4,200,000", category: "diamond", isBest: false, isNew: false },
-        
-        // Corporate
-        { name: "순금 감사패 (우드 케이스)", weight: "37.5g", purity: "99.9%", price: "5,800,000", category: "corporate", isBest: true, isNew: false },
-        { name: "순금 행운의 열쇠 3.75g", weight: "3.75g", purity: "99.9%", price: "550,000", category: "corporate", isBest: true, isNew: false },
-        { name: "기업 로고 순금 뱃지", weight: "3.75g", purity: "99.9%", price: "580,000", category: "corporate", isBest: false, isNew: true },
-        
-        // Gift Gold
-        { name: "순금 황금돼지 37.5g", weight: "37.5g", purity: "99.9%", price: "5,700,000", category: "gift_gold", isBest: false, isNew: true },
-        { name: "순금 거북이 18.75g", weight: "18.75g", purity: "99.9%", price: "2,850,000", category: "gift_gold", isBest: false, isNew: false },
-        
-        // Events
-        { name: "[이벤트] 2025 신년 기념 골드 코인", weight: "3.75g", purity: "99.9%", price: "520,000", category: "event", isBest: false, isNew: true },
-        { name: "[특가] 골드바 10g + 실버바 100g 세트", weight: "110g", purity: "99.9%", price: "1,720,000", category: "event", isBest: true, isNew: false },
-      ];
-      
-      for (const prod of productData) {
-        try {
-          await storage.createProduct(prod);
-        } catch (e) {
-          // Ignore duplicate errors
-        }
-      }
-      
-      res.json({ success: true, message: "Seed data created successfully" });
+      res.json({ success: true, message: "Category deleted" });
     } catch (error) {
-      console.error("Error seeding data:", error);
-      res.status(500).json({ success: false, error: "Failed to seed data" });
+      console.error("Error deleting category:", error);
+      res.status(500).json({ success: false, error: "Failed to delete category" });
     }
   });
 
-  // ==================== ADMIN AUTHENTICATION ====================
-  
-  app.post("/api/admin/login", async (req: Request, res: Response) => {
+  app.get("/api/categories/:id/subcategories", async (req: Request, res: Response) => {
     try {
-      const { username, password } = req.body;
+      const subcategories = await storage.getSubcategoriesByCategoryId(req.params.id);
+      res.json({ success: true, data: subcategories });
+    } catch (error) {
+      console.error("Error fetching subcategories:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch subcategories" });
+    }
+  });
+
+  // ==================== SUBCATEGORIES API ====================
+
+  app.get("/api/subcategories", async (req: Request, res: Response) => {
+    try {
+      const { categoryId } = req.query;
+      let subcategoryList;
       
-      if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
-        const token = generateSessionToken();
-        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-        adminSessions.set(token, { expiresAt });
-        
-        res.json({ 
-          success: true, 
-          token,
-          message: "로그인 성공" 
-        });
+      if (categoryId) {
+        subcategoryList = await storage.getSubcategoriesByCategoryId(categoryId as string);
       } else {
-        res.status(401).json({ 
-          success: false, 
-          error: "아이디 또는 비밀번호가 일치하지 않습니다." 
-        });
+        subcategoryList = await storage.getAllSubcategories();
       }
+      
+      res.json({ success: true, data: subcategoryList });
     } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ success: false, error: "로그인 처리 중 오류가 발생했습니다." });
+      console.error("Error fetching subcategories:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch subcategories" });
     }
   });
+
+  app.get("/api/subcategories/:id", async (req: Request, res: Response) => {
+    try {
+      const subcategory = await storage.getSubcategory(req.params.id);
+      if (!subcategory) {
+        return res.status(404).json({ success: false, error: "Subcategory not found" });
+      }
+      res.json({ success: true, data: subcategory });
+    } catch (error) {
+      console.error("Error fetching subcategory:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch subcategory" });
+    }
+  });
+
+  app.post("/api/subcategories", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertSubcategorySchema.parse(req.body);
+      const subcategory = await storage.createSubcategory(validatedData);
+      res.status(201).json({ success: true, data: subcategory });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error creating subcategory:", error);
+      res.status(500).json({ success: false, error: "Failed to create subcategory" });
+    }
+  });
+
+  app.put("/api/subcategories/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const partialSchema = insertSubcategorySchema.partial();
+      const validatedData = partialSchema.parse(req.body);
+      const subcategory = await storage.updateSubcategory(req.params.id, validatedData);
+      if (!subcategory) {
+        return res.status(404).json({ success: false, error: "Subcategory not found" });
+      }
+      res.json({ success: true, data: subcategory });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error updating subcategory:", error);
+      res.status(500).json({ success: false, error: "Failed to update subcategory" });
+    }
+  });
+
+  app.delete("/api/subcategories/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteSubcategory(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "Subcategory not found" });
+      }
+      res.json({ success: true, message: "Subcategory deleted" });
+    } catch (error) {
+      console.error("Error deleting subcategory:", error);
+      res.status(500).json({ success: false, error: "Failed to delete subcategory" });
+    }
+  });
+
+  // ==================== BRANDS API ====================
+
+  app.get("/api/brands", async (req: Request, res: Response) => {
+    try {
+      const brandList = await storage.getAllBrands();
+      res.json({ success: true, data: brandList });
+    } catch (error) {
+      console.error("Error fetching brands:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch brands" });
+    }
+  });
+
+  app.get("/api/brands/:id", async (req: Request, res: Response) => {
+    try {
+      const brand = await storage.getBrand(req.params.id);
+      if (!brand) {
+        return res.status(404).json({ success: false, error: "Brand not found" });
+      }
+      res.json({ success: true, data: brand });
+    } catch (error) {
+      console.error("Error fetching brand:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch brand" });
+    }
+  });
+
+  app.post("/api/brands", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertBrandSchema.parse(req.body);
+      const brand = await storage.createBrand(validatedData);
+      res.status(201).json({ success: true, data: brand });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error creating brand:", error);
+      res.status(500).json({ success: false, error: "Failed to create brand" });
+    }
+  });
+
+  app.put("/api/brands/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const partialSchema = insertBrandSchema.partial();
+      const validatedData = partialSchema.parse(req.body);
+      const brand = await storage.updateBrand(req.params.id, validatedData);
+      if (!brand) {
+        return res.status(404).json({ success: false, error: "Brand not found" });
+      }
+      res.json({ success: true, data: brand });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error updating brand:", error);
+      res.status(500).json({ success: false, error: "Failed to update brand" });
+    }
+  });
+
+  app.delete("/api/brands/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteBrand(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "Brand not found" });
+      }
+      res.json({ success: true, message: "Brand deleted" });
+    } catch (error) {
+      console.error("Error deleting brand:", error);
+      res.status(500).json({ success: false, error: "Failed to delete brand" });
+    }
+  });
+
+  // ==================== BANNERS API ====================
+
+  app.get("/api/banners", async (req: Request, res: Response) => {
+    try {
+      const bannerList = await storage.getActiveBanners();
+      res.json({ success: true, data: bannerList });
+    } catch (error) {
+      console.error("Error fetching banners:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch banners" });
+    }
+  });
+
+  app.get("/api/admin/banners", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const bannerList = await storage.getAllBanners();
+      res.json({ success: true, data: bannerList });
+    } catch (error) {
+      console.error("Error fetching banners:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch banners" });
+    }
+  });
+
+  app.get("/api/banners/:id", async (req: Request, res: Response) => {
+    try {
+      const banner = await storage.getBanner(req.params.id);
+      if (!banner) {
+        return res.status(404).json({ success: false, error: "Banner not found" });
+      }
+      res.json({ success: true, data: banner });
+    } catch (error) {
+      console.error("Error fetching banner:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch banner" });
+    }
+  });
+
+  app.post("/api/admin/banners", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertBannerSchema.parse(req.body);
+      const banner = await storage.createBanner(validatedData);
+      res.status(201).json({ success: true, data: banner });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error creating banner:", error);
+      res.status(500).json({ success: false, error: "Failed to create banner" });
+    }
+  });
+
+  app.put("/api/admin/banners/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const partialSchema = insertBannerSchema.partial();
+      const validatedData = partialSchema.parse(req.body);
+      const banner = await storage.updateBanner(req.params.id, validatedData);
+      if (!banner) {
+        return res.status(404).json({ success: false, error: "Banner not found" });
+      }
+      res.json({ success: true, data: banner });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error updating banner:", error);
+      res.status(500).json({ success: false, error: "Failed to update banner" });
+    }
+  });
+
+  app.delete("/api/admin/banners/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteBanner(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "Banner not found" });
+      }
+      res.json({ success: true, message: "Banner deleted" });
+    } catch (error) {
+      console.error("Error deleting banner:", error);
+      res.status(500).json({ success: false, error: "Failed to delete banner" });
+    }
+  });
+
+  // ==================== POPUPS API ====================
+
+  app.get("/api/popups", async (req: Request, res: Response) => {
+    try {
+      const popupList = await storage.getActivePopups();
+      res.json({ success: true, data: popupList });
+    } catch (error) {
+      console.error("Error fetching popups:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch popups" });
+    }
+  });
+
+  app.get("/api/admin/popups", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const popupList = await storage.getAllPopups();
+      res.json({ success: true, data: popupList });
+    } catch (error) {
+      console.error("Error fetching popups:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch popups" });
+    }
+  });
+
+  app.get("/api/popups/:id", async (req: Request, res: Response) => {
+    try {
+      const popup = await storage.getPopup(req.params.id);
+      if (!popup) {
+        return res.status(404).json({ success: false, error: "Popup not found" });
+      }
+      res.json({ success: true, data: popup });
+    } catch (error) {
+      console.error("Error fetching popup:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch popup" });
+    }
+  });
+
+  app.post("/api/admin/popups", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertPopupSchema.parse(req.body);
+      const popup = await storage.createPopup(validatedData);
+      res.status(201).json({ success: true, data: popup });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error creating popup:", error);
+      res.status(500).json({ success: false, error: "Failed to create popup" });
+    }
+  });
+
+  app.put("/api/admin/popups/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const partialSchema = insertPopupSchema.partial();
+      const validatedData = partialSchema.parse(req.body);
+      const popup = await storage.updatePopup(req.params.id, validatedData);
+      if (!popup) {
+        return res.status(404).json({ success: false, error: "Popup not found" });
+      }
+      res.json({ success: true, data: popup });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error updating popup:", error);
+      res.status(500).json({ success: false, error: "Failed to update popup" });
+    }
+  });
+
+  app.delete("/api/admin/popups/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deletePopup(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "Popup not found" });
+      }
+      res.json({ success: true, message: "Popup deleted" });
+    } catch (error) {
+      console.error("Error deleting popup:", error);
+      res.status(500).json({ success: false, error: "Failed to delete popup" });
+    }
+  });
+
+  // ==================== CART API ====================
+
+  app.get("/api/cart", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    const session = await getMemberFromToken(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+    }
+
+    try {
+      const cartItems = await storage.getCartItemsByMember(session.memberId);
+      res.json({ success: true, data: cartItems });
+    } catch (error) {
+      console.error("Error fetching cart:", error);
+      res.status(500).json({ success: false, error: "장바구니를 불러올 수 없습니다." });
+    }
+  });
+
+  app.post("/api/cart", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    const session = await getMemberFromToken(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+    }
+
+    try {
+      const data = { ...req.body, memberId: session.memberId };
+      const validatedData = insertCartItemSchema.parse(data);
+      const cartItem = await storage.createCartItem(validatedData);
+      res.status(201).json({ success: true, data: cartItem });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error adding to cart:", error);
+      res.status(500).json({ success: false, error: "장바구니 추가에 실패했습니다." });
+    }
+  });
+
+  app.put("/api/cart/:id", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    const session = await getMemberFromToken(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+    }
+
+    try {
+      const { quantity } = req.body;
+      const cartItem = await storage.updateCartItem(req.params.id, { quantity });
+      if (!cartItem) {
+        return res.status(404).json({ success: false, error: "장바구니 항목을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: cartItem });
+    } catch (error) {
+      console.error("Error updating cart item:", error);
+      res.status(500).json({ success: false, error: "장바구니 수정에 실패했습니다." });
+    }
+  });
+
+  app.delete("/api/cart/:id", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    const session = await getMemberFromToken(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+    }
+
+    try {
+      const success = await storage.deleteCartItem(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "장바구니 항목을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, message: "장바구니에서 삭제되었습니다." });
+    } catch (error) {
+      console.error("Error deleting cart item:", error);
+      res.status(500).json({ success: false, error: "장바구니 삭제에 실패했습니다." });
+    }
+  });
+
+  app.delete("/api/cart", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    const session = await getMemberFromToken(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+    }
+
+    try {
+      await storage.clearCartByMember(session.memberId);
+      res.json({ success: true, message: "장바구니가 비워졌습니다." });
+    } catch (error) {
+      console.error("Error clearing cart:", error);
+      res.status(500).json({ success: false, error: "장바구니 비우기에 실패했습니다." });
+    }
+  });
+
+  // ==================== WISHLIST API ====================
+
+  app.get("/api/wishlist", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    const session = await getMemberFromToken(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+    }
+
+    try {
+      const wishlistItems = await storage.getWishlistItemsByMember(session.memberId);
+      res.json({ success: true, data: wishlistItems });
+    } catch (error) {
+      console.error("Error fetching wishlist:", error);
+      res.status(500).json({ success: false, error: "위시리스트를 불러올 수 없습니다." });
+    }
+  });
+
+  app.post("/api/wishlist", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    const session = await getMemberFromToken(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+    }
+
+    try {
+      const data = { ...req.body, memberId: session.memberId };
+      const validatedData = insertWishlistItemSchema.parse(data);
+      const wishlistItem = await storage.createWishlistItem(validatedData);
+      res.status(201).json({ success: true, data: wishlistItem });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error adding to wishlist:", error);
+      res.status(500).json({ success: false, error: "위시리스트 추가에 실패했습니다." });
+    }
+  });
+
+  app.delete("/api/wishlist/:id", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    const session = await getMemberFromToken(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+    }
+
+    try {
+      const success = await storage.deleteWishlistItem(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "위시리스트 항목을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, message: "위시리스트에서 삭제되었습니다." });
+    } catch (error) {
+      console.error("Error deleting wishlist item:", error);
+      res.status(500).json({ success: false, error: "위시리스트 삭제에 실패했습니다." });
+    }
+  });
+
+  app.delete("/api/wishlist/product/:productId", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    const session = await getMemberFromToken(token);
+    if (!session) {
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+    }
+
+    try {
+      const success = await storage.deleteWishlistItemByMemberAndProduct(session.memberId, req.params.productId);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "위시리스트 항목을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, message: "위시리스트에서 삭제되었습니다." });
+    } catch (error) {
+      console.error("Error deleting wishlist item:", error);
+      res.status(500).json({ success: false, error: "위시리스트 삭제에 실패했습니다." });
+    }
+  });
+
+  // ==================== BLOG POSTS API ====================
+
+  app.get("/api/blog", async (req: Request, res: Response) => {
+    try {
+      const posts = await storage.getVisibleBlogPosts();
+      res.json({ success: true, data: posts });
+    } catch (error) {
+      console.error("Error fetching blog posts:", error);
+      res.status(500).json({ success: false, error: "블로그 글을 불러올 수 없습니다." });
+    }
+  });
+
+  app.get("/api/blog/:id", async (req: Request, res: Response) => {
+    try {
+      const post = await storage.getBlogPost(req.params.id);
+      if (!post) {
+        return res.status(404).json({ success: false, error: "블로그 글을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: post });
+    } catch (error) {
+      console.error("Error fetching blog post:", error);
+      res.status(500).json({ success: false, error: "블로그 글을 불러올 수 없습니다." });
+    }
+  });
+
+  app.get("/api/admin/blog", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const posts = await storage.getAllBlogPosts();
+      res.json({ success: true, data: posts });
+    } catch (error) {
+      console.error("Error fetching blog posts:", error);
+      res.status(500).json({ success: false, error: "블로그 글을 불러올 수 없습니다." });
+    }
+  });
+
+  app.post("/api/admin/blog", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertBlogPostSchema.parse(req.body);
+      const post = await storage.createBlogPost(validatedData);
+      res.status(201).json({ success: true, data: post });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error creating blog post:", error);
+      res.status(500).json({ success: false, error: "블로그 글 생성에 실패했습니다." });
+    }
+  });
+
+  app.put("/api/admin/blog/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const partialSchema = insertBlogPostSchema.partial();
+      const validatedData = partialSchema.parse(req.body);
+      const post = await storage.updateBlogPost(req.params.id, validatedData);
+      if (!post) {
+        return res.status(404).json({ success: false, error: "블로그 글을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: post });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error updating blog post:", error);
+      res.status(500).json({ success: false, error: "블로그 글 수정에 실패했습니다." });
+    }
+  });
+
+  app.delete("/api/admin/blog/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteBlogPost(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "블로그 글을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, message: "블로그 글이 삭제되었습니다." });
+    } catch (error) {
+      console.error("Error deleting blog post:", error);
+      res.status(500).json({ success: false, error: "블로그 글 삭제에 실패했습니다." });
+    }
+  });
+
+  // ==================== COUPONS API ====================
+
+  app.get("/api/admin/coupons", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const coupons = await storage.getAllCoupons();
+      res.json({ success: true, data: coupons });
+    } catch (error) {
+      console.error("Error fetching coupons:", error);
+      res.status(500).json({ success: false, error: "쿠폰 목록을 불러올 수 없습니다." });
+    }
+  });
+
+  app.get("/api/admin/coupons/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const coupon = await storage.getCoupon(req.params.id);
+      if (!coupon) {
+        return res.status(404).json({ success: false, error: "쿠폰을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: coupon });
+    } catch (error) {
+      console.error("Error fetching coupon:", error);
+      res.status(500).json({ success: false, error: "쿠폰을 불러올 수 없습니다." });
+    }
+  });
+
+  app.post("/api/admin/coupons", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertCouponSchema.parse(req.body);
+      const coupon = await storage.createCoupon(validatedData);
+      res.status(201).json({ success: true, data: coupon });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error creating coupon:", error);
+      res.status(500).json({ success: false, error: "쿠폰 생성에 실패했습니다." });
+    }
+  });
+
+  app.put("/api/admin/coupons/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const partialSchema = insertCouponSchema.partial();
+      const validatedData = partialSchema.parse(req.body);
+      const coupon = await storage.updateCoupon(req.params.id, validatedData);
+      if (!coupon) {
+        return res.status(404).json({ success: false, error: "쿠폰을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: coupon });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
+      console.error("Error updating coupon:", error);
+      res.status(500).json({ success: false, error: "쿠폰 수정에 실패했습니다." });
+    }
+  });
+
+  app.delete("/api/admin/coupons/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteCoupon(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "쿠폰을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, message: "쿠폰이 삭제되었습니다." });
+    } catch (error) {
+      console.error("Error deleting coupon:", error);
+      res.status(500).json({ success: false, error: "쿠폰 삭제에 실패했습니다." });
+    }
+  });
+
+  app.post("/api/coupons/apply", async (req: Request, res: Response) => {
+    try {
+      const { code } = req.body;
+      if (!code) {
+        return res.status(400).json({ success: false, error: "쿠폰 코드를 입력해주세요." });
+      }
+
+      const coupon = await storage.getCouponByCode(code);
+      if (!coupon) {
+        return res.status(404).json({ success: false, error: "유효하지 않은 쿠폰 코드입니다." });
+      }
+
+      if (!coupon.isActive) {
+        return res.status(400).json({ success: false, error: "사용할 수 없는 쿠폰입니다." });
+      }
+
+      const now = new Date();
+      if (coupon.expiresAt && new Date(coupon.expiresAt) < now) {
+        return res.status(400).json({ success: false, error: "만료된 쿠폰입니다." });
+      }
+
+      if (coupon.usageLimit && coupon.usageCount && coupon.usageCount >= coupon.usageLimit) {
+        return res.status(400).json({ success: false, error: "쿠폰 사용 한도를 초과했습니다." });
+      }
+
+      res.json({ success: true, data: coupon });
+    } catch (error) {
+      console.error("Error applying coupon:", error);
+      res.status(500).json({ success: false, error: "쿠폰 적용에 실패했습니다." });
+    }
+  });
+
+  // ==================== ADMIN AUTH API ====================
   
-  app.post("/api/admin/logout", async (req: Request, res: Response) => {
+  app.post("/api/admin/login", (req: Request, res: Response) => {
+    const { username, password } = req.body;
+    
+    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+      const token = generateSessionToken();
+      adminSessions.set(token, {
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+      });
+      
+      res.json({ success: true, token });
+    } else {
+      res.status(401).json({ success: false, error: "인증 실패" });
+    }
+  });
+
+  app.post("/api/admin/logout", (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
     if (token) {
       adminSessions.delete(token);
     }
-    res.json({ success: true, message: "로그아웃 성공" });
+    res.json({ success: true });
   });
-  
-  app.get("/api/admin/verify", async (req: Request, res: Response) => {
+
+  app.get("/api/admin/verify", (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
     if (token && isValidSession(token)) {
-      res.json({ success: true, authenticated: true });
+      res.json({ success: true, valid: true });
     } else {
-      res.status(401).json({ success: false, authenticated: false });
+      res.status(401).json({ success: false, valid: false });
     }
   });
 
-  // ==================== MEMBER MANAGEMENT API ====================
-  
-  app.get("/api/admin/members", async (req: Request, res: Response) => {
-    const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token || !isValidSession(token)) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
-    }
-    
+  // ==================== MEMBERS API ====================
+
+  app.get("/api/admin/members", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      const memberList = await storage.getAllMembers();
-      res.json({ success: true, data: memberList });
+      const members = await storage.getAllMembers();
+      res.json({ success: true, data: members });
     } catch (error) {
       console.error("Error fetching members:", error);
       res.status(500).json({ success: false, error: "회원 목록을 불러올 수 없습니다." });
     }
   });
-  
-  app.get("/api/admin/members/:id", async (req: Request, res: Response) => {
-    const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token || !isValidSession(token)) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
-    }
-    
-    try {
-      const member = await storage.getMember(req.params.id);
-      if (!member) {
-        return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
-      }
-      res.json({ success: true, data: member });
-    } catch (error) {
-      console.error("Error fetching member:", error);
-      res.status(500).json({ success: false, error: "회원 정보를 불러올 수 없습니다." });
-    }
-  });
-  
-  app.post("/api/admin/members", async (req: Request, res: Response) => {
-    const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token || !isValidSession(token)) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
-    }
-    
-    try {
-      const validatedData = insertMemberSchema.parse(req.body);
-      const member = await storage.createMember(validatedData);
-      res.status(201).json({ success: true, data: member });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ success: false, error: error.errors });
-      }
-      console.error("Error creating member:", error);
-      res.status(500).json({ success: false, error: "회원 생성에 실패했습니다." });
-    }
-  });
-  
-  app.patch("/api/admin/members/:id", async (req: Request, res: Response) => {
-    const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token || !isValidSession(token)) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
-    }
-    
-    try {
-      const partialSchema = insertMemberSchema.partial();
-      const validatedData = partialSchema.parse(req.body);
-      const member = await storage.updateMember(req.params.id, validatedData);
-      if (!member) {
-        return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
-      }
-      res.json({ success: true, data: member });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ success: false, error: error.errors });
-      }
-      console.error("Error updating member:", error);
-      res.status(500).json({ success: false, error: "회원 정보 수정에 실패했습니다." });
-    }
-  });
-  
-  app.delete("/api/admin/members/:id", async (req: Request, res: Response) => {
-    const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token || !isValidSession(token)) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
-    }
-    
-    try {
-      const success = await storage.deleteMember(req.params.id);
-      if (!success) {
-        return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
-      }
-      res.json({ success: true, message: "회원이 삭제되었습니다." });
-    } catch (error) {
-      console.error("Error deleting member:", error);
-      res.status(500).json({ success: false, error: "회원 삭제에 실패했습니다." });
-    }
-  });
 
-  // Public member signup
-  app.post("/api/members/signup", async (req: Request, res: Response) => {
+  app.post("/api/members/register", async (req: Request, res: Response) => {
     try {
-      const validatedData = insertMemberSchema.parse(req.body);
+      const { email, password, name, phone } = req.body;
       
-      // Check if email already exists
-      const existing = await storage.getMemberByEmail(validatedData.email);
-      if (existing) {
-        return res.status(400).json({ success: false, error: "이미 등록된 이메일입니다." });
+      const existingMember = await storage.getMemberByEmail(email);
+      if (existingMember) {
+        return res.status(400).json({ success: false, error: "이미 가입된 이메일입니다." });
       }
       
-      const member = await storage.createMember(validatedData);
-      res.status(201).json({ success: true, message: "회원가입이 완료되었습니다." });
+      const member = await storage.createMember({
+        email,
+        password,
+        name,
+        phone
+      });
+      
+      res.status(201).json({ 
+        success: true, 
+        message: "회원가입이 완료되었습니다.",
+        data: { id: member.id, email: member.email, name: member.name }
+      });
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ success: false, error: error.errors });
-      }
-      console.error("Error during signup:", error);
+      console.error("Error during registration:", error);
       res.status(500).json({ success: false, error: "회원가입 처리 중 오류가 발생했습니다." });
     }
   });
 
-  // Member login - uses database-based sessions for persistence
   app.post("/api/members/login", async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
       
-      if (!email || !password) {
-        return res.status(400).json({ success: false, error: "이메일과 비밀번호를 입력해주세요." });
-      }
-      
       const member = await storage.getMemberByEmail(email);
       if (!member) {
-        return res.status(401).json({ success: false, error: "등록되지 않은 이메일입니다." });
+        return res.status(401).json({ success: false, error: "이메일 또는 비밀번호가 일치하지 않습니다." });
       }
       
       if (member.password !== password) {
@@ -735,6 +996,8 @@ export async function registerRoutes(
         email: member.email,
         name: member.name
       });
+      
+      await storage.updateMemberLastLogin(member.id);
       
       res.json({ 
         success: true, 
@@ -753,16 +1016,15 @@ export async function registerRoutes(
       res.status(500).json({ success: false, error: "로그인 처리 중 오류가 발생했습니다." });
     }
   });
-  
-  // Helper function to get member from session token
-  async function getMemberFromToken(token: string | undefined): Promise<{ memberId: string; email: string; name: string } | null> {
-    if (!token) return null;
-    const session = await storage.getMemberSession(token);
-    if (!session) return null;
-    return { memberId: session.memberId, email: session.email, name: session.name };
-  }
 
-  // Get member info (for logged-in member)
+  app.post("/api/members/logout", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    if (token) {
+      await storage.deleteMemberSession(token);
+    }
+    res.json({ success: true });
+  });
+
   app.get("/api/members/me", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
     const session = await getMemberFromToken(token);
@@ -784,8 +1046,8 @@ export async function registerRoutes(
           email: member.email,
           phone: member.phone,
           address: member.address || null,
-          bank: member.bank || null,
-          accountNumber: member.accountNumber || null,
+          addressDetail: member.addressDetail || null,
+          zipcode: member.zipcode || null,
           pointBalance: member.pointBalance || 0,
           isFrozen: member.isFrozen || false,
           createdAt: member.createdAt
@@ -797,248 +1059,26 @@ export async function registerRoutes(
     }
   });
 
-  // ==================== DEPOSIT REQUESTS (Member) ====================
-  
-  // Create deposit request
-  app.post("/api/members/deposit-requests", async (req: Request, res: Response) => {
+  app.put("/api/members/me", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
     const session = await getMemberFromToken(token);
     if (!session) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다. 다시 로그인해주세요." });
+      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
     }
     
     try {
-      const member = await storage.getMember(session.memberId);
+      const { name, phone, address, addressDetail, zipcode } = req.body;
+      const member = await storage.updateMember(session.memberId, { name, phone, address, addressDetail, zipcode });
       if (!member) {
         return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
       }
-      
-      if (member.isFrozen) {
-        return res.status(403).json({ success: false, error: "계정이 동결되어 입금신청을 할 수 없습니다." });
-      }
-      
-      const { amount, bankName, accountNumber, depositorName } = req.body;
-      
-      if (!amount || amount <= 0) {
-        return res.status(400).json({ success: false, error: "유효한 금액을 입력해주세요." });
-      }
-      
-      if (!bankName || !depositorName) {
-        return res.status(400).json({ success: false, error: "은행명과 입금자명을 입력해주세요." });
-      }
-      
-      const request = await storage.createDepositRequest({
-        memberId: member.id,
-        memberName: member.name,
-        memberEmail: member.email,
-        amount: parseInt(amount),
-        bankName,
-        accountNumber: accountNumber || "",
-        depositorName,
-        status: "pending"
-      });
-      
-      res.status(201).json({ success: true, data: request, message: "입금신청이 접수되었습니다." });
+      res.json({ success: true, data: member });
     } catch (error) {
-      console.error("Error creating deposit request:", error);
-      res.status(500).json({ success: false, error: "입금신청 처리 중 오류가 발생했습니다." });
+      console.error("Error updating member:", error);
+      res.status(500).json({ success: false, error: "회원 정보 수정에 실패했습니다." });
     }
   });
 
-  // Get my deposit requests
-  app.get("/api/members/deposit-requests", async (req: Request, res: Response) => {
-    const token = req.headers.authorization?.replace("Bearer ", "");
-    const session = await getMemberFromToken(token);
-    if (!session) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다. 다시 로그인해주세요." });
-    }
-    
-    try {
-      const requests = await storage.getDepositRequestsByMember(session.memberId);
-      res.json({ success: true, data: requests });
-    } catch (error) {
-      console.error("Error fetching deposit requests:", error);
-      res.status(500).json({ success: false, error: "입금신청 목록을 불러올 수 없습니다." });
-    }
-  });
-
-  // Create withdrawal request
-  app.post("/api/members/withdrawal-requests", async (req: Request, res: Response) => {
-    const token = req.headers.authorization?.replace("Bearer ", "");
-    const session = await getMemberFromToken(token);
-    if (!session) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다. 다시 로그인해주세요." });
-    }
-    
-    try {
-      const member = await storage.getMember(session.memberId);
-      if (!member) {
-        return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
-      }
-      
-      if (member.isFrozen) {
-        return res.status(403).json({ success: false, error: "계정이 동결되어 출금신청을 할 수 없습니다." });
-      }
-      
-      const { amount } = req.body;
-      
-      if (!amount || amount <= 0) {
-        return res.status(400).json({ success: false, error: "유효한 금액을 입력해주세요." });
-      }
-      
-      const currentBalance = member.pointBalance || 0;
-      if (amount > currentBalance) {
-        return res.status(400).json({ success: false, error: "보유 포인트가 부족합니다." });
-      }
-      
-      const request = await storage.createWithdrawalRequest({
-        memberId: member.id,
-        memberName: member.name,
-        memberEmail: member.email,
-        amount: parseInt(amount),
-        status: "pending"
-      });
-      
-      res.status(201).json({ success: true, data: request, message: "출금신청이 접수되었습니다." });
-    } catch (error) {
-      console.error("Error creating withdrawal request:", error);
-      res.status(500).json({ success: false, error: "출금신청 처리 중 오류가 발생했습니다." });
-    }
-  });
-
-  // Get my withdrawal requests
-  app.get("/api/members/withdrawal-requests", async (req: Request, res: Response) => {
-    const token = req.headers.authorization?.replace("Bearer ", "");
-    const session = await getMemberFromToken(token);
-    if (!session) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다. 다시 로그인해주세요." });
-    }
-    
-    try {
-      const requests = await storage.getWithdrawalRequestsByMember(session.memberId);
-      res.json({ success: true, data: requests });
-    } catch (error) {
-      console.error("Error fetching withdrawal requests:", error);
-      res.status(500).json({ success: false, error: "출금신청 목록을 불러올 수 없습니다." });
-    }
-  });
-
-  // Get my point transactions
-  app.get("/api/members/point-transactions", async (req: Request, res: Response) => {
-    const token = req.headers.authorization?.replace("Bearer ", "");
-    const session = await getMemberFromToken(token);
-    if (!session) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다. 다시 로그인해주세요." });
-    }
-    
-    try {
-      const transactions = await storage.getPointTransactionsByMember(session.memberId);
-      res.json({ success: true, data: transactions });
-    } catch (error) {
-      console.error("Error fetching point transactions:", error);
-      res.status(500).json({ success: false, error: "포인트 내역을 불러올 수 없습니다." });
-    }
-  });
-
-  // ==================== ADMIN DEPOSIT & POINT MANAGEMENT ====================
-  
-  // Get all deposit requests (admin)
-  app.get("/api/admin/deposit-requests", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const status = req.query.status as string;
-      let requests;
-      if (status === "pending") {
-        requests = await storage.getPendingDepositRequests();
-      } else {
-        requests = await storage.getAllDepositRequests();
-      }
-      res.json({ success: true, data: requests });
-    } catch (error) {
-      console.error("Error fetching deposit requests:", error);
-      res.status(500).json({ success: false, error: "입금신청 목록을 불러올 수 없습니다." });
-    }
-  });
-
-  // Approve deposit request (admin)
-  app.post("/api/admin/deposit-requests/:id/approve", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const { adminNote } = req.body;
-      const request = await storage.approveDepositRequest(req.params.id, adminNote);
-      if (!request) {
-        return res.status(404).json({ success: false, error: "입금신청을 찾을 수 없거나 이미 처리되었습니다." });
-      }
-      res.json({ success: true, data: request, message: "입금신청이 승인되었습니다." });
-    } catch (error) {
-      console.error("Error approving deposit request:", error);
-      res.status(500).json({ success: false, error: "입금신청 승인 처리 중 오류가 발생했습니다." });
-    }
-  });
-
-  // Reject deposit request (admin)
-  app.post("/api/admin/deposit-requests/:id/reject", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const { adminNote } = req.body;
-      const request = await storage.rejectDepositRequest(req.params.id, adminNote);
-      if (!request) {
-        return res.status(404).json({ success: false, error: "입금신청을 찾을 수 없거나 이미 처리되었습니다." });
-      }
-      res.json({ success: true, data: request, message: "입금신청이 거부되었습니다." });
-    } catch (error) {
-      console.error("Error rejecting deposit request:", error);
-      res.status(500).json({ success: false, error: "입금신청 거부 처리 중 오류가 발생했습니다." });
-    }
-  });
-
-  // ==================== ADMIN WITHDRAWAL MANAGEMENT ====================
-  
-  // Get all withdrawal requests (admin)
-  app.get("/api/admin/withdrawal-requests", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const status = req.query.status as string;
-      let requests;
-      if (status === "pending") {
-        requests = await storage.getPendingWithdrawalRequests();
-      } else {
-        requests = await storage.getAllWithdrawalRequests();
-      }
-      res.json({ success: true, data: requests });
-    } catch (error) {
-      console.error("Error fetching withdrawal requests:", error);
-      res.status(500).json({ success: false, error: "출금신청 목록을 불러올 수 없습니다." });
-    }
-  });
-
-  // Approve withdrawal request (admin)
-  app.post("/api/admin/withdrawal-requests/:id/approve", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const { adminNote } = req.body;
-      const request = await storage.approveWithdrawalRequest(req.params.id, adminNote);
-      if (!request) {
-        return res.status(404).json({ success: false, error: "출금신청을 찾을 수 없거나 이미 처리되었습니다. 또는 잔액이 부족합니다." });
-      }
-      res.json({ success: true, data: request, message: "출금신청이 승인되었습니다." });
-    } catch (error) {
-      console.error("Error approving withdrawal request:", error);
-      res.status(500).json({ success: false, error: "출금신청 승인 처리 중 오류가 발생했습니다." });
-    }
-  });
-
-  // Reject withdrawal request (admin)
-  app.post("/api/admin/withdrawal-requests/:id/reject", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const { adminNote } = req.body;
-      const request = await storage.rejectWithdrawalRequest(req.params.id, adminNote);
-      if (!request) {
-        return res.status(404).json({ success: false, error: "출금신청을 찾을 수 없거나 이미 처리되었습니다." });
-      }
-      res.json({ success: true, data: request, message: "출금신청이 거부되었습니다." });
-    } catch (error) {
-      console.error("Error rejecting withdrawal request:", error);
-      res.status(500).json({ success: false, error: "출금신청 거부 처리 중 오류가 발생했습니다." });
-    }
-  });
-
-  // Adjust member points manually (admin)
   app.post("/api/admin/members/:id/adjust-points", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const { amount, reason } = req.body;
@@ -1059,7 +1099,6 @@ export async function registerRoutes(
     }
   });
 
-  // Freeze member account (admin)
   app.post("/api/admin/members/:id/freeze", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const { reason } = req.body;
@@ -1080,7 +1119,6 @@ export async function registerRoutes(
     }
   });
 
-  // Unfreeze member account (admin)
   app.post("/api/admin/members/:id/unfreeze", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const member = await storage.unfreezeMember(req.params.id);
@@ -1097,12 +1135,7 @@ export async function registerRoutes(
 
   // ==================== ADMIN STATS ====================
   
-  app.get("/api/admin/stats", async (req: Request, res: Response) => {
-    const token = req.headers.authorization?.replace("Bearer ", "");
-    if (!token || !isValidSession(token)) {
-      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
-    }
-    
+  app.get("/api/admin/stats", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const products = await storage.getAllProducts();
       const members = await storage.getAllMembers();
@@ -1117,7 +1150,7 @@ export async function registerRoutes(
           productsByCategory: categories.map(cat => ({
             id: cat.id,
             name: cat.name,
-            count: products.filter(p => p.category === cat.id).length
+            count: products.filter(p => p.categoryId === cat.id).length
           }))
         }
       });
@@ -1127,113 +1160,8 @@ export async function registerRoutes(
     }
   });
 
-  // ==================== SEED LUXURY JEWELRY ====================
-  
-  app.post("/api/seed-luxury-jewelry", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const brandImages: Record<string, string> = {
-        "반클리프": "/images/vca_alhambra_clover_necklace.png",
-        "까르띠에": "/images/cartier_love_bracelet_gold.png",
-        "티파니": "/images/tiffany_t_hoop_earrings.png",
-        "샤넬": "/images/chanel_coco_crush_ring.png",
-        "불가리": "/images/bulgari_bzero1_spiral_ring.png",
-        "루이비통": "/images/lv_blossom_gold_bracelet.png",
-        "쇼메": "/images/chaumet_liens_pendant_necklace.png",
-        "피아제": "/images/piaget_rose_gold_ring.png",
-        "부쉐론": "/images/boucheron_serpent_ring_gold.png",
-        "디올": "/images/chaumet_liens_pendant_necklace.png",
-        "그라프": "/images/tiffany_t_hoop_earrings.png",
-        "프레드": "/images/cartier_love_bracelet_gold.png",
-        "부첼라티": "/images/vca_alhambra_clover_necklace.png",
-        "키린": "/images/lv_blossom_gold_bracelet.png",
-      };
-      
-      const getImageForBrand = (name: string) => {
-        for (const [brand, image] of Object.entries(brandImages)) {
-          if (name.includes(brand)) return image;
-        }
-        return "/images/vca_alhambra_clover_necklace.png";
-      };
-
-      const luxuryJewelry = [
-        { name: "반클리프앤아펠 스위트 알함브라 화이트자개 목걸이", weight: "18K", purity: "750", price: "720,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Van Cleef & Arpels" },
-        { name: "쇼메 트리옹프 드 쇼메 목걸이", weight: "18K", purity: "750", price: "1,360,000", category: "pure_jewelry", isBest: false, isNew: true, description: "CHAUMET" },
-        { name: "티파니 18K 크로스 펜던트 미니", weight: "18K", purity: "750", price: "980,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Tiffany & Co." },
-        { name: "티파니 18K T1 후프 이어링", weight: "18K", purity: "750", price: "1,430,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Tiffany & Co." },
-        { name: "부쉐론 보헴 쎄뻥 S 사이즈 로즈골드 링", weight: "18K", purity: "750", price: "2,160,000", category: "pure_jewelry", isBest: false, isNew: true, description: "BOUCHERON" },
-        { name: "부쉐론 보헴 쎄뻥 XS 링", weight: "18K", purity: "750", price: "920,000", category: "pure_jewelry", isBest: false, isNew: false, description: "BOUCHERON" },
-        { name: "쇼메 주드리앙 펜던트", weight: "18K", purity: "750", price: "1,420,000", category: "pure_jewelry", isBest: true, isNew: false, description: "CHAUMET" },
-        { name: "키린 18K 브레이스릿", weight: "18K", purity: "750", price: "820,000", category: "pure_jewelry", isBest: false, isNew: true, description: "Qeelin" },
-        { name: "반클리프앤아펠 24년 홀리데이 기요세 투톤 네크리스", weight: "18K", purity: "750", price: "1,880,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Van Cleef & Arpels 리미티드" },
-        { name: "반클리프앤아펠 5P 화이트자개 브레이슬릿", weight: "18K", purity: "750", price: "2,520,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Van Cleef & Arpels" },
-        { name: "반클리프앤아펠 화이트골드 빈티지 목걸이", weight: "18K WG", purity: "750", price: "1,080,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Van Cleef & Arpels" },
-        { name: "티파니 18K 목걸이 옐로우골드", weight: "18K", purity: "750", price: "1,860,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Tiffany & Co." },
-        { name: "샤넬 18K 크러쉬 링 스몰", weight: "18K", purity: "750", price: "1,480,000", category: "pure_jewelry", isBest: true, isNew: true, description: "CHANEL" },
-        { name: "샤넬 18K 크러쉬 링 라지", weight: "18K", purity: "750", price: "1,480,000", category: "pure_jewelry", isBest: false, isNew: true, description: "CHANEL" },
-        { name: "샤넬 18K 크러쉬 링 라지 다이아", weight: "18K", purity: "750", price: "2,060,000", category: "pure_jewelry", isBest: false, isNew: false, description: "CHANEL 다이아몬드" },
-        { name: "반클리프앤아펠 리미티드 에디션 18K 포슬린", weight: "18K", purity: "750", price: "1,560,000", category: "pure_jewelry", isBest: true, isNew: false, description: "Van Cleef & Arpels 한정판" },
-        { name: "루이비통 18K 화이트 마더오브펄 핑크골드", weight: "18K", purity: "750", price: "1,180,000", category: "pure_jewelry", isBest: false, isNew: true, description: "Louis Vuitton" },
-        { name: "루이비통 블라썸 그레이 마더오브펄 썬 목걸이", weight: "18K", purity: "750", price: "1,180,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Louis Vuitton" },
-        { name: "루이비통 블라썸BB 핑크골드 화이트자개 브레이슬릿", weight: "18K", purity: "750", price: "1,880,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Louis Vuitton" },
-        { name: "피아제 18K 선라이트 네크리스", weight: "18K", purity: "750", price: "1,860,000", category: "pure_jewelry", isBest: false, isNew: true, description: "PIAGET" },
-        { name: "티파니 18K 키 목걸이 옐로우골드", weight: "18K", purity: "750", price: "1,680,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Tiffany & Co." },
-        { name: "루이비통 블라썸BB 핑크자개 목걸이", weight: "18K", purity: "750", price: "880,000", category: "pure_jewelry", isBest: false, isNew: true, description: "Louis Vuitton" },
-        { name: "루이비통 옹브레 블라썸 오픈 링", weight: "18K", purity: "750", price: "1,460,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Louis Vuitton" },
-        { name: "반클리프앤아펠 기요세 화이트 네크리스", weight: "18K", purity: "750", price: "1,580,000", category: "pure_jewelry", isBest: true, isNew: false, description: "Van Cleef & Arpels" },
-        { name: "까르띠에 18K 로즈골드 저스트 앵 끌루 다이아 팔찌", weight: "18K", purity: "750", price: "1,460,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Cartier LOVE" },
-        { name: "티파니 18K 린 이어링", weight: "18K", purity: "750", price: "1,180,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Tiffany & Co." },
-        { name: "샤넬 18K 크러쉬 링 미니", weight: "18K", purity: "750", price: "820,000", category: "pure_jewelry", isBest: false, isNew: true, description: "CHANEL" },
-        { name: "불가리 18K 미니 파베세팅 비제로원 링", weight: "18K", purity: "750", price: "1,980,000", category: "pure_jewelry", isBest: true, isNew: false, description: "BVLGARI" },
-        { name: "까르띠에 18K 러브 브레이슬릿", weight: "18K", purity: "750", price: "920,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Cartier LOVE" },
-        { name: "까르띠에 18K 슬림형 러브 브레이슬릿", weight: "18K", purity: "750", price: "1,850,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Cartier LOVE Slim" },
-        { name: "반클리프앤아펠 프리볼 18K 미니 이어링 루비", weight: "18K", purity: "750", price: "780,000", category: "pure_jewelry", isBest: false, isNew: true, description: "Van Cleef & Arpels" },
-        { name: "반클리프앤아펠 알함브라 스윗사이즈 이어링", weight: "18K", purity: "750", price: "720,000", category: "pure_jewelry", isBest: true, isNew: false, description: "Van Cleef & Arpels" },
-        { name: "반클리프앤아펠 빈티지 알함브라 화이트자개 18K 목걸이", weight: "18K", purity: "750", price: "1,720,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Van Cleef & Arpels" },
-        { name: "까르띠에 18K 신형잠금 저스트앵끌루 옐로우골드 팔찌", weight: "18K", purity: "750", price: "2,350,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Cartier Juste un Clou" },
-        { name: "부첼라티 18K 오페라 튤레 펜던트 세트", weight: "18K", purity: "750", price: "4,080,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Buccellati" },
-        { name: "프레드 18K 포스텐 라지 버클", weight: "18K", purity: "750", price: "1,380,000", category: "pure_jewelry", isBest: false, isNew: true, description: "FRED" },
-        { name: "부첼라티 18K 오페라 튤레 펜던트 스몰", weight: "18K", purity: "750", price: "1,520,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Buccellati" },
-        { name: "반클리프앤아펠 빈티지 알함브라 5모티프 브레이슬릿", weight: "18K", purity: "750", price: "3,980,000", category: "pure_jewelry", isBest: true, isNew: false, description: "Van Cleef & Arpels" },
-        { name: "그라프 18K 파베 버터플라이 다이아몬드 쁘띠 펜던트", weight: "18K", purity: "750", price: "830,000", category: "pure_jewelry", isBest: false, isNew: true, description: "GRAFF" },
-        { name: "피아제 18K 로즈 링", weight: "18K", purity: "750", price: "1,340,000", category: "pure_jewelry", isBest: false, isNew: false, description: "PIAGET" },
-        { name: "반클리프앤아펠 22년 리미티드 에디션 18K 포슬린", weight: "18K", purity: "750", price: "1,560,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Van Cleef & Arpels 한정판" },
-        { name: "쇼메 18K True 내로우 링 3.5mm", weight: "18K", purity: "750", price: "1,380,000", category: "pure_jewelry", isBest: false, isNew: true, description: "CHAUMET" },
-        { name: "디올 18K ROSE DES VENTS 팔찌", weight: "18K", purity: "750", price: "1,660,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Dior" },
-        { name: "불가리 18K 바이퍼 링", weight: "18K", purity: "750", price: "1,960,000", category: "pure_jewelry", isBest: false, isNew: false, description: "BVLGARI Serpenti" },
-        { name: "샤넬 18K 크러쉬 링", weight: "18K", purity: "750", price: "1,680,000", category: "pure_jewelry", isBest: false, isNew: true, description: "CHANEL" },
-        { name: "쇼메 18K 리앙 반지", weight: "18K", purity: "750", price: "1,680,000", category: "pure_jewelry", isBest: false, isNew: false, description: "CHAUMET" },
-        { name: "반클리프앤아펠 터키석 18K 스윗사이즈 이어링", weight: "18K", purity: "750", price: "740,000", category: "pure_jewelry", isBest: false, isNew: true, description: "Van Cleef & Arpels" },
-        { name: "반클리프앤아펠 화이트자개 이어링 스윗", weight: "18K", purity: "750", price: "720,000", category: "pure_jewelry", isBest: true, isNew: false, description: "Van Cleef & Arpels" },
-        { name: "불가리 18K 비제로원 로즈골드 링", weight: "18K", purity: "750", price: "2,460,000", category: "pure_jewelry", isBest: true, isNew: false, description: "BVLGARI B.zero1" },
-        { name: "반클리프앤아펠 뻬를리 디아망 목걸이 옐로우골드", weight: "18K", purity: "750", price: "1,560,000", category: "pure_jewelry", isBest: false, isNew: true, description: "Van Cleef & Arpels Perlée" },
-        { name: "까르띠에 18K 팬더 드 까르띠에 링", weight: "18K", purity: "750", price: "2,960,000", category: "pure_jewelry", isBest: true, isNew: true, description: "Cartier Panthère" },
-        { name: "쇼메 18K 주드리앙 화이트자개 귀걸이", weight: "18K", purity: "750", price: "730,000", category: "pure_jewelry", isBest: false, isNew: false, description: "CHAUMET" },
-        { name: "불가리 18K 세르펜티 다이아 뱅글", weight: "18K", purity: "750", price: "5,680,000", category: "pure_jewelry", isBest: true, isNew: false, description: "BVLGARI Serpenti" },
-        { name: "디올 18K Bois de Rose 반지", weight: "18K", purity: "750", price: "1,430,000", category: "pure_jewelry", isBest: false, isNew: true, description: "Dior" },
-        { name: "티파니 18K T 이어링", weight: "18K", purity: "750", price: "1,830,000", category: "pure_jewelry", isBest: false, isNew: false, description: "Tiffany & Co." },
-      ];
-      
-      let createdCount = 0;
-      for (const prod of luxuryJewelry) {
-        try {
-          const productWithImage = { ...prod, imageUrl: getImageForBrand(prod.name) };
-          await storage.createProduct(productWithImage);
-          createdCount++;
-        } catch (e) {
-          console.error("Error creating luxury jewelry product:", prod.name, e);
-        }
-      }
-      
-      res.json({ success: true, message: `${createdCount}개의 럭셔리 주얼리 상품이 추가되었습니다.` });
-    } catch (error) {
-      console.error("Error seeding luxury jewelry:", error);
-      res.status(500).json({ success: false, error: "럭셔리 주얼리 상품 추가에 실패했습니다." });
-    }
-  });
-
   // ==================== CHAT API ====================
   
-  // Get all conversations (admin only)
   app.get("/api/chat/conversations", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const conversations = await storage.getAllConversations();
@@ -1244,7 +1172,6 @@ export async function registerRoutes(
     }
   });
 
-  // Get single conversation with messages
   app.get("/api/chat/conversations/:id", async (req: Request, res: Response) => {
     try {
       const conversation = await storage.getConversation(req.params.id);
@@ -1259,7 +1186,6 @@ export async function registerRoutes(
     }
   });
 
-  // Create new conversation (public)
   app.post("/api/chat/conversations", async (req: Request, res: Response) => {
     try {
       const validatedData = insertChatConversationSchema.parse(req.body);
@@ -1274,7 +1200,6 @@ export async function registerRoutes(
     }
   });
 
-  // Update conversation status (admin only)
   app.patch("/api/chat/conversations/:id/status", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const { status } = req.body;
@@ -1289,7 +1214,6 @@ export async function registerRoutes(
     }
   });
 
-  // Send message (public for users, auth for admin)
   app.post("/api/chat/messages", async (req: Request, res: Response) => {
     try {
       const validatedData = insertChatMessageSchema.parse(req.body);
@@ -1304,7 +1228,6 @@ export async function registerRoutes(
     }
   });
 
-  // Mark messages as read
   app.post("/api/chat/conversations/:id/read", async (req: Request, res: Response) => {
     try {
       const { senderType } = req.body;
@@ -1316,7 +1239,6 @@ export async function registerRoutes(
     }
   });
 
-  // Get or create member chat conversation (member only)
   app.get("/api/chat/member/conversation", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
     const session = await getMemberFromToken(token);
@@ -1334,7 +1256,6 @@ export async function registerRoutes(
     }
   });
 
-  // Send message as member (member only)
   app.post("/api/chat/member/messages", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
     const session = await getMemberFromToken(token);
@@ -1351,9 +1272,14 @@ export async function registerRoutes(
       const conversation = await storage.getOrCreateConversationForMember(session.memberId, session.name);
       const chatMessage = await storage.createMessage({
         conversationId: conversation.id,
-        senderType: 'user',
+        senderType: "user",
         senderName: session.name,
-        message,
+        message
+      });
+      
+      await storage.updateChatConversation(conversation.id, {
+        lastMessage: message,
+        updatedAt: new Date()
       });
       
       res.status(201).json({ success: true, data: chatMessage });
@@ -1365,7 +1291,6 @@ export async function registerRoutes(
 
   // ==================== FAQ API ====================
   
-  // Get all FAQs (public)
   app.get("/api/faqs", async (req: Request, res: Response) => {
     try {
       const { category } = req.query;
@@ -1382,7 +1307,6 @@ export async function registerRoutes(
     }
   });
 
-  // Create FAQ (admin only)
   app.post("/api/faqs", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const validatedData = insertFaqSchema.parse(req.body);
@@ -1397,21 +1321,24 @@ export async function registerRoutes(
     }
   });
 
-  // Update FAQ (admin only)
   app.put("/api/faqs/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      const faq = await storage.updateFaq(req.params.id, req.body);
+      const partialSchema = insertFaqSchema.partial();
+      const validatedData = partialSchema.parse(req.body);
+      const faq = await storage.updateFaq(req.params.id, validatedData);
       if (!faq) {
         return res.status(404).json({ success: false, error: "FAQ를 찾을 수 없습니다." });
       }
       res.json({ success: true, data: faq });
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
       console.error("Error updating FAQ:", error);
       res.status(500).json({ success: false, error: "FAQ 수정에 실패했습니다." });
     }
   });
 
-  // Delete FAQ (admin only)
   app.delete("/api/faqs/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const success = await storage.deleteFaq(req.params.id);
@@ -1425,240 +1352,115 @@ export async function registerRoutes(
     }
   });
 
-  // ==================== FILE UPLOAD API ====================
-  
-  // Upload review image (admin only) - now saves to database for persistence
-  app.post("/api/admin/upload/review-image", requireAdminAuth, (req: Request, res: Response) => {
-    reviewImageUpload.single("image")(req, res, async (err: any) => {
-      if (err instanceof multer.MulterError) {
-        if (err.code === "LIMIT_FILE_SIZE") {
-          return res.status(400).json({ success: false, error: "파일 크기는 5MB 이하여야 합니다." });
-        }
-        return res.status(400).json({ success: false, error: err.message });
-      } else if (err) {
-        return res.status(400).json({ success: false, error: err.message });
-      }
-      
-      if (!req.file) {
-        return res.status(400).json({ success: false, error: "이미지 파일을 선택해주세요." });
-      }
-      
-      try {
-        // Convert buffer to base64 and save to database
-        const base64Data = req.file.buffer.toString("base64");
-        const reviewImage = await storage.createReviewImage({
-          data: base64Data,
-          mimeType: req.file.mimetype,
-          originalName: req.file.originalname,
-        });
-        
-        // Return URL pointing to database image endpoint
-        const imageUrl = `/api/review-images/${reviewImage.id}`;
-        res.json({ success: true, data: { imageUrl, imageId: reviewImage.id } });
-      } catch (error) {
-        console.error("Error saving review image:", error);
-        res.status(500).json({ success: false, error: "이미지 저장에 실패했습니다." });
-      }
-    });
-  });
-  
-  // Serve review images from database
-  app.get("/api/review-images/:id", async (req: Request, res: Response) => {
-    try {
-      const image = await storage.getReviewImage(req.params.id);
-      if (!image) {
-        return res.status(404).json({ success: false, error: "이미지를 찾을 수 없습니다." });
-      }
-      
-      // Convert base64 back to buffer and send
-      const buffer = Buffer.from(image.data, "base64");
-      res.setHeader("Content-Type", image.mimeType);
-      res.setHeader("Cache-Control", "public, max-age=31536000"); // Cache for 1 year
-      res.setHeader("ETag", `"${image.id}"`);
-      res.send(buffer);
-    } catch (error) {
-      console.error("Error serving review image:", error);
-      res.status(500).json({ success: false, error: "이미지를 불러올 수 없습니다." });
-    }
-  });
-
-  // Upload product image (admin only) - saves to database for persistence
-  app.post("/api/admin/upload/product-image", requireAdminAuth, (req: Request, res: Response) => {
-    reviewImageUpload.single("image")(req, res, async (err: any) => {
-      if (err instanceof multer.MulterError) {
-        if (err.code === "LIMIT_FILE_SIZE") {
-          return res.status(400).json({ success: false, error: "파일 크기는 5MB 이하여야 합니다." });
-        }
-        return res.status(400).json({ success: false, error: err.message });
-      } else if (err) {
-        return res.status(400).json({ success: false, error: err.message });
-      }
-      
-      if (!req.file) {
-        return res.status(400).json({ success: false, error: "이미지 파일을 선택해주세요." });
-      }
-      
-      try {
-        // Convert buffer to base64 and save to database
-        const base64Data = req.file.buffer.toString("base64");
-        const productImage = await storage.createProductImage({
-          data: base64Data,
-          mimeType: req.file.mimetype,
-          originalName: req.file.originalname,
-        });
-        
-        // Return URL pointing to database image endpoint
-        const imageUrl = `/api/product-images/${productImage.id}`;
-        res.json({ success: true, data: { imageUrl, imageId: productImage.id } });
-      } catch (error) {
-        console.error("Error saving product image:", error);
-        res.status(500).json({ success: false, error: "이미지 저장에 실패했습니다." });
-      }
-    });
-  });
-  
-  // Serve product images from database
-  app.get("/api/product-images/:id", async (req: Request, res: Response) => {
-    try {
-      const image = await storage.getProductImage(req.params.id);
-      if (!image) {
-        return res.status(404).json({ success: false, error: "이미지를 찾을 수 없습니다." });
-      }
-      
-      // Convert base64 back to buffer and send
-      const buffer = Buffer.from(image.data, "base64");
-      res.setHeader("Content-Type", image.mimeType);
-      res.setHeader("Cache-Control", "public, max-age=31536000"); // Cache for 1 year
-      res.setHeader("ETag", `"${image.id}"`);
-      res.send(buffer);
-    } catch (error) {
-      console.error("Error serving product image:", error);
-      res.status(500).json({ success: false, error: "이미지를 불러올 수 없습니다." });
-    }
-  });
-
   // ==================== REVIEWS API ====================
   
-  // Get all reviews (public - visible only)
   app.get("/api/reviews", async (req: Request, res: Response) => {
     try {
       const reviews = await storage.getVisibleReviews();
       res.json({ success: true, data: reviews });
     } catch (error) {
       console.error("Error fetching reviews:", error);
-      res.status(500).json({ success: false, error: "후기를 불러올 수 없습니다." });
+      res.status(500).json({ success: false, error: "리뷰를 불러올 수 없습니다." });
     }
   });
 
-  // Get all reviews (admin - includes hidden)
   app.get("/api/admin/reviews", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const reviews = await storage.getAllReviews();
       res.json({ success: true, data: reviews });
     } catch (error) {
       console.error("Error fetching reviews:", error);
-      res.status(500).json({ success: false, error: "후기를 불러올 수 없습니다." });
+      res.status(500).json({ success: false, error: "리뷰를 불러올 수 없습니다." });
     }
   });
 
-  // Get single review
-  app.get("/api/reviews/:id", async (req: Request, res: Response) => {
+  app.post("/api/reviews", reviewImageUpload.array("images", 5), async (req: Request, res: Response) => {
     try {
-      const review = await storage.getReview(req.params.id);
+      const { authorName, productId, productName, rating, title, content, displayDate } = req.body;
+      const files = req.files as Express.Multer.File[];
+      
+      const imageUrls: string[] = [];
+      if (files && files.length > 0) {
+        for (const file of files) {
+          const base64Data = file.buffer.toString("base64");
+          const reviewImage = await storage.createReviewImage({
+            data: base64Data,
+            mimeType: file.mimetype,
+            originalName: file.originalname
+          });
+          imageUrls.push(`/api/review-images/${reviewImage.id}`);
+        }
+      }
+      
+      const review = await storage.createReview({
+        authorName,
+        productId: productId || null,
+        productName: productName || null,
+        rating: parseInt(rating) || 5,
+        title: title || null,
+        content,
+        imageUrl: imageUrls[0] || null,
+        imageUrls,
+        displayDate: displayDate ? new Date(displayDate) : undefined
+      });
+      
+      res.status(201).json({ success: true, data: review });
+    } catch (error) {
+      console.error("Error creating review:", error);
+      res.status(500).json({ success: false, error: "리뷰 등록에 실패했습니다." });
+    }
+  });
+
+  app.put("/api/reviews/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const partialSchema = insertReviewSchema.partial();
+      const validatedData = partialSchema.parse(req.body);
+      const review = await storage.updateReview(req.params.id, validatedData);
       if (!review) {
-        return res.status(404).json({ success: false, error: "후기를 찾을 수 없습니다." });
+        return res.status(404).json({ success: false, error: "리뷰를 찾을 수 없습니다." });
       }
       res.json({ success: true, data: review });
-    } catch (error) {
-      console.error("Error fetching review:", error);
-      res.status(500).json({ success: false, error: "후기를 불러올 수 없습니다." });
-    }
-  });
-
-  // Create review (admin only - for manipulation)
-  app.post("/api/reviews", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const validatedData = insertReviewSchema.parse(req.body);
-      const review = await storage.createReview(validatedData);
-      res.status(201).json({ success: true, data: review });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ success: false, error: error.errors });
       }
-      console.error("Error creating review:", error);
-      res.status(500).json({ success: false, error: "후기 생성에 실패했습니다." });
-    }
-  });
-
-  // Update review (admin only)
-  app.put("/api/reviews/:id", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      console.log("=== REVIEW UPDATE START ===");
-      console.log("Review ID:", req.params.id);
-      console.log("Request body:", JSON.stringify(req.body, null, 2));
-      
-      // First check if review exists
-      const existingReview = await storage.getReview(req.params.id);
-      if (!existingReview) {
-        console.log("Review not found:", req.params.id);
-        return res.status(404).json({ success: false, error: "후기를 찾을 수 없습니다." });
-      }
-      console.log("Existing review found:", existingReview.id, existingReview.title);
-      
-      // Validate and transform the request body
-      const updateData: any = {};
-      if (req.body.authorName !== undefined) updateData.authorName = req.body.authorName;
-      if (req.body.productName !== undefined) updateData.productName = req.body.productName;
-      if (req.body.rating !== undefined) updateData.rating = Number(req.body.rating);
-      if (req.body.title !== undefined) updateData.title = req.body.title;
-      if (req.body.content !== undefined) updateData.content = req.body.content;
-      if (req.body.imageUrl !== undefined) updateData.imageUrl = req.body.imageUrl;
-      if (req.body.isVisible !== undefined) updateData.isVisible = Boolean(req.body.isVisible);
-      if (req.body.displayDate !== undefined) {
-        const parsedDate = new Date(req.body.displayDate);
-        if (!isNaN(parsedDate.getTime())) {
-          updateData.displayDate = parsedDate;
-        } else {
-          console.error("Invalid displayDate:", req.body.displayDate);
-        }
-      }
-      
-      console.log("Processed update data:", JSON.stringify(updateData, null, 2));
-      
-      const review = await storage.updateReview(req.params.id, updateData);
-      console.log("Update result:", review ? `Success - ${review.id}` : "Failed - undefined returned");
-      
-      if (!review) {
-        console.error("Update returned undefined for review:", req.params.id);
-        return res.status(500).json({ success: false, error: "후기 수정에 실패했습니다. (업데이트 실패)" });
-      }
-      
-      console.log("=== REVIEW UPDATE SUCCESS ===");
-      res.json({ success: true, data: review });
-    } catch (error) {
-      console.error("=== REVIEW UPDATE ERROR ===");
       console.error("Error updating review:", error);
-      res.status(500).json({ success: false, error: "후기 수정에 실패했습니다." });
+      res.status(500).json({ success: false, error: "리뷰 수정에 실패했습니다." });
     }
   });
 
-  // Delete review (admin only)
   app.delete("/api/reviews/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const success = await storage.deleteReview(req.params.id);
       if (!success) {
-        return res.status(404).json({ success: false, error: "후기를 찾을 수 없습니다." });
+        return res.status(404).json({ success: false, error: "리뷰를 찾을 수 없습니다." });
       }
-      res.json({ success: true, message: "후기가 삭제되었습니다." });
+      res.json({ success: true, message: "리뷰가 삭제되었습니다." });
     } catch (error) {
       console.error("Error deleting review:", error);
-      res.status(500).json({ success: false, error: "후기 삭제에 실패했습니다." });
+      res.status(500).json({ success: false, error: "리뷰 삭제에 실패했습니다." });
+    }
+  });
+
+  app.get("/api/review-images/:id", async (req: Request, res: Response) => {
+    try {
+      const image = await storage.getReviewImage(req.params.id);
+      if (!image) {
+        return res.status(404).send("Image not found");
+      }
+      
+      const buffer = Buffer.from(image.data, "base64");
+      res.set("Content-Type", image.mimeType);
+      res.set("Content-Length", buffer.length.toString());
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error fetching review image:", error);
+      res.status(500).send("Error fetching image");
     }
   });
 
   // ==================== NOTICES API ====================
   
-  // Get all notices (public - visible only)
   app.get("/api/notices", async (req: Request, res: Response) => {
     try {
       const notices = await storage.getVisibleNotices();
@@ -1669,7 +1471,22 @@ export async function registerRoutes(
     }
   });
 
-  // Get all notices (admin - includes hidden)
+  app.get("/api/notices/:id", async (req: Request, res: Response) => {
+    try {
+      const notice = await storage.getNotice(req.params.id);
+      if (!notice) {
+        return res.status(404).json({ success: false, error: "공지사항을 찾을 수 없습니다." });
+      }
+      
+      await storage.incrementNoticeViewCount(req.params.id);
+      
+      res.json({ success: true, data: notice });
+    } catch (error) {
+      console.error("Error fetching notice:", error);
+      res.status(500).json({ success: false, error: "공지사항을 불러올 수 없습니다." });
+    }
+  });
+
   app.get("/api/admin/notices", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const notices = await storage.getAllNotices();
@@ -1680,22 +1497,6 @@ export async function registerRoutes(
     }
   });
 
-  // Get single notice (and increment view count)
-  app.get("/api/notices/:id", async (req: Request, res: Response) => {
-    try {
-      const notice = await storage.getNotice(req.params.id);
-      if (!notice) {
-        return res.status(404).json({ success: false, error: "공지사항을 찾을 수 없습니다." });
-      }
-      await storage.incrementNoticeViewCount(req.params.id);
-      res.json({ success: true, data: notice });
-    } catch (error) {
-      console.error("Error fetching notice:", error);
-      res.status(500).json({ success: false, error: "공지사항을 불러올 수 없습니다." });
-    }
-  });
-
-  // Create notice (admin only)
   app.post("/api/notices", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const validatedData = insertNoticeSchema.parse(req.body);
@@ -1710,45 +1511,24 @@ export async function registerRoutes(
     }
   });
 
-  // Update notice (admin only)
   app.put("/api/notices/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      console.log("=== NOTICE UPDATE START ===");
-      console.log("Notice ID:", req.params.id);
-      console.log("Request body:", JSON.stringify(req.body, null, 2));
-      
-      // Validate and transform the request body
-      const updateData: any = {};
-      if (req.body.title !== undefined) updateData.title = req.body.title;
-      if (req.body.content !== undefined) updateData.content = req.body.content;
-      if (req.body.category !== undefined) updateData.category = req.body.category;
-      if (req.body.isPinned !== undefined) updateData.isPinned = Boolean(req.body.isPinned);
-      if (req.body.isVisible !== undefined) updateData.isVisible = Boolean(req.body.isVisible);
-      if (req.body.viewCount !== undefined) updateData.viewCount = Number(req.body.viewCount);
-      if (req.body.displayDate !== undefined) {
-        const parsedDate = new Date(req.body.displayDate);
-        if (!isNaN(parsedDate.getTime())) {
-          updateData.displayDate = parsedDate;
-        }
-      }
-      
-      console.log("Processed update data:", JSON.stringify(updateData, null, 2));
-      
-      const notice = await storage.updateNotice(req.params.id, updateData);
+      const partialSchema = insertNoticeSchema.partial();
+      const validatedData = partialSchema.parse(req.body);
+      const notice = await storage.updateNotice(req.params.id, validatedData);
       if (!notice) {
         return res.status(404).json({ success: false, error: "공지사항을 찾을 수 없습니다." });
       }
-      
-      console.log("=== NOTICE UPDATE SUCCESS ===");
       res.json({ success: true, data: notice });
     } catch (error) {
-      console.error("=== NOTICE UPDATE ERROR ===");
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
       console.error("Error updating notice:", error);
       res.status(500).json({ success: false, error: "공지사항 수정에 실패했습니다." });
     }
   });
 
-  // Delete notice (admin only)
   app.delete("/api/notices/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const success = await storage.deleteNotice(req.params.id);
@@ -1762,119 +1542,8 @@ export async function registerRoutes(
     }
   });
 
-  // ==================== DEPOSIT ACCOUNT SETTINGS ====================
-
-  // Get deposit account info (for deposit page)
-  app.get("/api/settings/deposit-account", async (req: Request, res: Response) => {
-    try {
-      const bankName = await storage.getSiteSetting("deposit_bank_name");
-      const accountNumber = await storage.getSiteSetting("deposit_account_number");
-      const accountHolder = await storage.getSiteSetting("deposit_account_holder");
-      
-      if (!bankName || !accountNumber || !accountHolder) {
-        return res.status(404).json({ error: "입금 계좌가 설정되지 않았습니다." });
-      }
-      
-      res.json({
-        id: "deposit-account",
-        bankName: bankName.value,
-        accountNumber: accountNumber.value,
-        accountHolder: accountHolder.value,
-        isActive: true,
-      });
-    } catch (error) {
-      console.error("Error fetching deposit account:", error);
-      res.status(500).json({ error: "계좌 정보를 불러올 수 없습니다." });
-    }
-  });
-
-  // Update deposit account (admin)
-  app.put("/api/admin/settings/deposit-account", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const { bankName, accountNumber, accountHolder } = req.body;
-      
-      if (!bankName || !accountNumber || !accountHolder) {
-        return res.status(400).json({ error: "모든 필드를 입력해주세요." });
-      }
-      
-      await storage.setSiteSetting("deposit_bank_name", bankName, "입금 은행명");
-      await storage.setSiteSetting("deposit_account_number", accountNumber, "입금 계좌번호");
-      await storage.setSiteSetting("deposit_account_holder", accountHolder, "예금주");
-      
-      res.json({
-        success: true,
-        data: {
-          id: "deposit-account",
-          bankName,
-          accountNumber,
-          accountHolder,
-          isActive: true,
-        }
-      });
-    } catch (error) {
-      console.error("Error updating deposit account:", error);
-      res.status(500).json({ error: "계좌 정보 저장에 실패했습니다." });
-    }
-  });
-
-  // Get member's deposit requests
-  app.get("/api/deposit-requests/my", async (req: Request, res: Response) => {
-    try {
-      const authHeader = req.headers.authorization;
-      if (!authHeader?.startsWith("Bearer ")) {
-        return res.status(401).json({ error: "로그인이 필요합니다." });
-      }
-      
-      const token = authHeader.split(" ")[1];
-      const [memberId] = token.split(":");
-      
-      const requests = await storage.getDepositRequestsByMember(memberId);
-      res.json(requests);
-    } catch (error) {
-      console.error("Error fetching my deposit requests:", error);
-      res.status(500).json({ error: "입금신청 내역을 불러올 수 없습니다." });
-    }
-  });
-
-  // Create deposit request
-  app.post("/api/deposit-requests", async (req: Request, res: Response) => {
-    try {
-      const authHeader = req.headers.authorization;
-      if (!authHeader?.startsWith("Bearer ")) {
-        return res.status(401).json({ error: "로그인이 필요합니다." });
-      }
-      
-      const { memberId, memberName, memberEmail, amount, bankName, accountNumber, depositorName } = req.body;
-      
-      if (!amount || amount < 10000) {
-        return res.status(400).json({ error: "최소 10,000원 이상 입금 가능합니다." });
-      }
-      
-      if (!depositorName) {
-        return res.status(400).json({ error: "입금자명을 입력해주세요." });
-      }
-      
-      const request = await storage.createDepositRequest({
-        memberId,
-        memberName,
-        memberEmail,
-        amount,
-        bankName: bankName || "",
-        accountNumber: accountNumber || "",
-        depositorName,
-        status: "pending",
-      });
-      
-      res.json({ success: true, data: request });
-    } catch (error) {
-      console.error("Error creating deposit request:", error);
-      res.status(500).json({ error: "입금신청에 실패했습니다." });
-    }
-  });
-
   // ==================== SITE SETTINGS API ====================
   
-  // Get all site settings (admin only)
   app.get("/api/admin/settings", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const settings = await storage.getAllSiteSettings();
@@ -1885,7 +1554,6 @@ export async function registerRoutes(
     }
   });
 
-  // Get single site setting (public - for things like KakaoTalk link)
   app.get("/api/settings/:key", async (req: Request, res: Response) => {
     try {
       const setting = await storage.getSiteSetting(req.params.key);
@@ -1899,7 +1567,6 @@ export async function registerRoutes(
     }
   });
 
-  // Update site setting (admin only)
   app.put("/api/admin/settings/:key", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const { value, description } = req.body;
@@ -1916,78 +1583,28 @@ export async function registerRoutes(
 
   // ==================== ORDERS API ====================
   
-  // Create order
   app.post("/api/orders", async (req: Request, res: Response) => {
     try {
-      const {
-        memberId,
-        memberName,
-        memberEmail,
-        memberPhone,
-        shippingName,
-        shippingPhone,
-        shippingZipcode,
-        shippingAddress,
-        shippingAddressDetail,
-        shippingMemo,
-        productId,
-        productName,
-        productPrice,
-        quantity,
-        totalAmount,
-      } = req.body;
-      
-      if (!memberName || !memberEmail || !memberPhone) {
-        return res.status(400).json({ success: false, error: "주문자 정보를 입력해주세요." });
-      }
-      
-      if (!shippingName || !shippingPhone || !shippingAddress) {
-        return res.status(400).json({ success: false, error: "배송지 정보를 입력해주세요." });
-      }
-      
-      if (!productId || !productName || !productPrice || !totalAmount) {
-        return res.status(400).json({ success: false, error: "상품 정보가 필요합니다." });
-      }
-      
+      const validatedData = insertOrderSchema.parse(req.body);
       const orderNumber = `ORD${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
       
-      const orderData = {
+      const order = await storage.createOrder({
+        ...validatedData,
         orderNumber,
-        memberId: memberId || null,
-        memberName: String(memberName).trim(),
-        memberEmail: String(memberEmail).trim(),
-        memberPhone: String(memberPhone).trim(),
-        shippingName: String(shippingName).trim(),
-        shippingPhone: String(shippingPhone).trim(),
-        shippingAddress: String(shippingAddress).trim(),
-        shippingAddressDetail: shippingAddressDetail ? String(shippingAddressDetail).trim() : null,
-        shippingZipcode: shippingZipcode ? String(shippingZipcode).trim() : null,
-        shippingMemo: shippingMemo ? String(shippingMemo).trim() : null,
-        productId: String(productId),
-        productName: String(productName),
-        productPrice: String(productPrice),
-        quantity: parseInt(quantity) || 1,
-        totalAmount: String(totalAmount),
         status: "pending",
-        paymentStatus: "pending",
-      };
-      
-      const validationResult = insertOrderSchema.safeParse(orderData);
-      if (!validationResult.success) {
-        console.error("Order validation error:", validationResult.error);
-        return res.status(400).json({ success: false, error: "주문 정보가 올바르지 않습니다." });
-      }
-      
-      const order = await storage.createOrder(validationResult.data);
+        paymentStatus: "pending"
+      });
       
       res.status(201).json({ success: true, data: order });
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ success: false, error: error.errors });
+      }
       console.error("Error creating order:", error);
       res.status(500).json({ success: false, error: "주문 처리 중 오류가 발생했습니다." });
     }
   });
 
-  // Get all orders (admin only)
   app.get("/api/admin/orders", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const orders = await storage.getAllOrders();
@@ -1998,14 +1615,15 @@ export async function registerRoutes(
     }
   });
 
-  // Update order status (admin only)
   app.put("/api/admin/orders/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      const { status, paymentStatus, adminNote } = req.body;
+      const { status, paymentStatus, adminNote, trackingNumber, shippingCompany } = req.body;
       const order = await storage.updateOrder(req.params.id, {
         ...(status && { status }),
         ...(paymentStatus && { paymentStatus }),
         ...(adminNote !== undefined && { adminNote }),
+        ...(trackingNumber !== undefined && { trackingNumber }),
+        ...(shippingCompany !== undefined && { shippingCompany }),
       });
       
       if (!order) {
@@ -2019,14 +1637,12 @@ export async function registerRoutes(
     }
   });
 
-  // Get member's orders
   app.get("/api/members/orders", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
     const memberIdFromQuery = req.query.memberId as string;
     
     let memberId: string | null = null;
     
-    // Try to get memberId from session first
     if (token) {
       const session = await getMemberFromToken(token);
       if (session) {
@@ -2034,7 +1650,6 @@ export async function registerRoutes(
       }
     }
     
-    // Fallback to memberId from query parameter if session expired
     if (!memberId && memberIdFromQuery) {
       memberId = memberIdFromQuery;
     }
@@ -2049,6 +1664,19 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching member orders:", error);
       res.status(500).json({ success: false, error: "주문 목록을 불러올 수 없습니다." });
+    }
+  });
+
+  app.get("/api/orders/:orderNumber", async (req: Request, res: Response) => {
+    try {
+      const order = await storage.getOrderByNumber(req.params.orderNumber);
+      if (!order) {
+        return res.status(404).json({ success: false, error: "주문을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: order });
+    } catch (error) {
+      console.error("Error fetching order:", error);
+      res.status(500).json({ success: false, error: "주문을 불러올 수 없습니다." });
     }
   });
 
