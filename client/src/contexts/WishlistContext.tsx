@@ -1,25 +1,23 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 
 export interface WishlistItem {
-  id: number;
+  id: string;
   name: string;
-  price: string;
-  imageUrl: string | null;
-  weight?: string | null;
-  purity?: string | null;
+  price: number;
+  imageUrl?: string | null;
 }
 
 interface WishlistContextType {
   items: WishlistItem[];
   count: number;
   addItem: (item: WishlistItem) => void;
-  removeItem: (id: number) => void;
+  removeItem: (id: string) => void;
   toggleItem: (item: WishlistItem) => void;
-  isInWishlist: (id: number) => boolean;
+  isInWishlist: (id: string) => boolean;
   clearWishlist: () => void;
 }
 
-const WISHLIST_KEY = "kaggold_wishlist";
+const WISHLIST_KEY = "cdamdong_wishlist";
 
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
@@ -37,11 +35,6 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const saveToStorage = useCallback((newItems: WishlistItem[]) => {
-    localStorage.setItem(WISHLIST_KEY, JSON.stringify(newItems));
-    setItems(newItems);
-  }, []);
-
   const addItem = useCallback((item: WishlistItem) => {
     setItems(prev => {
       const exists = prev.find(i => i.id === item.id);
@@ -52,7 +45,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const removeItem = useCallback((id: number) => {
+  const removeItem = useCallback((id: string) => {
     setItems(prev => {
       const newItems = prev.filter(i => i.id !== id);
       localStorage.setItem(WISHLIST_KEY, JSON.stringify(newItems));
@@ -69,7 +62,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const isInWishlist = useCallback((id: number) => {
+  const isInWishlist = useCallback((id: string) => {
     return items.some(i => i.id === id);
   }, [items]);
 
@@ -86,7 +79,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       removeItem,
       toggleItem,
       isInWishlist,
-      clearWishlist,
+      clearWishlist
     }}>
       {children}
     </WishlistContext.Provider>
@@ -95,7 +88,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
 export function useWishlist() {
   const context = useContext(WishlistContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useWishlist must be used within a WishlistProvider");
   }
   return context;

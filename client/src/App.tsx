@@ -10,7 +10,6 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import ProductList from "@/pages/ProductList";
 import ProductDetail from "@/pages/ProductDetail";
-import GoldPrice from "@/pages/GoldPrice";
 import Admin from "@/pages/Admin";
 import Signup from "@/pages/Signup";
 import Login from "@/pages/Login";
@@ -19,8 +18,6 @@ import Reviews from "@/pages/Reviews";
 import Notices from "@/pages/Notices";
 import Cart from "@/pages/Cart";
 import Profile from "@/pages/Profile";
-import Deposit from "@/pages/Deposit";
-import Withdrawal from "@/pages/Withdrawal";
 import Order from "@/pages/Order";
 
 function Router() {
@@ -30,18 +27,18 @@ function Router() {
       <Route path="/product/:id" component={ProductDetail} />
       <Route path="/products/:category" component={ProductList} />
       <Route path="/products" component={ProductList} />
-      <Route path="/gold-price" component={GoldPrice} />
       <Route path="/admin" component={Admin} />
       <Route path="/signup" component={Signup} />
       <Route path="/login" component={Login} />
       <Route path="/support" component={Support} />
       <Route path="/reviews" component={Reviews} />
       <Route path="/notices" component={Notices} />
+      <Route path="/notices/:id" component={Notices} />
       <Route path="/cart" component={Cart} />
       <Route path="/profile" component={Profile} />
-      <Route path="/deposit" component={Deposit} />
-      <Route path="/withdrawal" component={Withdrawal} />
+      <Route path="/wishlist" component={Cart} />
       <Route path="/order/:id" component={Order} />
+      <Route path="/search" component={ProductList} />
       <Route component={NotFound} />
     </Switch>
   );

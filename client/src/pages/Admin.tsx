@@ -8,8 +8,8 @@ import {
   Plus, Pencil, Trash2, Check, X, RefreshCw, Database, 
   LogOut, Users, Package, BarChart3, Eye, EyeOff,
   Lock, User, Mail, Phone, CheckCircle, XCircle,
-  Star, FileText, Bell, Calendar,
-  Wallet, Clock, Snowflake, Unlock, Settings, Link2, Upload,
+  Star, FileText, Bell, Calendar, Tag,
+  Clock, Snowflake, Unlock, Settings, Link2, Upload,
   MessageCircle, Send, Circle, Volume2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -41,11 +41,16 @@ const playNotificationSound = () => {
 };
 
 const CATEGORY_OPTIONS = [
-  { id: "gold_bar", name: "골드바" },
-  { id: "silver_bar", name: "실버바" },
-  { id: "baby_ring", name: "돌선물" },
-  { id: "jewelry", name: "순금기념품" },
-  { id: "pure_jewelry", name: "순금주얼리" },
+  { id: "outer", name: "아우터" },
+  { id: "padding", name: "패딩" },
+  { id: "tops", name: "상의" },
+  { id: "bottoms", name: "하의" },
+  { id: "shoes", name: "신발" },
+  { id: "accessories", name: "악세사리" },
+  { id: "wallets", name: "지갑" },
+  { id: "bags", name: "가방" },
+  { id: "watches", name: "시계" },
+  { id: "genuine", name: "정품" },
 ];
 
 interface AdminStats {
@@ -55,35 +60,6 @@ interface AdminStats {
   productsByCategory: { id: string; name: string; count: number }[];
 }
 
-interface AdminDepositRequest {
-  id: string;
-  memberId: string;
-  memberName: string;
-  memberEmail: string;
-  amount: number;
-  bankName: string;
-  accountNumber?: string;
-  depositorName: string;
-  status: "pending" | "approved" | "rejected";
-  adminNote?: string;
-  requestedAt: string;
-  processedAt?: string;
-}
-
-interface AdminWithdrawalRequest {
-  id: string;
-  memberId: string;
-  memberName: string;
-  memberEmail: string;
-  amount: number;
-  bankName: string;
-  accountNumber: string;
-  accountHolder: string;
-  status: "pending" | "approved" | "rejected";
-  adminNote?: string;
-  requestedAt: string;
-  processedAt?: string;
-}
 
 export default function Admin() {
   const { toast } = useToast();
@@ -94,7 +70,7 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "members" | "orders" | "deposits" | "withdrawals" | "reviews" | "notices" | "chat" | "settings">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "reviews" | "notices" | "chat" | "settings">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   
   const [products, setProducts] = useState<Product[]>([]);
@@ -107,10 +83,12 @@ export default function Admin() {
   
   const [formData, setFormData] = useState({
     name: "",
-    weight: "",
-    purity: "",
+    sku: "",
+    categoryId: "outer",
+    brandId: "",
     price: "",
-    category: "gold_bar",
+    originalPrice: "",
+    stock: "",
     isBest: false,
     isNew: false,
     description: "",
@@ -161,17 +139,15 @@ export default function Admin() {
   const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
   const [showAddNoticeForm, setShowAddNoticeForm] = useState(false);
 
-  const [depositRequests, setDepositRequests] = useState<AdminDepositRequest[]>([]);
-  const [depositFilter, setDepositFilter] = useState<"all" | "pending">("pending");
-  const [adminNote, setAdminNote] = useState("");
-
-  const [withdrawalRequests, setWithdrawalRequests] = useState<AdminWithdrawalRequest[]>([]);
-  const [withdrawalFilter, setWithdrawalFilter] = useState<"all" | "pending">("pending");
-  const [withdrawalAdminNote, setWithdrawalAdminNote] = useState("");
   const [adjustAmount, setAdjustAmount] = useState("");
   const [freezeReason, setFreezeReason] = useState("");
 
   const [adminOrders, setAdminOrders] = useState<Order[]>([]);
+  
+  const [brands, setBrands] = useState<{id: string; name: string; slug: string; logoUrl?: string; description?: string; isActive?: boolean}[]>([]);
+  const [brandFormData, setBrandFormData] = useState({ name: "", slug: "", logoUrl: "", description: "" });
+  const [editingBrandId, setEditingBrandId] = useState<string | null>(null);
+  const [showAddBrandForm, setShowAddBrandForm] = useState(false);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [orderFilter, setOrderFilter] = useState<"all" | "pending" | "confirmed" | "shipped" | "delivered" | "cancelled">("all");
 
@@ -318,110 +294,81 @@ export default function Admin() {
     }
   };
 
-  const fetchDepositRequests = async () => {
+  const fetchBrands = async () => {
     try {
-      const url = depositFilter === "pending" 
-        ? "/api/admin/deposit-requests?status=pending" 
-        : "/api/admin/deposit-requests";
-      const res = await fetchWithAuth(url);
+      const res = await fetch("/api/brands");
       const data = await res.json();
       if (data.success) {
-        setDepositRequests(data.data);
+        setBrands(data.data);
       }
     } catch (error) {
-      console.error("Error fetching deposit requests:", error);
+      console.error("Error fetching brands:", error);
     }
   };
 
-  const handleApproveDeposit = async (id: string) => {
+  const handleCreateBrand = async () => {
     try {
-      const res = await fetchWithAuth(`/api/admin/deposit-requests/${id}/approve`, {
+      const res = await fetchWithAuth("/api/brands", {
         method: "POST",
-        body: JSON.stringify({ adminNote }),
+        body: JSON.stringify(brandFormData),
       });
       const data = await res.json();
       if (data.success) {
-        toast({ title: "승인 완료", description: "입금신청이 승인되었습니다." });
-        fetchDepositRequests();
-        setAdminNote("");
+        toast({ title: "성공", description: "브랜드가 추가되었습니다." });
+        setShowAddBrandForm(false);
+        setBrandFormData({ name: "", slug: "", logoUrl: "", description: "" });
+        fetchBrands();
       } else {
-        toast({ title: "오류", description: data.error, variant: "destructive" });
+        toast({ title: "오류", description: data.error || "브랜드 추가에 실패했습니다.", variant: "destructive" });
       }
     } catch (error) {
-      toast({ title: "오류", description: "처리 중 오류가 발생했습니다.", variant: "destructive" });
+      toast({ title: "오류", description: "브랜드 추가에 실패했습니다.", variant: "destructive" });
     }
   };
 
-  const handleRejectDeposit = async (id: string) => {
+  const handleUpdateBrand = async (id: string) => {
     try {
-      const res = await fetchWithAuth(`/api/admin/deposit-requests/${id}/reject`, {
-        method: "POST",
-        body: JSON.stringify({ adminNote }),
+      const res = await fetchWithAuth(`/api/brands/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(brandFormData),
       });
       const data = await res.json();
       if (data.success) {
-        toast({ title: "거부 완료", description: "입금신청이 거부되었습니다." });
-        fetchDepositRequests();
-        setAdminNote("");
+        toast({ title: "성공", description: "브랜드가 수정되었습니다." });
+        setEditingBrandId(null);
+        fetchBrands();
       } else {
-        toast({ title: "오류", description: data.error, variant: "destructive" });
+        toast({ title: "오류", description: data.error || "브랜드 수정에 실패했습니다.", variant: "destructive" });
       }
     } catch (error) {
-      toast({ title: "오류", description: "처리 중 오류가 발생했습니다.", variant: "destructive" });
+      toast({ title: "오류", description: "브랜드 수정에 실패했습니다.", variant: "destructive" });
     }
   };
 
-  const fetchWithdrawalRequests = async () => {
+  const handleDeleteBrand = async (id: string) => {
+    if (!confirm("정말로 이 브랜드를 삭제하시겠습니까?")) return;
     try {
-      const url = withdrawalFilter === "pending" 
-        ? "/api/admin/withdrawal-requests?status=pending" 
-        : "/api/admin/withdrawal-requests";
-      const res = await fetchWithAuth(url);
+      const res = await fetchWithAuth(`/api/brands/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
-        setWithdrawalRequests(data.data);
+        toast({ title: "성공", description: "브랜드가 삭제되었습니다." });
+        fetchBrands();
+      } else {
+        toast({ title: "오류", description: data.error || "브랜드 삭제에 실패했습니다.", variant: "destructive" });
       }
     } catch (error) {
-      console.error("Error fetching withdrawal requests:", error);
+      toast({ title: "오류", description: "브랜드 삭제에 실패했습니다.", variant: "destructive" });
     }
   };
 
-  const handleApproveWithdrawal = async (id: string) => {
-    try {
-      const res = await fetchWithAuth(`/api/admin/withdrawal-requests/${id}/approve`, {
-        method: "POST",
-        body: JSON.stringify({ adminNote: withdrawalAdminNote }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast({ title: "승인 완료", description: "출금신청이 승인되었습니다." });
-        fetchWithdrawalRequests();
-        setWithdrawalAdminNote("");
-      } else {
-        toast({ title: "오류", description: data.error, variant: "destructive" });
-      }
-    } catch (error) {
-      toast({ title: "오류", description: "처리 중 오류가 발생했습니다.", variant: "destructive" });
-    }
-  };
-
-  const handleRejectWithdrawal = async (id: string) => {
-    try {
-      const res = await fetchWithAuth(`/api/admin/withdrawal-requests/${id}/reject`, {
-        method: "POST",
-        body: JSON.stringify({ adminNote: withdrawalAdminNote }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast({ title: "거부 완료", description: "출금신청이 거부되었습니다." });
-        fetchWithdrawalRequests();
-        setWithdrawalAdminNote("");
-      } else {
-        toast({ title: "오류", description: data.error, variant: "destructive" });
-      }
-    } catch (error) {
-      toast({ title: "오류", description: "처리 중 오류가 발생했습니다.", variant: "destructive" });
-    }
+  const startEditBrand = (brand: typeof brands[0]) => {
+    setEditingBrandId(brand.id);
+    setBrandFormData({
+      name: brand.name,
+      slug: brand.slug,
+      logoUrl: brand.logoUrl || "",
+      description: brand.description || "",
+    });
   };
 
   const fetchOrders = async () => {
@@ -573,9 +520,8 @@ export default function Admin() {
     if (isAuthenticated) {
       fetchStats();
       fetchProducts();
+      fetchBrands();
       fetchMembers();
-      fetchDepositRequests();
-      fetchWithdrawalRequests();
       fetchReviews();
       fetchNotices();
       fetchSiteSettings();
@@ -654,22 +600,16 @@ export default function Admin() {
   };
 
   useEffect(() => {
-    if (isAuthenticated && activeTab === "deposits") {
-      fetchDepositRequests();
-    }
-  }, [depositFilter, activeTab]);
-
-  useEffect(() => {
-    if (isAuthenticated && activeTab === "withdrawals") {
-      fetchWithdrawalRequests();
-    }
-  }, [withdrawalFilter, activeTab]);
-
-  useEffect(() => {
     if (isAuthenticated && activeTab === "orders") {
       fetchOrders();
     }
   }, [orderFilter, activeTab, isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === "brands") {
+      fetchBrands();
+    }
+  }, [activeTab, isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated && !chatSocketRef.current) {
@@ -873,7 +813,7 @@ export default function Admin() {
       if (data.success) {
         toast({ title: "성공", description: "상품이 추가되었습니다." });
         setShowAddForm(false);
-        setFormData({ name: "", weight: "", purity: "", price: "", category: "gold_bar", isBest: false, isNew: false, description: "", imageUrl: "", imageUrls: [] });
+        setFormData({ name: "", sku: "", categoryId: "outer", brandId: "", price: "", originalPrice: "", stock: "", isBest: false, isNew: false, description: "", imageUrl: "", imageUrls: [] });
         fetchProducts();
         fetchStats();
       } else {
@@ -939,10 +879,12 @@ export default function Admin() {
     const existingUrls = product.imageUrls || [];
     setFormData({
       name: product.name,
-      weight: product.weight,
-      purity: product.purity,
+      sku: product.sku || "",
+      categoryId: product.categoryId || "outer",
+      brandId: product.brandId?.toString() || "",
       price: product.price,
-      category: product.category,
+      originalPrice: product.originalPrice || "",
+      stock: product.stock?.toString() || "",
       isBest: product.isBest || false,
       isNew: product.isNew || false,
       description: product.description || "",
@@ -1381,7 +1323,7 @@ export default function Admin() {
 
   const filteredProducts = productFilter === "all" 
     ? products 
-    : products.filter(p => p.category === productFilter);
+    : products.filter(p => p.categoryId === productFilter);
 
   if (checkingAuth) {
     return (
@@ -1400,7 +1342,7 @@ export default function Admin() {
               <Lock className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900">관리자 로그인</h1>
-            <p className="text-gray-500 mt-2">한국골드금거래소 관리 시스템</p>
+            <p className="text-gray-500 mt-2">럭셔리 패션몰 관리 시스템</p>
           </div>
           
           <form onSubmit={handleLogin} className="space-y-5">
@@ -1572,32 +1514,13 @@ export default function Admin() {
             )}
           </Button>
           <Button
-            data-testid="tab-deposits"
-            variant={activeTab === "deposits" ? "default" : "outline"}
-            onClick={() => setActiveTab("deposits")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "deposits" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
+            data-testid="tab-brands"
+            variant={activeTab === "brands" ? "default" : "outline"}
+            onClick={() => setActiveTab("brands")}
+            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "brands" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
           >
-            <Wallet className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">입금관리</span>
-            {depositRequests.filter(d => d.status === "pending").length > 0 && (
-              <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
-                {depositRequests.filter(d => d.status === "pending").length}
-              </span>
-            )}
-          </Button>
-          <Button
-            data-testid="tab-withdrawals"
-            variant={activeTab === "withdrawals" ? "default" : "outline"}
-            onClick={() => setActiveTab("withdrawals")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "withdrawals" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <Wallet className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">출금관리</span>
-            {withdrawalRequests.filter(w => w.status === "pending").length > 0 && (
-              <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
-                {withdrawalRequests.filter(w => w.status === "pending").length}
-              </span>
-            )}
+            <Tag className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">브랜드 관리</span>
           </Button>
           <Button
             data-testid="tab-reviews"
@@ -1757,33 +1680,51 @@ export default function Admin() {
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   />
                   <Input
-                    data-testid="input-product-weight"
-                    placeholder="무게 (예: 100g)"
-                    value={formData.weight}
-                    onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                  />
-                  <Input
-                    data-testid="input-product-purity"
-                    placeholder="순도 (예: 999.9‰)"
-                    value={formData.purity}
-                    onChange={(e) => setFormData({ ...formData, purity: e.target.value })}
-                  />
-                  <Input
-                    data-testid="input-product-price"
-                    placeholder="가격 (예: 15,100,000)"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    data-testid="input-product-sku"
+                    placeholder="SKU (상품 코드)"
+                    value={formData.sku}
+                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                   />
                   <select
                     data-testid="select-product-category"
                     className="border border-gray-200 rounded-md px-3 py-2"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    value={formData.categoryId}
+                    onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                   >
                     {CATEGORY_OPTIONS.map((cat) => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
                   </select>
+                  <select
+                    data-testid="select-product-brand"
+                    className="border border-gray-200 rounded-md px-3 py-2"
+                    value={formData.brandId}
+                    onChange={(e) => setFormData({ ...formData, brandId: e.target.value })}
+                  >
+                    <option value="">브랜드 선택</option>
+                    {brands.map((brand) => (
+                      <option key={brand.id} value={brand.id}>{brand.name}</option>
+                    ))}
+                  </select>
+                  <Input
+                    data-testid="input-product-price"
+                    placeholder="판매가"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  />
+                  <Input
+                    data-testid="input-product-original-price"
+                    placeholder="정가 (할인 표시용)"
+                    value={formData.originalPrice}
+                    onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })}
+                  />
+                  <Input
+                    data-testid="input-product-stock"
+                    placeholder="재고 수량"
+                    type="number"
+                    value={formData.stock}
+                    onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                  />
                   <div className="col-span-3">
                     <label className="block text-sm font-medium text-gray-700 mb-1">상품 이미지 (최대 10장)</label>
                     <div className="flex items-center gap-2">
@@ -1877,10 +1818,10 @@ export default function Admin() {
                   <thead className="bg-gray-100 text-gray-600">
                     <tr>
                       <th className="px-4 py-3 text-left font-medium">상품명</th>
-                      <th className="px-4 py-3 text-left font-medium">무게</th>
-                      <th className="px-4 py-3 text-left font-medium">순도</th>
-                      <th className="px-4 py-3 text-left font-medium">가격</th>
+                      <th className="px-4 py-3 text-left font-medium">브랜드</th>
                       <th className="px-4 py-3 text-left font-medium">카테고리</th>
+                      <th className="px-4 py-3 text-left font-medium">가격</th>
+                      <th className="px-4 py-3 text-left font-medium">재고</th>
                       <th className="px-4 py-3 text-center font-medium">상태</th>
                       <th className="px-4 py-3 text-right font-medium">관리</th>
                     </tr>
@@ -1900,14 +1841,16 @@ export default function Admin() {
                             <span>{product.name}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-gray-600">{product.weight}</td>
-                        <td className="px-4 py-3 text-gray-600">{product.purity}</td>
-                        <td className="px-4 py-3 text-yellow-600 font-bold">{product.price}원</td>
+                        <td className="px-4 py-3 text-gray-600">
+                          {brands.find(b => b.id === product.brandId?.toString())?.name || "-"}
+                        </td>
                         <td className="px-4 py-3">
                           <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs">
-                            {CATEGORY_OPTIONS.find(c => c.id === product.category)?.name || product.category}
+                            {CATEGORY_OPTIONS.find(c => c.id === product.categoryId)?.name || product.categoryId || "-"}
                           </span>
                         </td>
+                        <td className="px-4 py-3 text-yellow-600 font-bold">{product.price}원</td>
+                        <td className="px-4 py-3 text-gray-600">{product.stock ?? "-"}</td>
                         <td className="px-4 py-3 text-center">
                           {product.isBest && <span className="bg-gray-900 text-white px-2 py-0.5 rounded text-[10px] mr-1">Best</span>}
                           {product.isNew && <span className="bg-red-600 text-white px-2 py-0.5 rounded text-[10px]">New</span>}
@@ -1969,40 +1912,62 @@ export default function Admin() {
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">무게</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">SKU (상품 코드)</label>
                         <Input
-                          placeholder="무게 (예: 100g)"
-                          value={formData.weight}
-                          onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">순도</label>
-                        <Input
-                          placeholder="순도 (예: 999.9‰)"
-                          value={formData.purity}
-                          onChange={(e) => setFormData({ ...formData, purity: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">가격 *</label>
-                        <Input
-                          placeholder="가격 (예: 15,100,000)"
-                          value={formData.price}
-                          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                          placeholder="SKU"
+                          value={formData.sku}
+                          onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
                         <select
                           className="w-full border border-gray-200 rounded-md px-3 py-2"
-                          value={formData.category}
-                          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                          value={formData.categoryId}
+                          onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                         >
                           {CATEGORY_OPTIONS.map((cat) => (
                             <option key={cat.id} value={cat.id}>{cat.name}</option>
                           ))}
                         </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">브랜드</label>
+                        <select
+                          className="w-full border border-gray-200 rounded-md px-3 py-2"
+                          value={formData.brandId}
+                          onChange={(e) => setFormData({ ...formData, brandId: e.target.value })}
+                        >
+                          <option value="">브랜드 선택</option>
+                          {brands.map((brand) => (
+                            <option key={brand.id} value={brand.id}>{brand.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">판매가 *</label>
+                        <Input
+                          placeholder="판매가"
+                          value={formData.price}
+                          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">정가 (할인 표시용)</label>
+                        <Input
+                          placeholder="정가"
+                          value={formData.originalPrice}
+                          onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">재고 수량</label>
+                        <Input
+                          placeholder="재고"
+                          type="number"
+                          value={formData.stock}
+                          onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                        />
                       </div>
                       <div className="flex items-center gap-6 pt-6">
                         <label className="flex items-center gap-2 cursor-pointer">
@@ -2680,257 +2645,177 @@ export default function Admin() {
           </div>
         )}
 
-        {activeTab === "deposits" && (
+        {activeTab === "brands" && (
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">입금 신청 관리</h2>
-                <p className="text-gray-500 text-sm">
-                  {depositFilter === "pending" 
-                    ? `대기 중인 신청 ${depositRequests.length}건` 
-                    : `전체 ${depositRequests.length}건`}
-                </p>
+                <h2 className="text-xl font-bold text-gray-900">브랜드 관리</h2>
+                <p className="text-gray-500 text-sm">총 {brands.length}개의 브랜드</p>
               </div>
               <div className="flex gap-3">
-                <select
-                  className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
-                  value={depositFilter}
-                  onChange={(e) => setDepositFilter(e.target.value as "all" | "pending")}
-                >
-                  <option value="pending">대기중만 보기</option>
-                  <option value="all">전체 보기</option>
-                </select>
-                <Button variant="outline" onClick={fetchDepositRequests}>
+                <Button variant="outline" onClick={fetchBrands}>
                   <RefreshCw className="w-4 h-4 mr-2" />
                   새로고침
+                </Button>
+                <Button
+                  data-testid="button-add-brand"
+                  onClick={() => {
+                    setShowAddBrandForm(true);
+                    setBrandFormData({ name: "", slug: "", logoUrl: "", description: "" });
+                  }}
+                  className="bg-yellow-500 hover:bg-yellow-600"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  브랜드 추가
                 </Button>
               </div>
             </div>
 
-            {depositRequests.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                {depositFilter === "pending" ? "대기 중인 입금 신청이 없습니다." : "입금 신청 내역이 없습니다."}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {depositRequests.map((request) => (
-                  <div
-                    key={request.id}
-                    className={`p-4 border rounded-lg ${
-                      request.status === "pending"
-                        ? "border-yellow-300 bg-yellow-50"
-                        : request.status === "approved"
-                        ? "border-green-200 bg-green-50"
-                        : "border-red-200 bg-red-50"
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="text-2xl font-bold text-gray-900">
-                            {request.amount.toLocaleString()}원
-                          </span>
-                          {request.status === "pending" ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
-                              <Clock className="w-3 h-3" />
-                              대기중
-                            </span>
-                          ) : request.status === "approved" ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                              <CheckCircle className="w-3 h-3" />
-                              승인됨
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                              <XCircle className="w-3 h-3" />
-                              거부됨
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <p>
-                            <span className="font-medium">회원:</span> {request.memberName} ({request.memberEmail})
-                          </p>
-                          <p>
-                            <span className="font-medium">입금자:</span> {request.depositorName}
-                            {request.bankName && request.bankName !== "카카오톡문의" && (
-                              <span className="text-gray-500"> ({request.bankName})</span>
-                            )}
-                          </p>
-                          <p>
-                            <span className="font-medium">신청일:</span>{" "}
-                            {new Date(request.requestedAt).toLocaleString("ko-KR")}
-                          </p>
-                          {request.processedAt && (
-                            <p>
-                              <span className="font-medium">처리일:</span>{" "}
-                              {new Date(request.processedAt).toLocaleString("ko-KR")}
-                            </p>
-                          )}
-                          {request.adminNote && (
-                            <p className="text-amber-600">
-                              <span className="font-medium">관리자 메모:</span> {request.adminNote}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {request.status === "pending" && (
-                        <div className="flex flex-col gap-2 ml-4">
-                          <Input
-                            placeholder="관리자 메모 (선택)"
-                            className="w-48"
-                            value={adminNote}
-                            onChange={(e) => setAdminNote(e.target.value)}
-                          />
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              className="bg-green-500 hover:bg-green-600"
-                              onClick={() => handleApproveDeposit(request.id)}
-                            >
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              승인
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleRejectDeposit(request.id)}
-                            >
-                              <XCircle className="w-4 h-4 mr-1" />
-                              거부
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+            {showAddBrandForm && (
+              <div className="bg-gray-50 rounded-lg p-6 mb-6 border">
+                <h3 className="font-bold mb-4">새 브랜드 추가</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">브랜드명 *</label>
+                    <Input
+                      value={brandFormData.name}
+                      onChange={(e) => setBrandFormData({ ...brandFormData, name: e.target.value })}
+                      placeholder="Gucci"
+                      data-testid="input-brand-name"
+                    />
                   </div>
-                ))}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">슬러그 *</label>
+                    <Input
+                      value={brandFormData.slug}
+                      onChange={(e) => setBrandFormData({ ...brandFormData, slug: e.target.value })}
+                      placeholder="gucci"
+                      data-testid="input-brand-slug"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">로고 URL</label>
+                    <Input
+                      value={brandFormData.logoUrl}
+                      onChange={(e) => setBrandFormData({ ...brandFormData, logoUrl: e.target.value })}
+                      placeholder="https://..."
+                      data-testid="input-brand-logo"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">설명</label>
+                    <Input
+                      value={brandFormData.description}
+                      onChange={(e) => setBrandFormData({ ...brandFormData, description: e.target.value })}
+                      placeholder="이탈리아 명품 브랜드"
+                      data-testid="input-brand-description"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Button onClick={handleCreateBrand} className="bg-yellow-500 hover:bg-yellow-600" data-testid="button-save-brand">
+                    <Check className="w-4 h-4 mr-2" />
+                    저장
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowAddBrandForm(false)} data-testid="button-cancel-brand">
+                    <X className="w-4 h-4 mr-2" />
+                    취소
+                  </Button>
+                </div>
               </div>
             )}
-          </div>
-        )}
 
-        {activeTab === "withdrawals" && (
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">출금 신청 관리</h2>
-                <p className="text-gray-500 text-sm">
-                  {withdrawalFilter === "pending" 
-                    ? `대기 중인 신청 ${withdrawalRequests.length}건` 
-                    : `전체 ${withdrawalRequests.length}건`}
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <select
-                  className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
-                  value={withdrawalFilter}
-                  onChange={(e) => setWithdrawalFilter(e.target.value as "all" | "pending")}
-                >
-                  <option value="pending">대기중만 보기</option>
-                  <option value="all">전체 보기</option>
-                </select>
-                <Button variant="outline" onClick={fetchWithdrawalRequests}>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  새로고침
-                </Button>
-              </div>
-            </div>
-
-            {withdrawalRequests.length === 0 ? (
+            {brands.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
-                {withdrawalFilter === "pending" ? "대기 중인 출금 신청이 없습니다." : "출금 신청 내역이 없습니다."}
+                등록된 브랜드가 없습니다.
               </div>
             ) : (
-              <div className="space-y-4">
-                {withdrawalRequests.map((request) => (
-                  <div
-                    key={request.id}
-                    className={`p-4 border rounded-lg ${
-                      request.status === "pending"
-                        ? "border-yellow-300 bg-yellow-50"
-                        : request.status === "approved"
-                        ? "border-green-200 bg-green-50"
-                        : "border-red-200 bg-red-50"
-                    }`}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="text-2xl font-bold text-gray-900">
-                            {request.amount.toLocaleString()}원
-                          </span>
-                          {request.status === "pending" ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
-                              <Clock className="w-3 h-3" />
-                              대기중
-                            </span>
-                          ) : request.status === "approved" ? (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                              <CheckCircle className="w-3 h-3" />
-                              승인됨
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                              <XCircle className="w-3 h-3" />
-                              거부됨
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <p>
-                            <span className="font-medium">회원:</span> {request.memberName} ({request.memberEmail})
-                          </p>
-                          <p>
-                            <span className="font-medium">신청일:</span>{" "}
-                            {new Date(request.requestedAt).toLocaleString("ko-KR")}
-                          </p>
-                          {request.processedAt && (
-                            <p>
-                              <span className="font-medium">처리일:</span>{" "}
-                              {new Date(request.processedAt).toLocaleString("ko-KR")}
-                            </p>
-                          )}
-                          {request.adminNote && (
-                            <p className="text-amber-600">
-                              <span className="font-medium">관리자 메모:</span> {request.adminNote}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {request.status === "pending" && (
-                        <div className="flex flex-col gap-2 ml-4">
-                          <Input
-                            placeholder="관리자 메모 (선택)"
-                            className="w-48"
-                            value={withdrawalAdminNote}
-                            onChange={(e) => setWithdrawalAdminNote(e.target.value)}
-                          />
-                          <div className="flex gap-2">
-                            <Button
-                              size="sm"
-                              className="bg-green-500 hover:bg-green-600"
-                              onClick={() => handleApproveWithdrawal(request.id)}
-                            >
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              승인
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleRejectWithdrawal(request.id)}
-                            >
-                              <XCircle className="w-4 h-4 mr-1" />
-                              거부
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-medium">로고</th>
+                      <th className="px-4 py-3 text-left font-medium">브랜드명</th>
+                      <th className="px-4 py-3 text-left font-medium">슬러그</th>
+                      <th className="px-4 py-3 text-left font-medium">설명</th>
+                      <th className="px-4 py-3 text-right font-medium">관리</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {brands.map((brand) => (
+                      <tr key={brand.id} className="hover:bg-gray-50">
+                        {editingBrandId === brand.id ? (
+                          <>
+                            <td className="px-4 py-3">
+                              <Input
+                                value={brandFormData.logoUrl}
+                                onChange={(e) => setBrandFormData({ ...brandFormData, logoUrl: e.target.value })}
+                                placeholder="로고 URL"
+                                className="w-32"
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <Input
+                                value={brandFormData.name}
+                                onChange={(e) => setBrandFormData({ ...brandFormData, name: e.target.value })}
+                                className="w-32"
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <Input
+                                value={brandFormData.slug}
+                                onChange={(e) => setBrandFormData({ ...brandFormData, slug: e.target.value })}
+                                className="w-32"
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <Input
+                                value={brandFormData.description}
+                                onChange={(e) => setBrandFormData({ ...brandFormData, description: e.target.value })}
+                                className="w-48"
+                              />
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex gap-1 justify-end">
+                                <Button size="sm" onClick={() => handleUpdateBrand(brand.id)} className="bg-green-500 hover:bg-green-600">
+                                  <Check className="w-4 h-4" />
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => setEditingBrandId(null)}>
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="px-4 py-3">
+                              {brand.logoUrl ? (
+                                <img src={brand.logoUrl} alt={brand.name} className="w-10 h-10 object-contain rounded" />
+                              ) : (
+                                <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                                  <Tag className="w-5 h-5 text-gray-400" />
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 font-medium">{brand.name}</td>
+                            <td className="px-4 py-3 text-gray-500">{brand.slug}</td>
+                            <td className="px-4 py-3 text-gray-500">{brand.description || "-"}</td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex gap-1 justify-end">
+                                <Button size="sm" variant="outline" onClick={() => startEditBrand(brand)} data-testid={`button-edit-brand-${brand.id}`}>
+                                  <Pencil className="w-4 h-4" />
+                                </Button>
+                                <Button size="sm" variant="destructive" onClick={() => handleDeleteBrand(brand.id)} data-testid={`button-delete-brand-${brand.id}`}>
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
