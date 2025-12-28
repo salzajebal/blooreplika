@@ -95,7 +95,7 @@ export default function Reviews() {
                 <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">{review.title}</h3>
                 
                 {review.productName && (
-                  <p className="text-sm text-gold-600 mb-2">구매상품: {review.productName}</p>
+                  <p className="text-sm text-primary mb-2">구매상품: {review.productName}</p>
                 )}
                 
                 <p className="text-gray-600 text-sm mb-4 line-clamp-4">{review.content}</p>
