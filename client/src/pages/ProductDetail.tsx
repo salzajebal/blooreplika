@@ -359,17 +359,32 @@ export default function ProductDetail() {
               </div>
             )}
             
-            {product.imageUrls && product.imageUrls.length > 0 ? (
+            {product.detailImageUrls && product.detailImageUrls.length > 0 ? (
               <div className="space-y-4 mb-8 sm:mb-12">
-                {product.imageUrls.map((imgUrl, index) => (
+                {product.detailImageUrls.map((imgUrl, index) => (
+                  <div key={index} className="flex justify-center">
+                    <img
+                      src={getProxiedImageUrl(imgUrl)}
+                      alt={`${product.name} 상세 설명 이미지 ${index + 1}`}
+                      className="max-w-full rounded-lg shadow-sm"
+                      style={{ maxHeight: 'none' }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      data-testid={`img-detail-${index}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : product.imageUrls && product.imageUrls.length > 1 ? (
+              <div className="space-y-4 mb-8 sm:mb-12">
+                {product.imageUrls.slice(1).map((imgUrl, index) => (
                   <div key={index} className="flex justify-center">
                     <img
                       src={getProxiedImageUrl(imgUrl)}
                       alt={`${product.name} 상세 이미지 ${index + 1}`}
                       className="max-w-full rounded-lg shadow-sm"
-                      style={{ maxHeight: '800px' }}
+                      style={{ maxHeight: 'none' }}
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      data-testid={`img-detail-${index}`}
+                      data-testid={`img-detail-fallback-${index}`}
                     />
                   </div>
                 ))}
