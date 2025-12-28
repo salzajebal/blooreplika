@@ -15,6 +15,9 @@ import shoesImg from '@assets/generated_images/luxury_designer_shoes_footwear.pn
 import bagsImg from '@assets/generated_images/hermes_birkin_luxury_bag.png';
 import walletsImg from '@assets/generated_images/louis_vuitton_luxury_wallet.png';
 import watchesImg from '@assets/generated_images/patek_philippe_luxury_watch.png';
+import banner1Img from '@assets/generated_images/luxury_fashion_boutique_banner.png';
+import banner2Img from '@assets/generated_images/luxury_accessories_collection_banner.png';
+import banner3Img from '@assets/generated_images/designer_shoes_display_banner.png';
 
 const categories = [
   { name: '아우터', slug: 'outer', image: outerImg },
@@ -30,23 +33,23 @@ const categories = [
 const bannerSlides = [
   {
     id: 1,
-    image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=1600&h=600&fit=crop',
+    image: banner1Img,
     title: 'NEW ARRIVAL',
-    subtitle: '2025 S/S 신상품 컬렉션',
+    subtitle: '2025 S/S 명품 레플리카 신상품',
     link: '/products/outer'
   },
   {
     id: 2,
-    image: 'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&h=600&fit=crop',
+    image: banner2Img,
     title: 'LUXURY COLLECTION',
-    subtitle: '명품 레플리카 베스트 아이템',
-    link: '/products/bags'
+    subtitle: '프리미엄 명품 악세사리 컬렉션',
+    link: '/products/wallets'
   },
   {
     id: 3,
-    image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&h=600&fit=crop',
-    title: 'SPECIAL SALE',
-    subtitle: '최대 50% 할인 이벤트',
+    image: banner3Img,
+    title: 'DESIGNER SHOES',
+    subtitle: '명품 슈즈 베스트 아이템',
     link: '/products/shoes'
   }
 ];
