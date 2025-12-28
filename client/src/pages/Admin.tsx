@@ -10,7 +10,7 @@ import {
   Lock, User, Mail, Phone, CheckCircle, XCircle,
   Star, FileText, Bell, Calendar, Tag,
   Clock, Snowflake, Unlock, Settings, Link2, Upload,
-  MessageCircle, Send, Circle, Volume2
+  MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage, Order } from "@shared/schema";
@@ -174,6 +174,57 @@ export default function Admin() {
     accountHolder: "",
   });
   const [depositAccountLoading, setDepositAccountLoading] = useState(false);
+
+  const [crawlCategory, setCrawlCategory] = useState("all");
+  const [crawlMaxProducts, setCrawlMaxProducts] = useState("500");
+  const [crawlLoading, setCrawlLoading] = useState(false);
+  const [productCount, setProductCount] = useState<number | null>(null);
+
+  const fetchProductCount = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/products/count", { method: "GET" });
+      const data = await res.json();
+      if (data.success) setProductCount(data.count);
+    } catch {}
+  };
+
+  const startCrawl = async () => {
+    setCrawlLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ category: crawlCategory, maxProducts: parseInt(crawlMaxProducts) || 500 }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "크롤링 시작", description: data.message });
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    } finally {
+      setCrawlLoading(false);
+    }
+  };
+
+  const clearAllProducts = async () => {
+    if (!confirm("정말 모든 상품을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
+    try {
+      const res = await fetchWithAuth("/api/admin/products/all", { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "삭제 완료", description: data.message });
+        fetchProductCount();
+        fetchProducts();
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "상품을 삭제할 수 없습니다.", variant: "destructive" });
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
@@ -525,6 +576,7 @@ export default function Admin() {
       fetchReviews();
       fetchNotices();
       fetchSiteSettings();
+      fetchProductCount();
     }
   }, [isAuthenticated]);
   
@@ -3699,6 +3751,122 @@ export default function Admin() {
                     <li className="flex items-start gap-2">
                       <span className="text-amber-500 mt-1">•</span>
                       <span>계좌정보 변경 시 즉시 반영됩니다.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Download className="w-5 h-5 text-blue-600" />
+                  상품 크롤링
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">cdamdong.co.kr에서 상품을 가져옵니다.</p>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Database className="w-6 h-6 text-blue-600" />
+                    <div>
+                      <h4 className="font-bold text-gray-900">현재 상품 수</h4>
+                      <p className="text-2xl font-bold text-blue-600">
+                        {productCount !== null ? productCount.toLocaleString() : "-"}개
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => fetchProductCount()}
+                      className="ml-auto"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+                        <select
+                          data-testid="select-crawl-category"
+                          value={crawlCategory}
+                          onChange={(e) => setCrawlCategory(e.target.value)}
+                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                        >
+                          <option value="all">전체 카테고리</option>
+                          <option value="outer">아우터</option>
+                          <option value="padding">패딩</option>
+                          <option value="tops">상의</option>
+                          <option value="bottoms">하의</option>
+                          <option value="shoes">신발</option>
+                          <option value="accessories">악세사리</option>
+                          <option value="wallets">지갑</option>
+                          <option value="bags">가방</option>
+                          <option value="watches">시계</option>
+                          <option value="genuine">정품</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">최대 상품 수 (카테고리당)</label>
+                        <Input
+                          data-testid="input-crawl-max-products"
+                          type="number"
+                          value={crawlMaxProducts}
+                          onChange={(e) => setCrawlMaxProducts(e.target.value)}
+                          placeholder="500"
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3">
+                      <Button
+                        data-testid="button-start-crawl"
+                        onClick={startCrawl}
+                        disabled={crawlLoading}
+                        className="bg-blue-500 hover:bg-blue-600 text-white flex-1"
+                      >
+                        {crawlLoading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            크롤링 중...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4 mr-2" />
+                            크롤링 시작
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        data-testid="button-clear-products"
+                        onClick={clearAllProducts}
+                        variant="destructive"
+                        className="flex-shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        전체 삭제
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-1">•</span>
+                      <span>크롤링은 백그라운드에서 실행되며, 완료까지 시간이 걸릴 수 있습니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-1">•</span>
+                      <span>"새로고침" 버튼으로 현재 상품 수를 확인하세요.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-red-500 mt-1">•</span>
+                      <span className="text-red-600">"전체 삭제"는 모든 상품을 삭제합니다. 신중하게 사용하세요.</span>
                     </li>
                   </ul>
                 </div>

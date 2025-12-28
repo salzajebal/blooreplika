@@ -1718,5 +1718,163 @@ export async function registerRoutes(
     }
   });
 
+  // Crawling endpoint for admin
+  app.post("/api/admin/crawl", requireAdminAuth, async (req: Request, res: Response) => {
+    const { category, maxProducts } = req.body;
+    
+    const CATEGORIES = [
+      { id: "10", name: "아우터", localId: "outer" },
+      { id: "20", name: "패딩", localId: "padding" },
+      { id: "30", name: "상의", localId: "tops" },
+      { id: "40", name: "하의", localId: "bottoms" },
+      { id: "70", name: "신발", localId: "shoes" },
+      { id: "80", name: "악세사리", localId: "accessories" },
+      { id: "a0", name: "지갑", localId: "wallets" },
+      { id: "c0", name: "가방", localId: "bags" },
+      { id: "f0", name: "시계", localId: "watches" },
+      { id: "g0", name: "정품", localId: "genuine" },
+    ];
+    
+    const categoriesToCrawl = category === "all" 
+      ? CATEGORIES 
+      : CATEGORIES.filter(c => c.localId === category);
+    
+    if (categoriesToCrawl.length === 0) {
+      return res.status(400).json({ success: false, error: "Invalid category" });
+    }
+    
+    res.json({ success: true, message: "크롤링이 시작되었습니다. 완료까지 시간이 걸릴 수 있습니다." });
+    
+    // Run crawling in background
+    (async () => {
+      const headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": "https://cdamdong.co.kr/",
+      };
+      
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      
+      const fetchProductList = async (categoryId: string, page: number): Promise<string[]> => {
+        try {
+          const response = await fetch(`https://cdamdong.co.kr/shop/list.php?ca_id=${categoryId}&page=${page}`, { headers });
+          if (!response.ok) return [];
+          const html = await response.text();
+          return [...new Set((html.match(/it_id=(\d+)/g) || []).map(m => m.replace('it_id=', '')))];
+        } catch { return []; }
+      };
+      
+      const fetchProductDetail = async (sourceId: string, categoryLocalId: string) => {
+        const url = `https://cdamdong.co.kr/shop/item.php?it_id=${sourceId}`;
+        try {
+          const response = await fetch(url, { headers });
+          if (!response.ok) return null;
+          const html = await response.text();
+          
+          const nameMatch = html.match(/<h1[^>]*class="sit_tit"[^>]*>([^<]+)<\/h1>/i);
+          const name = nameMatch ? nameMatch[1].trim() : `상품 ${sourceId}`;
+          
+          let price = 0;
+          const priceText = html.match(/(\d{1,3}(?:,\d{3})+)원/);
+          if (priceText) price = parseInt(priceText[1].replace(/,/g, ''), 10);
+          
+          const mainImages: string[] = [];
+          const imgMatches = html.match(new RegExp(`https://cdamdong\\.co\\.kr/data/item/${sourceId}/[^"']+\\.(jpg|jpeg|png|webp)`, 'gi')) || [];
+          imgMatches.forEach(img => {
+            const clean = img.replace(/thumb-/, '').replace(/_300x300|_500x500/g, '');
+            if (!mainImages.includes(clean)) mainImages.push(clean);
+          });
+          
+          const detailImages: string[] = [];
+          const detailMatches = html.match(/https:\/\/cdamdong\.co\.kr\/data\/editor\/[^"']+\.(jpg|jpeg|png|webp|gif)/gi) || [];
+          detailMatches.forEach(img => {
+            if (!detailImages.includes(img)) detailImages.push(img);
+          });
+          
+          const isBest = html.includes('BEST');
+          
+          return {
+            name, price,
+            imageUrl: mainImages[0] || `https://cdamdong.co.kr/data/item/${sourceId}/`,
+            imageUrls: mainImages,
+            detailImageUrls: detailImages,
+            categoryId: categoryLocalId,
+            isBest,
+          };
+        } catch { return null; }
+      };
+      
+      let totalInserted = 0;
+      const limit = maxProducts || 500;
+      
+      for (const cat of categoriesToCrawl) {
+        const allIds = new Set<string>();
+        let page = 1, empty = 0;
+        
+        while (empty < 3 && page <= 50 && allIds.size < limit) {
+          const ids = await fetchProductList(cat.id, page);
+          let newCount = 0;
+          ids.forEach(id => { if (!allIds.has(id) && allIds.size < limit) { allIds.add(id); newCount++; } });
+          if (newCount === 0) empty++; else empty = 0;
+          page++;
+          await delay(50);
+        }
+        
+        const idsArray = Array.from(allIds).slice(0, limit);
+        
+        for (let i = 0; i < idsArray.length; i += 20) {
+          const chunk = idsArray.slice(i, i + 20);
+          const results = await Promise.all(chunk.map(id => fetchProductDetail(id, cat.localId)));
+          
+          for (const p of results) {
+            if (p) {
+              try {
+                await storage.createProduct({
+                  name: p.name,
+                  categoryId: p.categoryId,
+                  price: p.price,
+                  description: p.name,
+                  detailContent: "프리미엄 명품 레플리카 제품입니다.",
+                  imageUrl: p.imageUrl,
+                  imageUrls: p.imageUrls.length > 0 ? p.imageUrls : [p.imageUrl],
+                  detailImageUrls: p.detailImageUrls,
+                  isBest: p.isBest,
+                  isNew: totalInserted % 8 === 0,
+                  isActive: true,
+                });
+                totalInserted++;
+              } catch {}
+            }
+          }
+          await delay(100);
+        }
+      }
+      
+      console.log(`Crawling complete: ${totalInserted} products added`);
+    })();
+  });
+  
+  // Get crawl status
+  app.get("/api/admin/products/count", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const products = await storage.getProducts();
+      res.json({ success: true, count: products.length });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to get count" });
+    }
+  });
+  
+  // Clear all products
+  app.delete("/api/admin/products/all", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const products = await storage.getProducts();
+      for (const p of products) {
+        await storage.deleteProduct(p.id);
+      }
+      res.json({ success: true, message: `${products.length}개 상품이 삭제되었습니다.` });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to delete products" });
+    }
+  });
+
   return httpServer;
 }
