@@ -6,9 +6,8 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, Heart, ChevronRight, Truck, Shield, Award, RotateCcw, ShoppingBag, Star, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useWishlist } from "@/contexts/WishlistContext";
+import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import type { Product, Brand, Review } from "@shared/schema";
-
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=800&fit=crop";
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -172,18 +171,19 @@ export default function ProductDetail() {
                   </div>
                 )}
                 <img
-                  src={
+                  src={getProxiedImageUrl(
                     product.imageUrls && product.imageUrls.length > 0
                       ? product.imageUrls[selectedImageIndex] || product.imageUrls[0]
-                      : product.imageUrl || DEFAULT_IMAGE
-                  }
+                      : product.imageUrl
+                  )}
                   alt={product.name}
                   className="w-full h-full object-contain p-4 sm:p-8"
                   data-testid="img-product-main"
+                  onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
                 />
               </div>
               <div className="flex gap-2 justify-center flex-wrap px-2">
-                {(product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls : [product.imageUrl || DEFAULT_IMAGE]).map((url, index) => (
+                {(product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls : [product.imageUrl]).map((url, index) => (
                   <div 
                     key={index} 
                     className={`w-16 h-16 sm:w-20 sm:h-20 bg-gray-50 rounded border overflow-hidden cursor-pointer transition-colors shrink-0 ${
@@ -193,9 +193,10 @@ export default function ProductDetail() {
                     data-testid={`img-thumbnail-${index}`}
                   >
                     <img
-                      src={url || DEFAULT_IMAGE}
+                      src={getProxiedImageUrl(url)}
                       alt={`${product.name} ${index + 1}`}
                       className="w-full h-full object-contain p-1 sm:p-2"
+                      onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
                     />
                   </div>
                 ))}

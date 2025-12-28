@@ -82,6 +82,44 @@ export async function registerRoutes(
   const express = await import("express");
   app.use("/uploads", express.default.static(path.join(process.cwd(), "uploads")));
   
+  // ==================== IMAGE PROXY API ====================
+  
+  app.get("/api/image-proxy", async (req: Request, res: Response) => {
+    try {
+      const imageUrl = req.query.url as string;
+      if (!imageUrl) {
+        return res.status(400).json({ success: false, error: "URL parameter required" });
+      }
+      
+      // Only allow proxying from cdamdong.co.kr
+      if (!imageUrl.includes("cdamdong.co.kr")) {
+        return res.status(403).json({ success: false, error: "Domain not allowed" });
+      }
+      
+      const response = await fetch(imageUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Referer": "https://cdamdong.co.kr/",
+          "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        },
+      });
+      
+      if (!response.ok) {
+        return res.status(response.status).json({ success: false, error: "Failed to fetch image" });
+      }
+      
+      const contentType = response.headers.get("content-type") || "image/jpeg";
+      const buffer = await response.arrayBuffer();
+      
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Cache-Control", "public, max-age=86400"); // Cache for 24 hours
+      res.send(Buffer.from(buffer));
+    } catch (error) {
+      console.error("Image proxy error:", error);
+      res.status(500).json({ success: false, error: "Failed to proxy image" });
+    }
+  });
+  
   // ==================== PRODUCTS API ====================
   
   app.get("/api/products", async (req: Request, res: Response) => {

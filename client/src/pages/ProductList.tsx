@@ -8,6 +8,7 @@ import type { Product } from "@shared/schema";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 const CATEGORIES = [
@@ -297,9 +298,10 @@ export default function ProductList() {
                     )}>
                       {product.imageUrl ? (
                         <img 
-                          src={product.imageUrl} 
+                          src={getProxiedImageUrl(product.imageUrl)} 
                           alt={product.name} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-300">

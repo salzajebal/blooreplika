@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { Link } from "wouter";
 import type { Product } from "@shared/schema";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -14,8 +15,6 @@ const DEFAULT_CATEGORIES = [
   { id: "bottoms", name: "하의" },
   { id: "bags", name: "가방" },
 ];
-
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1610375461246-83df859d849d?w=500&h=500&fit=crop";
 
 export function ProductGrid() {
   const [activeCategory, setActiveCategory] = useState("all");
@@ -129,9 +128,12 @@ export function ProductGrid() {
             >
               <div className="aspect-square bg-gray-50 relative overflow-hidden">
                 <img 
-                  src={product.imageUrl || DEFAULT_IMAGE} 
+                  src={getProxiedImageUrl(product.imageUrl)} 
                   alt={product.name} 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = DEFAULT_IMAGE;
+                  }}
                 />
                 
                 <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 flex flex-col gap-0.5 sm:gap-1">
