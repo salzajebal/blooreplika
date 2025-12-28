@@ -22,37 +22,45 @@ async function fetchProductDetail(sourceUrl: string, currentImageUrl: string): P
 
     const html = await response.text();
     
-    const detailImages: string[] = [];
+    const productImages: string[] = [];
     
-    const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+    // Find all images from this specific product's folder
+    const productItemFolder = `/data/item/${sourceUrl}/`;
+    const imgRegex = new RegExp(`https://cdamdong\\.co\\.kr${productItemFolder.replace(/\//g, '\\/')}[^"']+\\.(jpg|jpeg|png|webp)`, 'gi');
+    
     let match;
-    
     while ((match = imgRegex.exec(html)) !== null) {
-      let imgUrl = match[1];
-      if (imgUrl.startsWith("//")) {
-        imgUrl = "https:" + imgUrl;
-      } else if (imgUrl.startsWith("/")) {
-        imgUrl = "https://cdamdong.co.kr" + imgUrl;
+      let imgUrl = match[0];
+      
+      // Skip thumbnail versions, get large versions
+      if (imgUrl.includes("_77x82") || imgUrl.includes("_100x")) {
+        continue;
       }
       
-      if (imgUrl.includes(`/data/item/${sourceUrl}/`) && 
-          !imgUrl.includes("_77x82") &&
-          !detailImages.includes(imgUrl)) {
-        const largeImg = imgUrl.replace("_300x300", "_500x500").replace("thumb-", "");
-        if (!detailImages.includes(largeImg)) {
-          detailImages.push(largeImg);
-        }
+      // Convert to 500x500 version if it's a thumb
+      if (imgUrl.includes("thumb-")) {
+        imgUrl = imgUrl.replace("thumb-", "").replace("_300x300", "_500x500");
+      }
+      
+      // Make sure it's a 500x500 version
+      if (!imgUrl.includes("_500x500")) {
+        imgUrl = imgUrl.replace(/(\.[a-z]+)$/i, "_500x500$1");
+      }
+      
+      if (!productImages.includes(imgUrl)) {
+        productImages.push(imgUrl);
       }
     }
     
-    if (detailImages.length === 0 && currentImageUrl) {
-      const largeImg = currentImageUrl.replace("_300x300", "_500x500");
-      detailImages.push(largeImg);
+    // Fallback: use current image in large format
+    if (productImages.length === 0 && currentImageUrl) {
+      const largeImg = currentImageUrl.replace("_300x300", "_500x500").replace("thumb-", "");
+      productImages.push(largeImg);
     }
 
     return {
       detailContent: "프리미엄 품질의 명품 레플리카 제품입니다. 정품과 동일한 소재와 공법으로 제작되었습니다. 상세 이미지를 참고해 주세요.",
-      imageUrls: detailImages.slice(0, 15)
+      imageUrls: productImages.slice(0, 10)
     };
   } catch (error) {
     console.error(`Error fetching detail for ${sourceUrl}:`, error);

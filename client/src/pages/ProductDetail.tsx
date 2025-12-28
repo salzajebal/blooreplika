@@ -353,15 +353,30 @@ export default function ProductDetail() {
               상품 상세 정보
             </h2>
             
-            {product.detailContent ? (
-              <div 
-                className="prose max-w-none mb-8 sm:mb-12"
-                dangerouslySetInnerHTML={{ __html: product.detailContent }}
-                data-testid="content-detail"
-              />
+            {product.detailContent && (
+              <div className="text-gray-700 mb-6 text-center" data-testid="content-detail">
+                {product.detailContent}
+              </div>
+            )}
+            
+            {product.imageUrls && product.imageUrls.length > 0 ? (
+              <div className="space-y-4 mb-8 sm:mb-12">
+                {product.imageUrls.map((imgUrl, index) => (
+                  <div key={index} className="flex justify-center">
+                    <img
+                      src={getProxiedImageUrl(imgUrl)}
+                      alt={`${product.name} 상세 이미지 ${index + 1}`}
+                      className="max-w-full rounded-lg shadow-sm"
+                      style={{ maxHeight: '800px' }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      data-testid={`img-detail-${index}`}
+                    />
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="text-gray-500 text-center py-8 mb-8 sm:mb-12">
-                상품 상세 정보가 없습니다.
+                상품 상세 이미지가 없습니다.
               </div>
             )}
 
