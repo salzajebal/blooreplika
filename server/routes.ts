@@ -1718,142 +1718,122 @@ export async function registerRoutes(
     }
   });
 
-  // Crawling endpoint for admin
-  app.post("/api/admin/crawl", requireAdminAuth, async (req: Request, res: Response) => {
-    const { category, maxProducts } = req.body;
+  // Progress tracking for data sync
+  const syncProgress: { 
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    message: string;
+    startedAt?: Date;
+    completedAt?: Date;
+  } = { status: 'idle', total: 0, current: 0, message: '' };
+
+  // Export all products as JSON (public endpoint for cross-environment sync)
+  app.get("/api/export/products", async (_req: Request, res: Response) => {
+    try {
+      const products = await storage.getProducts();
+      res.json({ success: true, count: products.length, data: products });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to export products" });
+    }
+  });
+
+  // Get sync progress
+  app.get("/api/admin/sync/progress", requireAdminAuth, async (_req: Request, res: Response) => {
+    res.json({ success: true, ...syncProgress });
+  });
+
+  // Import products from development environment
+  app.post("/api/admin/sync/import", requireAdminAuth, async (req: Request, res: Response) => {
+    const { sourceUrl } = req.body;
     
-    const CATEGORIES = [
-      { id: "10", name: "아우터", localId: "outer" },
-      { id: "20", name: "패딩", localId: "padding" },
-      { id: "30", name: "상의", localId: "tops" },
-      { id: "40", name: "하의", localId: "bottoms" },
-      { id: "70", name: "신발", localId: "shoes" },
-      { id: "80", name: "악세사리", localId: "accessories" },
-      { id: "a0", name: "지갑", localId: "wallets" },
-      { id: "c0", name: "가방", localId: "bags" },
-      { id: "f0", name: "시계", localId: "watches" },
-      { id: "g0", name: "정품", localId: "genuine" },
-    ];
-    
-    const categoriesToCrawl = category === "all" 
-      ? CATEGORIES 
-      : CATEGORIES.filter(c => c.localId === category);
-    
-    if (categoriesToCrawl.length === 0) {
-      return res.status(400).json({ success: false, error: "Invalid category" });
+    if (!sourceUrl) {
+      return res.status(400).json({ success: false, error: "소스 URL이 필요합니다." });
     }
     
-    res.json({ success: true, message: "크롤링이 시작되었습니다. 완료까지 시간이 걸릴 수 있습니다." });
+    if (syncProgress.status === 'running') {
+      return res.status(400).json({ success: false, error: "이미 동기화가 진행 중입니다." });
+    }
     
-    // Run crawling in background
+    syncProgress.status = 'running';
+    syncProgress.total = 0;
+    syncProgress.current = 0;
+    syncProgress.message = '개발 환경에서 데이터를 가져오는 중...';
+    syncProgress.startedAt = new Date();
+    
+    res.json({ success: true, message: "동기화가 시작되었습니다." });
+    
+    // Run sync in background
     (async () => {
-      const headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Referer": "https://cdamdong.co.kr/",
-      };
-      
-      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-      
-      const fetchProductList = async (categoryId: string, page: number): Promise<string[]> => {
-        try {
-          const response = await fetch(`https://cdamdong.co.kr/shop/list.php?ca_id=${categoryId}&page=${page}`, { headers });
-          if (!response.ok) return [];
-          const html = await response.text();
-          return [...new Set((html.match(/it_id=(\d+)/g) || []).map(m => m.replace('it_id=', '')))];
-        } catch { return []; }
-      };
-      
-      const fetchProductDetail = async (sourceId: string, categoryLocalId: string) => {
-        const url = `https://cdamdong.co.kr/shop/item.php?it_id=${sourceId}`;
-        try {
-          const response = await fetch(url, { headers });
-          if (!response.ok) return null;
-          const html = await response.text();
-          
-          const nameMatch = html.match(/<h1[^>]*class="sit_tit"[^>]*>([^<]+)<\/h1>/i);
-          const name = nameMatch ? nameMatch[1].trim() : `상품 ${sourceId}`;
-          
-          let price = 0;
-          const priceText = html.match(/(\d{1,3}(?:,\d{3})+)원/);
-          if (priceText) price = parseInt(priceText[1].replace(/,/g, ''), 10);
-          
-          const mainImages: string[] = [];
-          const imgMatches = html.match(new RegExp(`https://cdamdong\\.co\\.kr/data/item/${sourceId}/[^"']+\\.(jpg|jpeg|png|webp)`, 'gi')) || [];
-          imgMatches.forEach(img => {
-            const clean = img.replace(/thumb-/, '').replace(/_300x300|_500x500/g, '');
-            if (!mainImages.includes(clean)) mainImages.push(clean);
-          });
-          
-          const detailImages: string[] = [];
-          const detailMatches = html.match(/https:\/\/cdamdong\.co\.kr\/data\/editor\/[^"']+\.(jpg|jpeg|png|webp|gif)/gi) || [];
-          detailMatches.forEach(img => {
-            if (!detailImages.includes(img)) detailImages.push(img);
-          });
-          
-          const isBest = html.includes('BEST');
-          
-          return {
-            name, price,
-            imageUrl: mainImages[0] || `https://cdamdong.co.kr/data/item/${sourceId}/`,
-            imageUrls: mainImages,
-            detailImageUrls: detailImages,
-            categoryId: categoryLocalId,
-            isBest,
-          };
-        } catch { return null; }
-      };
-      
-      let totalInserted = 0;
-      const limit = maxProducts || 500;
-      
-      for (const cat of categoriesToCrawl) {
-        const allIds = new Set<string>();
-        let page = 1, empty = 0;
-        
-        while (empty < 3 && page <= 50 && allIds.size < limit) {
-          const ids = await fetchProductList(cat.id, page);
-          let newCount = 0;
-          ids.forEach(id => { if (!allIds.has(id) && allIds.size < limit) { allIds.add(id); newCount++; } });
-          if (newCount === 0) empty++; else empty = 0;
-          page++;
-          await delay(50);
+      try {
+        // Fetch products from source
+        syncProgress.message = '개발 환경에서 상품 데이터 다운로드 중...';
+        const response = await fetch(sourceUrl);
+        if (!response.ok) {
+          throw new Error('소스에서 데이터를 가져올 수 없습니다.');
         }
         
-        const idsArray = Array.from(allIds).slice(0, limit);
+        const data = await response.json();
+        if (!data.success || !data.data) {
+          throw new Error('잘못된 데이터 형식입니다.');
+        }
         
-        for (let i = 0; i < idsArray.length; i += 20) {
-          const chunk = idsArray.slice(i, i + 20);
-          const results = await Promise.all(chunk.map(id => fetchProductDetail(id, cat.localId)));
-          
-          for (const p of results) {
-            if (p) {
-              try {
-                await storage.createProduct({
-                  name: p.name,
-                  categoryId: p.categoryId,
-                  price: p.price,
-                  description: p.name,
-                  detailContent: "프리미엄 명품 레플리카 제품입니다.",
-                  imageUrl: p.imageUrl,
-                  imageUrls: p.imageUrls.length > 0 ? p.imageUrls : [p.imageUrl],
-                  detailImageUrls: p.detailImageUrls,
-                  isBest: p.isBest,
-                  isNew: totalInserted % 8 === 0,
-                  isActive: true,
-                });
-                totalInserted++;
-              } catch {}
-            }
+        const products = data.data;
+        syncProgress.total = products.length;
+        syncProgress.message = `${products.length}개 상품 동기화 시작...`;
+        
+        // Clear existing products first
+        syncProgress.message = '기존 상품 삭제 중...';
+        const existingProducts = await storage.getProducts();
+        for (const p of existingProducts) {
+          await storage.deleteProduct(p.id);
+        }
+        
+        syncProgress.message = '상품 추가 중...';
+        
+        // Insert products in batches
+        for (let i = 0; i < products.length; i++) {
+          const p = products[i];
+          try {
+            await storage.createProduct({
+              name: p.name,
+              categoryId: p.categoryId,
+              price: p.price,
+              description: p.description || p.name,
+              detailContent: p.detailContent || '',
+              imageUrl: p.imageUrl,
+              imageUrls: p.imageUrls || [p.imageUrl],
+              detailImageUrls: p.detailImageUrls || [],
+              isBest: p.isBest || false,
+              isNew: p.isNew || false,
+              isActive: p.isActive !== false,
+            });
+            syncProgress.current = i + 1;
+            syncProgress.message = `상품 추가 중... (${i + 1}/${products.length})`;
+          } catch (err) {
+            console.error(`Failed to insert product ${p.name}:`, err);
           }
-          await delay(100);
+          
+          // Small delay to prevent overwhelming the database
+          if (i % 100 === 0) {
+            await new Promise(resolve => setTimeout(resolve, 10));
+          }
         }
+        
+        syncProgress.status = 'completed';
+        syncProgress.message = `완료! ${syncProgress.current}개 상품이 동기화되었습니다.`;
+        syncProgress.completedAt = new Date();
+        console.log(`Sync complete: ${syncProgress.current} products imported`);
+        
+      } catch (error: any) {
+        syncProgress.status = 'error';
+        syncProgress.message = `오류: ${error.message || '알 수 없는 오류'}`;
+        console.error('Sync error:', error);
       }
-      
-      console.log(`Crawling complete: ${totalInserted} products added`);
     })();
   });
   
-  // Get crawl status
+  // Get product count
   app.get("/api/admin/products/count", requireAdminAuth, async (_req: Request, res: Response) => {
     try {
       const products = await storage.getProducts();

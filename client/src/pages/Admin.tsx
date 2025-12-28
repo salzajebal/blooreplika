@@ -175,10 +175,15 @@ export default function Admin() {
   });
   const [depositAccountLoading, setDepositAccountLoading] = useState(false);
 
-  const [crawlCategory, setCrawlCategory] = useState("all");
-  const [crawlMaxProducts, setCrawlMaxProducts] = useState("500");
-  const [crawlLoading, setCrawlLoading] = useState(false);
   const [productCount, setProductCount] = useState<number | null>(null);
+  const [syncSourceUrl, setSyncSourceUrl] = useState("");
+  const [syncProgress, setSyncProgress] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    message: string;
+  }>({ status: 'idle', total: 0, current: 0, message: '' });
+  const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchProductCount = async () => {
     try {
@@ -188,24 +193,51 @@ export default function Admin() {
     } catch {}
   };
 
-  const startCrawl = async () => {
-    setCrawlLoading(true);
+  const fetchSyncProgress = async () => {
     try {
-      const res = await fetchWithAuth("/api/admin/crawl", {
+      const res = await fetchWithAuth("/api/admin/sync/progress", { method: "GET" });
+      const data = await res.json();
+      if (data.success) {
+        setSyncProgress({
+          status: data.status,
+          total: data.total,
+          current: data.current,
+          message: data.message,
+        });
+        if (data.status === 'completed' || data.status === 'error') {
+          if (syncIntervalRef.current) {
+            clearInterval(syncIntervalRef.current);
+            syncIntervalRef.current = null;
+          }
+          fetchProductCount();
+          fetchProducts();
+        }
+      }
+    } catch {}
+  };
+
+  const startSync = async () => {
+    if (!syncSourceUrl) {
+      toast({ title: "오류", description: "개발 환경 URL을 입력해주세요.", variant: "destructive" });
+      return;
+    }
+    
+    try {
+      const res = await fetchWithAuth("/api/admin/sync/import", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ category: crawlCategory, maxProducts: parseInt(crawlMaxProducts) || 500 }),
+        body: JSON.stringify({ sourceUrl: syncSourceUrl }),
       });
       const data = await res.json();
       if (data.success) {
-        toast({ title: "크롤링 시작", description: data.message });
+        toast({ title: "동기화 시작", description: data.message });
+        setSyncProgress({ status: 'running', total: 0, current: 0, message: '시작 중...' });
+        syncIntervalRef.current = setInterval(fetchSyncProgress, 500);
       } else {
         toast({ title: "오류", description: data.error, variant: "destructive" });
       }
     } catch (error) {
-      toast({ title: "오류", description: "크롤링을 시작할 수 없습니다.", variant: "destructive" });
-    } finally {
-      setCrawlLoading(false);
+      toast({ title: "오류", description: "동기화를 시작할 수 없습니다.", variant: "destructive" });
     }
   };
 
@@ -3760,19 +3792,19 @@ export default function Admin() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
               <div className="p-6 border-b border-gray-100">
                 <h3 className="text-lg font-bold flex items-center gap-2">
-                  <Download className="w-5 h-5 text-blue-600" />
-                  상품 크롤링
+                  <Download className="w-5 h-5 text-green-600" />
+                  데이터 동기화
                 </h3>
-                <p className="text-sm text-gray-500 mt-1">cdamdong.co.kr에서 상품을 가져옵니다.</p>
+                <p className="text-sm text-gray-500 mt-1">개발 환경의 상품 데이터를 프로덕션으로 복사합니다.</p>
               </div>
               
               <div className="p-6 space-y-6">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <div className="flex items-center gap-3 mb-4">
-                    <Database className="w-6 h-6 text-blue-600" />
+                    <Database className="w-6 h-6 text-green-600" />
                     <div>
                       <h4 className="font-bold text-gray-900">현재 상품 수</h4>
-                      <p className="text-2xl font-bold text-blue-600">
+                      <p className="text-2xl font-bold text-green-600">
                         {productCount !== null ? productCount.toLocaleString() : "-"}개
                       </p>
                     </div>
@@ -3787,57 +3819,73 @@ export default function Admin() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
-                        <select
-                          data-testid="select-crawl-category"
-                          value={crawlCategory}
-                          onChange={(e) => setCrawlCategory(e.target.value)}
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
-                        >
-                          <option value="all">전체 카테고리</option>
-                          <option value="outer">아우터</option>
-                          <option value="padding">패딩</option>
-                          <option value="tops">상의</option>
-                          <option value="bottoms">하의</option>
-                          <option value="shoes">신발</option>
-                          <option value="accessories">악세사리</option>
-                          <option value="wallets">지갑</option>
-                          <option value="bags">가방</option>
-                          <option value="watches">시계</option>
-                          <option value="genuine">정품</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">최대 상품 수 (카테고리당)</label>
-                        <Input
-                          data-testid="input-crawl-max-products"
-                          type="number"
-                          value={crawlMaxProducts}
-                          onChange={(e) => setCrawlMaxProducts(e.target.value)}
-                          placeholder="500"
-                          className="w-full"
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">개발 환경 데이터 URL</label>
+                      <Input
+                        data-testid="input-sync-source-url"
+                        type="url"
+                        value={syncSourceUrl}
+                        onChange={(e) => setSyncSourceUrl(e.target.value)}
+                        placeholder="https://개발환경주소/api/export/products"
+                        className="w-full"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        개발 환경의 주소 뒤에 <code className="bg-gray-100 px-1 rounded">/api/export/products</code>를 붙이세요.
+                      </p>
                     </div>
+
+                    {syncProgress.status !== 'idle' && (
+                      <div className={`p-4 rounded-lg ${
+                        syncProgress.status === 'running' ? 'bg-blue-50 border border-blue-200' :
+                        syncProgress.status === 'completed' ? 'bg-green-50 border border-green-200' :
+                        'bg-red-50 border border-red-200'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          {syncProgress.status === 'running' && <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />}
+                          {syncProgress.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                          {syncProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                          <span className={`text-sm font-medium ${
+                            syncProgress.status === 'running' ? 'text-blue-700' :
+                            syncProgress.status === 'completed' ? 'text-green-700' :
+                            'text-red-700'
+                          }`}>
+                            {syncProgress.message}
+                          </span>
+                        </div>
+                        
+                        {syncProgress.status === 'running' && syncProgress.total > 0 && (
+                          <div className="space-y-2">
+                            <div className="w-full bg-blue-100 rounded-full h-3">
+                              <div 
+                                className="bg-blue-500 h-3 rounded-full transition-all duration-300"
+                                style={{ width: `${Math.round((syncProgress.current / syncProgress.total) * 100)}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-xs text-blue-600">
+                              <span>{syncProgress.current.toLocaleString()} / {syncProgress.total.toLocaleString()}</span>
+                              <span>{Math.round((syncProgress.current / syncProgress.total) * 100)}%</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     <div className="flex gap-3">
                       <Button
-                        data-testid="button-start-crawl"
-                        onClick={startCrawl}
-                        disabled={crawlLoading}
-                        className="bg-blue-500 hover:bg-blue-600 text-white flex-1"
+                        data-testid="button-start-sync"
+                        onClick={startSync}
+                        disabled={syncProgress.status === 'running'}
+                        className="bg-green-500 hover:bg-green-600 text-white flex-1"
                       >
-                        {crawlLoading ? (
+                        {syncProgress.status === 'running' ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            크롤링 중...
+                            동기화 중...
                           </>
                         ) : (
                           <>
                             <Download className="w-4 h-4 mr-2" />
-                            크롤링 시작
+                            동기화 시작
                           </>
                         )}
                       </Button>
@@ -3846,6 +3894,7 @@ export default function Admin() {
                         onClick={clearAllProducts}
                         variant="destructive"
                         className="flex-shrink-0"
+                        disabled={syncProgress.status === 'running'}
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         전체 삭제
@@ -3855,20 +3904,17 @@ export default function Admin() {
                 </div>
 
                 <div className="border-t border-gray-200 pt-4">
-                  <ul className="text-sm text-gray-600 space-y-2">
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-500 mt-1">•</span>
-                      <span>크롤링은 백그라운드에서 실행되며, 완료까지 시간이 걸릴 수 있습니다.</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-500 mt-1">•</span>
-                      <span>"새로고침" 버튼으로 현재 상품 수를 확인하세요.</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-red-500 mt-1">•</span>
-                      <span className="text-red-600">"전체 삭제"는 모든 상품을 삭제합니다. 신중하게 사용하세요.</span>
-                    </li>
-                  </ul>
+                  <h4 className="font-semibold text-gray-700 mb-3">사용 방법</h4>
+                  <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
+                    <li>개발 환경 Replit 에디터에서 앱 URL을 복사하세요.</li>
+                    <li>URL 뒤에 <code className="bg-gray-100 px-1 rounded">/api/export/products</code>를 붙여 위 입력란에 붙여넣으세요.</li>
+                    <li>"동기화 시작" 버튼을 클릭하면 모든 상품이 복사됩니다.</li>
+                  </ol>
+                  <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-700">
+                      <strong>예시:</strong> https://12cc166b-...sisko.replit.dev/api/export/products
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
