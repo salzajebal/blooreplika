@@ -60,15 +60,15 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-gold-50 to-white">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white">
       <Header />
       
       <main className="flex-1 flex items-center justify-center py-12 px-4">
-        <Card className="w-full max-w-md shadow-xl border-gold-200">
+        <Card className="w-full max-w-md shadow-xl border-gray-200">
           <CardHeader className="text-center space-y-2">
             <CardTitle className="text-2xl font-bold text-gray-900">로그인</CardTitle>
             <CardDescription className="text-gray-600">
-              한국골드금거래소 회원 로그인
+              청담동에디션 회원 로그인
             </CardDescription>
           </CardHeader>
           
@@ -104,7 +104,7 @@ export default function Login() {
 
               <Button
                 type="submit"
-                className="w-full h-12 bg-gradient-to-r from-gold-600 to-gold-700 hover:from-gold-700 hover:to-gold-800 text-white font-semibold"
+                className="w-full h-12 bg-black hover:bg-gray-800 text-white font-semibold"
                 disabled={loading}
                 data-testid="button-login"
               >

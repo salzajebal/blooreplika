@@ -6,14 +6,13 @@ import { Link } from "wouter";
 import type { Product } from "@shared/schema";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
-import { useLivePrices } from "@/hooks/use-live-prices";
 
 const DEFAULT_CATEGORIES = [
-  { id: "gold_bar", name: "골드바" },
-  { id: "silver_bar", name: "실버바" },
-  { id: "baby_ring", name: "돌선물" },
-  { id: "jewelry", name: "순금기념품" },
-  { id: "pure_jewelry", name: "순금주얼리" },
+  { id: "outer", name: "아우터" },
+  { id: "padding", name: "패딩" },
+  { id: "tops", name: "상의" },
+  { id: "bottoms", name: "하의" },
+  { id: "bags", name: "가방" },
 ];
 
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1610375461246-83df859d849d?w=500&h=500&fit=crop";
@@ -24,7 +23,6 @@ export function ProductGrid() {
   const [loading, setLoading] = useState(true);
   const { toggleItem, isInWishlist } = useWishlist();
   const { toast } = useToast();
-  const { calculateProductPrice } = useLivePrices();
 
   const handleWishlistToggle = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
@@ -35,8 +33,6 @@ export function ProductGrid() {
       name: product.name,
       price: product.price,
       imageUrl: product.imageUrl,
-      weight: product.weight,
-      purity: product.purity,
     });
     toast({
       title: wasInWishlist ? "찜 목록에서 삭제" : "찜 목록에 추가",
@@ -110,7 +106,7 @@ export function ProductGrid() {
             {activeCategory === "all" ? "전체 상품" : DEFAULT_CATEGORIES.find(c => c.id === activeCategory)?.name}
           </h2>
           <p className="text-gray-500 text-xs sm:text-sm break-keep">
-            한국골드금거래소가 보증하는 정품 {activeCategory === "all" ? "귀금속" : DEFAULT_CATEGORIES.find(c => c.id === activeCategory)?.name} 모음
+            청담동에디션이 엄선한 프리미엄 {activeCategory === "all" ? "럭셔리 패션" : DEFAULT_CATEGORIES.find(c => c.id === activeCategory)?.name} 컬렉션
           </p>
         </div>
         <div className="text-xs sm:text-sm text-gray-500">
@@ -183,7 +179,6 @@ export function ProductGrid() {
               
               <div className="p-2 sm:p-3 md:p-4 text-center flex-1 flex flex-col justify-between">
                 <div>
-                  <div className="text-[10px] sm:text-xs text-gray-500 mb-0.5 sm:mb-1">{product.purity} / {product.weight}</div>
                   <h3 className="font-bold text-gray-900 group-hover:text-primary transition-colors line-clamp-2 h-8 sm:h-10 flex items-center justify-center text-xs sm:text-sm">
                     {product.name}
                   </h3>
@@ -192,7 +187,7 @@ export function ProductGrid() {
                 <div className="pt-2 sm:pt-3 border-t border-dashed border-gray-100 w-full mt-1 sm:mt-2">
                   <div className="flex justify-center items-baseline gap-0.5 sm:gap-1">
                     <span className="text-sm sm:text-base md:text-lg font-bold text-primary" data-testid={`price-product-${product.id}`}>
-                      {calculateProductPrice(product.category, product.weight) || product.price}
+                      {product.price.toLocaleString()}
                     </span>
                     <span className="text-[10px] sm:text-xs text-gray-500">원</span>
                   </div>

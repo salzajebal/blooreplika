@@ -31,7 +31,7 @@ export default function Reviews() {
       
       <main className="flex-1 container mx-auto px-4 py-8">
         <nav className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-          <Link href="/" className="hover:text-gold-600 flex items-center gap-1">
+          <Link href="/" className="hover:text-black flex items-center gap-1">
             <Home className="w-4 h-4" />
             홈
           </Link>
@@ -41,7 +41,7 @@ export default function Reviews() {
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">고객 후기</h1>
-          <p className="text-gray-600">한국골드금거래소를 이용해주신 고객님들의 생생한 후기입니다</p>
+          <p className="text-gray-600">청담동에디션을 이용해주신 고객님들의 생생한 후기입니다</p>
         </div>
 
         {isLoading ? (

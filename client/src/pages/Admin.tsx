@@ -1450,11 +1450,11 @@ export default function Admin() {
       <div className="bg-gray-900 text-white">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center">
-              <span className="font-bold text-gray-900">금</span>
+            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+              <span className="font-bold text-black text-sm">CD</span>
             </div>
             <div>
-              <h1 className="font-bold">한국골드금거래소</h1>
+              <h1 className="font-bold">청담동에디션</h1>
               <p className="text-xs text-gray-400">관리자 패널</p>
             </div>
           </div>
@@ -2859,7 +2859,7 @@ export default function Admin() {
                     <Input
                       value={reviewFormData.productName}
                       onChange={(e) => setReviewFormData({ ...reviewFormData, productName: e.target.value })}
-                      placeholder="골드바 100g"
+                      placeholder="루이비통 가방"
                       data-testid="input-review-product"
                     />
                   </div>
@@ -3649,7 +3649,7 @@ export default function Admin() {
                         type="text"
                         value={depositAccountSettings.accountHolder}
                         onChange={(e) => setDepositAccountSettings(prev => ({ ...prev, accountHolder: e.target.value }))}
-                        placeholder="예: 한국골드금거래소"
+                        placeholder="예: 청담동에디션"
                         className="w-full max-w-md"
                       />
                     </div>

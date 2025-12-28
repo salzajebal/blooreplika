@@ -287,7 +287,7 @@ export function ChatWidget() {
       <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-2 sm:space-y-3 bg-gray-50">
         <div className="flex justify-start">
           <div className="max-w-[85%] sm:max-w-[80%] bg-white rounded-lg px-3 sm:px-4 py-2 border border-gray-200">
-            <p className="text-xs sm:text-sm text-gray-900">안녕하세요! 한국골드금거래소 상담원입니다. 무엇을 도와드릴까요?</p>
+            <p className="text-xs sm:text-sm text-gray-900">안녕하세요! 청담동에디션 상담원입니다. 무엇을 도와드릴까요?</p>
             <p className="text-[10px] sm:text-xs text-gray-400 mt-1">자동응답</p>
           </div>
         </div>
