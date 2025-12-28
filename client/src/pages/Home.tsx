@@ -7,15 +7,24 @@ import { ChevronRight, Star, Heart, Package, Truck, Shield, Headphones } from "l
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { useState, useEffect } from "react";
 
+import outerImg from '@assets/generated_images/burberry_trench_coat_luxury.png';
+import paddingImg from '@assets/generated_images/moncler_down_jacket_luxury.png';
+import topsImg from '@assets/generated_images/designer_luxury_top_shirt.png';
+import bottomsImg from '@assets/generated_images/designer_luxury_pants_bottoms.png';
+import shoesImg from '@assets/generated_images/luxury_designer_shoes_footwear.png';
+import bagsImg from '@assets/generated_images/hermes_birkin_luxury_bag.png';
+import walletsImg from '@assets/generated_images/louis_vuitton_luxury_wallet.png';
+import watchesImg from '@assets/generated_images/patek_philippe_luxury_watch.png';
+
 const categories = [
-  { name: '아우터', slug: 'outer', image: 'https://images.unsplash.com/photo-1544022613-e87ca75a784a?w=400&h=400&fit=crop' },
-  { name: '패딩', slug: 'padding', image: 'https://images.unsplash.com/photo-1548883354-94bcfe321cbb?w=400&h=400&fit=crop' },
-  { name: '상의', slug: 'tops', image: 'https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400&h=400&fit=crop' },
-  { name: '하의', slug: 'bottoms', image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=400&h=400&fit=crop' },
-  { name: '신발', slug: 'shoes', image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop' },
-  { name: '가방', slug: 'bags', image: 'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&h=400&fit=crop' },
-  { name: '지갑', slug: 'wallets', image: 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=400&h=400&fit=crop' },
-  { name: '시계', slug: 'watches', image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop' },
+  { name: '아우터', slug: 'outer', image: outerImg },
+  { name: '패딩', slug: 'padding', image: paddingImg },
+  { name: '상의', slug: 'tops', image: topsImg },
+  { name: '하의', slug: 'bottoms', image: bottomsImg },
+  { name: '신발', slug: 'shoes', image: shoesImg },
+  { name: '가방', slug: 'bags', image: bagsImg },
+  { name: '지갑', slug: 'wallets', image: walletsImg },
+  { name: '시계', slug: 'watches', image: watchesImg },
 ];
 
 const bannerSlides = [
