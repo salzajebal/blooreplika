@@ -3,7 +3,6 @@ import { products } from "../shared/schema";
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Main categories from cdamdong.co.kr
 const CATEGORIES = [
   { id: "10", name: "아우터", localId: "outer" },
   { id: "20", name: "패딩", localId: "padding" },
@@ -27,145 +26,129 @@ interface ProductData {
   isBest: boolean;
 }
 
-async function fetchCategoryProducts(categoryId: string, page: number = 1): Promise<ProductData[]> {
+async function fetchPage(categoryId: string, page: number): Promise<{ products: ProductData[], hasMore: boolean }> {
   const foundProducts: ProductData[] = [];
-  const url = `https://cdamdong.co.kr/shop/list.php?ca_id=${categoryId}&sort=it_order&sortodr=asc&page=${page}`;
+  const url = `https://cdamdong.co.kr/shop/list.php?ca_id=${categoryId}&page=${page}`;
   
   try {
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         "Referer": "https://cdamdong.co.kr/",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       },
     });
     
-    if (!response.ok) {
-      console.log(`  Failed to fetch category ${categoryId} page ${page}: ${response.status}`);
-      return foundProducts;
-    }
+    if (!response.ok) return { products: [], hasMore: false };
     
     const html = await response.text();
     const category = CATEGORIES.find(c => c.id === categoryId);
     
-    // Extract product blocks using regex
-    // Pattern: it_id=XXX followed by img src and alt, then brand and price
-    const productBlockRegex = /it_id=(\d+)[^>]*>[\s\S]*?<img\s+src="([^"]+)"[^>]*alt="([^"]+)"[\s\S]*?<div class="list-brand[^"]*">([^<]*)<\/div>[\s\S]*?<div class="sct_cost">([0-9,]+)원/g;
+    // Find all product IDs
+    const productIds = [...new Set((html.match(/it_id=(\d+)/g) || []).map(m => m.replace('it_id=', '')))];
     
-    let match;
-    const seenIds = new Set<string>();
-    
-    while ((match = productBlockRegex.exec(html)) !== null) {
-      const [, sourceId, imageUrl, name, brand, priceStr] = match;
+    for (const sourceId of productIds) {
+      // Find image and name from img tag with alt
+      const imgRegex = new RegExp(`/data/item/${sourceId}/[^"]+\\.(?:jpg|jpeg|png|webp)["'][^>]*alt=["']([^"']+)["']`, 'i');
+      const imgMatch = html.match(imgRegex);
       
-      // Skip duplicates within the same page
-      if (seenIds.has(sourceId)) continue;
-      seenIds.add(sourceId);
+      if (!imgMatch) {
+        // Try alternative pattern
+        const altImgRegex = new RegExp(`alt=["']([^"']+)["'][^>]*src=["']([^"]*${sourceId}[^"]+)["']`, 'i');
+        const altMatch = html.match(altImgRegex);
+        if (!altMatch) continue;
+      }
       
-      const price = parseInt(priceStr.replace(/,/g, ''), 10) || 0;
-      const isBest = html.includes(`it_id=${sourceId}`) && html.includes('BEST ITEM');
+      // Get image URL
+      const imageUrlMatch = html.match(new RegExp(`https://cdamdong\\.co\\.kr/data/item/${sourceId}/[^"']+\\.(jpg|jpeg|png|webp)`, 'i'));
+      if (!imageUrlMatch) continue;
+      
+      let imageUrl = imageUrlMatch[0];
+      const name = imgMatch ? imgMatch[1].trim() : '';
+      if (!name) continue;
+      
+      // Get price - look for pattern near this product
+      const priceSection = html.substring(html.indexOf(`it_id=${sourceId}`), html.indexOf(`it_id=${sourceId}`) + 2000);
+      const priceMatch = priceSection.match(/(\d{1,3}(?:,\d{3})+)원/);
+      const price = priceMatch ? parseInt(priceMatch[1].replace(/,/g, ''), 10) : 0;
+      
+      // Get brand
+      const brandMatch = priceSection.match(/<div class="list-brand[^"]*">([^<]+)<\/div>/i);
+      const brand = brandMatch ? brandMatch[1].trim() : '';
+      
+      // Check if BEST
+      const isBest = priceSection.includes('BEST') || priceSection.includes('best_icon');
       
       foundProducts.push({
         sourceId,
-        name: name.trim(),
+        name,
         price,
-        imageUrl: imageUrl.startsWith('//') ? 'https:' + imageUrl : imageUrl,
+        imageUrl,
         categoryId: category?.localId || "other",
-        brand: brand.trim(),
+        brand,
         isBest,
       });
     }
     
-    // If regex didn't match, try alternative parsing
-    if (foundProducts.length === 0) {
-      // Extract all unique product IDs
-      const productIds = [...new Set(html.match(/it_id=(\d+)/g)?.map(m => m.replace('it_id=', '')) || [])];
-      
-      for (const sourceId of productIds) {
-        // Find image for this product
-        const imgMatch = html.match(new RegExp(`it_id=${sourceId}[\\s\\S]*?<img\\s+src="([^"]+)"[^>]*alt="([^"]+)"`, 'i'));
-        
-        if (imgMatch) {
-          const imageUrl = imgMatch[1].startsWith('//') ? 'https:' + imgMatch[1] : imgMatch[1];
-          const name = imgMatch[2].trim();
-          
-          // Find price - look for sct_cost after this product
-          const priceMatch = html.match(new RegExp(`it_id=${sourceId}[\\s\\S]*?<div class="sct_cost">([0-9,]+)원`, 'i'));
-          const price = priceMatch ? parseInt(priceMatch[1].replace(/,/g, ''), 10) : 0;
-          
-          // Find brand
-          const brandMatch = html.match(new RegExp(`it_id=${sourceId}[\\s\\S]*?<div class="list-brand[^"]*">([^<]+)</div>`, 'i'));
-          const brand = brandMatch ? brandMatch[1].trim() : '';
-          
-          if (!seenIds.has(sourceId)) {
-            seenIds.add(sourceId);
-            foundProducts.push({
-              sourceId,
-              name,
-              price,
-              imageUrl,
-              categoryId: category?.localId || "other",
-              brand,
-              isBest: false,
-            });
-          }
-        }
-      }
-    }
+    // Check if there's a next page
+    const hasMore = html.includes(`page=${page + 1}`);
     
-    return foundProducts;
+    return { products: foundProducts, hasMore };
   } catch (error) {
-    console.error(`  Error fetching category ${categoryId}:`, error);
-    return foundProducts;
+    console.error(`  Error page ${page}:`, error);
+    return { products: [], hasMore: false };
   }
 }
 
-async function fetchAllPagesForCategory(categoryId: string, categoryName: string): Promise<ProductData[]> {
-  const allProducts: ProductData[] = [];
-  const seenIds = new Set<string>();
+async function fetchAllCategoryProducts(categoryId: string, categoryName: string): Promise<ProductData[]> {
+  const allProducts = new Map<string, ProductData>();
   let page = 1;
-  let consecutiveEmpty = 0;
+  let emptyPages = 0;
   
-  while (consecutiveEmpty < 2) {
-    console.log(`  Fetching ${categoryName} page ${page}...`);
-    const pageProducts = await fetchCategoryProducts(categoryId, page);
+  console.log(`  Starting ${categoryName}...`);
+  
+  while (emptyPages < 3) {
+    const { products: pageProducts, hasMore } = await fetchPage(categoryId, page);
     
-    // Filter out products we've already seen
-    const newProducts = pageProducts.filter(p => !seenIds.has(p.sourceId));
-    
-    if (newProducts.length === 0) {
-      consecutiveEmpty++;
-    } else {
-      consecutiveEmpty = 0;
-      for (const p of newProducts) {
-        seenIds.add(p.sourceId);
-        allProducts.push(p);
+    let newCount = 0;
+    for (const p of pageProducts) {
+      if (!allProducts.has(p.sourceId)) {
+        allProducts.set(p.sourceId, p);
+        newCount++;
       }
     }
     
-    page++;
-    await delay(300);
-    
-    // Safety limit
-    if (page > 100) {
-      console.log(`  Reached page limit for ${categoryName}`);
-      break;
+    if (newCount === 0) {
+      emptyPages++;
+    } else {
+      emptyPages = 0;
     }
+    
+    if (page % 10 === 0 || !hasMore) {
+      console.log(`    Page ${page}: +${newCount} (total: ${allProducts.size})`);
+    }
+    
+    if (!hasMore && pageProducts.length === 0) break;
+    
+    page++;
+    await delay(150); // Fast but polite
+    
+    if (page > 200) break; // Safety limit
   }
   
-  return allProducts;
+  console.log(`  Completed ${categoryName}: ${allProducts.size} products`);
+  return Array.from(allProducts.values());
 }
 
 async function main() {
   console.log("=".repeat(60));
-  console.log("Starting comprehensive product crawl from cdamdong.co.kr");
+  console.log("FULL PRODUCT CRAWL - cdamdong.co.kr");
   console.log("=".repeat(60));
   
   const allProducts = new Map<string, ProductData>();
   
   for (const category of CATEGORIES) {
-    console.log(`\nProcessing category: ${category.name} (${category.id})`);
-    const categoryProducts = await fetchAllPagesForCategory(category.id, category.name);
+    console.log(`\n[${category.name}]`);
+    const categoryProducts = await fetchAllCategoryProducts(category.id, category.name);
     
     for (const product of categoryProducts) {
       if (!allProducts.has(product.sourceId)) {
@@ -173,30 +156,27 @@ async function main() {
       }
     }
     
-    console.log(`  Found ${categoryProducts.length} new, total unique: ${allProducts.size}`);
-    await delay(500);
+    console.log(`  Category total: ${categoryProducts.length}, Global unique: ${allProducts.size}`);
+    await delay(300);
   }
   
   console.log(`\n${"=".repeat(60)}`);
-  console.log(`Total unique products found: ${allProducts.size}`);
+  console.log(`TOTAL UNIQUE PRODUCTS: ${allProducts.size}`);
   console.log(`${"=".repeat(60)}`);
   
   if (allProducts.size === 0) {
-    console.log("No products found. Exiting without changes.");
+    console.log("No products found!");
     process.exit(1);
   }
   
-  // Clear existing products
-  console.log("\nClearing existing products...");
+  console.log("\nClearing database...");
   await db.delete(products);
   
-  // Insert new products
-  console.log("Inserting products into database...");
-  let insertedCount = 0;
+  console.log("Inserting products...");
   const productArray = Array.from(allProducts.values());
+  let inserted = 0;
   
-  // Batch insert for efficiency
-  const batchSize = 20;
+  const batchSize = 50;
   for (let i = 0; i < productArray.length; i += batchSize) {
     const batch = productArray.slice(i, i + batchSize);
     
@@ -210,17 +190,18 @@ async function main() {
           detailContent: "상세 이미지를 확인해 주세요. 프리미엄 품질의 명품 레플리카 제품입니다.",
           imageUrl: p.imageUrl,
           imageUrls: [p.imageUrl.replace(/thumb-/, '').replace(/_300x300/, '')],
-          isBest: p.isBest || (i + idx) % 7 === 0,
-          isNew: (i + idx) % 5 === 0,
+          isBest: p.isBest || (i + idx) % 8 === 0,
+          isNew: (i + idx) % 6 === 0,
           isActive: true,
         }))
       );
+      inserted += batch.length;
       
-      insertedCount += batch.length;
-      console.log(`  Inserted ${insertedCount}/${productArray.length} products...`);
+      if (inserted % 200 === 0) {
+        console.log(`  Inserted: ${inserted}/${productArray.length}`);
+      }
     } catch (error) {
-      console.error(`  Failed to insert batch:`, error);
-      // Try inserting one by one
+      console.error(`  Batch error, trying individually...`);
       for (const p of batch) {
         try {
           await db.insert(products).values({
@@ -228,25 +209,23 @@ async function main() {
             categoryId: p.categoryId,
             price: p.price,
             description: p.brand ? `${p.brand} ${p.name}` : p.name,
-            detailContent: "상세 이미지를 확인해 주세요. 프리미엄 품질의 명품 레플리카 제품입니다.",
+            detailContent: "상세 이미지를 확인해 주세요.",
             imageUrl: p.imageUrl,
             imageUrls: [p.imageUrl.replace(/thumb-/, '').replace(/_300x300/, '')],
             isBest: p.isBest,
             isNew: false,
             isActive: true,
           });
-          insertedCount++;
+          inserted++;
         } catch (e) {
-          console.error(`    Failed to insert ${p.name}:`, e);
+          console.error(`    Failed: ${p.name}`);
         }
       }
     }
-    
-    await delay(50);
   }
   
   console.log(`\n${"=".repeat(60)}`);
-  console.log(`Successfully inserted ${insertedCount} products!`);
+  console.log(`DONE! Inserted ${inserted} products`);
   console.log(`${"=".repeat(60)}`);
   
   process.exit(0);
