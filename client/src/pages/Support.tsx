@@ -3,35 +3,35 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { ChevronDown, ChevronUp, MessageCircle, HelpCircle, FileText, Bell } from "lucide-react";
-import type { Faq } from "@shared/schema";
-import { useKakaoLink } from "@/hooks/use-kakao-link";
-import { KakaoConfirmDialog } from "@/components/KakaoConfirmDialog";
 
 const FAQ_CATEGORIES = [
   { id: "order", name: "주문/배송" },
-  { id: "buy", name: "매입안내" },
-  { id: "price", name: "시세안내" },
+  { id: "exchange", name: "교환/반품" },
   { id: "product", name: "상품문의" },
-  { id: "refund", name: "반품/환불" },
-  { id: "member", name: "회원/결제" },
+  { id: "size", name: "사이즈" },
+  { id: "payment", name: "결제/환불" },
+  { id: "member", name: "회원/적립" },
 ];
 
 const DEFAULT_FAQS = [
-  { id: "1", category: "order", question: "온라인으로 주문이 가능한가요?", answer: "네, 온라인으로 주문 가능합니다. 다만, 금/은 시세는 실시간으로 변동되므로 주문 시 본점 또는 대리점으로 전화 문의 후 진행해 주시기 바랍니다." },
-  { id: "2", category: "order", question: "배송은 얼마나 걸리나요?", answer: "결제 확인 후 1-2 영업일 내에 발송되며, 배송은 보통 1-2일 소요됩니다. 귀중품 특성상 안전한 배송을 위해 보험 택배로 발송됩니다." },
-  { id: "5", category: "price", question: "금 시세는 어떻게 확인하나요?", answer: "홈페이지 상단의 '금시세조회' 메뉴에서 실시간 금/은/백금 시세를 확인하실 수 있습니다." },
-  { id: "6", category: "price", question: "시세는 얼마나 자주 변동되나요?", answer: "국제 금 시세와 환율에 따라 실시간으로 변동됩니다. 당일 시세는 오전 10시에 고시됩니다." },
-  { id: "7", category: "product", question: "골드바 순도는 어떻게 되나요?", answer: "당사에서 취급하는 골드바는 99.99% (999.9‰) 순도의 순금입니다. 국제 공인 LBMA 인증 제품입니다." },
-  { id: "8", category: "product", question: "각인 서비스가 가능한가요?", answer: "네, 골드바 및 일부 제품에 각인 서비스를 제공하고 있습니다. 제작 기간은 약 1주일 소요됩니다." },
-  { id: "9", category: "refund", question: "반품이 가능한가요?", answer: "금/은 제품 특성상 주문 후 취소 및 반품이 불가합니다. 불량 제품의 경우 수령 후 7일 이내 교환 가능합니다." },
-  { id: "10", category: "member", question: "회원가입 혜택이 있나요?", answer: "회원가입 시 구매 포인트 적립, 시세 알림 서비스, 특별 프로모션 등의 혜택을 받으실 수 있습니다." },
+  { id: "1", category: "order", question: "온라인으로 주문이 가능한가요?", answer: "네, 온라인으로 24시간 주문 가능합니다. 회원가입 후 편리하게 쇼핑하실 수 있습니다." },
+  { id: "2", category: "order", question: "배송은 얼마나 걸리나요?", answer: "결제 확인 후 1-3 영업일 내에 발송되며, 배송은 보통 2-3일 소요됩니다. 도서산간 지역은 추가 시간이 소요될 수 있습니다." },
+  { id: "3", category: "order", question: "해외배송도 가능한가요?", answer: "현재 국내 배송만 지원하고 있습니다. 해외배송 서비스는 준비 중입니다." },
+  { id: "4", category: "exchange", question: "교환/반품이 가능한가요?", answer: "상품 수령 후 7일 이내에 교환/반품 신청이 가능합니다. 단, 착용 흔적이 있거나 택이 제거된 경우 교환/반품이 불가합니다." },
+  { id: "5", category: "exchange", question: "교환 시 배송비는 누가 부담하나요?", answer: "단순 변심으로 인한 교환 시 왕복 배송비는 고객님 부담입니다. 상품 불량의 경우 무료로 교환해 드립니다." },
+  { id: "6", category: "product", question: "상품의 품질이 보장되나요?", answer: "모든 상품은 엄격한 품질 검수 과정을 거쳐 발송됩니다. 불량 상품의 경우 무료 교환/환불이 가능합니다." },
+  { id: "7", category: "product", question: "상품 색상이 사진과 다를 수 있나요?", answer: "모니터 환경에 따라 실제 상품과 색상 차이가 있을 수 있습니다. 자연광에서 촬영된 이미지가 가장 실제 색상과 유사합니다." },
+  { id: "8", category: "size", question: "사이즈 선택은 어떻게 하나요?", answer: "각 상품 페이지에 상세 사이즈표가 제공됩니다. 평소 착용하시는 사이즈를 참고하여 선택해 주세요." },
+  { id: "9", category: "size", question: "사이즈가 맞지 않으면 교환 가능한가요?", answer: "네, 상품 수령 후 7일 이내에 미착용 상태로 교환 신청 가능합니다." },
+  { id: "10", category: "payment", question: "어떤 결제 수단을 이용할 수 있나요?", answer: "신용카드, 체크카드, 무통장입금, 카카오페이, 네이버페이 등 다양한 결제 수단을 지원합니다." },
+  { id: "11", category: "payment", question: "환불은 얼마나 걸리나요?", answer: "반품 상품 확인 후 3-5 영업일 내에 환불 처리됩니다. 카드 결제의 경우 카드사 정책에 따라 추가 시간이 소요될 수 있습니다." },
+  { id: "12", category: "member", question: "회원가입 혜택이 있나요?", answer: "회원가입 시 적립금 지급, 등급별 할인, 특별 프로모션 혜택을 받으실 수 있습니다." },
 ];
 
 export default function Support() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const [faqs, setFaqs] = useState<typeof DEFAULT_FAQS>(DEFAULT_FAQS);
-  const { openKakaoChat, showConfirmDialog, confirmAndOpenKakao, closeConfirmDialog } = useKakaoLink();
 
   useEffect(() => {
     const fetchFaqs = async () => {
@@ -52,30 +52,28 @@ export default function Support() {
     ? faqs 
     : faqs.filter(faq => faq.category === activeCategory);
 
+  const handleKakaoClick = () => {
+    window.open("https://pf.kakao.com/_xixcxgj", "_blank");
+  };
+
   return (
-    <>
-      <KakaoConfirmDialog 
-        open={showConfirmDialog} 
-        onConfirm={confirmAndOpenKakao} 
-        onCancel={closeConfirmDialog} 
-      />
-      <div className="min-h-screen bg-white font-sans">
-        <Header />
-        
-        <main className="container-custom py-12">
-          <div className="text-center mb-12">
+    <div className="min-h-screen bg-white font-sans">
+      <Header />
+      
+      <main className="container-custom py-12">
+        <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-gray-900 mb-4" data-testid="text-support-title">고객센터</h1>
-          <p className="text-gray-500">한국골드금거래소에 대해 궁금한 점을 확인하세요</p>
+          <p className="text-gray-500">CDAMDONG에 대해 궁금한 점을 확인하세요</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-          <div className="bg-amber-50 border border-amber-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer">
-            <HelpCircle className="w-10 h-10 text-amber-600 mx-auto mb-3" />
+          <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer">
+            <HelpCircle className="w-10 h-10 text-gray-600 mx-auto mb-3" />
             <h3 className="font-bold text-gray-900 mb-2">자주묻는질문</h3>
             <p className="text-sm text-gray-500">FAQ에서 빠르게 답변을 찾아보세요</p>
           </div>
           <button 
-            onClick={openKakaoChat}
+            onClick={handleKakaoClick}
             className="bg-yellow-50 border border-yellow-300 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer block w-full"
             data-testid="button-kakao-support"
           >
@@ -83,15 +81,15 @@ export default function Support() {
             <h3 className="font-bold text-gray-900 mb-2">카카오톡 문의</h3>
             <p className="text-sm text-gray-500">카카오톡으로 상담하세요</p>
           </button>
-          <div className="bg-green-50 border border-green-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer">
-            <FileText className="w-10 h-10 text-green-600 mx-auto mb-3" />
+          <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer">
+            <FileText className="w-10 h-10 text-gray-600 mx-auto mb-3" />
             <h3 className="font-bold text-gray-900 mb-2">공지사항</h3>
             <p className="text-sm text-gray-500">최신 소식과 이벤트를 확인하세요</p>
           </div>
-          <div className="bg-purple-50 border border-purple-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer">
-            <Bell className="w-10 h-10 text-purple-600 mx-auto mb-3" />
+          <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer">
+            <Bell className="w-10 h-10 text-gray-600 mx-auto mb-3" />
             <h3 className="font-bold text-gray-900 mb-2">이용안내</h3>
-            <p className="text-sm text-gray-500">거래 및 이용 방법을 안내합니다</p>
+            <p className="text-sm text-gray-500">쇼핑 및 이용 방법을 안내합니다</p>
           </div>
         </div>
 
@@ -102,7 +100,7 @@ export default function Support() {
             <Button
               variant={activeCategory === "all" ? "default" : "outline"}
               onClick={() => setActiveCategory("all")}
-              className={activeCategory === "all" ? "bg-amber-500 hover:bg-amber-600" : ""}
+              className={activeCategory === "all" ? "bg-black hover:bg-gray-800" : ""}
             >
               전체
             </Button>
@@ -111,7 +109,7 @@ export default function Support() {
                 key={cat.id}
                 variant={activeCategory === cat.id ? "default" : "outline"}
                 onClick={() => setActiveCategory(cat.id)}
-                className={activeCategory === cat.id ? "bg-amber-500 hover:bg-amber-600" : ""}
+                className={activeCategory === cat.id ? "bg-black hover:bg-gray-800" : ""}
               >
                 {cat.name}
               </Button>
@@ -130,7 +128,7 @@ export default function Support() {
                   className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-amber-500 font-bold">Q</span>
+                    <span className="text-black font-bold">Q</span>
                     <span className="font-medium text-gray-900">{faq.question}</span>
                   </div>
                   {expandedFaq === faq.id ? (
@@ -142,7 +140,7 @@ export default function Support() {
                 {expandedFaq === faq.id && (
                   <div className="px-4 pb-4 border-t border-gray-100">
                     <div className="flex gap-3 pt-4">
-                      <span className="text-blue-500 font-bold">A</span>
+                      <span className="text-gray-500 font-bold">A</span>
                       <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
                     </div>
                   </div>
@@ -160,7 +158,6 @@ export default function Support() {
       </main>
       
       <Footer />
-      </div>
-    </>
+    </div>
   );
 }

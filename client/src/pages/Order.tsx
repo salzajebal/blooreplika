@@ -7,10 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useKakaoLink } from "@/hooks/use-kakao-link";
-import { KakaoConfirmDialog } from "@/components/KakaoConfirmDialog";
 import { CheckCircle, Package, User, MapPin, MessageCircle } from "lucide-react";
 import type { Product } from "@shared/schema";
+
+const KAKAO_LINK = "https://pf.kakao.com/_xixcxgj";
 
 function KakaoIcon({ className }: { className?: string }) {
   return (
@@ -24,7 +24,6 @@ export default function Order() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { kakaoLink, openKakaoChat, showConfirmDialog, confirmAndOpenKakao, closeConfirmDialog } = useKakaoLink();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -107,8 +106,7 @@ export default function Order() {
 
   const calculateTotal = () => {
     if (!product) return "0";
-    const price = parseInt(product.price.replace(/,/g, ""));
-    return (price * quantity).toLocaleString();
+    return (product.price * quantity).toLocaleString();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -242,7 +240,7 @@ export default function Order() {
                 </p>
                 
                 <a
-                  href={kakaoLink}
+                  href={KAKAO_LINK}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-bold py-4 px-8 rounded-lg text-lg transition-colors"
@@ -295,14 +293,8 @@ export default function Order() {
   }
 
   return (
-    <>
-      <KakaoConfirmDialog 
-        open={showConfirmDialog} 
-        onConfirm={confirmAndOpenKakao} 
-        onCancel={closeConfirmDialog} 
-      />
-      <div className="min-h-screen flex flex-col bg-gray-50">
-        <Header />
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <Header />
         
         <main className="flex-1 py-6 sm:py-10">
           <div className="max-w-4xl mx-auto px-4">
@@ -327,7 +319,7 @@ export default function Order() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-gray-900">{product.name}</h3>
-                  <p className="text-sm text-gray-500">{product.weight} / {product.purity}</p>
+                  {product.sku && <p className="text-sm text-gray-500">SKU: {product.sku}</p>}
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-sm text-gray-500">수량: {quantity}개</span>
                     <span className="font-bold text-primary text-lg">{calculateTotal()}원</span>
@@ -506,7 +498,6 @@ export default function Order() {
       </main>
 
       <Footer />
-      </div>
-    </>
+    </div>
   );
 }
