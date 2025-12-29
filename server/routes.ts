@@ -1728,57 +1728,32 @@ export async function registerRoutes(
     completedAt?: Date;
   } = { status: 'idle', total: 0, current: 0, message: '' };
 
-  // Export products as downloadable JSON file
+  // Export all products as JSON (public endpoint for cross-environment sync)
   app.get("/api/export/products", async (req: Request, res: Response) => {
+    // Allow cross-origin requests for data sync
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
     
-    const page = parseInt(req.query.page as string) || 0;
-    const limit = parseInt(req.query.limit as string) || 500;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 1000;
     
     try {
-      const allProducts = await storage.getAllProducts();
+      const allProducts = await storage.getProducts();
       const totalCount = allProducts.length;
-      
-      // If page=0, return metadata only
-      if (page === 0) {
-        res.json({ 
-          success: true, 
-          totalCount,
-          totalPages: Math.ceil(totalCount / limit)
-        });
-        return;
-      }
-      
       const totalPages = Math.ceil(totalCount / limit);
       const start = (page - 1) * limit;
       const end = start + limit;
       const products = allProducts.slice(start, end);
       
-      // Send minimal data to reduce size
-      const minimalProducts = products.map(p => ({
-        name: p.name,
-        categoryId: p.categoryId,
-        price: p.price,
-        description: p.description,
-        detailContent: p.detailContent,
-        imageUrl: p.imageUrl,
-        imageUrls: p.imageUrls,
-        detailImageUrls: p.detailImageUrls,
-        isBest: p.isBest,
-        isNew: p.isNew,
-        isActive: p.isActive,
-      }));
-      
       res.json({ 
         success: true, 
+        count: products.length,
+        totalCount,
         page,
         totalPages,
-        count: minimalProducts.length,
-        data: minimalProducts 
+        data: products 
       });
     } catch (error) {
-      console.error('Export error:', error);
       res.status(500).json({ success: false, error: "Failed to export products" });
     }
   });
@@ -1811,85 +1786,79 @@ export async function registerRoutes(
     // Run sync in background
     (async () => {
       try {
+        // Fetch first page to get total count
+        syncProgress.message = '상품 정보 확인 중...';
         const baseUrl = sourceUrl.replace(/\?.*$/, '');
         
-        // Get total count first
-        syncProgress.message = '상품 수 확인 중...';
-        const metaResponse = await fetch(`${baseUrl}?page=0&limit=500`);
-        if (!metaResponse.ok) {
+        const firstResponse = await fetch(`${baseUrl}?page=1&limit=1000`);
+        if (!firstResponse.ok) {
           throw new Error('소스에서 데이터를 가져올 수 없습니다.');
         }
         
-        const metaData = await metaResponse.json();
-        if (!metaData.success) {
+        const firstData = await firstResponse.json();
+        if (!firstData.success) {
           throw new Error('잘못된 데이터 형식입니다.');
         }
         
-        const totalCount = metaData.totalCount;
-        const totalPages = metaData.totalPages;
+        const totalCount = firstData.totalCount || firstData.count;
+        const totalPages = firstData.totalPages || 1;
         syncProgress.total = totalCount;
-        syncProgress.message = `${totalCount}개 상품 발견`;
+        syncProgress.message = `${totalCount}개 상품 발견, 다운로드 중...`;
         
-        // Clear existing products
+        // Clear existing products first
         syncProgress.message = '기존 상품 삭제 중...';
-        const existingProducts = await storage.getAllProducts();
+        const existingProducts = await storage.getProducts();
         for (const p of existingProducts) {
           await storage.deleteProduct(p.id);
         }
         
-        // Fetch and insert page by page
+        // Fetch and insert products page by page
         let totalInserted = 0;
         
         for (let page = 1; page <= totalPages; page++) {
           syncProgress.message = `페이지 ${page}/${totalPages} 다운로드 중...`;
           
-          try {
-            const pageResponse = await fetch(`${baseUrl}?page=${page}&limit=500`);
-            if (!pageResponse.ok) {
-              console.error(`Page ${page} fetch failed`);
-              continue;
-            }
-            
-            const pageData = await pageResponse.json();
-            if (!pageData.success || !pageData.data) continue;
-            
-            const products = pageData.data;
-            
-            for (const p of products) {
-              try {
-                await storage.createProduct({
-                  name: p.name,
-                  categoryId: p.categoryId,
-                  price: p.price,
-                  description: p.description || p.name,
-                  detailContent: p.detailContent || '',
-                  imageUrl: p.imageUrl,
-                  imageUrls: p.imageUrls || [p.imageUrl],
-                  detailImageUrls: p.detailImageUrls || [],
-                  isBest: p.isBest || false,
-                  isNew: p.isNew || false,
-                  isActive: p.isActive !== false,
-                });
-                totalInserted++;
-                syncProgress.current = totalInserted;
-              } catch (err) {
-                // Skip failed inserts
-              }
-            }
-            syncProgress.message = `${totalInserted}/${totalCount} 상품 복사 완료`;
-            
-          } catch (err) {
-            console.error(`Page ${page} error:`, err);
-          }
+          const pageResponse = await fetch(`${baseUrl}?page=${page}&limit=1000`);
+          if (!pageResponse.ok) continue;
           
-          // Small delay between pages
-          await new Promise(resolve => setTimeout(resolve, 100));
+          const pageData = await pageResponse.json();
+          if (!pageData.success || !pageData.data) continue;
+          
+          const products = pageData.data;
+          
+          for (let i = 0; i < products.length; i++) {
+            const p = products[i];
+            try {
+              await storage.createProduct({
+                name: p.name,
+                categoryId: p.categoryId,
+                price: p.price,
+                description: p.description || p.name,
+                detailContent: p.detailContent || '',
+                imageUrl: p.imageUrl,
+                imageUrls: p.imageUrls || [p.imageUrl],
+                detailImageUrls: p.detailImageUrls || [],
+                isBest: p.isBest || false,
+                isNew: p.isNew || false,
+                isActive: p.isActive !== false,
+              });
+              totalInserted++;
+              syncProgress.current = totalInserted;
+              syncProgress.message = `상품 추가 중... (${totalInserted}/${totalCount})`;
+            } catch (err) {
+              console.error(`Failed to insert product:`, err);
+            }
+            
+            if (totalInserted % 100 === 0) {
+              await new Promise(resolve => setTimeout(resolve, 5));
+            }
+          }
         }
         
         syncProgress.status = 'completed';
-        syncProgress.message = `완료! ${totalInserted}개 상품 복사됨`;
+        syncProgress.message = `완료! ${totalInserted}개 상품이 동기화되었습니다.`;
         syncProgress.completedAt = new Date();
-        console.log(`Sync complete: ${totalInserted} products`);
+        console.log(`Sync complete: ${totalInserted} products imported`);
         
       } catch (error: any) {
         syncProgress.status = 'error';
