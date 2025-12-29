@@ -1728,6 +1728,9 @@ export async function registerRoutes(
     completedAt?: Date;
   } = { status: 'idle', total: 0, current: 0, message: '' };
 
+  // Export cache to avoid re-fetching during paginated export
+  let exportCache: { products: any[]; createdAt: Date } | null = null;
+  
   // Export products as downloadable JSON file
   app.get("/api/export/products", async (req: Request, res: Response) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -1735,47 +1738,52 @@ export async function registerRoutes(
     
     const page = parseInt(req.query.page as string) || 0;
     const limit = parseInt(req.query.limit as string) || 500;
+    const refresh = req.query.refresh === 'true';
     
     try {
-      const allProducts = await storage.getAllProducts();
-      const totalCount = allProducts.length;
+      // Refresh cache if needed or expired (5 min)
+      const cacheExpired = !exportCache || 
+        (Date.now() - exportCache.createdAt.getTime() > 5 * 60 * 1000);
+      
+      if (refresh || cacheExpired || page === 0) {
+        const allProducts = await storage.getAllProducts();
+        exportCache = {
+          products: allProducts.map(p => ({
+            name: p.name,
+            categoryId: p.categoryId,
+            price: p.price,
+            description: p.description,
+            detailContent: p.detailContent,
+            imageUrl: p.imageUrl,
+            imageUrls: p.imageUrls,
+            detailImageUrls: p.detailImageUrls,
+            isBest: p.isBest,
+            isNew: p.isNew,
+            isActive: p.isActive,
+          })),
+          createdAt: new Date()
+        };
+      }
+      
+      const totalCount = exportCache.products.length;
+      const totalPages = Math.ceil(totalCount / limit);
       
       // If page=0, return metadata only
       if (page === 0) {
-        res.json({ 
-          success: true, 
-          totalCount,
-          totalPages: Math.ceil(totalCount / limit)
-        });
+        res.json({ success: true, totalCount, totalPages });
         return;
       }
       
-      const totalPages = Math.ceil(totalCount / limit);
       const start = (page - 1) * limit;
       const end = start + limit;
-      const products = allProducts.slice(start, end);
-      
-      // Send minimal data to reduce size
-      const minimalProducts = products.map(p => ({
-        name: p.name,
-        categoryId: p.categoryId,
-        price: p.price,
-        description: p.description,
-        detailContent: p.detailContent,
-        imageUrl: p.imageUrl,
-        imageUrls: p.imageUrls,
-        detailImageUrls: p.detailImageUrls,
-        isBest: p.isBest,
-        isNew: p.isNew,
-        isActive: p.isActive,
-      }));
+      const products = exportCache.products.slice(start, end);
       
       res.json({ 
         success: true, 
         page,
         totalPages,
-        count: minimalProducts.length,
-        data: minimalProducts 
+        count: products.length,
+        data: products 
       });
     } catch (error) {
       console.error('Export error:', error);
