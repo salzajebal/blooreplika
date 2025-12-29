@@ -3820,18 +3820,15 @@ export default function Admin() {
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">개발 환경 데이터 URL</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">소스 URL</label>
                       <Input
                         data-testid="input-sync-source-url"
                         type="url"
                         value={syncSourceUrl}
                         onChange={(e) => setSyncSourceUrl(e.target.value)}
-                        placeholder="https://개발환경주소/api/export/products"
+                        placeholder="URL 입력"
                         className="w-full"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
-                        개발 환경의 주소 뒤에 <code className="bg-gray-100 px-1 rounded">/api/export/products</code>를 붙이세요.
-                      </p>
                     </div>
 
                     {syncProgress.status !== 'idle' && (
@@ -3903,19 +3900,6 @@ export default function Admin() {
                   </div>
                 </div>
 
-                <div className="border-t border-gray-200 pt-4">
-                  <h4 className="font-semibold text-gray-700 mb-3">사용 방법</h4>
-                  <ol className="text-sm text-gray-600 space-y-2 list-decimal list-inside">
-                    <li>개발 환경 Replit 에디터에서 앱 URL을 복사하세요.</li>
-                    <li>URL 뒤에 <code className="bg-gray-100 px-1 rounded">/api/export/products</code>를 붙여 위 입력란에 붙여넣으세요.</li>
-                    <li>"동기화 시작" 버튼을 클릭하면 모든 상품이 복사됩니다.</li>
-                  </ol>
-                  <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-yellow-700">
-                      <strong>예시:</strong> https://12cc166b-...sisko.replit.dev/api/export/products
-                    </p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
