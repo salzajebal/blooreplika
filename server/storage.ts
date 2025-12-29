@@ -35,6 +35,8 @@ export interface IStorage {
   
   // Products
   getAllProducts(): Promise<Product[]>;
+  getProductsPaginated(limit: number, offset: number): Promise<Product[]>;
+  getProductCount(): Promise<number>;
   getProductsByCategory(categoryId: string): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
@@ -225,6 +227,15 @@ export class DatabaseStorage implements IStorage {
   // Products
   async getAllProducts(): Promise<Product[]> {
     return db.select().from(products).orderBy(desc(products.createdAt));
+  }
+
+  async getProductsPaginated(limit: number, offset: number): Promise<Product[]> {
+    return db.select().from(products).orderBy(desc(products.createdAt)).limit(limit).offset(offset);
+  }
+
+  async getProductCount(): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)::int` }).from(products);
+    return result[0]?.count ?? 0;
   }
 
   async getProductsByCategory(categoryId: string): Promise<Product[]> {

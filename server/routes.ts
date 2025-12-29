@@ -1729,11 +1729,25 @@ export async function registerRoutes(
   } = { status: 'idle', total: 0, current: 0, message: '' };
 
   // Export all products as JSON (public endpoint for cross-environment sync)
-  app.get("/api/export/products", async (_req: Request, res: Response) => {
+  app.get("/api/export/products", async (req: Request, res: Response) => {
     try {
-      const products = await storage.getProducts();
-      res.json({ success: true, count: products.length, data: products });
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 1000;
+      const offset = (page - 1) * limit;
+      
+      const totalCount = await storage.getProductCount();
+      const products = await storage.getProductsPaginated(limit, offset);
+      
+      res.json({ 
+        success: true, 
+        count: products.length,
+        totalCount,
+        page,
+        totalPages: Math.ceil(totalCount / limit),
+        data: products 
+      });
     } catch (error) {
+      console.error("Export error:", error);
       res.status(500).json({ success: false, error: "Failed to export products" });
     }
   });
@@ -1766,25 +1780,52 @@ export async function registerRoutes(
     // Run sync in background
     (async () => {
       try {
-        // Fetch products from source
+        // Fetch products from source with pagination
         syncProgress.message = '개발 환경에서 상품 데이터 다운로드 중...';
-        const response = await fetch(sourceUrl);
-        if (!response.ok) {
+        
+        const allProducts: any[] = [];
+        let page = 1;
+        let totalPages = 1;
+        
+        // First request to get total count
+        const firstUrl = sourceUrl.includes('?') ? `${sourceUrl}&page=1&limit=1000` : `${sourceUrl}?page=1&limit=1000`;
+        const firstResponse = await fetch(firstUrl);
+        if (!firstResponse.ok) {
           throw new Error('소스에서 데이터를 가져올 수 없습니다.');
         }
         
-        const data = await response.json();
-        if (!data.success || !data.data) {
+        const firstData = await firstResponse.json();
+        if (!firstData.success) {
           throw new Error('잘못된 데이터 형식입니다.');
         }
         
-        const products = data.data;
+        totalPages = firstData.totalPages || 1;
+        const totalCount = firstData.totalCount || firstData.count || 0;
+        allProducts.push(...(firstData.data || []));
+        
+        syncProgress.total = totalCount;
+        syncProgress.message = `데이터 다운로드 중... (1/${totalPages} 페이지)`;
+        
+        // Fetch remaining pages
+        for (page = 2; page <= totalPages; page++) {
+          const pageUrl = sourceUrl.includes('?') ? `${sourceUrl}&page=${page}&limit=1000` : `${sourceUrl}?page=${page}&limit=1000`;
+          const pageResponse = await fetch(pageUrl);
+          if (pageResponse.ok) {
+            const pageData = await pageResponse.json();
+            if (pageData.success && pageData.data) {
+              allProducts.push(...pageData.data);
+            }
+          }
+          syncProgress.message = `데이터 다운로드 중... (${page}/${totalPages} 페이지)`;
+        }
+        
+        const products = allProducts;
         syncProgress.total = products.length;
         syncProgress.message = `${products.length}개 상품 동기화 시작...`;
         
         // Clear existing products first
         syncProgress.message = '기존 상품 삭제 중...';
-        const existingProducts = await storage.getProducts();
+        const existingProducts = await storage.getAllProducts();
         for (const p of existingProducts) {
           await storage.deleteProduct(p.id);
         }
@@ -1836,7 +1877,7 @@ export async function registerRoutes(
   // Get product count
   app.get("/api/admin/products/count", requireAdminAuth, async (_req: Request, res: Response) => {
     try {
-      const products = await storage.getProducts();
+      const products = await storage.getAllProducts();
       res.json({ success: true, count: products.length });
     } catch (error) {
       res.status(500).json({ success: false, error: "Failed to get count" });
@@ -1846,7 +1887,7 @@ export async function registerRoutes(
   // Clear all products
   app.delete("/api/admin/products/all", requireAdminAuth, async (_req: Request, res: Response) => {
     try {
-      const products = await storage.getProducts();
+      const products = await storage.getAllProducts();
       for (const p of products) {
         await storage.deleteProduct(p.id);
       }
