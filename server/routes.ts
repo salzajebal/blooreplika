@@ -1822,39 +1822,38 @@ export async function registerRoutes(
       return res.status(400).json({ success: false, error: "이미 동기화가 진행 중입니다." });
     }
     
+    // Get product count first before starting async job
+    const products = await storage.getAllProducts();
+    
+    if (products.length === 0) {
+      return res.status(400).json({ success: false, error: "전송할 상품이 없습니다." });
+    }
+    
+    // Initialize progress with actual count
     syncProgress.status = 'running';
-    syncProgress.total = 0;
+    syncProgress.total = products.length;
     syncProgress.current = 0;
-    syncProgress.message = '개발환경 상품 데이터 준비 중...';
+    syncProgress.message = `${products.length}개 상품을 프로덕션으로 전송 시작...`;
     syncProgress.startedAt = new Date();
     
-    res.json({ success: true, message: "프로덕션 전송이 시작되었습니다." });
+    // Send response immediately
+    res.json({ success: true, message: `${products.length}개 상품 전송이 시작되었습니다.` });
     
-    // Run sync in background
-    (async () => {
+    // Normalize the target URL
+    let targetUrl = sourceUrl.trim();
+    if (targetUrl.endsWith('/')) {
+      targetUrl = targetUrl.slice(0, -1);
+    }
+    
+    // Run sync in background using setImmediate
+    setImmediate(async () => {
       try {
-        // Get all products from local development database
-        syncProgress.message = '개발환경에서 상품 데이터 로드 중...';
-        const products = await storage.getAllProducts();
-        syncProgress.total = products.length;
+        console.log(`Starting sync of ${products.length} products to ${targetUrl}`);
         
-        if (products.length === 0) {
-          syncProgress.status = 'error';
-          syncProgress.message = '전송할 상품이 없습니다.';
-          return;
-        }
-        
-        syncProgress.message = `${products.length}개 상품을 프로덕션으로 전송 중...`;
-        
-        // Normalize the target URL
-        let targetUrl = sourceUrl.trim();
-        if (targetUrl.endsWith('/')) {
-          targetUrl = targetUrl.slice(0, -1);
-        }
-        
-        // Send products to production in batches (small batch to avoid 413 errors)
+        // Send products to production in batches
         const batchSize = 5;
         let sentCount = 0;
+        let failedBatches = 0;
         
         for (let i = 0; i < products.length; i += batchSize) {
           const batch = products.slice(i, i + batchSize);
@@ -1867,10 +1866,10 @@ export async function registerRoutes(
             brandId: p.brandId,
             price: p.price,
             originalPrice: p.originalPrice,
-            description: p.description ? p.description.substring(0, 500) : p.name,
+            description: p.description ? String(p.description).substring(0, 300) : p.name,
             imageUrl: p.imageUrl,
-            imageUrls: (p.imageUrls || []).slice(0, 5),
-            detailImageUrls: (p.detailImageUrls || []).slice(0, 10),
+            imageUrls: (p.imageUrls || []).slice(0, 3),
+            detailImageUrls: (p.detailImageUrls || []).slice(0, 5),
             isBest: p.isBest || false,
             isNew: p.isNew || false,
             isActive: p.isActive !== false,
@@ -1878,6 +1877,9 @@ export async function registerRoutes(
           }));
           
           try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 30000);
+            
             const response = await fetch(`${targetUrl}/api/import/products`, {
               method: 'POST',
               headers: {
@@ -1887,13 +1889,15 @@ export async function registerRoutes(
                 products: minimalBatch,
                 clearExisting: isFirstBatch,
               }),
+              signal: controller.signal,
             });
+            
+            clearTimeout(timeout);
             
             if (!response.ok) {
               const errorText = await response.text();
-              console.error(`Batch ${i} failed:`, errorText);
-              // Continue with next batch instead of failing completely
-              syncProgress.message = `일부 상품 전송 실패, 계속 진행 중... (${sentCount}/${products.length})`;
+              console.error(`Batch ${i} failed (${response.status}):`, errorText.substring(0, 200));
+              failedBatches++;
             } else {
               const result = await response.json();
               if (result.success) {
@@ -1901,29 +1905,35 @@ export async function registerRoutes(
               }
             }
             
-            syncProgress.current = Math.min(i + batchSize, products.length);
-            syncProgress.message = `프로덕션으로 전송 중... (${syncProgress.current}/${products.length})`;
-            
           } catch (err: any) {
             console.error(`Batch ${i} error:`, err.message);
-            // Continue with next batch
+            failedBatches++;
           }
           
+          // Update progress
+          syncProgress.current = i + batch.length;
+          const percent = Math.round((syncProgress.current / syncProgress.total) * 100);
+          syncProgress.message = `프로덕션으로 전송 중... ${percent}% (${syncProgress.current}/${syncProgress.total})`;
+          
           // Small delay between batches
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
         
         syncProgress.status = 'completed';
-        syncProgress.message = `완료! ${sentCount}개 상품이 프로덕션으로 전송되었습니다.`;
+        if (failedBatches > 0) {
+          syncProgress.message = `완료! ${sentCount}개 상품 전송됨 (${failedBatches}개 배치 실패)`;
+        } else {
+          syncProgress.message = `완료! ${sentCount}개 상품이 프로덕션으로 전송되었습니다.`;
+        }
         syncProgress.completedAt = new Date();
-        console.log(`Sync complete: ${sentCount} products exported to production`);
+        console.log(`Sync complete: ${sentCount} products exported, ${failedBatches} batches failed`);
         
       } catch (error: any) {
         syncProgress.status = 'error';
         syncProgress.message = `오류: ${error.message || '알 수 없는 오류'}`;
         console.error('Sync error:', error);
       }
-    })();
+    });
   });
   
   // Get product count
