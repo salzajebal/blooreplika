@@ -1849,8 +1849,8 @@ export async function registerRoutes(
           targetUrl = targetUrl.slice(0, -1);
         }
         
-        // Send products to production in batches
-        const batchSize = 100;
+        // Send products to production in batches (small batch to avoid 413 errors)
+        const batchSize = 10;
         let sentCount = 0;
         
         for (let i = 0; i < products.length; i += batchSize) {
