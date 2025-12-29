@@ -1757,12 +1757,62 @@ export async function registerRoutes(
     res.json({ success: true, ...syncProgress });
   });
 
-  // Import products from development environment
+  // Import products from external source (receive products)
+  app.post("/api/import/products", async (req: Request, res: Response) => {
+    try {
+      const { products, clearExisting } = req.body;
+      
+      if (!products || !Array.isArray(products)) {
+        return res.status(400).json({ success: false, error: "상품 데이터가 필요합니다." });
+      }
+      
+      // Clear existing products if requested
+      if (clearExisting) {
+        const existingProducts = await storage.getAllProducts();
+        for (const p of existingProducts) {
+          await storage.deleteProduct(p.id);
+        }
+      }
+      
+      let successCount = 0;
+      for (const p of products) {
+        try {
+          await storage.createProduct({
+            name: p.name,
+            categoryId: p.categoryId,
+            price: p.price,
+            description: p.description || p.name,
+            detailContent: p.detailContent || '',
+            imageUrl: p.imageUrl,
+            imageUrls: p.imageUrls || [p.imageUrl],
+            detailImageUrls: p.detailImageUrls || [],
+            isBest: p.isBest || false,
+            isNew: p.isNew || false,
+            isActive: p.isActive !== false,
+          });
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to import product ${p.name}:`, err);
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `${successCount}개 상품이 가져와졌습니다.`,
+        count: successCount 
+      });
+    } catch (error) {
+      console.error("Import error:", error);
+      res.status(500).json({ success: false, error: "상품 가져오기에 실패했습니다." });
+    }
+  });
+
+  // Push products TO production (export from dev to production)
   app.post("/api/admin/sync/import", requireAdminAuth, async (req: Request, res: Response) => {
     const { sourceUrl } = req.body;
     
     if (!sourceUrl) {
-      return res.status(400).json({ success: false, error: "소스 URL이 필요합니다." });
+      return res.status(400).json({ success: false, error: "프로덕션 URL이 필요합니다." });
     }
     
     if (syncProgress.status === 'running') {
@@ -1772,99 +1822,79 @@ export async function registerRoutes(
     syncProgress.status = 'running';
     syncProgress.total = 0;
     syncProgress.current = 0;
-    syncProgress.message = '프로덕션에서 데이터를 가져오는 중...';
+    syncProgress.message = '개발환경 상품 데이터 준비 중...';
     syncProgress.startedAt = new Date();
     
-    res.json({ success: true, message: "동기화가 시작되었습니다." });
+    res.json({ success: true, message: "프로덕션 전송이 시작되었습니다." });
     
     // Run sync in background
     (async () => {
       try {
-        // Fetch products from source with pagination
-        syncProgress.message = '프로덕션에서 상품 데이터 다운로드 중...';
-        
-        const allProducts: any[] = [];
-        let page = 1;
-        let totalPages = 1;
-        
-        // First request to get total count
-        const firstUrl = sourceUrl.includes('?') ? `${sourceUrl}&page=1&limit=1000` : `${sourceUrl}?page=1&limit=1000`;
-        const firstResponse = await fetch(firstUrl);
-        if (!firstResponse.ok) {
-          throw new Error('소스에서 데이터를 가져올 수 없습니다.');
-        }
-        
-        const firstData = await firstResponse.json();
-        if (!firstData.success) {
-          throw new Error('잘못된 데이터 형식입니다.');
-        }
-        
-        totalPages = firstData.totalPages || 1;
-        const totalCount = firstData.totalCount || firstData.count || 0;
-        allProducts.push(...(firstData.data || []));
-        
-        syncProgress.total = totalCount;
-        syncProgress.message = `데이터 다운로드 중... (1/${totalPages} 페이지)`;
-        
-        // Fetch remaining pages
-        for (page = 2; page <= totalPages; page++) {
-          const pageUrl = sourceUrl.includes('?') ? `${sourceUrl}&page=${page}&limit=1000` : `${sourceUrl}?page=${page}&limit=1000`;
-          const pageResponse = await fetch(pageUrl);
-          if (pageResponse.ok) {
-            const pageData = await pageResponse.json();
-            if (pageData.success && pageData.data) {
-              allProducts.push(...pageData.data);
-            }
-          }
-          syncProgress.message = `데이터 다운로드 중... (${page}/${totalPages} 페이지)`;
-        }
-        
-        const products = allProducts;
+        // Get all products from local development database
+        syncProgress.message = '개발환경에서 상품 데이터 로드 중...';
+        const products = await storage.getAllProducts();
         syncProgress.total = products.length;
-        syncProgress.message = `${products.length}개 상품 동기화 시작...`;
         
-        // Clear existing products first
-        syncProgress.message = '기존 상품 삭제 중...';
-        const existingProducts = await storage.getAllProducts();
-        for (const p of existingProducts) {
-          await storage.deleteProduct(p.id);
+        if (products.length === 0) {
+          syncProgress.status = 'error';
+          syncProgress.message = '전송할 상품이 없습니다.';
+          return;
         }
         
-        syncProgress.message = '상품 추가 중...';
+        syncProgress.message = `${products.length}개 상품을 프로덕션으로 전송 중...`;
         
-        // Insert products in batches
-        for (let i = 0; i < products.length; i++) {
-          const p = products[i];
+        // Normalize the target URL
+        let targetUrl = sourceUrl.trim();
+        if (targetUrl.endsWith('/')) {
+          targetUrl = targetUrl.slice(0, -1);
+        }
+        
+        // Send products to production in batches
+        const batchSize = 100;
+        let sentCount = 0;
+        
+        for (let i = 0; i < products.length; i += batchSize) {
+          const batch = products.slice(i, i + batchSize);
+          const isFirstBatch = i === 0;
+          
           try {
-            await storage.createProduct({
-              name: p.name,
-              categoryId: p.categoryId,
-              price: p.price,
-              description: p.description || p.name,
-              detailContent: p.detailContent || '',
-              imageUrl: p.imageUrl,
-              imageUrls: p.imageUrls || [p.imageUrl],
-              detailImageUrls: p.detailImageUrls || [],
-              isBest: p.isBest || false,
-              isNew: p.isNew || false,
-              isActive: p.isActive !== false,
+            const response = await fetch(`${targetUrl}/api/import/products`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                products: batch,
+                clearExisting: isFirstBatch, // Only clear on first batch
+              }),
             });
-            syncProgress.current = i + 1;
-            syncProgress.message = `상품 추가 중... (${i + 1}/${products.length})`;
-          } catch (err) {
-            console.error(`Failed to insert product ${p.name}:`, err);
+            
+            if (!response.ok) {
+              const errorText = await response.text();
+              throw new Error(`프로덕션 서버 오류: ${response.status} - ${errorText}`);
+            }
+            
+            const result = await response.json();
+            if (!result.success) {
+              throw new Error(result.error || '프로덕션 전송 실패');
+            }
+            
+            sentCount += batch.length;
+            syncProgress.current = sentCount;
+            syncProgress.message = `프로덕션으로 전송 중... (${sentCount}/${products.length})`;
+            
+          } catch (err: any) {
+            throw new Error(`배치 전송 실패: ${err.message}`);
           }
           
-          // Small delay to prevent overwhelming the database
-          if (i % 100 === 0) {
-            await new Promise(resolve => setTimeout(resolve, 10));
-          }
+          // Small delay between batches
+          await new Promise(resolve => setTimeout(resolve, 100));
         }
         
         syncProgress.status = 'completed';
-        syncProgress.message = `완료! ${syncProgress.current}개 상품이 동기화되었습니다.`;
+        syncProgress.message = `완료! ${sentCount}개 상품이 프로덕션으로 전송되었습니다.`;
         syncProgress.completedAt = new Date();
-        console.log(`Sync complete: ${syncProgress.current} products imported`);
+        console.log(`Sync complete: ${sentCount} products exported to production`);
         
       } catch (error: any) {
         syncProgress.status = 'error';
