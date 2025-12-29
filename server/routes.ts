@@ -1728,9 +1728,6 @@ export async function registerRoutes(
     completedAt?: Date;
   } = { status: 'idle', total: 0, current: 0, message: '' };
 
-  // Export cache to avoid re-fetching during paginated export
-  let exportCache: { products: any[]; createdAt: Date } | null = null;
-  
   // Export products as downloadable JSON file
   app.get("/api/export/products", async (req: Request, res: Response) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -1738,52 +1735,47 @@ export async function registerRoutes(
     
     const page = parseInt(req.query.page as string) || 0;
     const limit = parseInt(req.query.limit as string) || 500;
-    const refresh = req.query.refresh === 'true';
     
     try {
-      // Refresh cache if needed or expired (5 min)
-      const cacheExpired = !exportCache || 
-        (Date.now() - exportCache.createdAt.getTime() > 5 * 60 * 1000);
-      
-      if (refresh || cacheExpired || page === 0) {
-        const allProducts = await storage.getAllProducts();
-        exportCache = {
-          products: allProducts.map(p => ({
-            name: p.name,
-            categoryId: p.categoryId,
-            price: p.price,
-            description: p.description,
-            detailContent: p.detailContent,
-            imageUrl: p.imageUrl,
-            imageUrls: p.imageUrls,
-            detailImageUrls: p.detailImageUrls,
-            isBest: p.isBest,
-            isNew: p.isNew,
-            isActive: p.isActive,
-          })),
-          createdAt: new Date()
-        };
-      }
-      
-      const totalCount = exportCache.products.length;
-      const totalPages = Math.ceil(totalCount / limit);
+      const allProducts = await storage.getAllProducts();
+      const totalCount = allProducts.length;
       
       // If page=0, return metadata only
       if (page === 0) {
-        res.json({ success: true, totalCount, totalPages });
+        res.json({ 
+          success: true, 
+          totalCount,
+          totalPages: Math.ceil(totalCount / limit)
+        });
         return;
       }
       
+      const totalPages = Math.ceil(totalCount / limit);
       const start = (page - 1) * limit;
       const end = start + limit;
-      const products = exportCache.products.slice(start, end);
+      const products = allProducts.slice(start, end);
+      
+      // Send minimal data to reduce size
+      const minimalProducts = products.map(p => ({
+        name: p.name,
+        categoryId: p.categoryId,
+        price: p.price,
+        description: p.description,
+        detailContent: p.detailContent,
+        imageUrl: p.imageUrl,
+        imageUrls: p.imageUrls,
+        detailImageUrls: p.detailImageUrls,
+        isBest: p.isBest,
+        isNew: p.isNew,
+        isActive: p.isActive,
+      }));
       
       res.json({ 
         success: true, 
         page,
         totalPages,
-        count: products.length,
-        data: products 
+        count: minimalProducts.length,
+        data: minimalProducts 
       });
     } catch (error) {
       console.error('Export error:', error);
@@ -1838,10 +1830,12 @@ export async function registerRoutes(
         syncProgress.total = totalCount;
         syncProgress.message = `${totalCount}개 상품 발견`;
         
-        // Clear existing products with bulk delete
+        // Clear existing products
         syncProgress.message = '기존 상품 삭제 중...';
-        const deletedCount = await storage.deleteAllProducts();
-        console.log(`Deleted ${deletedCount} existing products`);
+        const existingProducts = await storage.getAllProducts();
+        for (const p of existingProducts) {
+          await storage.deleteProduct(p.id);
+        }
         
         // Fetch and insert page by page
         let totalInserted = 0;
