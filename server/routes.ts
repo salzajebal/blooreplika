@@ -1730,6 +1730,9 @@ export async function registerRoutes(
 
   // Export all products as JSON (public endpoint for cross-environment sync)
   app.get("/api/export/products", async (_req: Request, res: Response) => {
+    // Allow cross-origin requests for data sync
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
     try {
       const products = await storage.getProducts();
       res.json({ success: true, count: products.length, data: products });
