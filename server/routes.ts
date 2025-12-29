@@ -1718,7 +1718,7 @@ export async function registerRoutes(
     }
   });
 
-  // Progress tracking for data sync
+  // Progress tracking for data sync and crawling
   const syncProgress: { 
     status: 'idle' | 'running' | 'completed' | 'error';
     total: number;
@@ -1727,6 +1727,16 @@ export async function registerRoutes(
     startedAt?: Date;
     completedAt?: Date;
   } = { status: 'idle', total: 0, current: 0, message: '' };
+  
+  const crawlProgress: {
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    message: string;
+    category: string;
+    startedAt?: Date;
+    completedAt?: Date;
+  } = { status: 'idle', total: 0, current: 0, message: '', category: '' };
 
   // Export all products as JSON (public endpoint for cross-environment sync)
   app.get("/api/export/products", async (_req: Request, res: Response) => {
@@ -1854,6 +1864,199 @@ export async function registerRoutes(
     } catch (error) {
       res.status(500).json({ success: false, error: "Failed to delete products" });
     }
+  });
+
+  // Get crawl progress
+  app.get("/api/admin/crawl/progress", requireAdminAuth, async (_req: Request, res: Response) => {
+    res.json({ success: true, ...crawlProgress });
+  });
+
+  // Full crawl from cdamdong.co.kr (like the successful script)
+  app.post("/api/admin/crawl/start", requireAdminAuth, async (req: Request, res: Response) => {
+    if (crawlProgress.status === 'running') {
+      return res.status(400).json({ success: false, error: "이미 크롤링이 진행 중입니다." });
+    }
+    
+    const { clearExisting } = req.body;
+    
+    crawlProgress.status = 'running';
+    crawlProgress.total = 0;
+    crawlProgress.current = 0;
+    crawlProgress.message = '크롤링 준비 중...';
+    crawlProgress.category = '';
+    crawlProgress.startedAt = new Date();
+    
+    res.json({ success: true, message: "크롤링이 시작되었습니다." });
+    
+    // Run crawl in background
+    (async () => {
+      const CATEGORIES = [
+        { id: "10", name: "아우터", localId: "outer" },
+        { id: "20", name: "패딩", localId: "padding" },
+        { id: "30", name: "상의", localId: "tops" },
+        { id: "40", name: "하의", localId: "bottoms" },
+        { id: "70", name: "신발", localId: "shoes" },
+        { id: "80", name: "악세사리", localId: "accessories" },
+        { id: "a0", name: "지갑", localId: "wallets" },
+        { id: "c0", name: "가방", localId: "bags" },
+        { id: "f0", name: "시계", localId: "watches" },
+        { id: "g0", name: "정품", localId: "genuine" },
+      ];
+      
+      const headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": "https://cdamdong.co.kr/",
+      };
+      
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      
+      const fetchProductList = async (categoryId: string, page: number): Promise<string[]> => {
+        try {
+          const response = await fetch(`https://cdamdong.co.kr/shop/list.php?ca_id=${categoryId}&page=${page}`, { headers });
+          if (!response.ok) return [];
+          const html = await response.text();
+          return [...new Set((html.match(/it_id=(\d+)/g) || []).map(m => m.replace('it_id=', '')))];
+        } catch { return []; }
+      };
+      
+      const fetchProductDetail = async (sourceId: string, categoryLocalId: string) => {
+        const url = `https://cdamdong.co.kr/shop/item.php?it_id=${sourceId}`;
+        try {
+          const response = await fetch(url, { headers });
+          if (!response.ok) return null;
+          const html = await response.text();
+          
+          // Name extraction
+          let name = '';
+          const nameMatch = html.match(/<h1[^>]*class="sit_tit"[^>]*>([^<]+)<\/h1>/i);
+          if (nameMatch) name = nameMatch[1].trim();
+          if (!name) {
+            const titleMatch = html.match(/<title>([^|<]+)/i);
+            if (titleMatch) name = titleMatch[1].trim();
+          }
+          if (!name) name = `상품 ${sourceId}`;
+          
+          // Price extraction
+          let price = 0;
+          const priceText = html.match(/(\d{1,3}(?:,\d{3})+)원/);
+          if (priceText) price = parseInt(priceText[1].replace(/,/g, ''), 10);
+          
+          // Main images from #sit_pvi
+          const mainImages: string[] = [];
+          const mainImgMatches = html.match(new RegExp(`https://cdamdong\\.co\\.kr/data/item/${sourceId}/[^"'\\s]+\\.(jpg|jpeg|png|webp)`, 'gi')) || [];
+          mainImgMatches.forEach(img => {
+            const clean = img.replace(/thumb-/, '').replace(/_300x300|_500x500/g, '').split('?')[0];
+            if (!clean.includes('_77x82') && !mainImages.includes(clean)) mainImages.push(clean);
+          });
+          
+          // Detail images from /data/editor/
+          const detailImages: string[] = [];
+          const detailMatches = html.match(/https?:\/\/cdamdong\.co\.kr\/data\/editor\/[^"'\s]+\.(jpg|jpeg|png|webp|gif)/gi) || [];
+          detailMatches.forEach(img => {
+            const clean = img.replace(/^http:/, 'https:');
+            if (!detailImages.includes(clean)) detailImages.push(clean);
+          });
+          
+          const isBest = html.includes('BEST') || html.includes('best_icon');
+          
+          return {
+            sourceId,
+            name,
+            price,
+            imageUrl: mainImages[0] || `https://cdamdong.co.kr/data/item/${sourceId}/`,
+            imageUrls: mainImages,
+            detailImageUrls: detailImages,
+            categoryId: categoryLocalId,
+            isBest,
+          };
+        } catch { return null; }
+      };
+      
+      try {
+        // Clear existing products if requested
+        if (clearExisting) {
+          crawlProgress.message = '기존 상품 삭제 중...';
+          const existing = await storage.getProducts();
+          for (const p of existing) {
+            await storage.deleteProduct(p.id);
+          }
+        }
+        
+        let totalInserted = 0;
+        
+        for (const category of CATEGORIES) {
+          crawlProgress.category = category.name;
+          crawlProgress.message = `[${category.name}] 상품 목록 수집 중...`;
+          
+          // Collect all product IDs from category
+          const allIds = new Set<string>();
+          let page = 1;
+          let emptyCount = 0;
+          
+          while (emptyCount < 3 && page <= 200) {
+            const ids = await fetchProductList(category.id, page);
+            let newCount = 0;
+            ids.forEach(id => { if (!allIds.has(id)) { allIds.add(id); newCount++; } });
+            if (newCount === 0) emptyCount++; else emptyCount = 0;
+            page++;
+            await delay(30);
+            
+            if (page % 20 === 0) {
+              crawlProgress.message = `[${category.name}] 페이지 ${page} 스캔 중... (${allIds.size}개 발견)`;
+            }
+          }
+          
+          crawlProgress.message = `[${category.name}] ${allIds.size}개 상품 상세 정보 수집 중...`;
+          crawlProgress.total = allIds.size;
+          crawlProgress.current = 0;
+          
+          const idsArray = Array.from(allIds);
+          
+          // Process in batches of 15 (parallel)
+          for (let i = 0; i < idsArray.length; i += 15) {
+            const batch = idsArray.slice(i, i + 15);
+            const results = await Promise.all(batch.map(id => fetchProductDetail(id, category.localId)));
+            
+            for (const p of results) {
+              if (p) {
+                try {
+                  await storage.createProduct({
+                    name: p.name,
+                    categoryId: p.categoryId,
+                    price: p.price,
+                    description: p.name,
+                    detailContent: "프리미엄 명품 레플리카 제품입니다.",
+                    imageUrl: p.imageUrl,
+                    imageUrls: p.imageUrls.length > 0 ? p.imageUrls : [p.imageUrl],
+                    detailImageUrls: p.detailImageUrls,
+                    isBest: p.isBest,
+                    isNew: totalInserted % 8 === 0,
+                    isActive: true,
+                  });
+                  totalInserted++;
+                } catch {}
+              }
+            }
+            
+            crawlProgress.current = Math.min(i + 15, idsArray.length);
+            crawlProgress.message = `[${category.name}] 상품 저장 중... (${crawlProgress.current}/${allIds.size})`;
+            await delay(50);
+          }
+          
+          console.log(`[${category.name}] ${allIds.size} products processed, total: ${totalInserted}`);
+        }
+        
+        crawlProgress.status = 'completed';
+        crawlProgress.message = `완료! 총 ${totalInserted}개 상품이 크롤링되었습니다.`;
+        crawlProgress.completedAt = new Date();
+        console.log(`Full crawl complete: ${totalInserted} products`);
+        
+      } catch (error: any) {
+        crawlProgress.status = 'error';
+        crawlProgress.message = `오류: ${error.message || '알 수 없는 오류'}`;
+        console.error('Crawl error:', error);
+      }
+    })();
   });
 
   return httpServer;

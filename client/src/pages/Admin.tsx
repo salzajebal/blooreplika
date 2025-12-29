@@ -184,6 +184,16 @@ export default function Admin() {
     message: string;
   }>({ status: 'idle', total: 0, current: 0, message: '' });
   const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const [crawlProgress, setCrawlProgress] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    message: string;
+    category: string;
+  }>({ status: 'idle', total: 0, current: 0, message: '', category: '' });
+  const [clearBeforeCrawl, setClearBeforeCrawl] = useState(true);
+  const crawlIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchProductCount = async () => {
     try {
@@ -238,6 +248,50 @@ export default function Admin() {
       }
     } catch (error) {
       toast({ title: "오류", description: "동기화를 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+
+  const fetchCrawlProgress = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/progress", { method: "GET" });
+      const data = await res.json();
+      if (data.success) {
+        setCrawlProgress({
+          status: data.status,
+          total: data.total,
+          current: data.current,
+          message: data.message,
+          category: data.category || '',
+        });
+        if (data.status === 'completed' || data.status === 'error') {
+          if (crawlIntervalRef.current) {
+            clearInterval(crawlIntervalRef.current);
+            crawlIntervalRef.current = null;
+          }
+          fetchProductCount();
+          fetchProducts();
+        }
+      }
+    } catch {}
+  };
+
+  const startCrawl = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clearExisting: clearBeforeCrawl }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "크롤링 시작", description: data.message });
+        setCrawlProgress({ status: 'running', total: 0, current: 0, message: '시작 중...', category: '' });
+        crawlIntervalRef.current = setInterval(fetchCrawlProgress, 500);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "크롤링을 시작할 수 없습니다.", variant: "destructive" });
     }
   };
 
@@ -3915,6 +3969,137 @@ export default function Admin() {
                       <strong>예시:</strong> https://12cc166b-...sisko.replit.dev/api/export/products
                     </p>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Download className="w-5 h-5 text-blue-600" />
+                  cdamdong.co.kr 크롤링
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">cdamdong.co.kr에서 전체 상품을 크롤링합니다. (약 18,000개)</p>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Database className="w-6 h-6 text-blue-600" />
+                    <div>
+                      <h4 className="font-bold text-gray-900">현재 상품 수</h4>
+                      <p className="text-2xl font-bold text-blue-600">
+                        {productCount !== null ? productCount.toLocaleString() : "-"}개
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => fetchProductCount()}
+                      className="ml-auto"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="clearBeforeCrawl"
+                        checked={clearBeforeCrawl}
+                        onChange={(e) => setClearBeforeCrawl(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 rounded"
+                      />
+                      <label htmlFor="clearBeforeCrawl" className="text-sm text-gray-700">
+                        크롤링 전 기존 상품 모두 삭제
+                      </label>
+                    </div>
+
+                    {crawlProgress.status !== 'idle' && (
+                      <div className={`p-4 rounded-lg ${
+                        crawlProgress.status === 'running' ? 'bg-blue-50 border border-blue-200' :
+                        crawlProgress.status === 'completed' ? 'bg-green-50 border border-green-200' :
+                        'bg-red-50 border border-red-200'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          {crawlProgress.status === 'running' && <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />}
+                          {crawlProgress.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                          {crawlProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                          <span className={`text-sm font-medium ${
+                            crawlProgress.status === 'running' ? 'text-blue-700' :
+                            crawlProgress.status === 'completed' ? 'text-green-700' :
+                            'text-red-700'
+                          }`}>
+                            {crawlProgress.message}
+                          </span>
+                        </div>
+                        
+                        {crawlProgress.status === 'running' && crawlProgress.total > 0 && (
+                          <div className="space-y-2">
+                            <div className="w-full bg-blue-100 rounded-full h-3">
+                              <div 
+                                className="bg-blue-500 h-3 rounded-full transition-all duration-300"
+                                style={{ width: `${Math.round((crawlProgress.current / crawlProgress.total) * 100)}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-xs text-blue-600">
+                              <span>{crawlProgress.current.toLocaleString()} / {crawlProgress.total.toLocaleString()}</span>
+                              <span>{Math.round((crawlProgress.current / crawlProgress.total) * 100)}%</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex gap-3">
+                      <Button
+                        data-testid="button-start-crawl"
+                        onClick={startCrawl}
+                        disabled={crawlProgress.status === 'running'}
+                        className="bg-blue-500 hover:bg-blue-600 text-white flex-1"
+                      >
+                        {crawlProgress.status === 'running' ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            크롤링 중...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4 mr-2" />
+                            전체 크롤링 시작
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        data-testid="button-clear-products"
+                        onClick={clearAllProducts}
+                        variant="destructive"
+                        className="flex-shrink-0"
+                        disabled={crawlProgress.status === 'running'}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        전체 삭제
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-1">•</span>
+                      <span>cdamdong.co.kr의 전체 카테고리(10개)에서 모든 상품을 크롤링합니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-1">•</span>
+                      <span>크롤링 시간: 약 10-30분 (상품 수에 따라 다름)</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-1">•</span>
+                      <span>진행 상황이 실시간으로 표시됩니다.</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>
