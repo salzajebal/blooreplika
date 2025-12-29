@@ -1830,12 +1830,10 @@ export async function registerRoutes(
         syncProgress.total = totalCount;
         syncProgress.message = `${totalCount}개 상품 발견`;
         
-        // Clear existing products
+        // Clear existing products with bulk delete
         syncProgress.message = '기존 상품 삭제 중...';
-        const existingProducts = await storage.getAllProducts();
-        for (const p of existingProducts) {
-          await storage.deleteProduct(p.id);
-        }
+        const deletedCount = await storage.deleteAllProducts();
+        console.log(`Deleted ${deletedCount} existing products`);
         
         // Fetch and insert page by page
         let totalInserted = 0;
