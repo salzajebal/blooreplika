@@ -218,7 +218,7 @@ export default function Admin() {
 
   const startSync = async () => {
     if (!syncSourceUrl) {
-      toast({ title: "오류", description: "프로덕션 사이트 URL을 입력해주세요.", variant: "destructive" });
+      toast({ title: "오류", description: "개발 환경 URL을 입력해주세요.", variant: "destructive" });
       return;
     }
     
@@ -3792,19 +3792,19 @@ export default function Admin() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
               <div className="p-6 border-b border-gray-100">
                 <h3 className="text-lg font-bold flex items-center gap-2">
-                  <Download className="w-5 h-5 text-blue-600" />
-                  프로덕션 동기화
+                  <Download className="w-5 h-5 text-green-600" />
+                  데이터 동기화
                 </h3>
-                <p className="text-sm text-gray-500 mt-1">프로덕션(배포된 사이트)의 상품 데이터를 개발 환경으로 가져옵니다.</p>
+                <p className="text-sm text-gray-500 mt-1">개발 환경의 상품 데이터를 프로덕션으로 복사합니다.</p>
               </div>
               
               <div className="p-6 space-y-6">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <div className="flex items-center gap-3 mb-4">
-                    <Database className="w-6 h-6 text-blue-600" />
+                    <Database className="w-6 h-6 text-green-600" />
                     <div>
-                      <h4 className="font-bold text-gray-900">현재 개발환경 상품 수</h4>
-                      <p className="text-2xl font-bold text-blue-600">
+                      <h4 className="font-bold text-gray-900">현재 상품 수</h4>
+                      <p className="text-2xl font-bold text-green-600">
                         {productCount !== null ? productCount.toLocaleString() : "-"}개
                       </p>
                     </div>
@@ -3820,20 +3820,15 @@ export default function Admin() {
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">프로덕션 사이트 URL</label>
-                      <div className="flex gap-2">
-                        <Input
-                          data-testid="input-sync-source-url"
-                          type="url"
-                          value={syncSourceUrl}
-                          onChange={(e) => setSyncSourceUrl(e.target.value)}
-                          placeholder="예: https://your-site.replit.app/api/export/products"
-                          className="flex-1"
-                        />
-                      </div>
-                      <p className="text-xs text-gray-500 mt-2">
-                        배포된 사이트의 상품 내보내기 API URL을 입력하세요. (예: https://사이트주소/api/export/products)
-                      </p>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">소스 URL</label>
+                      <Input
+                        data-testid="input-sync-source-url"
+                        type="url"
+                        value={syncSourceUrl}
+                        onChange={(e) => setSyncSourceUrl(e.target.value)}
+                        placeholder="URL 입력"
+                        className="w-full"
+                      />
                     </div>
 
                     {syncProgress.status !== 'idle' && (
@@ -3876,8 +3871,8 @@ export default function Admin() {
                       <Button
                         data-testid="button-start-sync"
                         onClick={startSync}
-                        disabled={syncProgress.status === 'running' || !syncSourceUrl}
-                        className="bg-blue-500 hover:bg-blue-600 text-white flex-1"
+                        disabled={syncProgress.status === 'running'}
+                        className="bg-green-500 hover:bg-green-600 text-white flex-1"
                       >
                         {syncProgress.status === 'running' ? (
                           <>
@@ -3887,7 +3882,7 @@ export default function Admin() {
                         ) : (
                           <>
                             <Download className="w-4 h-4 mr-2" />
-                            프로덕션에서 가져오기
+                            동기화 시작
                           </>
                         )}
                       </Button>
@@ -3905,26 +3900,6 @@ export default function Admin() {
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <Settings className="w-4 h-4" />
-                    사용 방법
-                  </h4>
-                  <ul className="text-sm text-gray-600 space-y-2">
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-500 mt-1">1.</span>
-                      <span>배포된 프로덕션 사이트의 URL을 확인합니다. (예: https://your-site.replit.app)</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-500 mt-1">2.</span>
-                      <span>URL 뒤에 <code className="bg-gray-200 px-1 rounded">/api/export/products</code>를 붙여서 입력합니다.</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-blue-500 mt-1">3.</span>
-                      <span>"프로덕션에서 가져오기" 버튼을 클릭하면 프로덕션의 상품 데이터가 개발 환경에 복사됩니다.</span>
-                    </li>
-                  </ul>
-                </div>
               </div>
             </div>
           </div>

@@ -1772,7 +1772,7 @@ export async function registerRoutes(
     syncProgress.status = 'running';
     syncProgress.total = 0;
     syncProgress.current = 0;
-    syncProgress.message = '프로덕션에서 데이터를 가져오는 중...';
+    syncProgress.message = '개발 환경에서 데이터를 가져오는 중...';
     syncProgress.startedAt = new Date();
     
     res.json({ success: true, message: "동기화가 시작되었습니다." });
@@ -1781,7 +1781,7 @@ export async function registerRoutes(
     (async () => {
       try {
         // Fetch products from source with pagination
-        syncProgress.message = '프로덕션에서 상품 데이터 다운로드 중...';
+        syncProgress.message = '개발 환경에서 상품 데이터 다운로드 중...';
         
         const allProducts: any[] = [];
         let page = 1;
