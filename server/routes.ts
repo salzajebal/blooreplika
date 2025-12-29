@@ -1741,7 +1741,7 @@ export async function registerRoutes(
   // Export all products as JSON (public endpoint for cross-environment sync)
   app.get("/api/export/products", async (_req: Request, res: Response) => {
     try {
-      const products = await storage.getProducts();
+      const products = await storage.getAllProducts();
       res.json({ success: true, count: products.length, data: products });
     } catch (error) {
       res.status(500).json({ success: false, error: "Failed to export products" });
@@ -1794,7 +1794,7 @@ export async function registerRoutes(
         
         // Clear existing products first
         syncProgress.message = '기존 상품 삭제 중...';
-        const existingProducts = await storage.getProducts();
+        const existingProducts = await storage.getAllProducts();
         for (const p of existingProducts) {
           await storage.deleteProduct(p.id);
         }
@@ -1846,7 +1846,7 @@ export async function registerRoutes(
   // Get product count
   app.get("/api/admin/products/count", requireAdminAuth, async (_req: Request, res: Response) => {
     try {
-      const products = await storage.getProducts();
+      const products = await storage.getAllProducts();
       res.json({ success: true, count: products.length });
     } catch (error) {
       res.status(500).json({ success: false, error: "Failed to get count" });
@@ -1856,7 +1856,7 @@ export async function registerRoutes(
   // Clear all products
   app.delete("/api/admin/products/all", requireAdminAuth, async (_req: Request, res: Response) => {
     try {
-      const products = await storage.getProducts();
+      const products = await storage.getAllProducts();
       for (const p of products) {
         await storage.deleteProduct(p.id);
       }
@@ -1976,7 +1976,7 @@ export async function registerRoutes(
         // Clear existing products if requested
         if (clearExisting) {
           crawlProgress.message = '기존 상품 삭제 중...';
-          const existing = await storage.getProducts();
+          const existing = await storage.getAllProducts();
           for (const p of existing) {
             await storage.deleteProduct(p.id);
           }
