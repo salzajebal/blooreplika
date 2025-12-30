@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart, Loader2 } from "lucide-react";
+import { ShoppingCart, Heart, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
@@ -22,11 +22,12 @@ export function ProductGrid() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const { toggleItem, isInWishlist } = useWishlist();
   const { toast } = useToast();
+
+  const totalPages = Math.ceil(totalCount / PRODUCTS_PER_PAGE);
 
   const handleWishlistToggle = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
@@ -46,42 +47,73 @@ export function ProductGrid() {
     });
   };
 
-  const fetchProducts = async (offset = 0, append = false) => {
+  const fetchProducts = async (page: number) => {
+    setLoading(true);
     try {
+      const offset = (page - 1) * PRODUCTS_PER_PAGE;
       const url = activeCategory === "all" 
         ? `/api/products?limit=${PRODUCTS_PER_PAGE}&offset=${offset}` 
         : `/api/products?category=${activeCategory}&limit=${PRODUCTS_PER_PAGE}&offset=${offset}`;
       const res = await fetch(url);
       const data = await res.json();
       if (data.success) {
-        if (append) {
-          setProducts(prev => [...prev, ...data.data]);
-        } else {
-          setProducts(data.data);
-        }
+        setProducts(data.data);
         setTotalCount(data.total ?? data.data.length);
-        setHasMore(data.hasMore ?? false);
       }
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
       setLoading(false);
-      setLoadingMore(false);
     }
   };
 
-  const loadMore = () => {
-    setLoadingMore(true);
-    fetchProducts(products.length, true);
-  };
-
   useEffect(() => {
-    setLoading(true);
-    setProducts([]);
-    fetchProducts(0, false);
+    setCurrentPage(1);
+    fetchProducts(1);
   }, [activeCategory]);
 
-  const filteredProducts = products;
+  useEffect(() => {
+    fetchProducts(currentPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentPage]);
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages + 2) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      
+      if (currentPage > 3) {
+        pages.push('...');
+      }
+      
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      
+      if (currentPage < totalPages - 2) {
+        pages.push('...');
+      }
+      
+      pages.push(totalPages);
+    }
+    
+    return pages;
+  };
 
   return (
     <section className="py-8 sm:py-12 md:py-16">
@@ -127,17 +159,23 @@ export function ProductGrid() {
           </p>
         </div>
         <div className="text-xs sm:text-sm text-gray-500">
-          총 <span className="font-bold text-primary" data-testid="text-product-count">{totalCount.toLocaleString()}</span>개 중 <span className="font-bold">{filteredProducts.length.toLocaleString()}</span>개 표시
+          총 <span className="font-bold text-primary" data-testid="text-product-count">{totalCount.toLocaleString()}</span>개
+          {totalPages > 1 && (
+            <span className="ml-2">
+              (페이지 <span className="font-bold">{currentPage}</span> / {totalPages})
+            </span>
+          )}
         </div>
       </div>
 
       {loading ? (
         <div className="py-12 sm:py-20 text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-primary" />
           <div className="text-gray-500 text-sm">상품을 불러오는 중...</div>
         </div>
-      ) : filteredProducts.length > 0 ? (
+      ) : products.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-4 md:gap-6">
-          {filteredProducts.map((product) => (
+          {products.map((product) => (
             <Link 
               key={product.id} 
               href={`/product/${product.id}`}
@@ -226,23 +264,47 @@ export function ProductGrid() {
         </div>
       )}
       
-      {hasMore && !loading && (
-        <div className="mt-8 text-center">
+      {totalPages > 1 && !loading && (
+        <div className="mt-8 flex justify-center items-center gap-1 sm:gap-2">
           <Button
-            onClick={loadMore}
-            disabled={loadingMore}
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1}
             variant="outline"
-            className="px-8 py-3"
-            data-testid="button-load-more"
+            size="icon"
+            className="h-9 w-9"
+            data-testid="button-prev-page"
           >
-            {loadingMore ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                로딩중...
-              </>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          
+          {getPageNumbers().map((page, index) => (
+            typeof page === 'number' ? (
+              <Button
+                key={index}
+                onClick={() => goToPage(page)}
+                variant={currentPage === page ? "default" : "outline"}
+                className={cn(
+                  "h-9 w-9 sm:h-10 sm:w-10",
+                  currentPage === page && "bg-primary text-white"
+                )}
+                data-testid={`button-page-${page}`}
+              >
+                {page}
+              </Button>
             ) : (
-              <>더 보기 ({(totalCount - products.length).toLocaleString()}개 남음)</>
-            )}
+              <span key={index} className="px-2 text-gray-400">...</span>
+            )
+          ))}
+          
+          <Button
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            variant="outline"
+            size="icon"
+            className="h-9 w-9"
+            data-testid="button-next-page"
+          >
+            <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
       )}
