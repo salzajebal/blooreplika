@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart } from "lucide-react";
+import { ShoppingCart, Heart, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
@@ -16,10 +16,15 @@ const DEFAULT_CATEGORIES = [
   { id: "bags", name: "가방" },
 ];
 
+const PRODUCTS_PER_PAGE = 40;
+
 export function ProductGrid() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const { toggleItem, isInWishlist } = useWishlist();
   const { toast } = useToast();
 
@@ -41,26 +46,39 @@ export function ProductGrid() {
     });
   };
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (offset = 0, append = false) => {
     try {
       const url = activeCategory === "all" 
-        ? "/api/products" 
-        : `/api/products?category=${activeCategory}`;
+        ? `/api/products?limit=${PRODUCTS_PER_PAGE}&offset=${offset}` 
+        : `/api/products?category=${activeCategory}&limit=${PRODUCTS_PER_PAGE}&offset=${offset}`;
       const res = await fetch(url);
       const data = await res.json();
       if (data.success) {
-        setProducts(data.data);
+        if (append) {
+          setProducts(prev => [...prev, ...data.data]);
+        } else {
+          setProducts(data.data);
+        }
+        setTotalCount(data.total || data.data.length);
+        setHasMore(data.hasMore || false);
       }
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  const loadMore = () => {
+    setLoadingMore(true);
+    fetchProducts(products.length, true);
   };
 
   useEffect(() => {
     setLoading(true);
-    fetchProducts();
+    setProducts([]);
+    fetchProducts(0, false);
   }, [activeCategory]);
 
   const filteredProducts = products;
@@ -109,7 +127,7 @@ export function ProductGrid() {
           </p>
         </div>
         <div className="text-xs sm:text-sm text-gray-500">
-          총 <span className="font-bold text-primary" data-testid="text-product-count">{filteredProducts.length}</span>개의 상품
+          총 <span className="font-bold text-primary" data-testid="text-product-count">{totalCount.toLocaleString()}</span>개 중 <span className="font-bold">{filteredProducts.length.toLocaleString()}</span>개 표시
         </div>
       </div>
 
@@ -205,6 +223,27 @@ export function ProductGrid() {
           <a href="/admin" className="inline-block mt-3 sm:mt-4 text-primary hover:underline text-xs sm:text-sm">
             관리자 페이지 바로가기 →
           </a>
+        </div>
+      )}
+      
+      {hasMore && !loading && (
+        <div className="mt-8 text-center">
+          <Button
+            onClick={loadMore}
+            disabled={loadingMore}
+            variant="outline"
+            className="px-8 py-3"
+            data-testid="button-load-more"
+          >
+            {loadingMore ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                로딩중...
+              </>
+            ) : (
+              <>더 보기 ({(totalCount - products.length).toLocaleString()}개 남음)</>
+            )}
+          </Button>
         </div>
       )}
       

@@ -124,7 +124,7 @@ export async function registerRoutes(
   
   app.get("/api/products", async (req: Request, res: Response) => {
     try {
-      const { category, categoryId, brandId, subcategoryId } = req.query;
+      const { category, categoryId, brandId, subcategoryId, limit, offset } = req.query;
       let productList;
       
       if (categoryId && categoryId !== "all") {
@@ -135,7 +135,21 @@ export async function registerRoutes(
         productList = await storage.getAllProducts();
       }
       
-      res.json({ success: true, data: productList });
+      // Apply pagination if specified
+      const limitNum = limit ? parseInt(limit as string, 10) : 100; // Default limit 100
+      const offsetNum = offset ? parseInt(offset as string, 10) : 0;
+      
+      const total = productList.length;
+      const paginatedList = productList.slice(offsetNum, offsetNum + limitNum);
+      
+      res.json({ 
+        success: true, 
+        data: paginatedList,
+        total,
+        limit: limitNum,
+        offset: offsetNum,
+        hasMore: offsetNum + limitNum < total
+      });
     } catch (error) {
       console.error("Error fetching products:", error);
       res.status(500).json({ success: false, error: "Failed to fetch products" });
