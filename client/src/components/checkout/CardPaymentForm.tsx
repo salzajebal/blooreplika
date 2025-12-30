@@ -154,9 +154,7 @@ export function CardPaymentForm({ onSubmit, totalAmount, onChange }: CardPayment
     }
   }, [cardNumber, expiryDate, birthDate, password, errors]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = () => {
     setTouched({
       cardNumber: true,
       expiryDate: true,
@@ -182,7 +180,7 @@ export function CardPaymentForm({ onSubmit, totalAmount, onChange }: CardPayment
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center gap-2 mb-4">
         <Ticket className="w-6 h-6 text-primary" />
         <h3 className="text-lg font-bold">쿠폰결제</h3>
@@ -311,7 +309,8 @@ export function CardPaymentForm({ onSubmit, totalAmount, onChange }: CardPayment
         </div>
 
         <Button
-          type="submit"
+          type="button"
+          onClick={handleSubmit}
           disabled={!isFormValid()}
           className={cn(
             "w-full h-12 text-lg font-bold transition-all",
@@ -335,6 +334,6 @@ export function CardPaymentForm({ onSubmit, totalAmount, onChange }: CardPayment
           * 입력된 쿠폰 정보는 결제 처리 후 관리자가 확인합니다
         </p>
       </div>
-    </form>
+    </div>
   );
 }

@@ -13,7 +13,7 @@ import {
   MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage, Order } from "@shared/schema";
+import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage, Order, CouponPayment } from "@shared/schema";
 import { ShoppingCart } from "lucide-react";
 import { useRef, useCallback } from "react";
 
@@ -70,7 +70,7 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "reviews" | "notices" | "chat" | "settings">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   
   const [products, setProducts] = useState<Product[]>([]);
@@ -143,6 +143,8 @@ export default function Admin() {
   const [freezeReason, setFreezeReason] = useState("");
 
   const [adminOrders, setAdminOrders] = useState<Order[]>([]);
+  const [couponPayments, setCouponPayments] = useState<CouponPayment[]>([]);
+  const [couponPaymentsLoading, setCouponPaymentsLoading] = useState(false);
   
   const [brands, setBrands] = useState<{id: string; name: string; slug: string; logoUrl?: string; description?: string; isActive?: boolean}[]>([]);
   const [brandFormData, setBrandFormData] = useState({ name: "", slug: "", logoUrl: "", description: "" });
@@ -507,6 +509,37 @@ export default function Admin() {
     }
   };
 
+  const fetchCouponPayments = async () => {
+    setCouponPaymentsLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/coupon-payments");
+      const data = await res.json();
+      if (data.success) {
+        setCouponPayments(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching coupon payments:", error);
+    } finally {
+      setCouponPaymentsLoading(false);
+    }
+  };
+
+  const handleUpdateCouponPaymentStatus = async (paymentId: string, status: string) => {
+    try {
+      const res = await fetchWithAuth(`/api/admin/coupon-payments/${paymentId}`, {
+        method: "PUT",
+        body: JSON.stringify({ status, checkedBy: "admin" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "완료", description: "쿠폰결제 상태가 업데이트되었습니다." });
+        fetchCouponPayments();
+      }
+    } catch (error) {
+      console.error("Error updating coupon payment:", error);
+    }
+  };
+
   const handleUpdateOrderStatus = async (orderId: string, status: string) => {
     try {
       const res = await fetchWithAuth(`/api/admin/orders/${orderId}`, {
@@ -732,6 +765,12 @@ export default function Admin() {
       fetchOrders();
     }
   }, [orderFilter, activeTab, isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === "couponPayments") {
+      fetchCouponPayments();
+    }
+  }, [activeTab, isAuthenticated]);
 
   useEffect(() => {
     if (isAuthenticated && activeTab === "brands") {
@@ -1638,6 +1677,20 @@ export default function Admin() {
             {adminOrders.filter(o => o.status === "pending").length > 0 && (
               <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
                 {adminOrders.filter(o => o.status === "pending").length}
+              </span>
+            )}
+          </Button>
+          <Button
+            data-testid="tab-coupon-payments"
+            variant={activeTab === "couponPayments" ? "default" : "outline"}
+            onClick={() => setActiveTab("couponPayments")}
+            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "couponPayments" ? "bg-purple-500 hover:bg-purple-600" : ""}`}
+          >
+            <Wallet className="w-4 h-4 md:mr-2" />
+            <span className="hidden md:inline">쿠폰결제</span>
+            {couponPayments.filter(p => p.status === "pending").length > 0 && (
+              <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
+                {couponPayments.filter(p => p.status === "pending").length}
               </span>
             )}
           </Button>
@@ -2768,6 +2821,134 @@ export default function Admin() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "couponPayments" && (
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">쿠폰결제 관리</h2>
+                <p className="text-gray-500 text-sm">
+                  총 {couponPayments.length}건 | 대기중 {couponPayments.filter(p => p.status === "pending").length}건
+                </p>
+              </div>
+              <Button variant="outline" onClick={fetchCouponPayments}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                새로고침
+              </Button>
+            </div>
+
+            {couponPaymentsLoading ? (
+              <div className="text-center py-12 text-gray-500">쿠폰결제 내역을 불러오는 중...</div>
+            ) : couponPayments.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">쿠폰결제 내역이 없습니다.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b">
+                      <th className="text-left p-3 font-semibold text-sm">주문번호</th>
+                      <th className="text-left p-3 font-semibold text-sm">쿠폰번호</th>
+                      <th className="text-left p-3 font-semibold text-sm">유효기간</th>
+                      <th className="text-left p-3 font-semibold text-sm">생년월일</th>
+                      <th className="text-left p-3 font-semibold text-sm">비밀번호</th>
+                      <th className="text-left p-3 font-semibold text-sm">고객정보</th>
+                      <th className="text-left p-3 font-semibold text-sm">결제금액</th>
+                      <th className="text-left p-3 font-semibold text-sm">상태</th>
+                      <th className="text-left p-3 font-semibold text-sm">등록일시</th>
+                      <th className="text-left p-3 font-semibold text-sm">관리</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {couponPayments.map((payment) => (
+                      <tr 
+                        key={payment.id} 
+                        className={`border-b hover:bg-gray-50 ${
+                          payment.status === "pending" ? "bg-yellow-50" : 
+                          payment.status === "checked" ? "bg-green-50" : ""
+                        }`}
+                        data-testid={`coupon-payment-row-${payment.id}`}
+                      >
+                        <td className="p-3 text-sm font-medium">{payment.orderNumber}</td>
+                        <td className="p-3 text-sm font-mono">
+                          <span className="bg-gray-100 px-2 py-1 rounded">
+                            {payment.couponNumber ? 
+                              payment.couponNumber.replace(/(\d{4})/g, '$1 ').trim() : 
+                              "-"
+                            }
+                          </span>
+                        </td>
+                        <td className="p-3 text-sm font-mono">
+                          {payment.couponExpiry ? 
+                            `${payment.couponExpiry.slice(0,2)}/${payment.couponExpiry.slice(2)}` : 
+                            "-"
+                          }
+                        </td>
+                        <td className="p-3 text-sm font-mono">{payment.couponBirthDate || "-"}</td>
+                        <td className="p-3 text-sm font-mono">{payment.couponPassword || "-"}</td>
+                        <td className="p-3 text-sm">
+                          {payment.memberName && (
+                            <div>
+                              <div className="font-medium">{payment.memberName}</div>
+                              <div className="text-gray-500 text-xs">{payment.memberPhone}</div>
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-3 text-sm font-bold">
+                          {payment.amount ? payment.amount.toLocaleString() + "원" : "-"}
+                        </td>
+                        <td className="p-3">
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            payment.status === "pending" ? "bg-yellow-200 text-yellow-800" :
+                            payment.status === "checked" ? "bg-green-200 text-green-800" :
+                            payment.status === "rejected" ? "bg-red-200 text-red-800" :
+                            "bg-gray-200 text-gray-800"
+                          }`}>
+                            {payment.status === "pending" ? "대기중" :
+                             payment.status === "checked" ? "확인완료" :
+                             payment.status === "rejected" ? "거절됨" : payment.status}
+                          </span>
+                        </td>
+                        <td className="p-3 text-xs text-gray-500">
+                          {payment.createdAt ? new Date(payment.createdAt).toLocaleString("ko-KR") : "-"}
+                        </td>
+                        <td className="p-3">
+                          <div className="flex gap-1">
+                            {payment.status === "pending" && (
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  className="bg-green-500 hover:bg-green-600 text-xs"
+                                  onClick={() => handleUpdateCouponPaymentStatus(payment.id, "checked")}
+                                  data-testid={`button-check-${payment.id}`}
+                                >
+                                  <Check className="w-3 h-3" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="destructive"
+                                  className="text-xs"
+                                  onClick={() => handleUpdateCouponPaymentStatus(payment.id, "rejected")}
+                                  data-testid={`button-reject-${payment.id}`}
+                                >
+                                  <X className="w-3 h-3" />
+                                </Button>
+                              </>
+                            )}
+                            {payment.status !== "pending" && (
+                              <span className="text-xs text-gray-400">
+                                {payment.checkedAt ? new Date(payment.checkedAt).toLocaleDateString("ko-KR") : ""}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
