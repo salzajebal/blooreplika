@@ -59,8 +59,8 @@ export function ProductGrid() {
         } else {
           setProducts(data.data);
         }
-        setTotalCount(data.total || data.data.length);
-        setHasMore(data.hasMore || false);
+        setTotalCount(data.total ?? data.data.length);
+        setHasMore(data.hasMore ?? false);
       }
     } catch (error) {
       console.error("Error fetching products:", error);

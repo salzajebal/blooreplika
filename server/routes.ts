@@ -135,21 +135,26 @@ export async function registerRoutes(
         productList = await storage.getAllProducts();
       }
       
-      // Apply pagination if specified
-      const limitNum = limit ? parseInt(limit as string, 10) : 100; // Default limit 100
-      const offsetNum = offset ? parseInt(offset as string, 10) : 0;
-      
       const total = productList.length;
-      const paginatedList = productList.slice(offsetNum, offsetNum + limitNum);
       
-      res.json({ 
-        success: true, 
-        data: paginatedList,
-        total,
-        limit: limitNum,
-        offset: offsetNum,
-        hasMore: offsetNum + limitNum < total
-      });
+      // Apply pagination only if limit is specified
+      if (limit) {
+        const limitNum = parseInt(limit as string, 10);
+        const offsetNum = offset ? parseInt(offset as string, 10) : 0;
+        const paginatedList = productList.slice(offsetNum, offsetNum + limitNum);
+        
+        res.json({ 
+          success: true, 
+          data: paginatedList,
+          total,
+          limit: limitNum,
+          offset: offsetNum,
+          hasMore: offsetNum + limitNum < total
+        });
+      } else {
+        // Return all products without pagination
+        res.json({ success: true, data: productList, total });
+      }
     } catch (error) {
       console.error("Error fetching products:", error);
       res.status(500).json({ success: false, error: "Failed to fetch products" });
