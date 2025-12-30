@@ -6,15 +6,15 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const CATEGORIES = [
   { id: "10", name: "아우터", localId: "outer" },
-  { id: "20", name: "패딩", localId: "padding" },
-  { id: "30", name: "상의", localId: "tops" },
-  { id: "40", name: "하의", localId: "bottoms" },
-  { id: "70", name: "신발", localId: "shoes" },
-  { id: "80", name: "악세사리", localId: "accessories" },
-  { id: "a0", name: "지갑", localId: "wallets" },
-  { id: "c0", name: "가방", localId: "bags" },
-  { id: "f0", name: "시계", localId: "watches" },
-  { id: "g0", name: "정품", localId: "genuine" },
+  { id: "g0", name: "패딩", localId: "padding" },
+  { id: "20", name: "상의", localId: "tops" },
+  { id: "30", name: "하의", localId: "bottoms" },
+  { id: "40", name: "신발", localId: "shoes" },
+  { id: "70", name: "악세사리", localId: "accessories" },
+  { id: "80", name: "지갑", localId: "wallets" },
+  { id: "a0", name: "가방", localId: "bags" },
+  { id: "c0", name: "시계", localId: "watches" },
+  { id: "f0", name: "정품", localId: "genuine" },
 ];
 
 const headers = {
