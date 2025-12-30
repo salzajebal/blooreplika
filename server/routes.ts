@@ -1,5 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { type Server } from "http";
+import * as cheerio from "cheerio";
 import { storage } from "./storage";
 import { 
   insertProductSchema, 
@@ -2057,6 +2058,182 @@ export async function registerRoutes(
         console.error('Crawl error:', error);
       }
     })();
+  });
+
+  // Crawl reviews from cdamdong.co.kr
+  app.post("/api/admin/crawl/reviews", requireAdminAuth, async (req: Request, res: Response) => {
+    const headers = {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "Referer": "https://cdamdong.co.kr/",
+    };
+    
+    try {
+      const maxPages = req.body.maxPages || 10;
+      const reviews: any[] = [];
+      
+      for (let page = 1; page <= maxPages; page++) {
+        const response = await fetch(`https://cdamdong.co.kr/bbs/board.php?bo_table=review&page=${page}`, { headers });
+        if (!response.ok) continue;
+        
+        const html = await response.text();
+        const $ = cheerio.load(html);
+        
+        // Parse review list items
+        $(".bo_tit a, .td_subject a").each((_: number, el: any) => {
+          const $el = $(el);
+          const title = $el.text().trim();
+          const href = $el.attr("href") || "";
+          const idMatch = href.match(/wr_id=(\d+)/);
+          
+          if (title && idMatch) {
+            reviews.push({
+              sourceId: idMatch[1],
+              title,
+              href,
+            });
+          }
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+      
+      // Fetch review details and save
+      let savedCount = 0;
+      for (const review of reviews.slice(0, 100)) {
+        try {
+          const detailUrl = `https://cdamdong.co.kr/bbs/board.php?bo_table=review&wr_id=${review.sourceId}`;
+          const detailRes = await fetch(detailUrl, { headers });
+          if (!detailRes.ok) continue;
+          
+          const detailHtml = await detailRes.text();
+          const $detail = cheerio.load(detailHtml);
+          
+          const content = $detail("#bo_v_con").text().trim() || 
+                         $detail(".view-content").text().trim() || 
+                         $detail(".bo_v_con").text().trim() || 
+                         review.title;
+          
+          // Extract images from review
+          const images: string[] = [];
+          $detail("#bo_v_con img, .view-content img, .bo_v_con img").each((_: number, img: any) => {
+            const src = $detail(img).attr("src");
+            if (src && src.includes("cdamdong.co.kr")) {
+              images.push(src);
+            }
+          });
+          
+          // Extract rating if available
+          const ratingMatch = detailHtml.match(/별점\s*[:：]?\s*(\d)/);
+          const rating = ratingMatch ? parseInt(ratingMatch[1]) : 5;
+          
+          // Extract author
+          const author = $detail(".sv_member, .member, .bo_v_info .sv_member").first().text().trim() || "익명";
+          
+          // Create review in database
+          await storage.createReview({
+            authorName: author,
+            rating,
+            content: content.slice(0, 1000),
+            imageUrls: images,
+            isVisible: true,
+          });
+          
+          savedCount++;
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (e) {
+          console.error("Error fetching review detail:", e);
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `${savedCount}개의 후기가 크롤링되었습니다.`,
+        total: reviews.length,
+        saved: savedCount,
+      });
+    } catch (error: any) {
+      console.error("Review crawl error:", error);
+      res.status(500).json({ success: false, error: error.message || "후기 크롤링 중 오류가 발생했습니다." });
+    }
+  });
+
+  // Crawl notices from cdamdong.co.kr
+  app.post("/api/admin/crawl/notices", requireAdminAuth, async (req: Request, res: Response) => {
+    const headers = {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "Referer": "https://cdamdong.co.kr/",
+    };
+    
+    try {
+      const maxPages = req.body.maxPages || 5;
+      const notices: any[] = [];
+      
+      for (let page = 1; page <= maxPages; page++) {
+        const response = await fetch(`https://cdamdong.co.kr/bbs/board.php?bo_table=notice&page=${page}`, { headers });
+        if (!response.ok) continue;
+        
+        const html = await response.text();
+        const $ = cheerio.load(html);
+        
+        // Parse notice list items
+        $(".bo_tit a, .td_subject a").each((_: number, el: any) => {
+          const $el = $(el);
+          const title = $el.text().trim();
+          const href = $el.attr("href") || "";
+          const idMatch = href.match(/wr_id=(\d+)/);
+          
+          if (title && idMatch) {
+            notices.push({
+              sourceId: idMatch[1],
+              title,
+              href,
+            });
+          }
+        });
+        
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+      
+      // Fetch notice details and save
+      let savedCount = 0;
+      for (const notice of notices.slice(0, 50)) {
+        try {
+          const detailUrl = `https://cdamdong.co.kr/bbs/board.php?bo_table=notice&wr_id=${notice.sourceId}`;
+          const detailRes = await fetch(detailUrl, { headers });
+          if (!detailRes.ok) continue;
+          
+          const detailHtml = await detailRes.text();
+          const $detail = cheerio.load(detailHtml);
+          
+          const content = $detail("#bo_v_con").html() || 
+                         $detail(".view-content").html() || 
+                         $detail(".bo_v_con").html() || 
+                         notice.title;
+          
+          // Create notice in database
+          await storage.createNotice({
+            title: notice.title,
+            content: content || notice.title,
+            isVisible: true,
+          });
+          
+          savedCount++;
+          await new Promise(resolve => setTimeout(resolve, 100));
+        } catch (e) {
+          console.error("Error fetching notice detail:", e);
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `${savedCount}개의 공지사항이 크롤링되었습니다.`,
+        total: notices.length,
+        saved: savedCount,
+      });
+    } catch (error: any) {
+      console.error("Notice crawl error:", error);
+      res.status(500).json({ success: false, error: error.message || "공지사항 크롤링 중 오류가 발생했습니다." });
+    }
   });
 
   return httpServer;

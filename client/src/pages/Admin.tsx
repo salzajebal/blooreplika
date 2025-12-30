@@ -298,6 +298,53 @@ export default function Admin() {
     }
   };
 
+  const [reviewCrawlLoading, setReviewCrawlLoading] = useState(false);
+  const [noticeCrawlLoading, setNoticeCrawlLoading] = useState(false);
+
+  const crawlReviews = async () => {
+    setReviewCrawlLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ maxPages: 10 }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "후기 크롤링 완료", description: data.message });
+        fetchReviews();
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "후기 크롤링에 실패했습니다.", variant: "destructive" });
+    } finally {
+      setReviewCrawlLoading(false);
+    }
+  };
+
+  const crawlNotices = async () => {
+    setNoticeCrawlLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/notices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ maxPages: 5 }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "공지사항 크롤링 완료", description: data.message });
+        fetchNotices();
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "공지사항 크롤링에 실패했습니다.", variant: "destructive" });
+    } finally {
+      setNoticeCrawlLoading(false);
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
     if (token) {
@@ -4168,6 +4215,48 @@ export default function Admin() {
                         전체 삭제
                       </Button>
                     </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <h4 className="font-semibold text-gray-800 mb-3">후기 & 공지사항 크롤링</h4>
+                  <div className="flex gap-3 mb-4">
+                    <Button
+                      data-testid="button-crawl-reviews"
+                      onClick={crawlReviews}
+                      disabled={reviewCrawlLoading}
+                      className="bg-green-500 hover:bg-green-600 text-white flex-1"
+                    >
+                      {reviewCrawlLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          후기 크롤링 중...
+                        </>
+                      ) : (
+                        <>
+                          <Star className="w-4 h-4 mr-2" />
+                          후기 크롤링
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      data-testid="button-crawl-notices"
+                      onClick={crawlNotices}
+                      disabled={noticeCrawlLoading}
+                      className="bg-orange-500 hover:bg-orange-600 text-white flex-1"
+                    >
+                      {noticeCrawlLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          공지사항 크롤링 중...
+                        </>
+                      ) : (
+                        <>
+                          <Bell className="w-4 h-4 mr-2" />
+                          공지사항 크롤링
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
 
