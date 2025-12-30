@@ -2130,25 +2130,48 @@ export async function registerRoutes(
           const detailUrl = `https://cdamdong.co.kr/bbs/board.php?bo_table=bestreview&wr_id=${review.sourceId}`;
           console.log(`Fetching review detail: ${detailUrl}`);
           
-          const detailRes = await fetch(detailUrl, { headers });
-          if (!detailRes.ok) continue;
+          const detailRes = await fetch(detailUrl, { 
+            headers: {
+              ...headers,
+              "Referer": "https://cdamdong.co.kr/bbs/board.php?bo_table=bestreview"
+            }
+          });
+          if (!detailRes.ok) {
+            console.log(`Review ${review.sourceId} returned ${detailRes.status}`);
+            continue;
+          }
           
           const detailHtml = await detailRes.text();
           const $detail = cheerio.load(detailHtml);
           
+          // Check if page redirected (no content)
+          if (detailHtml.includes('document.location.replace') && !detailHtml.includes('bo_v_title')) {
+            console.log(`Review ${review.sourceId} redirected, skipping`);
+            continue;
+          }
+          
           // Get full title from detail page
           const fullTitle = $detail("#bo_v_title .bo_v_tit").text().trim() || review.title;
           
-          // Get author name
-          const authorName = $detail("#bo_v_info .sv_member").text().trim() || "베스트리뷰";
+          // Get category/brand
+          const category = $detail("#bo_v_title .bo_v_cate").text().trim();
           
-          // Get view count (format: "3,480회")
-          const viewCountText = $detail("#bo_v_info").text();
-          const viewCountMatch = viewCountText.match(/조회.*?([\d,]+)회/);
+          // Get author name - try multiple selectors
+          let authorName = $detail("#bo_v_info .sv_member").text().trim();
+          if (!authorName) {
+            // Extract from title (format: "... 최**")
+            const authorMatch = fullTitle.match(/\s+([가-힣]+\*+)$/);
+            authorName = authorMatch ? authorMatch[1] : "베스트리뷰";
+          }
+          
+          // Get view count from #bo_v_info (format: "조회 3,483회")
+          const infoText = $detail("#bo_v_info").text();
+          const viewCountMatch = infoText.match(/([\d,]+)회/);
           const viewCount = viewCountMatch ? parseInt(viewCountMatch[1].replace(/,/g, "")) : 0;
           
-          // Get date (format: "25-12-29 22:00")
+          // Get date from .if_date (format: "25-12-29 22:00")
           const dateText = $detail(".if_date").text().trim();
+          console.log(`Review ${review.sourceId} dateText: "${dateText}"`);
           const dateMatch = dateText.match(/(\d{2})-(\d{2})-(\d{2})\s*(\d{2}):(\d{2})/);
           let displayDate: Date | undefined;
           if (dateMatch) {
@@ -2158,32 +2181,72 @@ export async function registerRoutes(
             const hour = parseInt(dateMatch[4]);
             const minute = parseInt(dateMatch[5]);
             displayDate = new Date(year, month, day, hour, minute);
+            console.log(`Review ${review.sourceId} parsed date: ${displayDate}`);
           }
           
-          // Get content text
-          const content = $detail("#bo_v_con").text().trim() || fullTitle;
+          // Get content text from article section
+          let content = $detail("#bo_v_atc").text().trim();
+          // Remove "본문" title if present
+          content = content.replace(/^본문\s*/, "").trim();
+          if (!content) content = fullTitle;
           
-          // Extract all images from review content
+          // Extract all images from review - check multiple locations
           const images: string[] = [];
-          if (review.thumbnail) {
+          const seenImages = new Set<string>();
+          
+          // Add thumbnail first if exists
+          if (review.thumbnail && !seenImages.has(review.thumbnail)) {
+            seenImages.add(review.thumbnail);
             images.push(review.thumbnail);
           }
-          $detail("#bo_v_con img").each((_: number, img: any) => {
-            let src = $detail(img).attr("src") || "";
-            // Handle relative URLs
+          
+          // Get images from #bo_v_img section (main attached images)
+          $detail("#bo_v_img img, #bo_v_img a").each((_: number, el: any) => {
+            let src = $detail(el).attr("src") || "";
+            // For links, get the href which points to full image
+            if (!src) {
+              const href = $detail(el).attr("href") || "";
+              if (href.includes("view_image.php")) {
+                // Extract actual image from view_image URL
+                const fnMatch = href.match(/fn=([^&]+)/);
+                if (fnMatch) {
+                  src = `https://cdamdong.co.kr/data/file/bestreview/${fnMatch[1]}`;
+                }
+              }
+            }
             if (src.startsWith("/")) {
               src = `https://cdamdong.co.kr${src}`;
             }
-            if (src && src.includes("cdamdong.co.kr") && !images.includes(src)) {
+            // Get full size image (remove thumb- prefix if present)
+            if (src.includes("/thumb-")) {
+              const fullSrc = src.replace(/\/thumb-([^_]+_[^_]+_[^_]+)_\d+x\d+\./, "/$1.");
+              if (!seenImages.has(fullSrc)) {
+                seenImages.add(fullSrc);
+                images.push(fullSrc);
+              }
+            } else if (src && src.includes("cdamdong.co.kr") && !seenImages.has(src)) {
+              seenImages.add(src);
               images.push(src);
             }
           });
           
-          console.log(`Review ${review.sourceId}: author=${authorName}, views=${viewCount}, date=${displayDate}, images=${images.length}`);
+          // Get images from content area
+          $detail("#bo_v_atc img, #bo_v_con img").each((_: number, img: any) => {
+            let src = $detail(img).attr("src") || "";
+            if (src.startsWith("/")) {
+              src = `https://cdamdong.co.kr${src}`;
+            }
+            if (src && src.includes("cdamdong.co.kr") && !seenImages.has(src)) {
+              seenImages.add(src);
+              images.push(src);
+            }
+          });
+          
+          console.log(`Review ${review.sourceId}: title="${fullTitle.slice(0,30)}...", author=${authorName}, views=${viewCount}, date=${displayDate?.toISOString()}, images=${images.length}`);
           
           // Create review in database
           await storage.createReview({
-            title: fullTitle,
+            title: category ? `[${category}] ${fullTitle}` : fullTitle,
             authorName,
             rating: 5,
             content: content.slice(0, 2000),
@@ -2193,7 +2256,7 @@ export async function registerRoutes(
           });
           
           savedCount++;
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await new Promise(resolve => setTimeout(resolve, 300));
         } catch (e) {
           console.error("Error fetching review detail:", e);
         }
