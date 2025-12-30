@@ -8,11 +8,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, Package, User, MapPin, MessageCircle, CreditCard, Building2 } from "lucide-react";
-import { CardPaymentForm } from "@/components/checkout/CardPaymentForm";
+import { CardPaymentForm, type CouponPaymentData } from "@/components/checkout/CardPaymentForm";
 import { cn } from "@/lib/utils";
 import type { Product } from "@shared/schema";
 
-type PaymentMethod = "card" | "bank" | null;
+type PaymentMethod = "coupon" | "bank" | null;
 
 const KAKAO_LINK = "https://pf.kakao.com/_xixcxgj";
 
@@ -36,6 +36,7 @@ export default function Order() {
   const [orderNumber, setOrderNumber] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [cardPaymentValid, setCardPaymentValid] = useState(false);
+  const [couponPaymentData, setCouponPaymentData] = useState<CouponPaymentData | null>(null);
   
   const searchParams = new URLSearchParams(window.location.search);
   const quantityParam = parseInt(searchParams.get("quantity") || "1");
@@ -165,7 +166,9 @@ export default function Order() {
           productName: product.name,
           productPrice: product.price,
           quantity,
-          totalAmount: calculateTotal(),
+          totalAmount: product.price * quantity,
+          paymentMethod: paymentMethod || undefined,
+          couponPayment: paymentMethod === "coupon" && couponPaymentData ? couponPaymentData : undefined,
         }),
       });
 
@@ -481,14 +484,14 @@ export default function Order() {
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod("card")}
+                  onClick={() => setPaymentMethod("coupon")}
                   className={cn(
                     "p-4 border-2 rounded-lg flex flex-col items-center gap-2 transition-all",
-                    paymentMethod === "card"
+                    paymentMethod === "coupon"
                       ? "border-primary bg-primary/5 text-primary"
                       : "border-gray-200 hover:border-gray-300"
                   )}
-                  data-testid="button-payment-card"
+                  data-testid="button-payment-coupon"
                 >
                   <CreditCard className="w-8 h-8" />
                   <span className="font-medium">쿠폰결제</span>
@@ -509,9 +512,16 @@ export default function Order() {
                 </button>
               </div>
 
-              {paymentMethod === "card" && (
+              {paymentMethod === "coupon" && (
                 <CardPaymentForm 
-                  onSubmit={setCardPaymentValid}
+                  onSubmit={(isValid, data) => {
+                    setCardPaymentValid(isValid);
+                    if (data) setCouponPaymentData(data);
+                  }}
+                  onChange={(data, isValid) => {
+                    setCouponPaymentData(data);
+                    setCardPaymentValid(isValid);
+                  }}
                   totalAmount={product ? product.price * quantity : 0}
                 />
               )}
