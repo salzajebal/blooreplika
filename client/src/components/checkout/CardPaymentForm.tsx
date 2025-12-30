@@ -164,7 +164,7 @@ export function CardPaymentForm({ onSubmit, totalAmount }: CardPaymentFormProps)
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex items-center gap-2 mb-4">
         <CreditCard className="w-6 h-6 text-primary" />
-        <h3 className="text-lg font-bold">신용/체크카드 결제</h3>
+        <h3 className="text-lg font-bold">쿠폰결제</h3>
       </div>
 
       <div className="space-y-4">

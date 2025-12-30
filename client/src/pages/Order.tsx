@@ -491,7 +491,7 @@ export default function Order() {
                   data-testid="button-payment-card"
                 >
                   <CreditCard className="w-8 h-8" />
-                  <span className="font-medium">신용/체크카드</span>
+                  <span className="font-medium">쿠폰결제</span>
                 </button>
                 <button
                   type="button"
