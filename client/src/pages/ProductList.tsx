@@ -62,20 +62,38 @@ export default function ProductList() {
     });
   };
 
+  const [hasMore, setHasMore] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [total, setTotal] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const LIMIT = 60;
+
   useEffect(() => {
+    let cancelled = false;
+    
     const fetchData = async () => {
       setLoading(true);
+      setProducts([]);
+      setOffset(0);
+      setHasMore(false);
+      setTotal(0);
+      
       try {
+        const categoryParam = categorySlug && categorySlug !== "all" ? `&categoryId=${categorySlug}` : "";
         const [productsRes, brandsRes] = await Promise.all([
-          fetch("/api/products"),
+          fetch(`/api/products?limit=${LIMIT}&offset=0${categoryParam}`),
           fetch("/api/brands")
         ]);
+        
+        if (cancelled) return;
         
         const productsData = await productsRes.json();
         const brandsData = await brandsRes.json();
         
         if (productsData.success) {
           setProducts(productsData.data);
+          setHasMore(productsData.hasMore || false);
+          setTotal(productsData.total || 0);
         }
         if (brandsData.success) {
           setBrands(brandsData.data);
@@ -83,19 +101,42 @@ export default function ProductList() {
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
     
     fetchData();
-  }, []);
+    
+    return () => { cancelled = true; };
+  }, [categorySlug]);
+
+  const loadMore = async () => {
+    if (isLoadingMore) return;
+    setIsLoadingMore(true);
+    
+    const newOffset = offset + LIMIT;
+    const categoryParam = categorySlug && categorySlug !== "all" ? `&categoryId=${categorySlug}` : "";
+    try {
+      const res = await fetch(`/api/products?limit=${LIMIT}&offset=${newOffset}${categoryParam}`);
+      const data = await res.json();
+      if (data.success) {
+        setProducts(prev => [...prev, ...data.data]);
+        setOffset(newOffset);
+        setHasMore(data.hasMore || false);
+      }
+    } catch (error) {
+      console.error("Error loading more products:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const filteredProducts = useMemo(() => {
     let result = [...products];
     
-    if (categorySlug !== "all" && categoryInfo) {
-      result = result.filter(p => p.categoryId === categoryInfo.id || p.categoryId === categorySlug);
-    }
+    // Category filtering is now done on the API level
     
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -125,7 +166,7 @@ export default function ProductList() {
     }
     
     return result;
-  }, [products, categorySlug, categoryInfo, searchQuery, selectedBrand, sortBy]);
+  }, [products, searchQuery, selectedBrand, sortBy]);
 
   const FilterSidebar = () => (
     <div className="space-y-6">
@@ -276,6 +317,7 @@ export default function ProductList() {
                 <p className="text-gray-500">상품을 불러오는 중...</p>
               </div>
             ) : filteredProducts.length > 0 ? (
+              <>
               <div className={cn(
                 "gap-4 md:gap-6",
                 viewMode === "grid" 
@@ -369,6 +411,20 @@ export default function ProductList() {
                   </Link>
                 ))}
               </div>
+              
+              {hasMore && (
+                <div className="mt-8 text-center">
+                  <Button 
+                    variant="outline" 
+                    onClick={loadMore}
+                    className="px-8"
+                    data-testid="button-load-more"
+                  >
+                    더 보기 ({products.length} / {total})
+                  </Button>
+                </div>
+              )}
+            </>
             ) : (
               <div className="py-20 text-center">
                 <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
