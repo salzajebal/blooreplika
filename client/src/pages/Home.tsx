@@ -167,22 +167,26 @@ export default function Home() {
       <Header />
       
       <main>
-        <section className="relative h-[300px] md:h-[400px] lg:h-[500px] overflow-hidden">
+        <section className="relative aspect-[16/9] md:aspect-[21/9] lg:aspect-[3/1] overflow-hidden bg-gray-100">
           {bannerSlides.map((slide, index) => (
             <Link 
               key={slide.id} 
               href={slide.link}
               className={`absolute inset-0 transition-opacity duration-500 ${index === currentSlide ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
             >
-              <img src={slide.image} alt={slide.title} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-black/30" />
-              <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center">
-                <h2 className="text-3xl md:text-5xl font-bold mb-2">{slide.title}</h2>
-                <p className="text-lg md:text-xl">{slide.subtitle}</p>
+              <img 
+                src={slide.image} 
+                alt={slide.title} 
+                className="w-full h-full object-cover object-center"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-white text-center px-4">
+                <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-2 drop-shadow-lg">{slide.title}</h2>
+                <p className="text-sm sm:text-lg md:text-xl drop-shadow-md">{slide.subtitle}</p>
               </div>
             </Link>
           ))}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+          <div className="absolute bottom-3 md:bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
             {bannerSlides.map((_, index) => (
               <button
                 key={index}
