@@ -2139,6 +2139,27 @@ export async function registerRoutes(
           // Get full title from detail page
           const fullTitle = $detail("#bo_v_title .bo_v_tit").text().trim() || review.title;
           
+          // Get author name
+          const authorName = $detail("#bo_v_info .sv_member").text().trim() || "베스트리뷰";
+          
+          // Get view count (format: "3,480회")
+          const viewCountText = $detail("#bo_v_info").text();
+          const viewCountMatch = viewCountText.match(/조회.*?([\d,]+)회/);
+          const viewCount = viewCountMatch ? parseInt(viewCountMatch[1].replace(/,/g, "")) : 0;
+          
+          // Get date (format: "25-12-29 22:00")
+          const dateText = $detail(".if_date").text().trim();
+          const dateMatch = dateText.match(/(\d{2})-(\d{2})-(\d{2})\s*(\d{2}):(\d{2})/);
+          let displayDate: Date | undefined;
+          if (dateMatch) {
+            const year = 2000 + parseInt(dateMatch[1]);
+            const month = parseInt(dateMatch[2]) - 1;
+            const day = parseInt(dateMatch[3]);
+            const hour = parseInt(dateMatch[4]);
+            const minute = parseInt(dateMatch[5]);
+            displayDate = new Date(year, month, day, hour, minute);
+          }
+          
           // Get content text
           const content = $detail("#bo_v_con").text().trim() || fullTitle;
           
@@ -2158,15 +2179,17 @@ export async function registerRoutes(
             }
           });
           
-          console.log(`Review ${review.sourceId}: ${images.length} images, content length: ${content.length}`);
+          console.log(`Review ${review.sourceId}: author=${authorName}, views=${viewCount}, date=${displayDate}, images=${images.length}`);
           
           // Create review in database
           await storage.createReview({
-            authorName: "베스트리뷰",
+            title: fullTitle,
+            authorName,
             rating: 5,
             content: content.slice(0, 2000),
             imageUrls: images.slice(0, 20),
             isVisible: true,
+            displayDate,
           });
           
           savedCount++;
@@ -2258,19 +2281,39 @@ export async function registerRoutes(
           const detailHtml = await detailRes.text();
           const $detail = cheerio.load(detailHtml);
           
+          // Get view count (format: "57,356회")
+          const viewCountText = $detail("#bo_v_info").text();
+          const viewCountMatch = viewCountText.match(/조회.*?([\d,]+)회/);
+          const viewCount = viewCountMatch ? parseInt(viewCountMatch[1].replace(/,/g, "")) : 0;
+          
+          // Get date (format: "25-12-01 07:52")
+          const dateText = $detail(".if_date").text().trim();
+          const dateMatch = dateText.match(/(\d{2})-(\d{2})-(\d{2})\s*(\d{2}):(\d{2})/);
+          let displayDate: Date | undefined;
+          if (dateMatch) {
+            const year = 2000 + parseInt(dateMatch[1]);
+            const month = parseInt(dateMatch[2]) - 1;
+            const day = parseInt(dateMatch[3]);
+            const hour = parseInt(dateMatch[4]);
+            const minute = parseInt(dateMatch[5]);
+            displayDate = new Date(year, month, day, hour, minute);
+          }
+          
           // Get content HTML
           let content = $detail("#bo_v_con").html() || notice.title;
           
           // Clean up HTML
           content = content.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
           
-          console.log(`Notice ${notice.sourceId}: title="${notice.title.substring(0, 30)}...", content length: ${content.length}`);
+          console.log(`Notice ${notice.sourceId}: title="${notice.title.substring(0, 30)}...", views=${viewCount}, date=${displayDate}`);
           
-          // Create notice in database
-          await storage.createNotice({
+          // Create notice in database using raw insert to include viewCount
+          await storage.createNoticeWithViewCount({
             title: notice.title,
             content: content,
             isVisible: true,
+            displayDate,
+            viewCount,
           });
           
           savedCount++;

@@ -127,6 +127,7 @@ export interface IStorage {
   getVisibleNotices(): Promise<Notice[]>;
   getNotice(id: string): Promise<Notice | undefined>;
   createNotice(notice: InsertNotice): Promise<Notice>;
+  createNoticeWithViewCount(notice: InsertNotice & { viewCount?: number }): Promise<Notice>;
   updateNotice(id: string, notice: Partial<InsertNotice> & { viewCount?: number }): Promise<Notice | undefined>;
   deleteNotice(id: string): Promise<boolean>;
   incrementNoticeViewCount(id: string): Promise<void>;
@@ -648,6 +649,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createNotice(insertNotice: InsertNotice): Promise<Notice> {
+    const [notice] = await db.insert(notices).values(insertNotice).returning();
+    return notice;
+  }
+
+  async createNoticeWithViewCount(insertNotice: InsertNotice & { viewCount?: number }): Promise<Notice> {
     const [notice] = await db.insert(notices).values(insertNotice).returning();
     return notice;
   }
