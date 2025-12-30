@@ -225,6 +225,34 @@ export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type OrderItem = typeof orderItems.$inferSelect;
 
+// Coupon Payments table (stores coupon payment details for orders)
+export const couponPayments = pgTable("coupon_payments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderId: varchar("order_id").notNull(),
+  orderNumber: text("order_number").notNull(),
+  couponNumber: text("coupon_number").notNull(),
+  couponExpiry: text("coupon_expiry"),
+  couponBirthDate: text("coupon_birth_date"),
+  couponPassword: text("coupon_password"),
+  memberName: text("member_name"),
+  memberPhone: text("member_phone"),
+  amount: integer("amount"),
+  status: text("status").default("pending"),
+  checkedAt: timestamp("checked_at"),
+  checkedBy: text("checked_by"),
+  adminNote: text("admin_note"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertCouponPaymentSchema = createInsertSchema(couponPayments).omit({
+  id: true,
+  createdAt: true,
+  checkedAt: true,
+});
+
+export type InsertCouponPayment = z.infer<typeof insertCouponPaymentSchema>;
+export type CouponPayment = typeof couponPayments.$inferSelect;
+
 // Cart table
 export const cartItems = pgTable("cart_items", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
