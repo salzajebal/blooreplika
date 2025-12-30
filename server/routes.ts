@@ -2060,90 +2060,123 @@ export async function registerRoutes(
     })();
   });
 
-  // Crawl reviews from cdamdong.co.kr
+  // Crawl reviews from cdamdong.co.kr (bestreview board)
   app.post("/api/admin/crawl/reviews", requireAdminAuth, async (req: Request, res: Response) => {
     const headers = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       "Referer": "https://cdamdong.co.kr/",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
     };
     
     try {
-      const maxPages = req.body.maxPages || 10;
+      const maxPages = req.body.maxPages || 5;
       const reviews: any[] = [];
+      const seenIds = new Set<string>();
+      
+      console.log("Starting review crawl from bestreview board...");
       
       for (let page = 1; page <= maxPages; page++) {
-        const response = await fetch(`https://cdamdong.co.kr/bbs/board.php?bo_table=review&page=${page}`, { headers });
-        if (!response.ok) continue;
-        
-        const html = await response.text();
-        const $ = cheerio.load(html);
-        
-        // Parse review list items
-        $(".bo_tit a, .td_subject a").each((_: number, el: any) => {
-          const $el = $(el);
-          const title = $el.text().trim();
-          const href = $el.attr("href") || "";
-          const idMatch = href.match(/wr_id=(\d+)/);
+        try {
+          const listUrl = `https://cdamdong.co.kr/bbs/board.php?bo_table=bestreview&page=${page}`;
+          console.log(`Fetching review list page ${page}: ${listUrl}`);
           
-          if (title && idMatch) {
-            reviews.push({
-              sourceId: idMatch[1],
-              title,
-              href,
-            });
+          const response = await fetch(listUrl, { headers });
+          if (!response.ok) {
+            console.log(`Page ${page} returned ${response.status}`);
+            continue;
           }
-        });
-        
-        await new Promise(resolve => setTimeout(resolve, 300));
+          
+          const html = await response.text();
+          const $ = cheerio.load(html);
+          
+          // Parse review list items - bestreview uses gallery format
+          $(".sct_li").each((_: number, el: any) => {
+            const $el = $(el);
+            const $link = $el.find(".sct_txt a, .prdImg a").first();
+            const href = $link.attr("href") || "";
+            const idMatch = href.match(/wr_id=(\d+)/);
+            
+            // Get title from the title div
+            const title = $el.find(".sct_txt .title div").last().text().trim() || 
+                         $el.find(".sct_txt a").text().trim();
+            
+            // Get thumbnail image
+            const thumbnail = $el.find(".prdImg img").attr("src") || "";
+            
+            if (idMatch && !seenIds.has(idMatch[1])) {
+              seenIds.add(idMatch[1]);
+              reviews.push({
+                sourceId: idMatch[1],
+                title,
+                thumbnail,
+              });
+            }
+          });
+          
+          console.log(`Page ${page}: Found ${reviews.length} total reviews so far`);
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (e) {
+          console.error(`Error fetching page ${page}:`, e);
+        }
       }
+      
+      console.log(`Total reviews found: ${reviews.length}`);
       
       // Fetch review details and save
       let savedCount = 0;
-      for (const review of reviews.slice(0, 100)) {
+      for (const review of reviews.slice(0, 50)) {
         try {
-          const detailUrl = `https://cdamdong.co.kr/bbs/board.php?bo_table=review&wr_id=${review.sourceId}`;
+          const detailUrl = `https://cdamdong.co.kr/bbs/board.php?bo_table=bestreview&wr_id=${review.sourceId}`;
+          console.log(`Fetching review detail: ${detailUrl}`);
+          
           const detailRes = await fetch(detailUrl, { headers });
           if (!detailRes.ok) continue;
           
           const detailHtml = await detailRes.text();
           const $detail = cheerio.load(detailHtml);
           
-          const content = $detail("#bo_v_con").text().trim() || 
-                         $detail(".view-content").text().trim() || 
-                         $detail(".bo_v_con").text().trim() || 
-                         review.title;
+          // Get full title from detail page
+          const fullTitle = $detail("#bo_v_title .bo_v_tit").text().trim() || review.title;
           
-          // Extract images from review
+          // Get content text
+          const content = $detail("#bo_v_con").text().trim() || fullTitle;
+          
+          // Extract all images from review content
           const images: string[] = [];
-          $detail("#bo_v_con img, .view-content img, .bo_v_con img").each((_: number, img: any) => {
-            const src = $detail(img).attr("src");
-            if (src && src.includes("cdamdong.co.kr")) {
+          if (review.thumbnail) {
+            images.push(review.thumbnail);
+          }
+          $detail("#bo_v_con img").each((_: number, img: any) => {
+            let src = $detail(img).attr("src") || "";
+            // Handle relative URLs
+            if (src.startsWith("/")) {
+              src = `https://cdamdong.co.kr${src}`;
+            }
+            if (src && src.includes("cdamdong.co.kr") && !images.includes(src)) {
               images.push(src);
             }
           });
           
-          // Extract rating if available
-          const ratingMatch = detailHtml.match(/별점\s*[:：]?\s*(\d)/);
-          const rating = ratingMatch ? parseInt(ratingMatch[1]) : 5;
-          
-          // Extract author
-          const author = $detail(".sv_member, .member, .bo_v_info .sv_member").first().text().trim() || "익명";
+          console.log(`Review ${review.sourceId}: ${images.length} images, content length: ${content.length}`);
           
           // Create review in database
           await storage.createReview({
-            authorName: author,
-            rating,
-            content: content.slice(0, 1000),
-            imageUrls: images,
+            authorName: "베스트리뷰",
+            rating: 5,
+            content: content.slice(0, 2000),
+            imageUrls: images.slice(0, 20),
             isVisible: true,
           });
           
           savedCount++;
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 200));
         } catch (e) {
           console.error("Error fetching review detail:", e);
         }
       }
+      
+      console.log(`Review crawl complete: ${savedCount} saved`);
       
       res.json({ 
         success: true, 
@@ -2160,69 +2193,94 @@ export async function registerRoutes(
   // Crawl notices from cdamdong.co.kr
   app.post("/api/admin/crawl/notices", requireAdminAuth, async (req: Request, res: Response) => {
     const headers = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       "Referer": "https://cdamdong.co.kr/",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
     };
     
     try {
-      const maxPages = req.body.maxPages || 5;
+      const maxPages = req.body.maxPages || 3;
       const notices: any[] = [];
+      const seenIds = new Set<string>();
+      
+      console.log("Starting notice crawl...");
       
       for (let page = 1; page <= maxPages; page++) {
-        const response = await fetch(`https://cdamdong.co.kr/bbs/board.php?bo_table=notice&page=${page}`, { headers });
-        if (!response.ok) continue;
-        
-        const html = await response.text();
-        const $ = cheerio.load(html);
-        
-        // Parse notice list items
-        $(".bo_tit a, .td_subject a").each((_: number, el: any) => {
-          const $el = $(el);
-          const title = $el.text().trim();
-          const href = $el.attr("href") || "";
-          const idMatch = href.match(/wr_id=(\d+)/);
+        try {
+          const listUrl = `https://cdamdong.co.kr/bbs/board.php?bo_table=notice&page=${page}`;
+          console.log(`Fetching notice list page ${page}: ${listUrl}`);
           
-          if (title && idMatch) {
-            notices.push({
-              sourceId: idMatch[1],
-              title,
-              href,
-            });
+          const response = await fetch(listUrl, { headers });
+          if (!response.ok) {
+            console.log(`Page ${page} returned ${response.status}`);
+            continue;
           }
-        });
-        
-        await new Promise(resolve => setTimeout(resolve, 300));
+          
+          const html = await response.text();
+          const $ = cheerio.load(html);
+          
+          // Parse notice list items - look for links with wr_id in href
+          $(".bo_tit a").each((_: number, el: any) => {
+            const $el = $(el);
+            const title = $el.text().trim();
+            const href = $el.attr("href") || "";
+            const idMatch = href.match(/wr_id=(\d+)/);
+            
+            if (title && idMatch && !seenIds.has(idMatch[1])) {
+              seenIds.add(idMatch[1]);
+              notices.push({
+                sourceId: idMatch[1],
+                title,
+              });
+            }
+          });
+          
+          console.log(`Page ${page}: Found ${notices.length} total notices so far`);
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (e) {
+          console.error(`Error fetching page ${page}:`, e);
+        }
       }
+      
+      console.log(`Total notices found: ${notices.length}`);
       
       // Fetch notice details and save
       let savedCount = 0;
-      for (const notice of notices.slice(0, 50)) {
+      for (const notice of notices.slice(0, 30)) {
         try {
           const detailUrl = `https://cdamdong.co.kr/bbs/board.php?bo_table=notice&wr_id=${notice.sourceId}`;
+          console.log(`Fetching notice detail: ${detailUrl}`);
+          
           const detailRes = await fetch(detailUrl, { headers });
           if (!detailRes.ok) continue;
           
           const detailHtml = await detailRes.text();
           const $detail = cheerio.load(detailHtml);
           
-          const content = $detail("#bo_v_con").html() || 
-                         $detail(".view-content").html() || 
-                         $detail(".bo_v_con").html() || 
-                         notice.title;
+          // Get content HTML
+          let content = $detail("#bo_v_con").html() || notice.title;
+          
+          // Clean up HTML
+          content = content.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
+          
+          console.log(`Notice ${notice.sourceId}: title="${notice.title.substring(0, 30)}...", content length: ${content.length}`);
           
           // Create notice in database
           await storage.createNotice({
             title: notice.title,
-            content: content || notice.title,
+            content: content,
             isVisible: true,
           });
           
           savedCount++;
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise(resolve => setTimeout(resolve, 200));
         } catch (e) {
           console.error("Error fetching notice detail:", e);
         }
       }
+      
+      console.log(`Notice crawl complete: ${savedCount} saved`);
       
       res.json({ 
         success: true, 
