@@ -88,9 +88,18 @@ export async function registerRoutes(
   
   app.get("/api/image-proxy", async (req: Request, res: Response) => {
     try {
-      const imageUrl = req.query.url as string;
+      let imageUrl = req.query.url as string;
       if (!imageUrl) {
         return res.status(400).json({ success: false, error: "URL parameter required" });
+      }
+      
+      // Decode URL if needed (handle double encoding)
+      try {
+        if (imageUrl.includes('%')) {
+          imageUrl = decodeURIComponent(imageUrl);
+        }
+      } catch (e) {
+        // If decode fails, use as-is
       }
       
       // Only allow proxying from cdamdong.co.kr
@@ -98,16 +107,25 @@ export async function registerRoutes(
         return res.status(403).json({ success: false, error: "Domain not allowed" });
       }
       
+      // Ensure URL is absolute
+      if (!imageUrl.startsWith("http")) {
+        imageUrl = `https://cdamdong.co.kr${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
+      }
+      
       const response = await fetch(imageUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           "Referer": "https://cdamdong.co.kr/",
           "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+          "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
         },
+        redirect: "follow",
       });
       
       if (!response.ok) {
-        return res.status(response.status).json({ success: false, error: "Failed to fetch image" });
+        console.log(`Image proxy failed for ${imageUrl}: ${response.status}`);
+        // Return a placeholder image instead of an error
+        return res.redirect("https://via.placeholder.com/400x300?text=Image+Not+Found");
       }
       
       const contentType = response.headers.get("content-type") || "image/jpeg";
@@ -118,7 +136,8 @@ export async function registerRoutes(
       res.send(Buffer.from(buffer));
     } catch (error) {
       console.error("Image proxy error:", error);
-      res.status(500).json({ success: false, error: "Failed to proxy image" });
+      // Return placeholder on error instead of JSON
+      res.redirect("https://via.placeholder.com/400x300?text=Error");
     }
   });
   
@@ -2152,7 +2171,7 @@ export async function registerRoutes(
     };
     
     try {
-      const maxPages = req.body.maxPages || 10;
+      const maxPages = req.body.maxPages || 20;
       const boards = req.body.boards || ["bestreview", "kalreom"];
       const reviews: any[] = [];
       const seenIds = new Set<string>();
@@ -2254,7 +2273,7 @@ export async function registerRoutes(
       
       // Fetch review details and save
       let savedCount = 0;
-      const maxReviews = req.body.maxReviews || 100;
+      const maxReviews = req.body.maxReviews || 200;
       for (const review of reviews.slice(0, maxReviews)) {
         try {
           const board = review.board || "bestreview";
