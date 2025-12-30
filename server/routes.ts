@@ -1782,7 +1782,7 @@ export async function registerRoutes(
       return res.status(400).json({ success: false, error: "이미 크롤링이 진행 중입니다." });
     }
     
-    const { clearExisting } = req.body;
+    const { clearExisting, selectedCategories } = req.body;
     
     crawlProgress.status = 'running';
     crawlProgress.total = 0;
@@ -1795,7 +1795,7 @@ export async function registerRoutes(
     
     // Run crawl in background
     (async () => {
-      const CATEGORIES = [
+      const ALL_CATEGORIES = [
         { id: "10", name: "아우터", localId: "outer" },
         { id: "20", name: "패딩", localId: "padding" },
         { id: "30", name: "상의", localId: "tops" },
@@ -1807,6 +1807,11 @@ export async function registerRoutes(
         { id: "f0", name: "시계", localId: "watches" },
         { id: "g0", name: "정품", localId: "genuine" },
       ];
+      
+      // Filter categories if selectedCategories is provided
+      const CATEGORIES = selectedCategories && selectedCategories.length > 0
+        ? ALL_CATEGORIES.filter(c => selectedCategories.includes(c.localId))
+        : ALL_CATEGORIES;
       
       const headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",

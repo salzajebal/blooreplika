@@ -185,8 +185,22 @@ export default function Admin() {
     message: string;
     category: string;
   }>({ status: 'idle', total: 0, current: 0, message: '', category: '' });
-  const [clearBeforeCrawl, setClearBeforeCrawl] = useState(true);
+  const [clearBeforeCrawl, setClearBeforeCrawl] = useState(false);
   const crawlIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const CRAWL_CATEGORIES = [
+    { localId: "outer", name: "아우터" },
+    { localId: "padding", name: "패딩" },
+    { localId: "tops", name: "상의" },
+    { localId: "bottoms", name: "하의" },
+    { localId: "shoes", name: "신발" },
+    { localId: "accessories", name: "악세사리" },
+    { localId: "wallets", name: "지갑" },
+    { localId: "bags", name: "가방" },
+    { localId: "watches", name: "시계" },
+    { localId: "genuine", name: "정품" },
+  ];
+  const [selectedCrawlCategories, setSelectedCrawlCategories] = useState<string[]>([]);
 
   const fetchProductCount = async () => {
     setProductCountLoading(true);
@@ -228,11 +242,17 @@ export default function Admin() {
       const res = await fetchWithAuth("/api/admin/crawl/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clearExisting: clearBeforeCrawl }),
+        body: JSON.stringify({ 
+          clearExisting: clearBeforeCrawl,
+          selectedCategories: selectedCrawlCategories.length > 0 ? selectedCrawlCategories : undefined
+        }),
       });
       const data = await res.json();
       if (data.success) {
-        toast({ title: "크롤링 시작", description: data.message });
+        const categoryText = selectedCrawlCategories.length > 0 
+          ? `${selectedCrawlCategories.length}개 카테고리` 
+          : "전체 카테고리";
+        toast({ title: "크롤링 시작", description: `${categoryText} 크롤링이 시작되었습니다.` });
         setCrawlProgress({ status: 'running', total: 0, current: 0, message: '시작 중...', category: '' });
         crawlIntervalRef.current = setInterval(fetchCrawlProgress, 500);
       } else {
@@ -241,6 +261,22 @@ export default function Admin() {
     } catch (error) {
       toast({ title: "오류", description: "크롤링을 시작할 수 없습니다.", variant: "destructive" });
     }
+  };
+  
+  const toggleCrawlCategory = (localId: string) => {
+    setSelectedCrawlCategories(prev => 
+      prev.includes(localId) 
+        ? prev.filter(id => id !== localId)
+        : [...prev, localId]
+    );
+  };
+  
+  const selectAllCrawlCategories = () => {
+    setSelectedCrawlCategories(CRAWL_CATEGORIES.map(c => c.localId));
+  };
+  
+  const deselectAllCrawlCategories = () => {
+    setSelectedCrawlCategories([]);
   };
 
   const clearAllProducts = async () => {
@@ -3847,6 +3883,41 @@ export default function Admin() {
                         크롤링 전 기존 상품 모두 삭제
                       </label>
                     </div>
+                    
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-medium text-gray-800">카테고리 선택 (선택안하면 전체)</h5>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={selectAllCrawlCategories}>전체 선택</Button>
+                          <Button size="sm" variant="outline" onClick={deselectAllCrawlCategories}>선택 해제</Button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                        {CRAWL_CATEGORIES.map((cat) => (
+                          <label 
+                            key={cat.localId}
+                            className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
+                              selectedCrawlCategories.includes(cat.localId) 
+                                ? 'bg-blue-50 border-blue-300' 
+                                : 'bg-white border-gray-200 hover:border-blue-200'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedCrawlCategories.includes(cat.localId)}
+                              onChange={() => toggleCrawlCategory(cat.localId)}
+                              className="w-4 h-4 text-blue-600 rounded"
+                            />
+                            <span className="text-sm">{cat.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {selectedCrawlCategories.length > 0 && (
+                        <p className="text-xs text-blue-600 mt-2">
+                          선택된 카테고리: {selectedCrawlCategories.map(id => CRAWL_CATEGORIES.find(c => c.localId === id)?.name).join(', ')}
+                        </p>
+                      )}
+                    </div>
 
                     {crawlProgress.status !== 'idle' && (
                       <div className={`p-4 rounded-lg ${
@@ -3899,7 +3970,9 @@ export default function Admin() {
                         ) : (
                           <>
                             <Download className="w-4 h-4 mr-2" />
-                            전체 크롤링 시작
+                            {selectedCrawlCategories.length > 0 
+                              ? `선택 카테고리 크롤링 (${selectedCrawlCategories.length}개)`
+                              : '전체 크롤링 시작'}
                           </>
                         )}
                       </Button>
