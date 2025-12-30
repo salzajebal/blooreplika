@@ -1001,6 +1001,86 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/admin/members", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { email, password, name, phone, address, bank, accountNumber, isActive, isAdmin } = req.body;
+      
+      if (!email || !password || !name) {
+        return res.status(400).json({ success: false, error: "이메일, 비밀번호, 이름은 필수 입력사항입니다." });
+      }
+      
+      const existingMember = await storage.getMemberByEmail(email);
+      if (existingMember) {
+        return res.status(400).json({ success: false, error: "이미 가입된 이메일입니다." });
+      }
+      
+      const member = await storage.createMember({
+        email,
+        password,
+        name,
+        phone: phone || null,
+        address: address || null,
+        bank: bank || null,
+        accountNumber: accountNumber || null,
+        isActive: isActive !== undefined ? isActive : true,
+        isAdmin: isAdmin || false
+      });
+      
+      res.status(201).json({ 
+        success: true, 
+        message: "회원이 추가되었습니다.",
+        data: member
+      });
+    } catch (error) {
+      console.error("Error creating member:", error);
+      res.status(500).json({ success: false, error: "회원 추가 중 오류가 발생했습니다." });
+    }
+  });
+
+  app.put("/api/admin/members/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { email, password, name, phone, address, bank, accountNumber, isActive, isAdmin } = req.body;
+      
+      const updateData: any = {
+        email,
+        name,
+        phone: phone || null,
+        address: address || null,
+        bank: bank || null,
+        accountNumber: accountNumber || null,
+        isActive: isActive !== undefined ? isActive : true,
+        isAdmin: isAdmin || false
+      };
+      
+      if (password) {
+        updateData.password = password;
+      }
+      
+      const member = await storage.updateMember(req.params.id, updateData);
+      if (!member) {
+        return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
+      }
+      
+      res.json({ success: true, data: member, message: "회원 정보가 수정되었습니다." });
+    } catch (error) {
+      console.error("Error updating member:", error);
+      res.status(500).json({ success: false, error: "회원 정보 수정 중 오류가 발생했습니다." });
+    }
+  });
+
+  app.delete("/api/admin/members/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteMember(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, message: "회원이 삭제되었습니다." });
+    } catch (error) {
+      console.error("Error deleting member:", error);
+      res.status(500).json({ success: false, error: "회원 삭제 중 오류가 발생했습니다." });
+    }
+  });
+
   app.post("/api/members/register", async (req: Request, res: Response) => {
     try {
       const { email, password, name, phone } = req.body;
