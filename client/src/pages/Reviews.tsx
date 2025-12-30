@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Star, ChevronRight, Home, ChevronLeft, Eye, Calendar } from "lucide-react";
+import { Star, ChevronRight, Home, ChevronLeft, Eye, Calendar, ImageOff, Loader2 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +32,62 @@ function getProxiedImageUrl(url: string): string {
   return url;
 }
 
+// Lazy loading image component with loading state
+function LazyImage({ src, alt, className, onLoadSuccess }: { 
+  src: string; 
+  alt: string; 
+  className?: string;
+  onLoadSuccess?: () => void;
+}) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const handleLoad = useCallback(() => {
+    setIsLoading(false);
+    setHasError(false);
+    onLoadSuccess?.();
+  }, [onLoadSuccess]);
+
+  const handleError = useCallback(() => {
+    if (retryCount < 2) {
+      setRetryCount(prev => prev + 1);
+      setIsLoading(true);
+    } else {
+      setIsLoading(false);
+      setHasError(true);
+    }
+  }, [retryCount]);
+
+  if (hasError) {
+    return (
+      <div className={`${className} bg-gray-200 flex flex-col items-center justify-center text-gray-400`}>
+        <ImageOff className="w-8 h-8 mb-1" />
+        <span className="text-xs">이미지 없음</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      {isLoading && (
+        <div className={`${className} bg-gray-100 flex items-center justify-center absolute inset-0`}>
+          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        </div>
+      )}
+      <img
+        key={`${src}-${retryCount}`}
+        src={src}
+        alt={alt}
+        className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
+        onLoad={handleLoad}
+        onError={handleError}
+        loading="lazy"
+      />
+    </div>
+  );
+}
+
 function ReviewImageGallery({ images, title }: { images: string[]; title: string }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -57,30 +113,27 @@ function ReviewImageGallery({ images, title }: { images: string[]; title: string
         className="relative mb-4 rounded-lg overflow-hidden cursor-pointer group"
         onClick={() => setIsOpen(true)}
       >
-        <img
+        <LazyImage
           src={proxiedImages[currentIndex]}
           alt={`${title} - ${currentIndex + 1}`}
           className="w-full h-48 sm:h-56 object-cover group-hover:scale-105 transition-transform duration-300"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = "https://via.placeholder.com/400x300?text=Image";
-          }}
         />
         
         {proxiedImages.length > 1 && (
           <>
             <button
               onClick={handlePrev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors z-10"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               onClick={handleNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors z-10"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-10">
               {currentIndex + 1} / {proxiedImages.length}
             </div>
           </>
@@ -90,30 +143,27 @@ function ReviewImageGallery({ images, title }: { images: string[]; title: string
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-4xl p-0 bg-black border-none">
           <div className="relative">
-            <img
+            <LazyImage
               src={proxiedImages[currentIndex]}
               alt={`${title} - ${currentIndex + 1}`}
               className="w-full max-h-[80vh] object-contain"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "https://via.placeholder.com/800x600?text=Image";
-              }}
             />
             
             {proxiedImages.length > 1 && (
               <>
                 <button
                   onClick={handlePrev}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/20 hover:bg-white/40 rounded-full flex items-center justify-center text-white transition-colors"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/20 hover:bg-white/40 rounded-full flex items-center justify-center text-white transition-colors z-10"
                 >
                   <ChevronLeft className="w-6 h-6" />
                 </button>
                 <button
                   onClick={handleNext}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/20 hover:bg-white/40 rounded-full flex items-center justify-center text-white transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/20 hover:bg-white/40 rounded-full flex items-center justify-center text-white transition-colors z-10"
                 >
                   <ChevronRight className="w-6 h-6" />
                 </button>
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-sm px-3 py-1 rounded-full z-10">
                   {currentIndex + 1} / {proxiedImages.length}
                 </div>
               </>
@@ -130,13 +180,10 @@ function ReviewImageGallery({ images, title }: { images: string[]; title: string
                     idx === currentIndex ? "border-white" : "border-transparent opacity-60 hover:opacity-100"
                   }`}
                 >
-                  <img
+                  <LazyImage
                     src={img}
                     alt={`썸네일 ${idx + 1}`}
                     className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "https://via.placeholder.com/64?text=Img";
-                    }}
                   />
                 </button>
               ))}

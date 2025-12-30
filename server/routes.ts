@@ -124,8 +124,14 @@ export async function registerRoutes(
       
       if (!response.ok) {
         console.log(`Image proxy failed for ${imageUrl}: ${response.status}`);
-        // Return a placeholder image instead of an error
-        return res.redirect("https://via.placeholder.com/400x300?text=Image+Not+Found");
+        // Return a local SVG placeholder instead of external redirect
+        const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+          <rect fill="#f3f4f6" width="400" height="300"/>
+          <text x="200" y="150" text-anchor="middle" fill="#9ca3af" font-family="sans-serif" font-size="14">이미지 없음</text>
+        </svg>`;
+        res.setHeader("Content-Type", "image/svg+xml");
+        res.setHeader("Cache-Control", "public, max-age=3600");
+        return res.send(placeholderSvg);
       }
       
       const contentType = response.headers.get("content-type") || "image/jpeg";
@@ -136,8 +142,14 @@ export async function registerRoutes(
       res.send(Buffer.from(buffer));
     } catch (error) {
       console.error("Image proxy error:", error);
-      // Return placeholder on error instead of JSON
-      res.redirect("https://via.placeholder.com/400x300?text=Error");
+      // Return local SVG placeholder on error instead of external redirect
+      const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+        <rect fill="#f3f4f6" width="400" height="300"/>
+        <text x="200" y="150" text-anchor="middle" fill="#9ca3af" font-family="sans-serif" font-size="14">이미지 없음</text>
+      </svg>`;
+      res.setHeader("Content-Type", "image/svg+xml");
+      res.setHeader("Cache-Control", "public, max-age=3600");
+      res.send(placeholderSvg);
     }
   });
   
