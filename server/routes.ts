@@ -18,7 +18,8 @@ import {
   insertCartItemSchema,
   insertWishlistItemSchema,
   insertBlogPostSchema,
-  insertCouponSchema
+  insertCouponSchema,
+  insertCouponPaymentSchema
 } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
@@ -1667,7 +1668,8 @@ export async function registerRoutes(
   
   app.post("/api/orders", async (req: Request, res: Response) => {
     try {
-      const validatedData = insertOrderSchema.parse(req.body);
+      const { couponPayment, ...orderData } = req.body;
+      const validatedData = insertOrderSchema.parse(orderData);
       const orderNumber = `ORD${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
       
       const order = await storage.createOrder({
@@ -1676,6 +1678,21 @@ export async function registerRoutes(
         status: "pending",
         paymentStatus: "pending"
       });
+      
+      if (couponPayment && validatedData.paymentMethod === "coupon") {
+        await storage.createCouponPayment({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          couponNumber: couponPayment.couponNumber || "",
+          couponExpiry: couponPayment.couponExpiry,
+          couponBirthDate: couponPayment.couponBirthDate,
+          couponPassword: couponPayment.couponPassword,
+          memberName: validatedData.memberName,
+          memberPhone: validatedData.memberPhone,
+          amount: validatedData.totalAmount,
+          status: "pending"
+        });
+      }
       
       res.status(201).json({ success: true, data: order });
     } catch (error) {
@@ -1716,6 +1733,54 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating order:", error);
       res.status(500).json({ success: false, error: "주문 수정 중 오류가 발생했습니다." });
+    }
+  });
+
+  // ==================== COUPON PAYMENTS API ====================
+  
+  app.get("/api/admin/coupon-payments", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const payments = await storage.getAllCouponPayments();
+      res.json({ success: true, data: payments });
+    } catch (error) {
+      console.error("Error fetching coupon payments:", error);
+      res.status(500).json({ success: false, error: "쿠폰결제 목록을 불러올 수 없습니다." });
+    }
+  });
+
+  app.get("/api/admin/coupon-payments/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const payment = await storage.getCouponPayment(req.params.id);
+      if (!payment) {
+        return res.status(404).json({ success: false, error: "쿠폰결제 정보를 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: payment });
+    } catch (error) {
+      console.error("Error fetching coupon payment:", error);
+      res.status(500).json({ success: false, error: "쿠폰결제 정보를 불러올 수 없습니다." });
+    }
+  });
+
+  app.put("/api/admin/coupon-payments/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { status, adminNote, checkedBy } = req.body;
+      const updateData: any = {};
+      
+      if (status) updateData.status = status;
+      if (adminNote !== undefined) updateData.adminNote = adminNote;
+      if (checkedBy) updateData.checkedBy = checkedBy;
+      if (status === "checked") updateData.checkedAt = new Date();
+      
+      const payment = await storage.updateCouponPayment(req.params.id, updateData);
+      
+      if (!payment) {
+        return res.status(404).json({ success: false, error: "쿠폰결제 정보를 찾을 수 없습니다." });
+      }
+      
+      res.json({ success: true, data: payment });
+    } catch (error) {
+      console.error("Error updating coupon payment:", error);
+      res.status(500).json({ success: false, error: "쿠폰결제 수정 중 오류가 발생했습니다." });
     }
   });
 
