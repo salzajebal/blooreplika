@@ -273,7 +273,10 @@ export default function ProductList() {
                 </Sheet>
                 
                 <span className="text-sm text-gray-500">
-                  총 <span className="font-bold text-black" data-testid="text-product-count">{filteredProducts.length}</span>개
+                  총 <span className="font-bold text-black" data-testid="text-product-count">{total.toLocaleString()}</span>개
+                  {totalPages > 1 && (
+                    <span className="ml-1 text-gray-400">(페이지 {currentPage}/{totalPages})</span>
+                  )}
                 </span>
               </div>
               
