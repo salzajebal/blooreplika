@@ -32,16 +32,27 @@ function getProxiedImageUrl(url: string): string {
   return url;
 }
 
+// Filter out problematic image URLs (board system thumbnails that return 404)
+function filterValidImageUrls(urls: string[]): string[] {
+  return urls.filter(url => {
+    // Skip board system thumbnail URLs as they often return 404
+    if (url.includes('/data/file/bestreview/') || url.includes('/data/file/kalreom/')) {
+      return false;
+    }
+    return true;
+  });
+}
+
 // Lazy loading image component with loading state
-function LazyImage({ src, alt, className, onLoadSuccess }: { 
+function LazyImage({ src, alt, className, onLoadSuccess, onError: onErrorProp }: { 
   src: string; 
   alt: string; 
   className?: string;
   onLoadSuccess?: () => void;
+  onError?: () => void;
 }) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
 
   const handleLoad = useCallback(() => {
     setIsLoading(false);
@@ -50,14 +61,10 @@ function LazyImage({ src, alt, className, onLoadSuccess }: {
   }, [onLoadSuccess]);
 
   const handleError = useCallback(() => {
-    if (retryCount < 2) {
-      setRetryCount(prev => prev + 1);
-      setIsLoading(true);
-    } else {
-      setIsLoading(false);
-      setHasError(true);
-    }
-  }, [retryCount]);
+    setIsLoading(false);
+    setHasError(true);
+    onErrorProp?.();
+  }, [onErrorProp]);
 
   if (hasError) {
     return (
@@ -76,7 +83,6 @@ function LazyImage({ src, alt, className, onLoadSuccess }: {
         </div>
       )}
       <img
-        key={`${src}-${retryCount}`}
         src={src}
         alt={alt}
         className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
@@ -94,8 +100,11 @@ function ReviewImageGallery({ images, title }: { images: string[]; title: string
 
   if (!images || images.length === 0) return null;
 
-  // Proxy all images
-  const proxiedImages = images.map(getProxiedImageUrl);
+  // Filter out problematic URLs and proxy remaining images
+  const validImages = filterValidImageUrls(images);
+  if (validImages.length === 0) return null;
+  
+  const proxiedImages = validImages.map(getProxiedImageUrl);
 
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -206,13 +215,14 @@ export default function Reviews() {
   });
 
   const getDisplayImages = (review: Review): string[] => {
+    let images: string[] = [];
     if (review.imageUrls && review.imageUrls.length > 0) {
-      return review.imageUrls;
+      images = review.imageUrls;
+    } else if (review.imageUrl) {
+      images = [review.imageUrl];
     }
-    if (review.imageUrl) {
-      return [review.imageUrl];
-    }
-    return [];
+    // Filter out problematic URLs
+    return filterValidImageUrls(images);
   };
 
   return (
