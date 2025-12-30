@@ -7,8 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, Package, User, MapPin, MessageCircle } from "lucide-react";
+import { CheckCircle, Package, User, MapPin, MessageCircle, CreditCard, Building2 } from "lucide-react";
+import { CardPaymentForm } from "@/components/checkout/CardPaymentForm";
+import { cn } from "@/lib/utils";
 import type { Product } from "@shared/schema";
+
+type PaymentMethod = "card" | "bank" | null;
 
 const KAKAO_LINK = "https://pf.kakao.com/_xixcxgj";
 
@@ -30,6 +34,8 @@ export default function Order() {
   const [submitting, setSubmitting] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
+  const [cardPaymentValid, setCardPaymentValid] = useState(false);
   
   const searchParams = new URLSearchParams(window.location.search);
   const quantityParam = parseInt(searchParams.get("quantity") || "1");
@@ -466,16 +472,63 @@ export default function Order() {
               </div>
             </div>
 
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-6">
-              <h3 className="font-bold text-amber-900 mb-2 flex items-center gap-2">
-                <MessageCircle className="w-5 h-5" />
-                결제 안내
-              </h3>
-              <p className="text-amber-800 text-sm">
-                주문서 작성 완료 후, <strong>결제계좌 정보</strong>는 카카오톡 상담을 통해 안내받으실 수 있습니다.
-                <br />
-                주문 완료 페이지에서 카카오톡 링크를 클릭해주세요.
-              </p>
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-primary" />
+                결제 방법
+              </h2>
+              
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("card")}
+                  className={cn(
+                    "p-4 border-2 rounded-lg flex flex-col items-center gap-2 transition-all",
+                    paymentMethod === "card"
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-gray-200 hover:border-gray-300"
+                  )}
+                  data-testid="button-payment-card"
+                >
+                  <CreditCard className="w-8 h-8" />
+                  <span className="font-medium">신용/체크카드</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod("bank")}
+                  className={cn(
+                    "p-4 border-2 rounded-lg flex flex-col items-center gap-2 transition-all",
+                    paymentMethod === "bank"
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-gray-200 hover:border-gray-300"
+                  )}
+                  data-testid="button-payment-bank"
+                >
+                  <Building2 className="w-8 h-8" />
+                  <span className="font-medium">계좌이체</span>
+                </button>
+              </div>
+
+              {paymentMethod === "card" && (
+                <CardPaymentForm 
+                  onSubmit={setCardPaymentValid}
+                  totalAmount={product ? product.price * quantity : 0}
+                />
+              )}
+
+              {paymentMethod === "bank" && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <h3 className="font-bold text-amber-900 mb-2 flex items-center gap-2">
+                    <MessageCircle className="w-5 h-5" />
+                    계좌이체 안내
+                  </h3>
+                  <p className="text-amber-800 text-sm">
+                    주문서 작성 완료 후, <strong>결제계좌 정보</strong>는 카카오톡 상담을 통해 안내받으실 수 있습니다.
+                    <br />
+                    주문 완료 페이지에서 카카오톡 링크를 클릭해주세요.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
