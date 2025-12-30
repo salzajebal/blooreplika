@@ -230,17 +230,21 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getProductsPaginated(limit: number, offset: number, categoryId?: string): Promise<{ products: Product[], total: number }> {
-    const whereClause = categoryId ? eq(products.categoryId, categoryId) : undefined;
-    
-    const [countResult, productList] = await Promise.all([
-      db.select({ count: sql<number>`count(*)` }).from(products).where(whereClause),
-      db.select().from(products).where(whereClause).orderBy(desc(products.createdAt)).limit(limit).offset(offset)
-    ]);
-    
-    return {
-      products: productList,
-      total: Number(countResult[0]?.count || 0)
-    };
+    // Execute count and data queries in parallel for performance
+    // Use explicit query building to avoid where(undefined) issues
+    if (categoryId) {
+      const [countResult, productList] = await Promise.all([
+        db.select({ count: sql<number>`count(*)::int` }).from(products).where(eq(products.categoryId, categoryId)),
+        db.select().from(products).where(eq(products.categoryId, categoryId)).orderBy(desc(products.createdAt)).limit(limit).offset(offset)
+      ]);
+      return { products: productList, total: countResult[0]?.count || 0 };
+    } else {
+      const [countResult, productList] = await Promise.all([
+        db.select({ count: sql<number>`count(*)::int` }).from(products),
+        db.select().from(products).orderBy(desc(products.createdAt)).limit(limit).offset(offset)
+      ]);
+      return { products: productList, total: countResult[0]?.count || 0 };
+    }
   }
   
   async getProductsCount(categoryId?: string): Promise<number> {
