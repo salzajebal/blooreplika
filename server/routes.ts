@@ -2140,11 +2140,11 @@ export async function registerRoutes(
     })();
   });
 
-  // Crawl reviews from cdamdong.co.kr (bestreview board)
+  // Crawl reviews from cdamdong.co.kr (bestreview and kalreom boards)
   app.post("/api/admin/crawl/reviews", requireAdminAuth, async (req: Request, res: Response) => {
     const headers = {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      "Referer": "https://cdamdong.co.kr/bbs/board.php?bo_table=bestreview",
+      "Referer": "https://cdamdong.co.kr/",
       "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
       "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
       "Accept-Encoding": "gzip, deflate, br",
@@ -2152,108 +2152,119 @@ export async function registerRoutes(
     };
     
     try {
-      const maxPages = req.body.maxPages || 5;
+      const maxPages = req.body.maxPages || 10;
+      const boards = req.body.boards || ["bestreview", "kalreom"];
       const reviews: any[] = [];
       const seenIds = new Set<string>();
       
-      console.log("Starting review crawl from bestreview board...");
+      console.log(`Starting review crawl from boards: ${boards.join(", ")}, maxPages: ${maxPages}`);
       
-      for (let page = 1; page <= maxPages; page++) {
-        try {
-          const listUrl = `https://cdamdong.co.kr/bbs/board.php?bo_table=bestreview&page=${page}`;
-          console.log(`Fetching review list page ${page}: ${listUrl}`);
-          
-          const response = await fetch(listUrl, { headers });
-          console.log(`Page ${page} response status: ${response.status}`);
-          
-          if (!response.ok) {
-            console.log(`Page ${page} returned ${response.status}`);
-            continue;
-          }
-          
-          const html = await response.text();
-          console.log(`Page ${page} HTML length: ${html.length}`);
-          
-          const $ = cheerio.load(html, { decodeEntities: true });
-          
-          // Method 1: Parse review list items using sct_li class
-          const sctLiCount = $(".sct_li").length;
-          console.log(`Page ${page}: Found ${sctLiCount} .sct_li elements`);
-          
-          $(".sct_li").each((_: number, el: any) => {
-            const $el = $(el);
+      // Crawl from multiple boards
+      for (const board of boards) {
+        console.log(`\n=== Crawling board: ${board} ===`);
+        let consecutiveEmptyPages = 0;
+        
+        for (let page = 1; page <= maxPages; page++) {
+          try {
+            const listUrl = `https://cdamdong.co.kr/bbs/board.php?bo_table=${board}&page=${page}`;
+            console.log(`Fetching ${board} page ${page}: ${listUrl}`);
             
-            // Try multiple selectors for the link
-            let href = "";
-            const $link = $el.find("a[href*='bestreview']").first();
-            if ($link.length) {
-              href = $link.attr("href") || "";
+            const response = await fetch(listUrl, { headers });
+            
+            if (!response.ok) {
+              console.log(`Page ${page} returned ${response.status}`);
+              consecutiveEmptyPages++;
+              if (consecutiveEmptyPages >= 3) break;
+              continue;
             }
             
-            // Decode HTML entities in href
-            href = href.replace(/&amp;/g, "&");
+            const html = await response.text();
+            const $ = cheerio.load(html);
             
-            const idMatch = href.match(/wr_id=(\d+)/);
+            let pageItemsFound = 0;
             
-            // Get title from the title div
-            const title = $el.find(".sct_txt .title div").last().text().trim() || 
-                         $el.find(".sct_txt a").text().trim() ||
-                         $el.find("a").first().text().trim();
-            
-            // Get thumbnail image
-            const thumbnail = $el.find(".prdImg img").attr("src") || $el.find("img").first().attr("src") || "";
-            
-            console.log(`Found item: href="${href.slice(0,50)}", id=${idMatch?.[1]}, title="${title.slice(0,30)}"`);
-            
-            if (idMatch && !seenIds.has(idMatch[1])) {
-              seenIds.add(idMatch[1]);
-              reviews.push({
-                sourceId: idMatch[1],
-                title,
-                thumbnail,
-              });
-            }
-          });
-          
-          // Method 2: Fallback - extract IDs directly from HTML using regex
-          if (reviews.length === 0) {
-            console.log("Method 1 failed, trying regex extraction...");
-            const idRegex = /bestreview[^"]*wr_id=(\d+)/g;
-            let match;
-            while ((match = idRegex.exec(html)) !== null) {
-              const id = match[1];
-              if (!seenIds.has(id)) {
-                seenIds.add(id);
+            // Method 1: Parse review list items using sct_li class
+            $(".sct_li").each((_: number, el: any) => {
+              const $el = $(el);
+              
+              let href = $el.find(`a[href*='${board}']`).first().attr("href") || "";
+              href = href.replace(/&amp;/g, "&");
+              
+              const idMatch = href.match(/wr_id=(\d+)/);
+              
+              const title = $el.find(".sct_txt .title div").last().text().trim() || 
+                           $el.find(".sct_txt a").text().trim() ||
+                           $el.find("a").first().text().trim();
+              
+              const thumbnail = $el.find(".prdImg img").attr("src") || $el.find("img").first().attr("src") || "";
+              
+              const uniqueKey = `${board}_${idMatch?.[1]}`;
+              if (idMatch && !seenIds.has(uniqueKey)) {
+                seenIds.add(uniqueKey);
                 reviews.push({
-                  sourceId: id,
-                  title: `후기 #${id}`,
-                  thumbnail: "",
+                  sourceId: idMatch[1],
+                  board,
+                  title,
+                  thumbnail,
                 });
+                pageItemsFound++;
+              }
+            });
+            
+            // Method 2: Fallback - regex extraction
+            if (pageItemsFound === 0) {
+              const idRegex = new RegExp(`${board}[^"]*wr_id=(\\d+)`, 'g');
+              let match;
+              while ((match = idRegex.exec(html)) !== null) {
+                const id = match[1];
+                const uniqueKey = `${board}_${id}`;
+                if (!seenIds.has(uniqueKey)) {
+                  seenIds.add(uniqueKey);
+                  reviews.push({
+                    sourceId: id,
+                    board,
+                    title: `후기 #${id}`,
+                    thumbnail: "",
+                  });
+                  pageItemsFound++;
+                }
               }
             }
-            console.log(`Regex method found ${seenIds.size} unique IDs`);
+            
+            console.log(`${board} page ${page}: Found ${pageItemsFound} new items, total: ${reviews.length}`);
+            
+            if (pageItemsFound === 0) {
+              consecutiveEmptyPages++;
+              if (consecutiveEmptyPages >= 2) {
+                console.log(`No new items on ${board} page ${page}, stopping board crawl`);
+                break;
+              }
+            } else {
+              consecutiveEmptyPages = 0;
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 300));
+          } catch (e) {
+            console.error(`Error fetching ${board} page ${page}:`, e);
           }
-          
-          console.log(`Page ${page}: Found ${reviews.length} total reviews so far`);
-          await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (e) {
-          console.error(`Error fetching page ${page}:`, e);
         }
       }
       
-      console.log(`Total reviews found: ${reviews.length}`);
+      console.log(`\nTotal reviews found across all boards: ${reviews.length}`);
       
       // Fetch review details and save
       let savedCount = 0;
-      for (const review of reviews.slice(0, 50)) {
+      const maxReviews = req.body.maxReviews || 100;
+      for (const review of reviews.slice(0, maxReviews)) {
         try {
-          const detailUrl = `https://cdamdong.co.kr/bbs/board.php?bo_table=bestreview&wr_id=${review.sourceId}`;
-          console.log(`Fetching review detail: ${detailUrl}`);
+          const board = review.board || "bestreview";
+          const detailUrl = `https://cdamdong.co.kr/bbs/board.php?bo_table=${board}&wr_id=${review.sourceId}`;
+          console.log(`Fetching ${board} review detail: ${detailUrl}`);
           
           const detailRes = await fetch(detailUrl, { 
             headers: {
               ...headers,
-              "Referer": "https://cdamdong.co.kr/bbs/board.php?bo_table=bestreview"
+              "Referer": `https://cdamdong.co.kr/bbs/board.php?bo_table=${board}`
             }
           });
           if (!detailRes.ok) {
