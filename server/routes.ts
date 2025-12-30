@@ -2064,9 +2064,11 @@ export async function registerRoutes(
   app.post("/api/admin/crawl/reviews", requireAdminAuth, async (req: Request, res: Response) => {
     const headers = {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      "Referer": "https://cdamdong.co.kr/",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Referer": "https://cdamdong.co.kr/bbs/board.php?bo_table=bestreview",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
       "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+      "Accept-Encoding": "gzip, deflate, br",
+      "Connection": "keep-alive",
     };
     
     try {
@@ -2082,27 +2084,46 @@ export async function registerRoutes(
           console.log(`Fetching review list page ${page}: ${listUrl}`);
           
           const response = await fetch(listUrl, { headers });
+          console.log(`Page ${page} response status: ${response.status}`);
+          
           if (!response.ok) {
             console.log(`Page ${page} returned ${response.status}`);
             continue;
           }
           
           const html = await response.text();
-          const $ = cheerio.load(html);
+          console.log(`Page ${page} HTML length: ${html.length}`);
           
-          // Parse review list items - bestreview uses gallery format
+          const $ = cheerio.load(html, { decodeEntities: true });
+          
+          // Method 1: Parse review list items using sct_li class
+          const sctLiCount = $(".sct_li").length;
+          console.log(`Page ${page}: Found ${sctLiCount} .sct_li elements`);
+          
           $(".sct_li").each((_: number, el: any) => {
             const $el = $(el);
-            const $link = $el.find(".sct_txt a, .prdImg a").first();
-            const href = $link.attr("href") || "";
+            
+            // Try multiple selectors for the link
+            let href = "";
+            const $link = $el.find("a[href*='bestreview']").first();
+            if ($link.length) {
+              href = $link.attr("href") || "";
+            }
+            
+            // Decode HTML entities in href
+            href = href.replace(/&amp;/g, "&");
+            
             const idMatch = href.match(/wr_id=(\d+)/);
             
             // Get title from the title div
             const title = $el.find(".sct_txt .title div").last().text().trim() || 
-                         $el.find(".sct_txt a").text().trim();
+                         $el.find(".sct_txt a").text().trim() ||
+                         $el.find("a").first().text().trim();
             
             // Get thumbnail image
-            const thumbnail = $el.find(".prdImg img").attr("src") || "";
+            const thumbnail = $el.find(".prdImg img").attr("src") || $el.find("img").first().attr("src") || "";
+            
+            console.log(`Found item: href="${href.slice(0,50)}", id=${idMatch?.[1]}, title="${title.slice(0,30)}"`);
             
             if (idMatch && !seenIds.has(idMatch[1])) {
               seenIds.add(idMatch[1]);
@@ -2113,6 +2134,25 @@ export async function registerRoutes(
               });
             }
           });
+          
+          // Method 2: Fallback - extract IDs directly from HTML using regex
+          if (reviews.length === 0) {
+            console.log("Method 1 failed, trying regex extraction...");
+            const idRegex = /bestreview[^"]*wr_id=(\d+)/g;
+            let match;
+            while ((match = idRegex.exec(html)) !== null) {
+              const id = match[1];
+              if (!seenIds.has(id)) {
+                seenIds.add(id);
+                reviews.push({
+                  sourceId: id,
+                  title: `후기 #${id}`,
+                  thumbnail: "",
+                });
+              }
+            }
+            console.log(`Regex method found ${seenIds.size} unique IDs`);
+          }
           
           console.log(`Page ${page}: Found ${reviews.length} total reviews so far`);
           await new Promise(resolve => setTimeout(resolve, 500));
