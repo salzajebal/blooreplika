@@ -135,9 +135,10 @@ export default function Notices() {
                     
                     {isExpanded && (
                       <div className="px-6 pb-6 pt-2 bg-gray-50">
-                        <div className="prose prose-sm max-w-none text-gray-700">
-                          <p className="whitespace-pre-wrap">{notice.content}</p>
-                        </div>
+                        <div 
+                          className="prose prose-sm max-w-none text-gray-700 [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_p]:my-2"
+                          dangerouslySetInnerHTML={{ __html: notice.content }}
+                        />
                         <div className="mt-4 pt-4 border-t text-sm text-gray-500 sm:hidden">
                           <p>
                             {notice.displayDate
