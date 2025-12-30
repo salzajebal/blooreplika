@@ -176,6 +176,7 @@ export default function Admin() {
   const [depositAccountLoading, setDepositAccountLoading] = useState(false);
 
   const [productCount, setProductCount] = useState<number | null>(null);
+  const [productCountLoading, setProductCountLoading] = useState(false);
   
   const [crawlProgress, setCrawlProgress] = useState<{
     status: 'idle' | 'running' | 'completed' | 'error';
@@ -188,11 +189,14 @@ export default function Admin() {
   const crawlIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchProductCount = async () => {
+    setProductCountLoading(true);
     try {
       const res = await fetchWithAuth("/api/admin/products/count", { method: "GET" });
       const data = await res.json();
       if (data.success) setProductCount(data.count);
-    } catch {}
+    } catch {} finally {
+      setProductCountLoading(false);
+    }
   };
 
   const fetchCrawlProgress = async () => {
@@ -609,6 +613,12 @@ export default function Admin() {
       fetchProductCount();
     }
   }, [isAuthenticated]);
+  
+  useEffect(() => {
+    if (isAuthenticated && activeTab === "settings") {
+      fetchProductCount();
+    }
+  }, [activeTab, isAuthenticated]);
   
   const fetchSiteSettings = async () => {
     try {
@@ -3803,7 +3813,14 @@ export default function Admin() {
                     <div>
                       <h4 className="font-bold text-gray-900">현재 상품 수</h4>
                       <p className="text-2xl font-bold text-blue-600">
-                        {productCount !== null ? productCount.toLocaleString() : "-"}개
+                        {productCountLoading ? (
+                          <span className="flex items-center gap-2">
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            로딩중...
+                          </span>
+                        ) : (
+                          `${productCount !== null ? productCount.toLocaleString() : "0"}개`
+                        )}
                       </p>
                     </div>
                     <Button 
@@ -3811,8 +3828,9 @@ export default function Admin() {
                       size="sm" 
                       onClick={() => fetchProductCount()}
                       className="ml-auto"
+                      disabled={productCountLoading}
                     >
-                      <RefreshCw className="w-4 h-4" />
+                      <RefreshCw className={`w-4 h-4 ${productCountLoading ? 'animate-spin' : ''}`} />
                     </Button>
                   </div>
 
