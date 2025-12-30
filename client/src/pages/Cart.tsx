@@ -172,7 +172,7 @@ export default function Cart() {
                           "font-medium",
                           paymentMethod === "card" ? "text-primary" : "text-gray-600"
                         )}>
-                          쿠폰결제
+                          카드결제
                         </span>
                       </button>
                       

@@ -532,7 +532,7 @@ export default function Admin() {
       });
       const data = await res.json();
       if (data.success) {
-        toast({ title: "완료", description: "쿠폰결제 상태가 업데이트되었습니다." });
+        toast({ title: "완료", description: "카드결제 상태가 업데이트되었습니다." });
         fetchCouponPayments();
       }
     } catch (error) {
@@ -1687,7 +1687,7 @@ export default function Admin() {
             className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "couponPayments" ? "bg-purple-500 hover:bg-purple-600" : ""}`}
           >
             <Wallet className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">쿠폰결제</span>
+            <span className="hidden md:inline">카드결제</span>
             {couponPayments.filter(p => p.status === "pending").length > 0 && (
               <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
                 {couponPayments.filter(p => p.status === "pending").length}
@@ -2830,7 +2830,7 @@ export default function Admin() {
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">쿠폰결제 관리</h2>
+                <h2 className="text-xl font-bold text-gray-900">카드결제 관리</h2>
                 <p className="text-gray-500 text-sm">
                   총 {couponPayments.length}건 | 대기중 {couponPayments.filter(p => p.status === "pending").length}건
                 </p>
@@ -2842,9 +2842,9 @@ export default function Admin() {
             </div>
 
             {couponPaymentsLoading ? (
-              <div className="text-center py-12 text-gray-500">쿠폰결제 내역을 불러오는 중...</div>
+              <div className="text-center py-12 text-gray-500">카드결제 내역을 불러오는 중...</div>
             ) : couponPayments.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">쿠폰결제 내역이 없습니다.</div>
+              <div className="text-center py-12 text-gray-500">카드결제 내역이 없습니다.</div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse">
