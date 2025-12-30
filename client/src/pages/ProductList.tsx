@@ -1,7 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Heart, Package, Star, Grid, List, ChevronDown, Filter, X } from "lucide-react";
+import { Heart, Package, Star, Grid, List, ChevronDown, Filter, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useState, useEffect, useMemo } from "react";
 import type { Product } from "@shared/schema";
@@ -62,26 +62,22 @@ export default function ProductList() {
     });
   };
 
-  const [hasMore, setHasMore] = useState(false);
-  const [offset, setOffset] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const LIMIT = 60;
+  const ITEMS_PER_PAGE = 60;
+  const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   useEffect(() => {
     let cancelled = false;
     
     const fetchData = async () => {
       setLoading(true);
-      setProducts([]);
-      setOffset(0);
-      setHasMore(false);
-      setTotal(0);
       
       try {
+        const offset = (currentPage - 1) * ITEMS_PER_PAGE;
         const categoryParam = categorySlug && categorySlug !== "all" ? `&categoryId=${categorySlug}` : "";
         const [productsRes, brandsRes] = await Promise.all([
-          fetch(`/api/products?limit=${LIMIT}&offset=0${categoryParam}`),
+          fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}`),
           fetch("/api/brands")
         ]);
         
@@ -92,7 +88,6 @@ export default function ProductList() {
         
         if (productsData.success) {
           setProducts(productsData.data);
-          setHasMore(productsData.hasMore || false);
           setTotal(productsData.total || 0);
         }
         if (brandsData.success) {
@@ -110,27 +105,41 @@ export default function ProductList() {
     fetchData();
     
     return () => { cancelled = true; };
+  }, [categorySlug, currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
   }, [categorySlug]);
 
-  const loadMore = async () => {
-    if (isLoadingMore) return;
-    setIsLoadingMore(true);
-    
-    const newOffset = offset + LIMIT;
-    const categoryParam = categorySlug && categorySlug !== "all" ? `&categoryId=${categorySlug}` : "";
-    try {
-      const res = await fetch(`/api/products?limit=${LIMIT}&offset=${newOffset}${categoryParam}`);
-      const data = await res.json();
-      if (data.success) {
-        setProducts(prev => [...prev, ...data.data]);
-        setOffset(newOffset);
-        setHasMore(data.hasMore || false);
-      }
-    } catch (error) {
-      console.error("Error loading more products:", error);
-    } finally {
-      setIsLoadingMore(false);
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+    
+    if (totalPages <= maxVisible + 2) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      
+      if (currentPage > 3) pages.push('...');
+      
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      
+      for (let i = start; i <= end; i++) pages.push(i);
+      
+      if (currentPage < totalPages - 2) pages.push('...');
+      
+      pages.push(totalPages);
+    }
+    
+    return pages;
   };
 
   const filteredProducts = useMemo(() => {
@@ -412,16 +421,49 @@ export default function ProductList() {
                 ))}
               </div>
               
-              {hasMore && (
-                <div className="mt-8 text-center">
-                  <Button 
-                    variant="outline" 
-                    onClick={loadMore}
-                    className="px-8"
-                    data-testid="button-load-more"
+              {totalPages > 1 && (
+                <div className="mt-8 flex items-center justify-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="h-9 w-9"
+                    data-testid="button-prev-page"
                   >
-                    더 보기 ({products.length} / {total})
+                    <ChevronLeft className="h-4 w-4" />
                   </Button>
+                  
+                  {getPageNumbers().map((page, idx) => (
+                    typeof page === 'number' ? (
+                      <Button
+                        key={idx}
+                        variant={currentPage === page ? "default" : "outline"}
+                        onClick={() => goToPage(page)}
+                        className="h-9 w-9 p-0"
+                        data-testid={`button-page-${page}`}
+                      >
+                        {page}
+                      </Button>
+                    ) : (
+                      <span key={idx} className="px-2 text-gray-400">...</span>
+                    )
+                  ))}
+                  
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="h-9 w-9"
+                    data-testid="button-next-page"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  
+                  <span className="ml-4 text-sm text-gray-500">
+                    {total.toLocaleString()}개 상품
+                  </span>
                 </div>
               )}
             </>
