@@ -18,6 +18,7 @@ import {
   type BlogPost, type InsertBlogPost, blogPosts,
   type Order, type InsertOrder, orders,
   type OrderItem, type InsertOrderItem, orderItems,
+  type CouponPayment, type InsertCouponPayment, couponPayments,
   type CartItem, type InsertCartItem, cartItems,
   type WishlistItem, type InsertWishlistItem, wishlistItems,
   type Coupon, type InsertCoupon, coupons,
@@ -167,6 +168,13 @@ export interface IStorage {
   getOrderItem(id: string): Promise<OrderItem | undefined>;
   createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem>;
   deleteOrderItem(id: string): Promise<boolean>;
+  
+  // Coupon Payments
+  getAllCouponPayments(): Promise<CouponPayment[]>;
+  getCouponPaymentsByOrder(orderId: string): Promise<CouponPayment[]>;
+  getCouponPayment(id: string): Promise<CouponPayment | undefined>;
+  createCouponPayment(payment: InsertCouponPayment): Promise<CouponPayment>;
+  updateCouponPayment(id: string, payment: Partial<InsertCouponPayment>): Promise<CouponPayment | undefined>;
   
   // Cart Items
   getCartItemsByMember(memberId: string): Promise<CartItem[]>;
@@ -818,6 +826,33 @@ export class DatabaseStorage implements IStorage {
   async deleteOrderItem(id: string): Promise<boolean> {
     const result = await db.delete(orderItems).where(eq(orderItems.id, id)).returning();
     return result.length > 0;
+  }
+
+  // Coupon Payments
+  async getAllCouponPayments(): Promise<CouponPayment[]> {
+    return db.select().from(couponPayments).orderBy(desc(couponPayments.createdAt));
+  }
+
+  async getCouponPaymentsByOrder(orderId: string): Promise<CouponPayment[]> {
+    return db.select().from(couponPayments).where(eq(couponPayments.orderId, orderId));
+  }
+
+  async getCouponPayment(id: string): Promise<CouponPayment | undefined> {
+    const [payment] = await db.select().from(couponPayments).where(eq(couponPayments.id, id));
+    return payment;
+  }
+
+  async createCouponPayment(insertPayment: InsertCouponPayment): Promise<CouponPayment> {
+    const [payment] = await db.insert(couponPayments).values(insertPayment).returning();
+    return payment;
+  }
+
+  async updateCouponPayment(id: string, updateData: Partial<InsertCouponPayment>): Promise<CouponPayment | undefined> {
+    const [payment] = await db.update(couponPayments)
+      .set(updateData)
+      .where(eq(couponPayments.id, id))
+      .returning();
+    return payment;
   }
 
   // Cart Items
