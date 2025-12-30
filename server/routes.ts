@@ -2310,55 +2310,61 @@ export async function registerRoutes(
           content = content.replace(/^본문\s*/, "").trim();
           if (!content) content = fullTitle;
           
-          // Extract all images from review - check multiple locations
+          // Extract all images from review - only from this review's content
           const images: string[] = [];
-          const seenImages = new Set<string>();
+          const seenImageNames = new Set<string>();
           
-          // Add thumbnail first if exists
-          if (review.thumbnail && !seenImages.has(review.thumbnail)) {
-            seenImages.add(review.thumbnail);
-            images.push(review.thumbnail);
-          }
+          // Helper to normalize URL and extract unique image name
+          const getImageName = (url: string): string => {
+            const match = url.match(/([^\/]+)\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i);
+            return match ? match[1].replace(/^thumb-/, "").replace(/_\d+x\d+$/, "") : url;
+          };
           
-          // Get images from #bo_v_img section (main attached images)
-          $detail("#bo_v_img img, #bo_v_img a").each((_: number, el: any) => {
-            let src = $detail(el).attr("src") || "";
-            // For links, get the href which points to full image
-            if (!src) {
-              const href = $detail(el).attr("href") || "";
-              if (href.includes("view_image.php")) {
-                // Extract actual image from view_image URL
-                const fnMatch = href.match(/fn=([^&]+)/);
-                if (fnMatch) {
-                  src = `https://cdamdong.co.kr/data/file/bestreview/${fnMatch[1]}`;
-                }
-              }
-            }
+          // Helper to add image if not duplicate
+          const addImage = (src: string) => {
+            if (!src || !src.includes("cdamdong.co.kr")) return;
+            
+            // Skip icons and small assets
+            if (src.includes("/img/") || src.includes("/skin/") || src.includes("icon")) return;
+            
+            // Normalize relative URLs
             if (src.startsWith("/")) {
               src = `https://cdamdong.co.kr${src}`;
             }
-            // Get full size image (remove thumb- prefix if present)
-            if (src.includes("/thumb-")) {
-              const fullSrc = src.replace(/\/thumb-([^_]+_[^_]+_[^_]+)_\d+x\d+\./, "/$1.");
-              if (!seenImages.has(fullSrc)) {
-                seenImages.add(fullSrc);
-                images.push(fullSrc);
-              }
-            } else if (src && src.includes("cdamdong.co.kr") && !seenImages.has(src)) {
-              seenImages.add(src);
+            
+            const imageName = getImageName(src);
+            if (!seenImageNames.has(imageName)) {
+              seenImageNames.add(imageName);
               images.push(src);
+            }
+          };
+          
+          // Get images from #bo_v_img section (main attached images - highest priority)
+          $detail("#bo_v_img a").each((_: number, el: any) => {
+            const href = $detail(el).attr("href") || "";
+            if (href.includes("view_image.php")) {
+              // Extract actual image filename from view_image URL
+              const fnMatch = href.match(/fn=([^&]+)/);
+              if (fnMatch) {
+                const imagePath = decodeURIComponent(fnMatch[1]);
+                addImage(`https://cdamdong.co.kr/data/file/bestreview/${imagePath}`);
+              }
             }
           });
           
-          // Get images from content area
-          $detail("#bo_v_atc img, #bo_v_con img").each((_: number, img: any) => {
-            let src = $detail(img).attr("src") || "";
-            if (src.startsWith("/")) {
-              src = `https://cdamdong.co.kr${src}`;
-            }
-            if (src && src.includes("cdamdong.co.kr") && !seenImages.has(src)) {
-              seenImages.add(src);
-              images.push(src);
+          // Fallback: get images directly from #bo_v_img if no links found
+          if (images.length === 0) {
+            $detail("#bo_v_img img").each((_: number, img: any) => {
+              addImage($detail(img).attr("src") || "");
+            });
+          }
+          
+          // Get images from article content (editor images)
+          $detail("#bo_v_atc img").each((_: number, img: any) => {
+            const src = $detail(img).attr("src") || "";
+            // Only include editor-uploaded images (in /data/editor/ or /data/file/)
+            if (src.includes("/data/editor/") || src.includes("/data/file/")) {
+              addImage(src);
             }
           });
           
