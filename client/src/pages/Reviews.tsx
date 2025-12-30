@@ -22,20 +22,33 @@ interface Review {
   viewCount?: number;
 }
 
+// Helper function to proxy external images
+function getProxiedImageUrl(url: string): string {
+  if (!url) return "";
+  // If it's an external image from cdamdong.co.kr, use the proxy
+  if (url.includes("cdamdong.co.kr")) {
+    return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
 function ReviewImageGallery({ images, title }: { images: string[]; title: string }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
 
   if (!images || images.length === 0) return null;
 
+  // Proxy all images
+  const proxiedImages = images.map(getProxiedImageUrl);
+
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+    setCurrentIndex((prev) => (prev === 0 ? proxiedImages.length - 1 : prev - 1));
   };
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
+    setCurrentIndex((prev) => (prev === proxiedImages.length - 1 ? 0 : prev + 1));
   };
 
   return (
@@ -45,7 +58,7 @@ function ReviewImageGallery({ images, title }: { images: string[]; title: string
         onClick={() => setIsOpen(true)}
       >
         <img
-          src={images[currentIndex]}
+          src={proxiedImages[currentIndex]}
           alt={`${title} - ${currentIndex + 1}`}
           className="w-full h-48 sm:h-56 object-cover group-hover:scale-105 transition-transform duration-300"
           onError={(e) => {
@@ -53,7 +66,7 @@ function ReviewImageGallery({ images, title }: { images: string[]; title: string
           }}
         />
         
-        {images.length > 1 && (
+        {proxiedImages.length > 1 && (
           <>
             <button
               onClick={handlePrev}
@@ -68,7 +81,7 @@ function ReviewImageGallery({ images, title }: { images: string[]; title: string
               <ChevronRight className="w-5 h-5" />
             </button>
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-              {currentIndex + 1} / {images.length}
+              {currentIndex + 1} / {proxiedImages.length}
             </div>
           </>
         )}
@@ -78,7 +91,7 @@ function ReviewImageGallery({ images, title }: { images: string[]; title: string
         <DialogContent className="max-w-4xl p-0 bg-black border-none">
           <div className="relative">
             <img
-              src={images[currentIndex]}
+              src={proxiedImages[currentIndex]}
               alt={`${title} - ${currentIndex + 1}`}
               className="w-full max-h-[80vh] object-contain"
               onError={(e) => {
@@ -86,7 +99,7 @@ function ReviewImageGallery({ images, title }: { images: string[]; title: string
               }}
             />
             
-            {images.length > 1 && (
+            {proxiedImages.length > 1 && (
               <>
                 <button
                   onClick={handlePrev}
@@ -101,15 +114,15 @@ function ReviewImageGallery({ images, title }: { images: string[]; title: string
                   <ChevronRight className="w-6 h-6" />
                 </button>
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/50 text-white text-sm px-3 py-1 rounded-full">
-                  {currentIndex + 1} / {images.length}
+                  {currentIndex + 1} / {proxiedImages.length}
                 </div>
               </>
             )}
           </div>
           
-          {images.length > 1 && (
+          {proxiedImages.length > 1 && (
             <div className="flex gap-2 p-4 overflow-x-auto bg-black">
-              {images.map((img, idx) => (
+              {proxiedImages.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setCurrentIndex(idx)}
