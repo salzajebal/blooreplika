@@ -2370,9 +2370,22 @@ export async function registerRoutes(
           
           console.log(`Review ${review.sourceId}: title="${fullTitle.slice(0,30)}...", author=${authorName}, views=${viewCount}, date=${displayDate?.toISOString()}, images=${images.length}`);
           
+          // Check for duplicate (same title and date)
+          const existingReviews = await storage.getVisibleReviews();
+          const titleToCheck = category ? `[${category}] ${fullTitle}` : fullTitle;
+          const isDuplicate = existingReviews.some(r => 
+            r.title === titleToCheck && 
+            r.displayDate?.toISOString() === displayDate?.toISOString()
+          );
+          
+          if (isDuplicate) {
+            console.log(`Skipping duplicate review: ${titleToCheck.slice(0, 30)}...`);
+            continue;
+          }
+          
           // Create review in database
           await storage.createReview({
-            title: category ? `[${category}] ${fullTitle}` : fullTitle,
+            title: titleToCheck,
             authorName,
             rating: 5,
             content: content.slice(0, 2000),
