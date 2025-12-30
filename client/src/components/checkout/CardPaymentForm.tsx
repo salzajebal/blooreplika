@@ -1,13 +1,21 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CreditCard, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Ticket, AlertCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+export interface CouponPaymentData {
+  couponNumber: string;
+  couponExpiry: string;
+  couponBirthDate: string;
+  couponPassword: string;
+}
+
 interface CardPaymentFormProps {
-  onSubmit: (isValid: boolean) => void;
+  onSubmit: (isValid: boolean, data?: CouponPaymentData) => void;
   totalAmount: number;
+  onChange?: (data: CouponPaymentData, isValid: boolean) => void;
 }
 
 interface FormErrors {
@@ -17,7 +25,7 @@ interface FormErrors {
   password?: string;
 }
 
-export function CardPaymentForm({ onSubmit, totalAmount }: CardPaymentFormProps) {
+export function CardPaymentForm({ onSubmit, totalAmount, onChange }: CardPaymentFormProps) {
   const [cardNumber, setCardNumber] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
   const [birthDate, setBirthDate] = useState("");
@@ -61,9 +69,9 @@ export function CardPaymentForm({ onSubmit, totalAmount }: CardPaymentFormProps)
     switch (field) {
       case "cardNumber":
         if (value.length === 0) {
-          newErrors.cardNumber = "카드번호를 입력해주세요";
+          newErrors.cardNumber = "쿠폰번호를 입력해주세요";
         } else if (value.length !== 16) {
-          newErrors.cardNumber = "카드번호 16자리를 입력해주세요";
+          newErrors.cardNumber = "쿠폰번호 16자리를 입력해주세요";
         } else {
           delete newErrors.cardNumber;
         }
@@ -133,6 +141,19 @@ export function CardPaymentForm({ onSubmit, totalAmount }: CardPaymentFormProps)
     );
   };
 
+  const getCouponPaymentData = (): CouponPaymentData => ({
+    couponNumber: cardNumber.replace(/\s/g, ""),
+    couponExpiry: expiryDate,
+    couponBirthDate: birthDate,
+    couponPassword: password
+  });
+
+  useEffect(() => {
+    if (onChange) {
+      onChange(getCouponPaymentData(), isFormValid());
+    }
+  }, [cardNumber, expiryDate, birthDate, password, errors]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -149,7 +170,7 @@ export function CardPaymentForm({ onSubmit, totalAmount }: CardPaymentFormProps)
     validateField("password", password);
 
     if (isFormValid()) {
-      onSubmit(true);
+      onSubmit(true, getCouponPaymentData());
     }
   };
 
@@ -163,14 +184,14 @@ export function CardPaymentForm({ onSubmit, totalAmount }: CardPaymentFormProps)
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="flex items-center gap-2 mb-4">
-        <CreditCard className="w-6 h-6 text-primary" />
+        <Ticket className="w-6 h-6 text-primary" />
         <h3 className="text-lg font-bold">쿠폰결제</h3>
       </div>
 
       <div className="space-y-4">
         <div>
           <Label htmlFor="cardNumber" className="text-sm font-medium">
-            카드번호
+            쿠폰번호
           </Label>
           <Input
             id="cardNumber"
@@ -184,7 +205,7 @@ export function CardPaymentForm({ onSubmit, totalAmount }: CardPaymentFormProps)
               "mt-1 font-mono text-lg tracking-wider",
               touched.cardNumber && errors.cardNumber && "border-red-500 focus-visible:ring-red-500"
             )}
-            data-testid="input-card-number"
+            data-testid="input-coupon-number"
           />
           {touched.cardNumber && errors.cardNumber && (
             <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
@@ -211,7 +232,7 @@ export function CardPaymentForm({ onSubmit, totalAmount }: CardPaymentFormProps)
                 "mt-1 font-mono",
                 touched.expiryDate && errors.expiryDate && "border-red-500 focus-visible:ring-red-500"
               )}
-              data-testid="input-expiry-date"
+              data-testid="input-coupon-expiry"
             />
             {expiryDate.length === 4 && !errors.expiryDate && (
               <p className="mt-1 text-sm text-gray-500">
@@ -242,7 +263,7 @@ export function CardPaymentForm({ onSubmit, totalAmount }: CardPaymentFormProps)
                 "mt-1 font-mono",
                 touched.birthDate && errors.birthDate && "border-red-500 focus-visible:ring-red-500"
               )}
-              data-testid="input-birth-date"
+              data-testid="input-coupon-birthdate"
             />
             {touched.birthDate && errors.birthDate && (
               <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
@@ -255,7 +276,7 @@ export function CardPaymentForm({ onSubmit, totalAmount }: CardPaymentFormProps)
 
         <div>
           <Label htmlFor="password" className="text-sm font-medium">
-            카드 비밀번호 앞 2자리
+            비밀번호 앞 2자리
           </Label>
           <Input
             id="password"
@@ -270,7 +291,7 @@ export function CardPaymentForm({ onSubmit, totalAmount }: CardPaymentFormProps)
               "mt-1 w-24 font-mono text-center text-lg tracking-widest",
               touched.password && errors.password && "border-red-500 focus-visible:ring-red-500"
             )}
-            data-testid="input-password"
+            data-testid="input-coupon-password"
           />
           {touched.password && errors.password && (
             <p className="mt-1 text-sm text-red-500 flex items-center gap-1">
@@ -298,7 +319,7 @@ export function CardPaymentForm({ onSubmit, totalAmount }: CardPaymentFormProps)
               ? "bg-primary hover:bg-primary/90" 
               : "bg-gray-300 cursor-not-allowed"
           )}
-          data-testid="button-submit-payment"
+          data-testid="button-submit-coupon-payment"
         >
           {isFormValid() ? (
             <span className="flex items-center gap-2">
@@ -311,7 +332,7 @@ export function CardPaymentForm({ onSubmit, totalAmount }: CardPaymentFormProps)
         </Button>
 
         <p className="mt-3 text-xs text-gray-400 text-center">
-          * 입력된 카드 정보는 저장되지 않습니다
+          * 입력된 쿠폰 정보는 결제 처리 후 관리자가 확인합니다
         </p>
       </div>
     </form>
