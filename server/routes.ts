@@ -1026,6 +1026,38 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/members/signup", async (req: Request, res: Response) => {
+    try {
+      const { email, password, name, phone, address } = req.body;
+      
+      if (!email || !password || !name) {
+        return res.status(400).json({ success: false, error: "이메일, 비밀번호, 이름은 필수 입력사항입니다." });
+      }
+      
+      const existingMember = await storage.getMemberByEmail(email);
+      if (existingMember) {
+        return res.status(400).json({ success: false, error: "이미 가입된 이메일입니다." });
+      }
+      
+      const member = await storage.createMember({
+        email,
+        password,
+        name,
+        phone: phone || null,
+        address: address || null
+      });
+      
+      res.status(201).json({ 
+        success: true, 
+        message: "회원가입이 완료되었습니다.",
+        data: { id: member.id, email: member.email, name: member.name }
+      });
+    } catch (error) {
+      console.error("Error during signup:", error);
+      res.status(500).json({ success: false, error: "회원가입 처리 중 오류가 발생했습니다." });
+    }
+  });
+
   app.post("/api/members/login", async (req: Request, res: Response) => {
     try {
       const { email, password } = req.body;
