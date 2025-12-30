@@ -16,6 +16,7 @@ import Login from "@/pages/Login";
 import Support from "@/pages/Support";
 import Reviews from "@/pages/Reviews";
 import Notices from "@/pages/Notices";
+import Guide from "@/pages/Guide";
 import Cart from "@/pages/Cart";
 import Profile from "@/pages/Profile";
 import Order from "@/pages/Order";
@@ -34,6 +35,7 @@ function Router() {
       <Route path="/reviews" component={Reviews} />
       <Route path="/notices" component={Notices} />
       <Route path="/notices/:id" component={Notices} />
+      <Route path="/guide" component={Guide} />
       <Route path="/cart" component={Cart} />
       <Route path="/profile" component={Profile} />
       <Route path="/wishlist" component={Cart} />

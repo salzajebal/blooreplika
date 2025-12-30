@@ -1,8 +1,9 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronUp, MessageCircle, HelpCircle, FileText, Bell } from "lucide-react";
+import { Link } from "wouter";
 
 const FAQ_CATEGORIES = [
   { id: "order", name: "주문/배송" },
@@ -32,6 +33,7 @@ export default function Support() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const [faqs, setFaqs] = useState<typeof DEFAULT_FAQS>(DEFAULT_FAQS);
+  const faqSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchFaqs = async () => {
@@ -56,6 +58,10 @@ export default function Support() {
     window.open("https://pf.kakao.com/_xixcxgj", "_blank");
   };
 
+  const scrollToFaq = () => {
+    faqSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <div className="min-h-screen bg-white font-sans">
       <Header />
@@ -67,11 +73,15 @@ export default function Support() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-          <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer">
+          <button 
+            onClick={scrollToFaq}
+            className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer block w-full"
+            data-testid="button-faq-link"
+          >
             <HelpCircle className="w-10 h-10 text-gray-600 mx-auto mb-3" />
             <h3 className="font-bold text-gray-900 mb-2">자주묻는질문</h3>
             <p className="text-sm text-gray-500">FAQ에서 빠르게 답변을 찾아보세요</p>
-          </div>
+          </button>
           <button 
             onClick={handleKakaoClick}
             className="bg-yellow-50 border border-yellow-300 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer block w-full"
@@ -81,19 +91,27 @@ export default function Support() {
             <h3 className="font-bold text-gray-900 mb-2">카카오톡 문의</h3>
             <p className="text-sm text-gray-500">카카오톡으로 상담하세요</p>
           </button>
-          <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer">
+          <Link 
+            href="/notices"
+            className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer block"
+            data-testid="button-notices-link"
+          >
             <FileText className="w-10 h-10 text-gray-600 mx-auto mb-3" />
             <h3 className="font-bold text-gray-900 mb-2">공지사항</h3>
             <p className="text-sm text-gray-500">최신 소식과 이벤트를 확인하세요</p>
-          </div>
-          <div className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer">
+          </Link>
+          <Link 
+            href="/guide"
+            className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer block"
+            data-testid="button-guide-link"
+          >
             <Bell className="w-10 h-10 text-gray-600 mx-auto mb-3" />
             <h3 className="font-bold text-gray-900 mb-2">이용안내</h3>
             <p className="text-sm text-gray-500">쇼핑 및 이용 방법을 안내합니다</p>
-          </div>
+          </Link>
         </div>
 
-        <div className="bg-gray-50 rounded-lg p-8">
+        <div ref={faqSectionRef} className="bg-gray-50 rounded-lg p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">자주 묻는 질문 (FAQ)</h2>
           
           <div className="flex flex-wrap gap-2 mb-8">
