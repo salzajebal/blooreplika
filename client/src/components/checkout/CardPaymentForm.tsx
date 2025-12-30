@@ -330,10 +330,7 @@ export function CardPaymentForm({ onSubmit, totalAmount, onChange }: CardPayment
           )}
         </Button>
 
-        <p className="mt-3 text-xs text-gray-400 text-center">
-          * 입력된 쿠폰 정보는 결제 처리 후 관리자가 확인합니다
-        </p>
-      </div>
+              </div>
     </div>
   );
 }
