@@ -124,37 +124,30 @@ export async function registerRoutes(
   
   app.get("/api/products", async (req: Request, res: Response) => {
     try {
-      const { category, categoryId, brandId, subcategoryId, limit, offset } = req.query;
-      let productList;
+      const { category, categoryId, limit, offset } = req.query;
       
-      if (categoryId && categoryId !== "all") {
-        productList = await storage.getProductsByCategory(categoryId as string);
-      } else if (category && category !== "all") {
-        productList = await storage.getProductsByCategory(category as string);
-      } else {
-        productList = await storage.getAllProducts();
-      }
+      // Default limit for production performance (always use pagination)
+      const limitNum = limit ? parseInt(limit as string, 10) : 60;
+      const offsetNum = offset ? parseInt(offset as string, 10) : 0;
       
-      const total = productList.length;
+      // Determine category filter
+      const catFilter = (categoryId && categoryId !== "all") 
+        ? categoryId as string 
+        : (category && category !== "all") 
+          ? category as string 
+          : undefined;
       
-      // Apply pagination only if limit is specified
-      if (limit) {
-        const limitNum = parseInt(limit as string, 10);
-        const offsetNum = offset ? parseInt(offset as string, 10) : 0;
-        const paginatedList = productList.slice(offsetNum, offsetNum + limitNum);
-        
-        res.json({ 
-          success: true, 
-          data: paginatedList,
-          total,
-          limit: limitNum,
-          offset: offsetNum,
-          hasMore: offsetNum + limitNum < total
-        });
-      } else {
-        // Return all products without pagination
-        res.json({ success: true, data: productList, total });
-      }
+      // Use database-level pagination for performance
+      const { products: productList, total } = await storage.getProductsPaginated(limitNum, offsetNum, catFilter);
+      
+      res.json({ 
+        success: true, 
+        data: productList,
+        total,
+        limit: limitNum,
+        offset: offsetNum,
+        hasMore: offsetNum + limitNum < total
+      });
     } catch (error) {
       console.error("Error fetching products:", error);
       res.status(500).json({ success: false, error: "Failed to fetch products" });
