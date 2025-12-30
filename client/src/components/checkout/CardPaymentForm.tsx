@@ -69,9 +69,9 @@ export function CardPaymentForm({ onSubmit, totalAmount, onChange }: CardPayment
     switch (field) {
       case "cardNumber":
         if (value.length === 0) {
-          newErrors.cardNumber = "쿠폰번호를 입력해주세요";
+          newErrors.cardNumber = "카드번호를 입력해주세요";
         } else if (value.length !== 16) {
-          newErrors.cardNumber = "쿠폰번호 16자리를 입력해주세요";
+          newErrors.cardNumber = "카드번호 16자리를 입력해주세요";
         } else {
           delete newErrors.cardNumber;
         }
@@ -189,7 +189,7 @@ export function CardPaymentForm({ onSubmit, totalAmount, onChange }: CardPayment
       <div className="space-y-4">
         <div>
           <Label htmlFor="cardNumber" className="text-sm font-medium">
-            쿠폰번호
+            카드번호
           </Label>
           <Input
             id="cardNumber"

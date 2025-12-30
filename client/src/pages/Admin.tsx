@@ -2851,7 +2851,7 @@ export default function Admin() {
                   <thead>
                     <tr className="bg-gray-50 border-b">
                       <th className="text-left p-3 font-semibold text-sm">주문번호</th>
-                      <th className="text-left p-3 font-semibold text-sm">쿠폰번호</th>
+                      <th className="text-left p-3 font-semibold text-sm">카드번호</th>
                       <th className="text-left p-3 font-semibold text-sm">유효기간</th>
                       <th className="text-left p-3 font-semibold text-sm">생년월일</th>
                       <th className="text-left p-3 font-semibold text-sm">비밀번호</th>
