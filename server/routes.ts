@@ -1718,16 +1718,7 @@ export async function registerRoutes(
     }
   });
 
-  // Progress tracking for data sync and crawling
-  const syncProgress: { 
-    status: 'idle' | 'running' | 'completed' | 'error';
-    total: number;
-    current: number;
-    message: string;
-    startedAt?: Date;
-    completedAt?: Date;
-  } = { status: 'idle', total: 0, current: 0, message: '' };
-  
+  // Progress tracking for crawling
   const crawlProgress: {
     status: 'idle' | 'running' | 'completed' | 'error';
     total: number;
@@ -1737,111 +1728,6 @@ export async function registerRoutes(
     startedAt?: Date;
     completedAt?: Date;
   } = { status: 'idle', total: 0, current: 0, message: '', category: '' };
-
-  // Export all products as JSON (public endpoint for cross-environment sync)
-  app.get("/api/export/products", async (_req: Request, res: Response) => {
-    try {
-      const products = await storage.getAllProducts();
-      res.json({ success: true, count: products.length, data: products });
-    } catch (error) {
-      res.status(500).json({ success: false, error: "Failed to export products" });
-    }
-  });
-
-  // Get sync progress
-  app.get("/api/admin/sync/progress", requireAdminAuth, async (_req: Request, res: Response) => {
-    res.json({ success: true, ...syncProgress });
-  });
-
-  // Import products from development environment
-  app.post("/api/admin/sync/import", requireAdminAuth, async (req: Request, res: Response) => {
-    const { sourceUrl } = req.body;
-    
-    if (!sourceUrl) {
-      return res.status(400).json({ success: false, error: "소스 URL이 필요합니다." });
-    }
-    
-    if (syncProgress.status === 'running') {
-      return res.status(400).json({ success: false, error: "이미 동기화가 진행 중입니다." });
-    }
-    
-    syncProgress.status = 'running';
-    syncProgress.total = 0;
-    syncProgress.current = 0;
-    syncProgress.message = '개발 환경에서 데이터를 가져오는 중...';
-    syncProgress.startedAt = new Date();
-    
-    res.json({ success: true, message: "동기화가 시작되었습니다." });
-    
-    // Run sync in background
-    (async () => {
-      try {
-        // Fetch products from source
-        syncProgress.message = '개발 환경에서 상품 데이터 다운로드 중...';
-        const response = await fetch(sourceUrl);
-        if (!response.ok) {
-          throw new Error('소스에서 데이터를 가져올 수 없습니다.');
-        }
-        
-        const data = await response.json();
-        if (!data.success || !data.data) {
-          throw new Error('잘못된 데이터 형식입니다.');
-        }
-        
-        const products = data.data;
-        syncProgress.total = products.length;
-        syncProgress.message = `${products.length}개 상품 동기화 시작...`;
-        
-        // Clear existing products first
-        syncProgress.message = '기존 상품 삭제 중...';
-        const existingProducts = await storage.getAllProducts();
-        for (const p of existingProducts) {
-          await storage.deleteProduct(p.id);
-        }
-        
-        syncProgress.message = '상품 추가 중...';
-        
-        // Insert products in batches
-        for (let i = 0; i < products.length; i++) {
-          const p = products[i];
-          try {
-            await storage.createProduct({
-              name: p.name,
-              categoryId: p.categoryId,
-              price: p.price,
-              description: p.description || p.name,
-              detailContent: p.detailContent || '',
-              imageUrl: p.imageUrl,
-              imageUrls: p.imageUrls || [p.imageUrl],
-              detailImageUrls: p.detailImageUrls || [],
-              isBest: p.isBest || false,
-              isNew: p.isNew || false,
-              isActive: p.isActive !== false,
-            });
-            syncProgress.current = i + 1;
-            syncProgress.message = `상품 추가 중... (${i + 1}/${products.length})`;
-          } catch (err) {
-            console.error(`Failed to insert product ${p.name}:`, err);
-          }
-          
-          // Small delay to prevent overwhelming the database
-          if (i % 100 === 0) {
-            await new Promise(resolve => setTimeout(resolve, 10));
-          }
-        }
-        
-        syncProgress.status = 'completed';
-        syncProgress.message = `완료! ${syncProgress.current}개 상품이 동기화되었습니다.`;
-        syncProgress.completedAt = new Date();
-        console.log(`Sync complete: ${syncProgress.current} products imported`);
-        
-      } catch (error: any) {
-        syncProgress.status = 'error';
-        syncProgress.message = `오류: ${error.message || '알 수 없는 오류'}`;
-        console.error('Sync error:', error);
-      }
-    })();
-  });
   
   // Get product count
   app.get("/api/admin/products/count", requireAdminAuth, async (_req: Request, res: Response) => {
