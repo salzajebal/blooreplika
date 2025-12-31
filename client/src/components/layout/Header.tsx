@@ -23,7 +23,7 @@ const mainNavItems = [
   { name: '가방', path: '/products/bags' },
   { name: '시계', path: '/products/watches' },
   { name: '정품', path: '/products/genuine' },
-  { name: '커뮤니티', path: '/community' },
+  { name: '커뮤니티', path: '/comparison' },
 ];
 
 export function Header() {
