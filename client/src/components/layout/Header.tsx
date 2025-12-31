@@ -144,8 +144,8 @@ export function Header() {
       </div>
 
       <div className="bg-white border-b border-gray-100">
-        <div className="max-w-[1200px] mx-auto px-4 py-5">
-          <div className="grid grid-cols-3 items-center">
+        <div className="max-w-[1200px] mx-auto px-2 md:px-4 py-2 md:py-5">
+          <div className="grid grid-cols-3 items-center gap-2">
             <div className="md:hidden">
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                 <SheetTrigger asChild>
@@ -207,7 +207,7 @@ export function Header() {
             <div className="hidden md:block"></div>
 
             <Link href="/" className="flex items-center justify-self-center" data-testid="link-home">
-              <img src="/images/logo.gif" alt="청담동에디션" className="h-16 md:h-20" />
+              <img src="/images/logo.gif" alt="청담동에디션" className="h-10 md:h-20" />
             </Link>
 
             <div className="hidden md:flex items-center justify-end gap-5">

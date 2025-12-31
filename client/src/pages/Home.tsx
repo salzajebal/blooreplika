@@ -153,22 +153,22 @@ function FloatingButtons() {
   
   return (
     <>
-      <div className="fixed right-4 bottom-20 z-50 flex flex-col gap-2">
+      <div className="fixed right-2 md:right-4 bottom-24 md:bottom-20 z-50 flex flex-col gap-2">
         <button 
           onClick={() => setIsOpen(true)}
-          className="w-12 h-12 bg-white border border-gray-300 rounded shadow-lg flex flex-col items-center justify-center text-gray-600 hover:bg-gray-50"
+          className="w-10 h-10 md:w-12 md:h-12 bg-white border border-gray-300 rounded shadow-lg flex flex-col items-center justify-center text-gray-600 hover:bg-gray-50"
           data-testid="floating-support"
         >
-          <MessageCircle className="w-5 h-5" />
-          <span className="text-[8px] mt-0.5">상담</span>
+          <MessageCircle className="w-4 h-4 md:w-5 md:h-5" />
+          <span className="text-[7px] md:text-[8px] mt-0.5">상담</span>
         </button>
         <Link 
           href="/notices"
-          className="w-12 h-12 bg-white border border-gray-300 rounded shadow-lg flex flex-col items-center justify-center text-gray-600 hover:bg-gray-50"
+          className="w-10 h-10 md:w-12 md:h-12 bg-white border border-gray-300 rounded shadow-lg flex flex-col items-center justify-center text-gray-600 hover:bg-gray-50"
           data-testid="floating-qa"
         >
-          <HelpCircle className="w-5 h-5" />
-          <span className="text-[8px] mt-0.5">공지</span>
+          <HelpCircle className="w-4 h-4 md:w-5 md:h-5" />
+          <span className="text-[7px] md:text-[8px] mt-0.5">공지</span>
         </Link>
       </div>
 
@@ -359,7 +359,7 @@ function MainBannerSlider() {
               src={getProxiedImageUrl(url)}
               alt={`배너 ${index + 1}`}
               className="w-full h-auto"
-              style={{ maxHeight: '500px', objectFit: 'contain', width: '100%' }}
+              style={{ maxHeight: '400px', objectFit: 'cover', width: '100%' }}
             />
           </div>
         ))}
@@ -367,17 +367,17 @@ function MainBannerSlider() {
       
       <button 
         onClick={() => setCurrentSlide((prev) => (prev === 0 ? bannerImages.length - 1 : prev - 1))}
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/30 hover:bg-black/50 rounded-full flex items-center justify-center text-white z-10"
+        className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 bg-black/30 hover:bg-black/50 rounded-full flex items-center justify-center text-white z-10"
         aria-label="이전"
       >
-        <ChevronLeft className="w-6 h-6" />
+        <ChevronLeft className="w-5 h-5 md:w-6 md:h-6" />
       </button>
       <button 
         onClick={() => setCurrentSlide((prev) => (prev + 1) % bannerImages.length)}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/30 hover:bg-black/50 rounded-full flex items-center justify-center text-white z-10"
+        className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 bg-black/30 hover:bg-black/50 rounded-full flex items-center justify-center text-white z-10"
         aria-label="다음"
       >
-        <ChevronRight className="w-6 h-6" />
+        <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
       </button>
       
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
