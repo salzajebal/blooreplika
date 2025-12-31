@@ -110,6 +110,42 @@ export function Header() {
 
   return (
     <header className="w-full sticky top-0 z-50 bg-white">
+      <div className="md:hidden bg-gray-100 text-gray-600 text-[10px]">
+        <div className="px-2 h-7 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {memberName ? (
+              <>
+                <span className="text-gray-800 font-medium">{memberName}님</span>
+                <span className="text-gray-300">|</span>
+                <button onClick={handleLogout} className="hover:text-black">로그아웃</button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="hover:text-black">로그인</Link>
+                <span className="text-gray-300">|</span>
+                <Link href="/signup" className="hover:text-black">회원가입</Link>
+              </>
+            )}
+            <span className="text-gray-300">|</span>
+            <Link href="/orders" className="hover:text-black">주문조회</Link>
+            <span className="text-gray-300">|</span>
+            <Link href="/profile" className="hover:text-black">마이쇼핑</Link>
+          </div>
+          <form onSubmit={handleSearch} className="flex items-center">
+            <input 
+              type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="검색" 
+              className="w-16 border border-gray-300 px-1.5 py-0.5 text-[10px] focus:outline-none bg-white"
+            />
+            <button type="submit" className="bg-gray-200 border border-gray-300 border-l-0 px-1 py-0.5">
+              <Search className="w-3 h-3 text-gray-500" />
+            </button>
+          </form>
+        </div>
+      </div>
+
       <div className="hidden md:block bg-[#333] text-white text-xs">
         <div className="max-w-[1200px] mx-auto px-4 h-8 flex items-center justify-between">
           <div className="relative overflow-hidden h-4 w-[300px]">
