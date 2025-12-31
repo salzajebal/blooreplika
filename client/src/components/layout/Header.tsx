@@ -138,7 +138,6 @@ export function Header() {
             )}
             <Link href="/cart" className="px-3 hover:text-yellow-300">장바구니</Link>
             <Link href="/orders" className="px-3 hover:text-yellow-300">주문조회</Link>
-            <Link href="/coupons" className="px-3 hover:text-yellow-300">쿠폰등록</Link>
             <Link href="/profile" className="px-3 hover:text-yellow-300">마이쇼핑</Link>
           </div>
         </div>
