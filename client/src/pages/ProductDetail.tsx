@@ -148,6 +148,34 @@ export default function ProductDetail() {
     ? Math.round((1 - product.price / product.originalPrice) * 100)
     : 0;
 
+  const getOptionLabelAndDefaults = () => {
+    const category = product.categoryId?.toLowerCase() || "";
+    const name = product.name?.toLowerCase() || "";
+    
+    if (category.includes("bag") || category.includes("가방") || name.includes("백") || name.includes("가방")) {
+      return { label: "색상", defaults: [] };
+    }
+    if (category.includes("wallet") || category.includes("지갑") || name.includes("지갑")) {
+      return { label: "색상", defaults: [] };
+    }
+    if (category.includes("shoe") || category.includes("신발") || name.includes("신발") || name.includes("스니커즈") || name.includes("슬리퍼") || name.includes("부츠") || name.includes("로퍼")) {
+      return { label: "사이즈", defaults: ["220", "225", "230", "235", "240", "245", "250", "255", "260", "265", "270", "275", "280"] };
+    }
+    if (category.includes("watch") || category.includes("시계") || name.includes("시계")) {
+      return { label: "옵션", defaults: [] };
+    }
+    if (category.includes("accessory") || category.includes("악세") || name.includes("귀걸이") || name.includes("목걸이") || name.includes("반지") || name.includes("팔찌") || name.includes("브로치")) {
+      return { label: "옵션", defaults: [] };
+    }
+    if (category.includes("outer") || category.includes("아우터") || category.includes("패딩") || category.includes("top") || category.includes("상의") || category.includes("bottom") || category.includes("하의") || name.includes("자켓") || name.includes("코트") || name.includes("패딩") || name.includes("니트") || name.includes("셔츠") || name.includes("티셔츠") || name.includes("바지") || name.includes("스커트")) {
+      return { label: "사이즈", defaults: ["XS", "S", "M", "L", "XL", "XXL"] };
+    }
+    return { label: "옵션", defaults: [] };
+  };
+
+  const { label: optionLabel, defaults: defaultOptions } = getOptionLabelAndDefaults();
+  const hasOptions = options.length > 0 || defaultOptions.length > 0;
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
@@ -313,34 +341,33 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              <div className="border-t border-gray-200 pt-4">
-                <h3 className="font-bold text-gray-900 mb-3">선택옵션</h3>
-                <div className="space-y-3">
-                  <div>
-                    <label className="text-sm text-gray-600 mb-1 block">사이즈(여성)</label>
-                    <select 
-                      className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:outline-none focus:border-gray-500"
-                      value={selectedOption}
-                      onChange={(e) => setSelectedOption(e.target.value)}
-                      data-testid="select-option"
-                    >
-                      <option value="">선택</option>
-                      {options.length > 0 ? (
-                        options.map((option, index) => (
-                          <option key={index} value={option}>{option}</option>
-                        ))
-                      ) : (
-                        <>
-                          <option value="FREE">FREE</option>
-                          <option value="S">S</option>
-                          <option value="M">M</option>
-                          <option value="L">L</option>
-                        </>
-                      )}
-                    </select>
+              {hasOptions && (
+                <div className="border-t border-gray-200 pt-4">
+                  <h3 className="font-bold text-gray-900 mb-3">선택옵션</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm text-gray-600 mb-1 block">{optionLabel}</label>
+                      <select 
+                        className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:outline-none focus:border-gray-500"
+                        value={selectedOption}
+                        onChange={(e) => setSelectedOption(e.target.value)}
+                        data-testid="select-option"
+                      >
+                        <option value="">선택</option>
+                        {options.length > 0 ? (
+                          options.map((option, index) => (
+                            <option key={index} value={option}>{option}</option>
+                          ))
+                        ) : (
+                          defaultOptions.map((option, index) => (
+                            <option key={index} value={option}>{option}</option>
+                          ))
+                        )}
+                      </select>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               <div className="space-y-2 pt-2">
                 <Button
