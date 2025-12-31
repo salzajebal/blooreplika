@@ -326,7 +326,7 @@ function MainBannerSlider() {
   }, [bannerImages.length]);
 
   return (
-    <section className="relative w-full bg-black overflow-hidden">
+    <section className="relative w-full overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)' }}>
       <div 
         className="flex transition-transform duration-500 ease-in-out"
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
