@@ -25,6 +25,7 @@ import FAQ from "@/pages/FAQ";
 import Events from "@/pages/Events";
 import Blog from "@/pages/Blog";
 import Choice from "@/pages/Choice";
+import OrderInquiry from "@/pages/OrderInquiry";
 
 function Router() {
   return (
@@ -54,6 +55,7 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/wishlist" component={Cart} />
       <Route path="/order/:id" component={Order} />
+      <Route path="/orders" component={OrderInquiry} />
       <Route path="/search" component={ProductList} />
       <Route component={NotFound} />
     </Switch>

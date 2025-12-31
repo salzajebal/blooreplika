@@ -1926,6 +1926,34 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/orders/lookup", async (req: Request, res: Response) => {
+    try {
+      const { orderNumber, phone } = req.query;
+      
+      if (!orderNumber || !phone) {
+        return res.status(400).json({ success: false, error: "주문번호와 연락처를 입력해주세요." });
+      }
+      
+      const order = await storage.getOrderByNumber(orderNumber as string);
+      
+      if (!order) {
+        return res.status(404).json({ success: false, error: "주문을 찾을 수 없습니다." });
+      }
+      
+      const cleanPhone = (phone as string).replace(/-/g, "");
+      const orderPhone = order.memberPhone?.replace(/-/g, "") || "";
+      
+      if (orderPhone !== cleanPhone) {
+        return res.status(404).json({ success: false, error: "주문번호와 연락처가 일치하지 않습니다." });
+      }
+      
+      res.json({ success: true, data: order });
+    } catch (error) {
+      console.error("Error looking up order:", error);
+      res.status(500).json({ success: false, error: "주문을 조회할 수 없습니다." });
+    }
+  });
+
   app.get("/api/orders/:orderNumber", async (req: Request, res: Response) => {
     try {
       const order = await storage.getOrderByNumber(req.params.orderNumber);
