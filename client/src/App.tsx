@@ -20,11 +20,13 @@ import Guide from "@/pages/Guide";
 import Cart from "@/pages/Cart";
 import Profile from "@/pages/Profile";
 import Order from "@/pages/Order";
+import About from "@/pages/About";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/about" component={About} />
       <Route path="/product/:id" component={ProductDetail} />
       <Route path="/products/:category" component={ProductList} />
       <Route path="/products" component={ProductList} />
