@@ -3,8 +3,16 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { useWishlist } from "@/contexts/WishlistContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
+
+const noticeTexts = [
+  "청담동에디션의 정품 제품은 NFC 연속...",
+  "10월 배송 일정 안내! 자세한 내용은 공지사항 확인",
+  "카카오톡 사칭 주의! 공식 채널 확인 필수",
+  "월간 베스트 리뷰 이벤트 오픈!",
+  "청담동에디션 25년 5월 카톡 후기 모음!",
+];
 
 const mainNavItems = [
   { name: '소개글', path: '/about' },
@@ -36,6 +44,15 @@ export function Header() {
   const [todayPoints] = useState<number>(6521);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [noticeIndex, setNoticeIndex] = useState(0);
+
+  // Auto-scroll notice ticker
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNoticeIndex((prev) => (prev + 1) % noticeTexts.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const checkLoginStatus = () => {
@@ -95,7 +112,18 @@ export function Header() {
     <header className="w-full sticky top-0 z-50 bg-white">
       <div className="hidden md:block bg-[#333] text-white text-xs">
         <div className="max-w-[1200px] mx-auto px-4 h-8 flex items-center justify-between">
-          <span className="text-gray-400 text-[11px]">청담동에디션의 정품 제품은 NFC 연속...</span>
+          <div className="relative overflow-hidden h-4 w-[300px]">
+            <div 
+              className="absolute inset-0 transition-transform duration-500 ease-in-out flex items-center"
+              style={{ transform: `translateY(-${noticeIndex * 100}%)` }}
+            >
+              {noticeTexts.map((text, idx) => (
+                <span key={idx} className="text-gray-400 text-[11px] whitespace-nowrap absolute w-full" style={{ top: `${idx * 100}%` }}>
+                  {text}
+                </span>
+              ))}
+            </div>
+          </div>
           <div className="flex items-center divide-x divide-gray-600">
             {memberName ? (
               <>
