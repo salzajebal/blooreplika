@@ -153,7 +153,7 @@ export function Header() {
                     <Menu className="w-6 h-6" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[280px] overflow-y-auto p-0">
+                <SheetContent side="left" className="w-[280px] overflow-y-auto p-0" hideCloseButton>
                   <div className="bg-[#333] text-white p-4 flex items-center justify-between">
                     <span className="font-bold">메뉴</span>
                     <SheetClose asChild>
