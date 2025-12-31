@@ -144,7 +144,7 @@ export function Header() {
       </div>
 
       <div className="bg-white border-b border-gray-100">
-        <div className="max-w-[1200px] mx-auto px-4 py-3">
+        <div className="max-w-[1200px] mx-auto px-4 py-5">
           <div className="grid grid-cols-3 items-center">
             <div className="md:hidden">
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -207,17 +207,17 @@ export function Header() {
             <div className="hidden md:block"></div>
 
             <Link href="/" className="flex items-center justify-self-center" data-testid="link-home">
-              <img src="/images/logo.gif" alt="청담동에디션" className="h-12 md:h-14" />
+              <img src="/images/logo.gif" alt="청담동에디션" className="h-16 md:h-20" />
             </Link>
 
-            <div className="hidden md:flex items-center justify-end gap-4">
+            <div className="hidden md:flex items-center justify-end gap-5">
               <Link href="/profile" className="text-gray-500 hover:text-black">
-                <User className="w-5 h-5" />
+                <User className="w-6 h-6" />
               </Link>
               <Link href="/cart" className="relative text-gray-500 hover:text-black" data-testid="button-cart">
-                <ShoppingBag className="w-5 h-5" />
+                <ShoppingBag className="w-6 h-6" />
                 {count > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full">
+                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full">
                     {count > 9 ? "9+" : count}
                   </span>
                 )}
@@ -229,15 +229,15 @@ export function Header() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="검색" 
-                  className="w-[120px] border border-gray-300 px-2 py-1 text-xs focus:outline-none"
+                  className="w-[160px] border border-gray-300 px-3 py-2 text-sm focus:outline-none"
                   data-testid="input-search"
                 />
-                <button type="submit" className="bg-gray-100 border border-gray-300 border-l-0 px-2 py-1 text-xs hover:bg-gray-200">
-                  <Search className="w-4 h-4 text-gray-500" />
+                <button type="submit" className="bg-gray-100 border border-gray-300 border-l-0 px-3 py-2 hover:bg-gray-200">
+                  <Search className="w-5 h-5 text-gray-500" />
                 </button>
               </form>
 
-              <div className="text-[10px] text-gray-500 whitespace-nowrap">
+              <div className="text-xs text-gray-500 whitespace-nowrap">
                 오늘 <span className="text-red-500 font-semibold">{todayPoints.toLocaleString()}</span> · 전체 <span className="font-semibold">{totalPoints.toLocaleString()}</span>
               </div>
             </div>
@@ -263,13 +263,13 @@ export function Header() {
               <li key={item.name} className="flex items-center">
                 <Link 
                   href={item.path} 
-                  className={`px-2.5 py-2.5 text-[13px] text-gray-600 hover:text-black transition-colors whitespace-nowrap ${location === item.path ? 'text-black font-medium' : ''}`}
+                  className={`px-3 py-3 text-sm text-gray-600 hover:text-black transition-colors whitespace-nowrap ${location === item.path ? 'text-black font-medium' : ''}`}
                   data-testid={`nav-${item.name}`}
                 >
                   {item.name}
                 </Link>
                 {index < mainNavItems.length - 1 && (
-                  <span className="text-gray-300 text-[10px]">|</span>
+                  <span className="text-gray-300 text-xs">|</span>
                 )}
               </li>
             ))}
