@@ -144,7 +144,7 @@ export function Header() {
       </div>
 
       <div className="bg-white border-b border-gray-100">
-        <div className="max-w-[1200px] mx-auto px-4 py-5 md:py-6">
+        <div className="max-w-[1200px] mx-auto px-4 py-3">
           <div className="grid grid-cols-3 items-center">
             <div className="md:hidden">
               <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -206,13 +206,8 @@ export function Header() {
             </div>
             <div className="hidden md:block"></div>
 
-            <Link href="/" className="flex flex-col items-center justify-self-center" data-testid="link-home">
-              <span className="text-[10px] text-amber-600 tracking-wider mb-1">SINCE 2010</span>
-              <div className="flex items-center gap-1">
-                <span className="text-amber-500 text-lg">👑</span>
-                <span className="text-2xl md:text-3xl font-bold text-gray-800 tracking-tight" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>청담동에디션</span>
-                <span className="text-amber-500 text-lg">👑</span>
-              </div>
+            <Link href="/" className="flex items-center justify-self-center" data-testid="link-home">
+              <img src="/images/logo.gif" alt="청담동에디션" className="h-12 md:h-14" />
             </Link>
 
             <div className="hidden md:flex items-center justify-end gap-4">
@@ -268,13 +263,13 @@ export function Header() {
               <li key={item.name} className="flex items-center">
                 <Link 
                   href={item.path} 
-                  className={`px-3 py-3.5 text-[14px] text-gray-700 hover:text-black transition-colors whitespace-nowrap ${location === item.path ? 'text-black font-semibold' : ''}`}
+                  className={`px-2.5 py-2.5 text-[13px] text-gray-600 hover:text-black transition-colors whitespace-nowrap ${location === item.path ? 'text-black font-medium' : ''}`}
                   data-testid={`nav-${item.name}`}
                 >
                   {item.name}
                 </Link>
                 {index < mainNavItems.length - 1 && (
-                  <span className="text-gray-300 text-xs">|</span>
+                  <span className="text-gray-300 text-[10px]">|</span>
                 )}
               </li>
             ))}
