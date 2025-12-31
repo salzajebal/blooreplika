@@ -25,6 +25,7 @@ import Comparison from "@/pages/Comparison";
 import FAQ from "@/pages/FAQ";
 import Events from "@/pages/Events";
 import Blog from "@/pages/Blog";
+import Choice from "@/pages/Choice";
 
 function Router() {
   return (
@@ -47,6 +48,8 @@ function Router() {
       <Route path="/events" component={Events} />
       <Route path="/blog" component={Blog} />
       <Route path="/blog/:id" component={Blog} />
+      <Route path="/choice" component={Choice} />
+      <Route path="/choice/:id" component={Choice} />
       <Route path="/guide" component={Guide} />
       <Route path="/cart" component={Cart} />
       <Route path="/profile" component={Profile} />
