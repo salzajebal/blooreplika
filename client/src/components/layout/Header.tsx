@@ -179,10 +179,10 @@ export function Header() {
             </div>
             <div className="hidden md:block"></div>
 
-            <Link href="/" className="flex flex-col items-center justify-self-center" data-testid="link-home">
-              <span className="text-[10px] text-gray-400 tracking-[0.2em] mb-0.5">SINCE 2010</span>
-              <span className="text-2xl mb-0.5">👑</span>
-              <h1 className="text-xl font-bold text-[#333] tracking-tight">청담동에디션</h1>
+            <Link href="/" className="flex flex-col items-center justify-self-center py-6" data-testid="link-home">
+              <span className="text-sm md:text-base text-gray-400 tracking-[0.3em] mb-3">SINCE 2010</span>
+              <span className="text-5xl md:text-6xl mb-3">👑</span>
+              <h1 className="text-2xl md:text-3xl font-bold text-[#333] tracking-tight">청담동에디션</h1>
             </Link>
 
             <div className="hidden md:flex items-center justify-end gap-4">
