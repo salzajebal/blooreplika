@@ -1987,6 +1987,51 @@ export async function registerRoutes(
       res.status(500).json({ success: false, error: "Failed to get count" });
     }
   });
+
+  // Get all products for admin with pagination and search
+  app.get("/api/admin/products", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { search, category, page = "1", limit = "50" } = req.query;
+      const pageNum = parseInt(page as string, 10);
+      const limitNum = parseInt(limit as string, 10);
+      const offset = (pageNum - 1) * limitNum;
+      
+      let allProducts = await storage.getAllProducts();
+      
+      // Apply search filter
+      if (search && typeof search === "string" && search.trim()) {
+        const searchLower = search.toLowerCase().trim();
+        allProducts = allProducts.filter(p => 
+          p.name?.toLowerCase().includes(searchLower) ||
+          p.sku?.toLowerCase().includes(searchLower) ||
+          p.description?.toLowerCase().includes(searchLower)
+        );
+      }
+      
+      // Apply category filter
+      if (category && category !== "all") {
+        allProducts = allProducts.filter(p => p.categoryId === category);
+      }
+      
+      const total = allProducts.length;
+      const totalPages = Math.ceil(total / limitNum);
+      const paginatedProducts = allProducts.slice(offset, offset + limitNum);
+      
+      res.json({ 
+        success: true, 
+        data: paginatedProducts,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching admin products:", error);
+      res.status(500).json({ success: false, error: "Failed to get products" });
+    }
+  });
   
   // Clear all products
   app.delete("/api/admin/products/all", requireAdminAuth, async (_req: Request, res: Response) => {

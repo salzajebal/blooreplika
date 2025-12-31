@@ -80,6 +80,9 @@ export default function Admin() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditProductModal, setShowEditProductModal] = useState(false);
   const [productFilter, setProductFilter] = useState("all");
+  const [productSearch, setProductSearch] = useState("");
+  const [productPage, setProductPage] = useState(1);
+  const [productPagination, setProductPagination] = useState({ total: 0, totalPages: 1 });
   
   const [formData, setFormData] = useState({
     name: "",
@@ -438,12 +441,19 @@ export default function Admin() {
     }
   };
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (page = productPage, search = productSearch, category = productFilter) => {
     try {
-      const res = await fetch("/api/products");
+      const params = new URLSearchParams();
+      params.append("page", page.toString());
+      params.append("limit", "50");
+      if (search) params.append("search", search);
+      if (category && category !== "all") params.append("category", category);
+      
+      const res = await fetchWithAuth(`/api/admin/products?${params.toString()}`);
       const data = await res.json();
       if (data.success) {
         setProducts(data.data);
+        setProductPagination({ total: data.pagination.total, totalPages: data.pagination.totalPages });
       }
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -1535,9 +1545,7 @@ export default function Admin() {
     });
   };
 
-  const filteredProducts = productFilter === "all" 
-    ? products 
-    : products.filter(p => p.categoryId === productFilter);
+  const filteredProducts = products;
 
   if (checkingAuth) {
     return (
@@ -1865,27 +1873,12 @@ export default function Admin() {
 
         {activeTab === "products" && (
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">상품 관리</h2>
-                <p className="text-gray-500 text-sm">총 {products.length}개의 상품</p>
-              </div>
-              <div className="flex gap-3">
-                <select
-                  data-testid="select-product-filter"
-                  value={productFilter}
-                  onChange={(e) => setProductFilter(e.target.value)}
-                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
-                >
-                  <option value="all">전체 카테고리</option>
-                  {CATEGORY_OPTIONS.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
-                <Button variant="outline" onClick={fetchProducts}>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  새로고침
-                </Button>
+            <div className="flex flex-col gap-4 mb-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">상품 관리</h2>
+                  <p className="text-gray-500 text-sm">총 {productPagination.total.toLocaleString()}개의 상품 (페이지 {productPage}/{productPagination.totalPages})</p>
+                </div>
                 <Button 
                   data-testid="button-add-product"
                   onClick={() => setShowAddForm(true)} 
@@ -1893,6 +1886,58 @@ export default function Admin() {
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   상품 추가
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-3 items-center">
+                <div className="flex-1 min-w-[200px]">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="상품명, SKU로 검색..."
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          setProductPage(1);
+                          fetchProducts(1, productSearch, productFilter);
+                        }
+                      }}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm pr-10"
+                      data-testid="input-product-search"
+                    />
+                    <Search className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2" />
+                  </div>
+                </div>
+                <select
+                  data-testid="select-product-filter"
+                  value={productFilter}
+                  onChange={(e) => {
+                    setProductFilter(e.target.value);
+                    setProductPage(1);
+                    fetchProducts(1, productSearch, e.target.value);
+                  }}
+                  className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="all">전체 카테고리</option>
+                  {CATEGORY_OPTIONS.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+                <Button variant="outline" onClick={() => {
+                  setProductPage(1);
+                  fetchProducts(1, productSearch, productFilter);
+                }}>
+                  <Search className="w-4 h-4 mr-2" />
+                  검색
+                </Button>
+                <Button variant="outline" onClick={() => {
+                  setProductSearch("");
+                  setProductFilter("all");
+                  setProductPage(1);
+                  fetchProducts(1, "", "all");
+                }}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  초기화
                 </Button>
               </div>
             </div>
@@ -2107,6 +2152,64 @@ export default function Admin() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* 페이지네이션 */}
+            {productPagination.totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newPage = Math.max(1, productPage - 1);
+                    setProductPage(newPage);
+                    fetchProducts(newPage, productSearch, productFilter);
+                  }}
+                  disabled={productPage <= 1}
+                >
+                  이전
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, productPagination.totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (productPagination.totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (productPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (productPage >= productPagination.totalPages - 2) {
+                      pageNum = productPagination.totalPages - 4 + i;
+                    } else {
+                      pageNum = productPage - 2 + i;
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={pageNum === productPage ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          setProductPage(pageNum);
+                          fetchProducts(pageNum, productSearch, productFilter);
+                        }}
+                        className={pageNum === productPage ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const newPage = Math.min(productPagination.totalPages, productPage + 1);
+                    setProductPage(newPage);
+                    fetchProducts(newPage, productSearch, productFilter);
+                  }}
+                  disabled={productPage >= productPagination.totalPages}
+                >
+                  다음
+                </Button>
               </div>
             )}
 
