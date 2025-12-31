@@ -1,6 +1,6 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { getProxiedImageUrl } from "@/lib/imageProxy";
 import { Search } from "lucide-react";
 import { useState } from "react";
@@ -59,12 +59,13 @@ const comparisonItems = [
 const sideMenuItems = [
   { name: "공지사항", path: "/notices" },
   { name: "FAQ", path: "/faq" },
-  { name: "칼럼", path: "/comparison", active: true },
-  { name: "이벤트", path: "/notices" },
+  { name: "칼럼", path: "/comparison" },
+  { name: "이벤트", path: "/events" },
   { name: "사용후기", path: "/reviews" },
 ];
 
 export default function Comparison() {
+  const [location] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [searchType, setSearchType] = useState("title");
 
@@ -104,7 +105,7 @@ export default function Comparison() {
                     key={index}
                     href={item.path}
                     className={`block px-4 py-3 text-sm border-b border-gray-200 last:border-b-0 ${
-                      item.active 
+                      location === item.path 
                         ? 'bg-gray-900 text-white font-medium' 
                         : 'text-gray-700 hover:bg-gray-50'
                     }`}
