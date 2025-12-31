@@ -3,7 +3,7 @@ import { useParams, Link, useLocation } from "wouter";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart, ChevronRight, Truck, Shield, Award, RotateCcw, ShoppingBag, Star, Check } from "lucide-react";
+import { ShoppingCart, Heart, ChevronRight, Truck, Shield, ShoppingBag, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
@@ -203,146 +203,176 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            <div className="space-y-4 sm:space-y-6 px-1">
-              <div className="text-center lg:text-left">
-                <div className="flex items-center justify-center lg:justify-start gap-2 mb-2 flex-wrap">
-                  {brand && (
-                    <span className="text-sm text-gray-500 font-medium" data-testid="text-brand">{brand.name}</span>
-                  )}
-                  {product.isBest && (
-                    <span className="bg-gray-900 text-white text-xs px-2 py-1 font-bold">BEST</span>
-                  )}
-                  {product.isNew && (
-                    <span className="bg-red-600 text-white text-xs px-2 py-1 font-bold">NEW</span>
-                  )}
-                  {product.isSoldOut && (
-                    <span className="bg-gray-500 text-white text-xs px-2 py-1 font-bold">SOLD OUT</span>
-                  )}
-                </div>
-                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 break-keep" data-testid="text-product-name">
+            <div className="space-y-4 px-1">
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 break-keep" data-testid="text-product-name">
                   {product.name}
                 </h1>
-                <p className="text-sm sm:text-base text-gray-600" data-testid="text-description">{product.description}</p>
-              </div>
-
-              <div className="border-t border-b border-gray-100 py-4 sm:py-6 text-center lg:text-left">
-                <div className="flex items-baseline justify-center lg:justify-start gap-2 flex-wrap">
-                  {discountPercent > 0 && (
-                    <>
-                      <span className="text-lg text-red-500 font-bold">{discountPercent}%</span>
-                      <span className="text-lg text-gray-400 line-through">
-                        {Number(product.originalPrice).toLocaleString()}원
-                      </span>
-                    </>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded">해외배송</span>
+                  <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded">하이엔드급</span>
+                  {product.isSoldOut && (
+                    <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">SOLD OUT</span>
                   )}
                 </div>
-                <div className="flex items-baseline justify-center lg:justify-start gap-2 mt-1">
-                  <span className="text-2xl sm:text-3xl font-bold text-primary" data-testid="price-product-detail">
-                    {Number(product.price).toLocaleString()}
-                  </span>
-                  <span className="text-base sm:text-lg text-gray-500">원</span>
-                </div>
-                <p className="text-xs sm:text-sm text-gray-500 mt-1">무료 배송</p>
               </div>
 
-              {options.length > 0 && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">옵션 선택</label>
-                  <div className="flex flex-wrap gap-2">
-                    {options.map((option, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setSelectedOption(option)}
-                        className={`px-4 py-2 text-sm border rounded-md transition-colors ${
-                          selectedOption === option
-                            ? 'border-primary bg-primary/5 text-primary'
-                            : 'border-gray-200 hover:border-gray-400'
-                        }`}
-                        data-testid={`button-option-${index}`}
-                      >
-                        {selectedOption === option && <Check className="w-3 h-3 inline mr-1" />}
-                        {option}
-                      </button>
-                    ))}
+              <div className="bg-gray-50 p-4 rounded">
+                <p className="text-sm text-gray-700 mb-3">
+                  청담동 에디션만의 특별한 고객 등급혜택<br/>
+                  <span className="text-xs text-gray-500">구매실적에 따라 다양한 혜택을 드립니다.</span>
+                </p>
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-gray-300">
+                      <th className="text-left py-2 text-gray-600 font-medium">등급</th>
+                      <th className="text-left py-2 text-gray-600 font-medium">혜택</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-gray-200">
+                      <td className="py-2">
+                        <span className="inline-flex items-center">
+                          <span className="bg-purple-600 text-white text-[10px] px-1 rounded mr-1 font-bold">V</span>
+                          <span className="text-purple-600 font-bold">VVIP</span>
+                        </span>
+                      </td>
+                      <td className="py-2 text-gray-700">3% 할인</td>
+                    </tr>
+                    <tr className="border-b border-gray-200">
+                      <td className="py-2">
+                        <span className="inline-flex items-center">
+                          <span className="bg-red-500 text-white text-[10px] px-1 rounded mr-1 font-bold">V</span>
+                          <span className="text-red-500 font-bold">VIP</span>
+                        </span>
+                      </td>
+                      <td className="py-2 text-gray-700">2% 할인</td>
+                    </tr>
+                    <tr className="border-b border-gray-200">
+                      <td className="py-2">
+                        <span className="inline-flex items-center">
+                          <span className="bg-amber-500 text-white text-[10px] px-1 rounded mr-1 font-bold">G</span>
+                          <span className="text-amber-600 font-bold">GOLD</span>
+                        </span>
+                      </td>
+                      <td className="py-2 text-gray-700">1% 할인</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2">
+                        <span className="inline-flex items-center">
+                          <span className="bg-gray-400 text-white text-[10px] px-1 rounded mr-1 font-bold">S</span>
+                          <span className="text-gray-500 font-bold">SILVER</span>
+                        </span>
+                      </td>
+                      <td className="py-2 text-gray-700">0% 할인</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex">
+                  <span className="text-gray-500 w-24">판매가격</span>
+                  <span className="font-bold text-gray-900" data-testid="price-product-detail">{Number(product.price).toLocaleString()}원</span>
+                </div>
+                <div className="flex">
+                  <span className="text-gray-500 w-24">포인트</span>
+                  <span className="text-gray-700">{Math.floor(Number(product.price) * 0.03).toLocaleString()}점</span>
+                </div>
+                <div className="flex">
+                  <span className="text-gray-500 w-24">배송비결제</span>
+                  <span className="text-gray-700">무료배송</span>
+                </div>
+                <div className="flex">
+                  <span className="text-gray-500 w-24">최대구매수량</span>
+                  <span className="text-gray-700">3 개</span>
+                </div>
+              </div>
+
+              <div className="border-t border-gray-200 pt-4">
+                <h3 className="font-bold text-gray-900 mb-3">배송정보</h3>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
+                      <Shield className="w-5 h-5 text-gray-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">무료 검수 제공</p>
+                      <p className="text-xs text-gray-500">프리미엄 검수 무료 제공! (의류 제외)</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
+                      <Truck className="w-5 h-5 text-gray-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">배송기간</p>
+                      <p className="text-xs text-gray-500">최소 2주 ~ 최대 4주 소요(일부 품목 제외)</p>
+                    </div>
                   </div>
                 </div>
-              )}
-
-              <div className="flex items-center justify-center lg:justify-start gap-4">
-                <span className="text-gray-500 text-sm">수량</span>
-                <div className="flex items-center border border-gray-200 rounded">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-3 py-2 text-gray-500 hover:bg-gray-50"
-                    data-testid="button-quantity-minus"
-                  >
-                    -
-                  </button>
-                  <span className="px-4 py-2 border-x border-gray-200 min-w-[50px] text-center" data-testid="text-quantity">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="px-3 py-2 text-gray-500 hover:bg-gray-50"
-                    data-testid="button-quantity-plus"
-                  >
-                    +
-                  </button>
-                </div>
-                {product.stock !== null && product.stock !== undefined && product.stock > 0 && product.stock <= 10 && (
-                  <span className="text-xs text-red-500">남은 수량: {product.stock}개</span>
-                )}
               </div>
 
-              <div className="hidden lg:flex gap-3">
+              <div className="border-t border-gray-200 pt-4">
+                <h3 className="font-bold text-gray-900 mb-3">선택옵션</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm text-gray-600 mb-1 block">사이즈(여성)</label>
+                    <select 
+                      className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:outline-none focus:border-gray-500"
+                      value={selectedOption}
+                      onChange={(e) => setSelectedOption(e.target.value)}
+                      data-testid="select-option"
+                    >
+                      <option value="">선택</option>
+                      {options.length > 0 ? (
+                        options.map((option, index) => (
+                          <option key={index} value={option}>{option}</option>
+                        ))
+                      ) : (
+                        <>
+                          <option value="FREE">FREE</option>
+                          <option value="S">S</option>
+                          <option value="M">M</option>
+                          <option value="L">L</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2">
                 <Button
-                  variant="outline"
                   size="lg"
-                  className="flex-1 h-14"
-                  onClick={handleAddToCart}
-                  disabled={!!product.isSoldOut}
-                  data-testid="button-add-cart"
-                >
-                  <ShoppingCart className="w-5 h-5 mr-2" />
-                  장바구니
-                </Button>
-                <Button
-                  size="lg"
-                  className="flex-1 h-14 bg-primary hover:bg-primary/90"
+                  className="w-full h-12 bg-gray-900 hover:bg-gray-800 text-white font-bold"
                   onClick={handleBuyNow}
                   disabled={!!product.isSoldOut}
                   data-testid="button-buy-now"
                 >
-                  <ShoppingBag className="w-5 h-5 mr-2" />
-                  바로 구매
+                  바로구매
                 </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className={`h-14 w-14 ${isWishlisted ? 'text-red-500 border-red-200' : ''}`}
-                  onClick={handleWishlistToggle}
-                  data-testid="button-wishlist"
-                >
-                  <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-4 gap-2 sm:gap-4 pt-4 border-t border-gray-100">
-                <div className="text-center">
-                  <Truck className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-primary mb-1" />
-                  <span className="text-[10px] sm:text-xs text-gray-600">무료배송</span>
-                </div>
-                <div className="text-center">
-                  <Shield className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-primary mb-1" />
-                  <span className="text-[10px] sm:text-xs text-gray-600">정품보증</span>
-                </div>
-                <div className="text-center">
-                  <Award className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-primary mb-1" />
-                  <span className="text-[10px] sm:text-xs text-gray-600">품질보장</span>
-                </div>
-                <div className="text-center">
-                  <RotateCcw className="w-5 h-5 sm:w-6 sm:h-6 mx-auto text-primary mb-1" />
-                  <span className="text-[10px] sm:text-xs text-gray-600">교환/반품</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="h-12 border-gray-300 text-gray-700 font-medium"
+                    onClick={handleAddToCart}
+                    disabled={!!product.isSoldOut}
+                    data-testid="button-add-cart"
+                  >
+                    장바구니
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className={`h-12 border-gray-300 font-medium ${isWishlisted ? 'text-red-500 border-red-300' : 'text-gray-700'}`}
+                    onClick={handleWishlistToggle}
+                    data-testid="button-wishlist"
+                  >
+                    <Heart className={`w-4 h-4 mr-1 ${isWishlisted ? 'fill-current' : ''}`} />
+                    위시리스트
+                  </Button>
                 </div>
               </div>
             </div>
