@@ -91,7 +91,7 @@ function MainBannerSlider() {
   }, [bannerImages.length]);
 
   return (
-    <section className="relative w-full bg-gray-900 overflow-hidden">
+    <section className="relative w-full bg-black overflow-hidden">
       <div 
         className="flex transition-transform duration-500 ease-in-out"
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
@@ -99,9 +99,15 @@ function MainBannerSlider() {
         {bannerImages.map((url, index) => (
           <div 
             key={index}
-            className="w-full flex-shrink-0 aspect-[16/6] md:aspect-[16/5] bg-cover bg-center"
-            style={{ backgroundImage: `url(${getProxiedImageUrl(url)})` }}
-          />
+            className="w-full flex-shrink-0"
+          >
+            <img 
+              src={getProxiedImageUrl(url)}
+              alt={`배너 ${index + 1}`}
+              className="w-full h-auto"
+              style={{ maxHeight: '500px', objectFit: 'contain', width: '100%' }}
+            />
+          </div>
         ))}
       </div>
       
