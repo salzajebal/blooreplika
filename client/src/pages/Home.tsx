@@ -1,6 +1,5 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { HomePopup } from "@/components/home/HomePopup";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Star, MessageCircle, HelpCircle } from "lucide-react";
@@ -17,25 +16,59 @@ function filterValidImageUrls(urls: string[]): string[] {
 }
 
 function FloatingButtons() {
+  const [chatOpen, setChatOpen] = useState(false);
+  
   return (
-    <div className="fixed right-4 bottom-20 z-50 flex flex-col gap-2">
-      <Link 
-        href="/support"
-        className="w-12 h-12 bg-white border border-gray-300 rounded shadow-lg flex flex-col items-center justify-center text-gray-600 hover:bg-gray-50"
-        data-testid="floating-support"
-      >
-        <MessageCircle className="w-5 h-5" />
-        <span className="text-[8px] mt-0.5">상담</span>
-      </Link>
-      <Link 
-        href="/faq"
-        className="w-12 h-12 bg-white border border-gray-300 rounded shadow-lg flex flex-col items-center justify-center text-gray-600 hover:bg-gray-50"
-        data-testid="floating-qa"
-      >
-        <HelpCircle className="w-5 h-5" />
-        <span className="text-[8px] mt-0.5">Q&A</span>
-      </Link>
-    </div>
+    <>
+      <div className="fixed right-4 bottom-20 z-50 flex flex-col gap-2">
+        <button 
+          onClick={() => setChatOpen(true)}
+          className="w-12 h-12 bg-white border border-gray-300 rounded shadow-lg flex flex-col items-center justify-center text-gray-600 hover:bg-gray-50"
+          data-testid="floating-support"
+        >
+          <MessageCircle className="w-5 h-5" />
+          <span className="text-[8px] mt-0.5">상담</span>
+        </button>
+        <Link 
+          href="/notices"
+          className="w-12 h-12 bg-white border border-gray-300 rounded shadow-lg flex flex-col items-center justify-center text-gray-600 hover:bg-gray-50"
+          data-testid="floating-qa"
+        >
+          <HelpCircle className="w-5 h-5" />
+          <span className="text-[8px] mt-0.5">공지</span>
+        </Link>
+      </div>
+      
+      {chatOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="bg-black px-4 py-3 flex items-center justify-between">
+              <span className="text-white text-sm font-medium">1:1 상담</span>
+              <button
+                onClick={() => setChatOpen(false)}
+                className="text-white/70 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="text-center mb-4">
+                <MessageCircle className="w-12 h-12 mx-auto text-gray-400 mb-3" />
+                <h3 className="font-medium text-gray-800 mb-2">실시간 상담</h3>
+                <p className="text-sm text-gray-500">문의사항이 있으시면 메시지를 남겨주세요.</p>
+              </div>
+              <Link 
+                href="/support"
+                onClick={() => setChatOpen(false)}
+                className="block w-full bg-black text-white text-center py-3 rounded-lg hover:bg-gray-800 transition-colors"
+              >
+                상담 페이지로 이동
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -419,7 +452,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
-      <HomePopup />
+      {/* 카카오톡 팝업 제거됨 - 상담 기능은 플로팅 버튼으로 이동 */}
       <Header />
       
       <main>
