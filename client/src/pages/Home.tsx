@@ -334,13 +334,19 @@ function MainBannerSlider() {
         {bannerImages.map((url, index) => (
           <div 
             key={index}
-            className="w-full flex-shrink-0"
+            className="w-full flex-shrink-0 relative"
           >
             <img 
               src={getProxiedImageUrl(url)}
               alt={`배너 ${index + 1}`}
               className="w-full h-auto"
               style={{ maxHeight: '500px', objectFit: 'contain', width: '100%' }}
+            />
+            <div 
+              className="absolute inset-0 pointer-events-none"
+              style={{ 
+                background: 'linear-gradient(to right, rgba(26,26,46,0.7) 0%, transparent 15%, transparent 85%, rgba(15,52,96,0.7) 100%), linear-gradient(to bottom, rgba(26,26,46,0.3) 0%, transparent 20%, transparent 80%, rgba(15,52,96,0.4) 100%)'
+              }}
             />
           </div>
         ))}
