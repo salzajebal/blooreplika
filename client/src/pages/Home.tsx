@@ -39,48 +39,71 @@ function FloatingButtons() {
   );
 }
 
-function BannerSlider() {
+function BannerSlider({ reviews }: { reviews: any[] }) {
   const [currentSlide, setCurrentSlide] = useState(0);
   
-  const bannerSlides = [
-    { id: 1, date: "2월 30일(목) - 주문대비안내...", timestamp: "21:04" },
-    { id: 2, date: "2월 30일(목) - 신상품 입고", timestamp: "14:44" },
-    { id: 3, date: "2월 30일(목) - 베스트 상품", timestamp: "18:30" },
-  ];
+  const getValidImages = () => {
+    const validImages: { url: string; title: string }[] = [];
+    for (const review of reviews) {
+      const urls = review.imageUrls || (review.imageUrl ? [review.imageUrl] : []);
+      for (const url of urls) {
+        if (!url.includes('/data/file/bestreview/') && !url.includes('/data/file/kalreom/')) {
+          validImages.push({ url, title: review.title || '' });
+          if (validImages.length >= 4) break;
+        }
+      }
+      if (validImages.length >= 4) break;
+    }
+    return validImages;
+  };
+
+  const bannerImages = getValidImages();
 
   useEffect(() => {
+    if (bannerImages.length < 2) return;
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % bannerSlides.length);
+      setCurrentSlide((prev) => (prev + 2) % Math.max(bannerImages.length, 2));
     }, 5000);
     return () => clearInterval(timer);
-  }, []);
+  }, [bannerImages.length]);
+
+  const getTimeString = (index: number) => {
+    const hours = [21, 14, 18, 16];
+    const mins = [4, 44, 30, 22];
+    return `${hours[index % 4]}:${mins[index % 4].toString().padStart(2, '0')}`;
+  };
+
+  if (bannerImages.length === 0) {
+    return (
+      <section className="relative bg-gray-300 h-[300px] md:h-[400px] flex items-center justify-center">
+        <div className="text-gray-500">배너 이미지 로딩중...</div>
+      </section>
+    );
+  }
 
   return (
     <section className="relative bg-gray-200 overflow-hidden">
       <div className="grid grid-cols-1 md:grid-cols-2">
         {[0, 1].map((offset) => {
-          const slideIndex = (currentSlide + offset) % bannerSlides.length;
-          const slide = bannerSlides[slideIndex];
+          const imageIndex = (currentSlide + offset) % bannerImages.length;
+          const banner = bannerImages[imageIndex];
           return (
             <div 
               key={offset}
-              className="relative aspect-[4/3] md:aspect-[16/11] bg-gradient-to-br from-gray-600 via-gray-700 to-gray-800 overflow-hidden"
+              className="relative aspect-[4/3] md:aspect-[16/11] bg-gray-700 overflow-hidden"
             >
-              <div className="absolute inset-0" style={{
-                background: `
-                  repeating-linear-gradient(
-                    0deg,
-                    transparent,
-                    transparent 60px,
-                    rgba(255,255,255,0.02) 60px,
-                    rgba(255,255,255,0.02) 61px
-                  )
-                `
-              }} />
+              <img 
+                src={getProxiedImageUrl(banner.url)}
+                alt="배너"
+                className="absolute inset-0 w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0'; }}
+              />
               
-              <div className="absolute inset-0 flex flex-wrap items-center justify-center overflow-hidden opacity-10">
-                {Array(8).fill(null).map((_, i) => (
-                  <div key={i} className="text-white text-[10px] tracking-[0.3em] whitespace-nowrap px-4 py-2 transform -rotate-3">
+              <div className="absolute inset-0 bg-black/30" />
+              
+              <div className="absolute inset-0 flex flex-wrap items-center justify-center overflow-hidden pointer-events-none">
+                {Array(6).fill(null).map((_, i) => (
+                  <div key={i} className="text-white/10 text-[10px] tracking-[0.3em] whitespace-nowrap px-4 py-3 transform -rotate-3">
                     cdamdong cdamdong cdamdong cdamdong cdamdong
                   </div>
                 ))}
@@ -88,9 +111,9 @@ function BannerSlider() {
               
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center">
-                  <div className="text-white/50 text-[10px] md:text-xs mb-2">{slide.date}</div>
-                  <div className="text-white text-4xl md:text-6xl font-bold tracking-wider mb-4">{slide.timestamp}</div>
-                  <div className="bg-black/50 backdrop-blur-sm rounded-lg px-5 py-3 inline-block">
+                  <div className="text-white/60 text-[10px] md:text-xs mb-2">2월 30일(목) - 주문대비안내...</div>
+                  <div className="text-white text-4xl md:text-6xl font-bold tracking-wider mb-4 drop-shadow-lg">{getTimeString(imageIndex)}</div>
+                  <div className="bg-black/60 backdrop-blur-sm rounded-lg px-5 py-3 inline-block">
                     <div className="text-yellow-400 text-lg mb-0.5">👑</div>
                     <div className="text-white font-bold text-sm md:text-base tracking-wide">청담동에디션</div>
                   </div>
@@ -98,7 +121,7 @@ function BannerSlider() {
               </div>
               
               <div className="absolute bottom-3 left-0 right-0 text-center">
-                <div className="text-white/20 text-[8px] tracking-[0.2em]">
+                <div className="text-white/30 text-[8px] tracking-[0.2em]">
                   cdamdong cdamdong cdamdong cdamdong cdam
                 </div>
               </div>
@@ -108,14 +131,14 @@ function BannerSlider() {
       </div>
       
       <button 
-        onClick={() => setCurrentSlide((prev) => (prev === 0 ? bannerSlides.length - 1 : prev - 1))}
+        onClick={() => setCurrentSlide((prev) => (prev === 0 ? Math.max(bannerImages.length - 2, 0) : prev - 2))}
         className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white z-20"
         aria-label="이전 배너"
       >
         <ChevronLeft className="w-5 h-5" />
       </button>
       <button 
-        onClick={() => setCurrentSlide((prev) => (prev + 1) % bannerSlides.length)}
+        onClick={() => setCurrentSlide((prev) => (prev + 2) % Math.max(bannerImages.length, 2))}
         className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white z-20"
         aria-label="다음 배너"
       >
@@ -251,7 +274,7 @@ export default function Home() {
       <Header />
       
       <main>
-        <BannerSlider />
+        <BannerSlider reviews={reviews} />
 
         {products.length > 0 && (
           <section className="py-8 bg-white">
