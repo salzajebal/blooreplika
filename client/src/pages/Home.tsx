@@ -326,9 +326,28 @@ function MainBannerSlider() {
   }, [bannerImages.length]);
 
   return (
-    <section className="relative w-full overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)' }}>
+    <section className="relative w-full overflow-hidden">
+      {bannerImages.map((url, index) => (
+        <div
+          key={`bg-${index}`}
+          className="absolute inset-0 transition-opacity duration-700"
+          style={{
+            opacity: index === currentSlide ? 1 : 0,
+            backgroundImage: `url(${getProxiedImageUrl(url)})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(20px)',
+            transform: 'scale(1.1)',
+          }}
+        />
+      ))}
       <div 
-        className="flex transition-transform duration-500 ease-in-out"
+        className="absolute inset-0"
+        style={{ background: 'linear-gradient(135deg, rgba(26,26,46,0.6) 0%, rgba(22,33,62,0.5) 50%, rgba(15,52,96,0.6) 100%)' }}
+      />
+      
+      <div 
+        className="relative flex transition-transform duration-500 ease-in-out"
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
       >
         {bannerImages.map((url, index) => (
@@ -341,12 +360,6 @@ function MainBannerSlider() {
               alt={`배너 ${index + 1}`}
               className="w-full h-auto"
               style={{ maxHeight: '500px', objectFit: 'contain', width: '100%' }}
-            />
-            <div 
-              className="absolute inset-0 pointer-events-none"
-              style={{ 
-                background: 'linear-gradient(to right, rgba(26,26,46,0.7) 0%, transparent 15%, transparent 85%, rgba(15,52,96,0.7) 100%), linear-gradient(to bottom, rgba(26,26,46,0.3) 0%, transparent 20%, transparent 80%, rgba(15,52,96,0.4) 100%)'
-              }}
             />
           </div>
         ))}
