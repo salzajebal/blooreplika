@@ -21,12 +21,15 @@ import Cart from "@/pages/Cart";
 import Profile from "@/pages/Profile";
 import Order from "@/pages/Order";
 import About from "@/pages/About";
+import Comparison from "@/pages/Comparison";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/about" component={About} />
+      <Route path="/comparison" component={Comparison} />
+      <Route path="/comparison/:id" component={Comparison} />
       <Route path="/product/:id" component={ProductDetail} />
       <Route path="/products/:category" component={ProductList} />
       <Route path="/products" component={ProductList} />

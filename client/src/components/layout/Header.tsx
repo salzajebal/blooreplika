@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 const mainNavItems = [
   { name: '소개글', path: '/about' },
   { name: '공지사항', path: '/notices' },
-  { name: '1:1 비교', path: '/compare' },
+  { name: '1:1 비교', path: '/comparison' },
   { name: '베스트리뷰', path: '/reviews' },
   { name: '블로그', path: '/blog' },
   { name: '청담동초이스', path: '/choice' },
