@@ -24,6 +24,7 @@ import About from "@/pages/About";
 import Comparison from "@/pages/Comparison";
 import FAQ from "@/pages/FAQ";
 import Events from "@/pages/Events";
+import Blog from "@/pages/Blog";
 
 function Router() {
   return (
@@ -44,6 +45,8 @@ function Router() {
       <Route path="/notices/:id" component={Notices} />
       <Route path="/faq" component={FAQ} />
       <Route path="/events" component={Events} />
+      <Route path="/blog" component={Blog} />
+      <Route path="/blog/:id" component={Blog} />
       <Route path="/guide" component={Guide} />
       <Route path="/cart" component={Cart} />
       <Route path="/profile" component={Profile} />
