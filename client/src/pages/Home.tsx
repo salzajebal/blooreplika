@@ -358,8 +358,7 @@ function MainBannerSlider() {
             <img 
               src={getProxiedImageUrl(url)}
               alt={`배너 ${index + 1}`}
-              className="w-full h-auto"
-              style={{ maxHeight: '400px', objectFit: 'cover', width: '100%' }}
+              className="w-full h-auto max-h-[250px] md:max-h-[500px] object-contain"
             />
           </div>
         ))}
