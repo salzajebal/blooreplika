@@ -180,3 +180,14 @@
     padding-right: 12px;
   }
 }
+
+@keyframes sparkle {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.4));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 12px rgba(255, 215, 0, 1)) drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
+    transform: scale(1.1);
+  }
+}

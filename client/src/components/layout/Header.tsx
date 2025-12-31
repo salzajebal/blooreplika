@@ -208,7 +208,7 @@ export function Header() {
 
             <Link href="/" className="flex flex-col items-center justify-self-center" data-testid="link-home">
               <span className="text-[10px] text-gray-400 tracking-[0.2em] mb-0.5">SINCE 2010</span>
-              <span className="text-2xl mb-0.5">👑</span>
+              <span className="text-2xl mb-0.5 animate-pulse drop-shadow-[0_0_8px_rgba(255,215,0,0.8)]" style={{ animation: 'sparkle 2s ease-in-out infinite' }}>👑</span>
               <h1 className="text-xl font-bold text-[#333] tracking-tight">청담동에디션</h1>
             </Link>
 
