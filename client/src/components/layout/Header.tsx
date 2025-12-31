@@ -134,12 +134,14 @@ export function Header() {
     setActiveDropdown(null);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent, slug: string) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+  const handleKeyDown = (e: React.KeyboardEvent, slug: string, hasSubmenu: boolean) => {
+    if (e.key === 'Escape') {
+      setActiveDropdown(null);
+      return;
+    }
+    if (hasSubmenu && (e.key === 'ArrowDown' || e.key === ' ')) {
       e.preventDefault();
       setActiveDropdown(activeDropdown === slug ? null : slug);
-    } else if (e.key === 'Escape') {
-      setActiveDropdown(null);
     }
   };
 
@@ -411,7 +413,7 @@ export function Header() {
                   href={cat.path} 
                   className="px-4 py-3 text-sm font-medium text-gray-800 hover:text-black transition-colors flex items-center gap-1 h-12"
                   data-testid={`nav-${cat.slug}`}
-                  onKeyDown={(e) => handleKeyDown(e, cat.slug)}
+                  onKeyDown={(e) => handleKeyDown(e, cat.slug, !!(cat.subcategories && cat.subcategories.length > 0))}
                   aria-haspopup={cat.subcategories && cat.subcategories.length > 0 ? "true" : undefined}
                   aria-expanded={activeDropdown === cat.slug ? "true" : undefined}
                 >
