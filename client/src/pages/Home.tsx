@@ -336,8 +336,8 @@ function MainBannerSlider() {
             backgroundImage: `url(${getProxiedImageUrl(url)})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            filter: 'blur(20px)',
-            transform: 'scale(1.1)',
+            filter: 'blur(8px)',
+            transform: 'scale(1.05)',
           }}
         />
       ))}
