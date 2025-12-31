@@ -3,15 +3,9 @@ import { Footer } from "@/components/layout/Footer";
 import { HomePopup } from "@/components/home/HomePopup";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Star, Package } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star, MessageCircle, HelpCircle } from "lucide-react";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { useState, useEffect, useRef } from "react";
-
-const bannerSlides = [
-  { id: 1, title: "LUXURY BAGS", subtitle: "명품 가방 컬렉션", gradient: "from-gray-800 to-gray-900", link: "/products/bags" },
-  { id: 2, title: "WINTER PADDING", subtitle: "프리미엄 패딩 신상품", gradient: "from-gray-700 to-gray-800", link: "/products/padding" },
-  { id: 3, title: "ACCESSORIES", subtitle: "럭셔리 악세사리", gradient: "from-gray-900 to-black", link: "/products/accessories" },
-];
 
 function filterValidImageUrls(urls: string[]): string[] {
   return urls.filter(url => {
@@ -22,9 +16,122 @@ function filterValidImageUrls(urls: string[]): string[] {
   });
 }
 
+function FloatingButtons() {
+  return (
+    <div className="fixed right-4 bottom-20 z-50 flex flex-col gap-2">
+      <Link 
+        href="/support"
+        className="w-12 h-12 bg-white border border-gray-300 rounded shadow-lg flex flex-col items-center justify-center text-gray-600 hover:bg-gray-50"
+        data-testid="floating-support"
+      >
+        <MessageCircle className="w-5 h-5" />
+        <span className="text-[8px] mt-0.5">상담</span>
+      </Link>
+      <Link 
+        href="/faq"
+        className="w-12 h-12 bg-white border border-gray-300 rounded shadow-lg flex flex-col items-center justify-center text-gray-600 hover:bg-gray-50"
+        data-testid="floating-qa"
+      >
+        <HelpCircle className="w-5 h-5" />
+        <span className="text-[8px] mt-0.5">Q&A</span>
+      </Link>
+    </div>
+  );
+}
+
+function BannerSlider() {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  
+  const bannerSlides = [
+    { id: 1, date: "2월 30일(목) - 주문대비안내...", timestamp: "21:04" },
+    { id: 2, date: "2월 30일(목) - 신상품 입고", timestamp: "14:44" },
+    { id: 3, date: "2월 30일(목) - 베스트 상품", timestamp: "18:30" },
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % bannerSlides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <section className="relative bg-gray-200 overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-2">
+        {[0, 1].map((offset) => {
+          const slideIndex = (currentSlide + offset) % bannerSlides.length;
+          const slide = bannerSlides[slideIndex];
+          return (
+            <div 
+              key={offset}
+              className="relative aspect-[4/3] md:aspect-[16/11] bg-gradient-to-br from-gray-600 via-gray-700 to-gray-800 overflow-hidden"
+            >
+              <div className="absolute inset-0" style={{
+                background: `
+                  repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 60px,
+                    rgba(255,255,255,0.02) 60px,
+                    rgba(255,255,255,0.02) 61px
+                  )
+                `
+              }} />
+              
+              <div className="absolute inset-0 flex flex-wrap items-center justify-center overflow-hidden opacity-10">
+                {Array(8).fill(null).map((_, i) => (
+                  <div key={i} className="text-white text-[10px] tracking-[0.3em] whitespace-nowrap px-4 py-2 transform -rotate-3">
+                    cdamdong cdamdong cdamdong cdamdong cdamdong
+                  </div>
+                ))}
+              </div>
+              
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-white/50 text-[10px] md:text-xs mb-2">{slide.date}</div>
+                  <div className="text-white text-4xl md:text-6xl font-bold tracking-wider mb-4">{slide.timestamp}</div>
+                  <div className="bg-black/50 backdrop-blur-sm rounded-lg px-5 py-3 inline-block">
+                    <div className="text-yellow-400 text-lg mb-0.5">👑</div>
+                    <div className="text-white font-bold text-sm md:text-base tracking-wide">청담동에디션</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="absolute bottom-3 left-0 right-0 text-center">
+                <div className="text-white/20 text-[8px] tracking-[0.2em]">
+                  cdamdong cdamdong cdamdong cdamdong cdam
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      
+      <button 
+        onClick={() => setCurrentSlide((prev) => (prev === 0 ? bannerSlides.length - 1 : prev - 1))}
+        className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white z-20"
+        aria-label="이전 배너"
+      >
+        <ChevronLeft className="w-5 h-5" />
+      </button>
+      <button 
+        onClick={() => setCurrentSlide((prev) => (prev + 1) % bannerSlides.length)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/60 rounded-full flex items-center justify-center text-white z-20"
+        aria-label="다음 배너"
+      >
+        <ChevronRight className="w-5 h-5" />
+      </button>
+    </section>
+  );
+}
+
 function ProductCard({ product }: { product: any }) {
   return (
-    <Link href={`/product/${product.id}`} className="block bg-white border border-gray-200 overflow-hidden hover:shadow-md transition-shadow" data-testid={`product-card-${product.id}`}>
+    <Link 
+      href={`/product/${product.id}`} 
+      className="block bg-white border border-gray-200 overflow-hidden hover:shadow-md transition-shadow" 
+      data-testid={`product-card-${product.id}`}
+    >
       <div className="aspect-square bg-gray-100 relative">
         <img 
           src={getProxiedImageUrl(product.imageUrl)} 
@@ -54,8 +161,47 @@ function ProductCard({ product }: { product: any }) {
   );
 }
 
+function ReviewCard({ review }: { review: any }) {
+  const getFirstValidImage = (): string | null => {
+    const urls = review.imageUrls || (review.imageUrl ? [review.imageUrl] : []);
+    const validUrls = filterValidImageUrls(urls);
+    return validUrls.length > 0 ? validUrls[0] : null;
+  };
+  
+  const imageUrl = getFirstValidImage();
+  
+  return (
+    <Link 
+      href={`/reviews/${review.id}`}
+      className="flex-shrink-0 w-[200px] bg-white border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+      data-testid={`review-card-${review.id}`}
+    >
+      {imageUrl && (
+        <div className="aspect-square bg-gray-100">
+          <img 
+            src={getProxiedImageUrl(imageUrl)}
+            alt={review.title}
+            className="w-full h-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        </div>
+      )}
+      <div className="p-2">
+        <div className="flex items-center gap-0.5 mb-1">
+          {[1,2,3,4,5].map((star) => (
+            <Star 
+              key={star} 
+              className={`w-2.5 h-2.5 ${star <= (review.rating || 5) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+            />
+          ))}
+        </div>
+        <p className="text-[10px] text-gray-600 line-clamp-2">{review.content}</p>
+      </div>
+    </Link>
+  );
+}
+
 export default function Home() {
-  const [currentSlide, setCurrentSlide] = useState(0);
   const reviewScrollRef = useRef<HTMLDivElement>(null);
 
   const { data: productsData } = useQuery({
@@ -85,21 +231,13 @@ export default function Home() {
     }
   });
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % bannerSlides.length);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, []);
-
   const products = productsData || [];
   const reviews = reviewsData || [];
-  const bestReviews = reviews.slice(0, 4);
   const notices = noticesData || [];
 
   const scrollReviews = (direction: 'left' | 'right') => {
     if (reviewScrollRef.current) {
-      const scrollAmount = 320;
+      const scrollAmount = 220;
       reviewScrollRef.current.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
@@ -107,261 +245,126 @@ export default function Home() {
     }
   };
 
-  const getFirstValidImage = (review: any): string | null => {
-    const urls = review.imageUrls || (review.imageUrl ? [review.imageUrl] : []);
-    const validUrls = filterValidImageUrls(urls);
-    return validUrls.length > 0 ? validUrls[0] : null;
-  };
-
   return (
-    <div className="min-h-screen bg-[#f5f5f5]">
+    <div className="min-h-screen bg-white">
       <HomePopup />
       <Header />
       
       <main>
-        <section className="relative bg-gray-200 overflow-hidden" style={{ height: 'clamp(250px, 40vw, 450px)' }}>
-          {bannerSlides.map((slide, index) => (
-            <Link 
-              key={slide.id} 
-              href={slide.link}
-              className={`absolute inset-0 transition-opacity duration-700 bg-gradient-to-r ${slide.gradient} flex items-center justify-center ${index === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
-            >
-              <div className="text-center text-white px-4">
-                <h2 className="text-3xl md:text-5xl font-bold tracking-wider mb-3">{slide.title}</h2>
-                <p className="text-lg md:text-xl text-white/80">{slide.subtitle}</p>
-              </div>
-            </Link>
-          ))}
-          
-          <button 
-            onClick={() => setCurrentSlide((prev) => (prev === 0 ? bannerSlides.length - 1 : prev - 1))}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/30 hover:bg-black/50 rounded-full flex items-center justify-center text-white z-20"
-            aria-label="이전 배너"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <button 
-            onClick={() => setCurrentSlide((prev) => (prev + 1) % bannerSlides.length)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/30 hover:bg-black/50 rounded-full flex items-center justify-center text-white z-20"
-            aria-label="다음 배너"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
+        <BannerSlider />
 
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 z-20 bg-black/40 px-3 py-1.5 rounded-full">
-            {bannerSlides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`w-2.5 h-2.5 rounded-full transition-colors ${index === currentSlide ? 'bg-white' : 'bg-white/40'}`}
-                aria-label={`배너 ${index + 1}로 이동`}
-              />
-            ))}
-          </div>
-        </section>
-
-        <section className="bg-white py-8">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-800 border-b-2 border-gray-800 pb-1">인기 상품</h2>
-              <Link href="/products" className="text-sm text-gray-500 hover:text-black flex items-center gap-1">
-                전체보기 <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {products.slice(0, 8).map((product: any) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-            
-            {products.length === 0 && (
-              <div className="text-center py-12 text-gray-500">
-                <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>등록된 상품이 없습니다.</p>
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="bg-[#f5f5f5] py-8">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-gray-600 text-sm">- 고객님들의 소중한 리뷰 :)</span>
-            </div>
-            <div className="text-xs text-gray-500 mb-4">(실제 후기 {reviews.length}개 이상!)</div>
-            
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-800 border-b-2 border-gray-800 pb-1">구매후기</h2>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => scrollReviews('left')}
-                  className="w-8 h-8 border border-gray-300 bg-white flex items-center justify-center hover:bg-gray-100"
-                  aria-label="이전 후기"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button 
-                  onClick={() => scrollReviews('right')}
-                  className="w-8 h-8 border border-gray-300 bg-white flex items-center justify-center hover:bg-gray-100"
-                  aria-label="다음 후기"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            <div 
-              ref={reviewScrollRef}
-              className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            >
-              {reviews.slice(0, 20).map((review: any) => {
-                const imageUrl = getFirstValidImage(review);
-                return (
-                  <Link 
-                    key={review.id}
-                    href={`/reviews/${review.id}`}
-                    className="flex-shrink-0 w-[260px] bg-white border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-                    data-testid={`review-card-${review.id}`}
-                  >
-                    {imageUrl && (
-                      <div className="aspect-square bg-gray-100">
-                        <img 
-                          src={getProxiedImageUrl(imageUrl)}
-                          alt={review.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                      </div>
-                    )}
-                    <div className="p-3">
-                      <div className="flex items-center gap-1 mb-2">
-                        {[1,2,3,4,5].map((star) => (
-                          <Star 
-                            key={star} 
-                            className={`w-3 h-3 ${star <= (review.rating || 5) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-600 line-clamp-2">{review.content}</p>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-
-            <div className="text-center mt-4">
-              <Link 
-                href="/reviews" 
-                className="inline-block border border-gray-300 bg-white px-6 py-2 text-sm text-gray-600 hover:bg-gray-50"
-              >
-                후기 더보기 +{reviews.length}건
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-white py-8">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-800 border-b-2 border-gray-800 pb-1">베스트후기</h2>
-              <Link href="/reviews" className="text-sm text-gray-500 hover:text-black flex items-center gap-1">
-                더보기 <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {bestReviews.map((review: any) => {
-                const imageUrl = getFirstValidImage(review);
-                return (
-                  <Link 
-                    key={review.id}
-                    href={`/reviews/${review.id}`}
-                    className="bg-white border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-                    data-testid={`best-review-${review.id}`}
-                  >
-                    {imageUrl && (
-                      <div className="aspect-square bg-gray-100">
-                        <img 
-                          src={getProxiedImageUrl(imageUrl)}
-                          alt={review.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                      </div>
-                    )}
-                    <div className="p-3">
-                      <div className="flex items-center gap-1 mb-1">
-                        {[1,2,3,4,5].map((star) => (
-                          <Star 
-                            key={star} 
-                            className={`w-3 h-3 ${star <= (review.rating || 5) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-xs text-gray-700 line-clamp-2 font-medium">{review.title}</p>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-
-            {bestReviews.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <Star className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>등록된 후기가 없습니다.</p>
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="bg-[#f5f5f5] py-8">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-gray-800 border-b-2 border-gray-800 pb-1">공지사항</h2>
-              <Link href="/notices" className="text-sm text-gray-500 hover:text-black flex items-center gap-1">
-                더보기 <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {notices.map((notice: any) => (
-                <Link 
-                  key={notice.id}
-                  href={`/notices/${notice.id}`}
-                  className="bg-white border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-                  data-testid={`notice-card-${notice.id}`}
-                >
-                  {notice.imageUrl && (
-                    <div className="aspect-square bg-gray-100">
-                      <img 
-                        src={getProxiedImageUrl(notice.imageUrl)}
-                        alt={notice.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
-                    </div>
-                  )}
-                  <div className="p-3">
-                    <p className="text-xs text-gray-700 line-clamp-2">{notice.title}</p>
-                    <p className="text-[10px] text-gray-400 mt-1">
-                      {notice.displayDate ? new Date(notice.displayDate).toLocaleDateString() : ''}
-                    </p>
-                  </div>
+        {products.length > 0 && (
+          <section className="py-8 bg-white">
+            <div className="max-w-[1200px] mx-auto px-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-gray-800">인기 상품</h2>
+                <Link href="/products" className="text-sm text-gray-500 hover:text-black flex items-center gap-1">
+                  더보기 <ChevronRight className="w-4 h-4" />
                 </Link>
-              ))}
-            </div>
-
-            {notices.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                <p>등록된 공지사항이 없습니다.</p>
               </div>
-            )}
-          </div>
-        </section>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {products.slice(0, 8).map((product: any) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {reviews.length > 0 && (
+          <section className="py-8 bg-gray-50">
+            <div className="max-w-[1200px] mx-auto px-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-gray-500 text-sm">- 고객님들의 소중한 리뷰 :)</span>
+              </div>
+              <div className="text-xs text-gray-400 mb-4">(실제 후기 {reviews.length}개 이상!)</div>
+              
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-bold text-gray-800 border-b-2 border-gray-800 pb-1">구매후기</h2>
+                <div className="flex gap-1">
+                  <button 
+                    onClick={() => scrollReviews('left')}
+                    className="w-7 h-7 border border-gray-300 bg-white flex items-center justify-center hover:bg-gray-100"
+                    aria-label="이전 후기"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button 
+                    onClick={() => scrollReviews('right')}
+                    className="w-7 h-7 border border-gray-300 bg-white flex items-center justify-center hover:bg-gray-100"
+                    aria-label="다음 후기"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              <div 
+                ref={reviewScrollRef}
+                className="flex gap-3 overflow-x-auto pb-4"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {reviews.slice(0, 20).map((review: any) => (
+                  <ReviewCard key={review.id} review={review} />
+                ))}
+              </div>
+
+              <div className="text-center mt-3">
+                <Link 
+                  href="/reviews" 
+                  className="inline-block border border-gray-300 bg-white px-5 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
+                >
+                  후기 더보기 +{reviews.length}건
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {notices.length > 0 && (
+          <section className="py-8 bg-white">
+            <div className="max-w-[1200px] mx-auto px-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-bold text-gray-800 border-b-2 border-gray-800 pb-1">공지사항</h2>
+                <Link href="/notices" className="text-sm text-gray-500 hover:text-black flex items-center gap-1">
+                  더보기 <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {notices.slice(0, 8).map((notice: any) => (
+                  <Link 
+                    key={notice.id}
+                    href={`/notices/${notice.id}`}
+                    className="bg-white border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                    data-testid={`notice-card-${notice.id}`}
+                  >
+                    {notice.imageUrl && (
+                      <div className="aspect-video bg-gray-100">
+                        <img 
+                          src={getProxiedImageUrl(notice.imageUrl)}
+                          alt={notice.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      </div>
+                    )}
+                    <div className="p-2">
+                      <p className="text-xs text-gray-700 line-clamp-2">{notice.title}</p>
+                      <p className="text-[10px] text-gray-400 mt-1">
+                        {notice.displayDate ? new Date(notice.displayDate).toLocaleDateString() : ''}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
       </main>
       
+      <FloatingButtons />
       <Footer />
     </div>
   );
