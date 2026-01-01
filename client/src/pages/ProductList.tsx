@@ -304,6 +304,39 @@ export default function ProductList() {
               </Link>
             ))}
           </div>
+          
+          {brands.length > 0 && (
+            <div className="mt-3">
+              <p className="text-[10px] text-gray-500 mb-2 font-medium">브랜드</p>
+              <div className="flex flex-wrap gap-1.5">
+                <button 
+                  onClick={() => setSelectedBrand(null)}
+                  className={cn(
+                    "px-2.5 py-1 text-[10px] rounded-full border transition-colors",
+                    !selectedBrand 
+                      ? "bg-gray-800 text-white border-gray-800" 
+                      : "bg-white text-gray-600 border-gray-300 hover:border-gray-800"
+                  )}
+                >
+                  전체
+                </button>
+                {brands.slice(0, 20).map(brand => (
+                  <button 
+                    key={brand.id}
+                    onClick={() => setSelectedBrand(brand.id)}
+                    className={cn(
+                      "px-2.5 py-1 text-[10px] rounded-full border transition-colors",
+                      selectedBrand === brand.id 
+                        ? "bg-gray-800 text-white border-gray-800" 
+                        : "bg-white text-gray-600 border-gray-300 hover:border-gray-800"
+                    )}
+                  >
+                    {brand.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-8">
