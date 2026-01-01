@@ -2654,51 +2654,137 @@ export async function registerRoutes(
     }
   });
 
-  // Sync accessory prices to match original cdamdong.co.kr (optimized with batch SQL)
+  // Sync ALL accessory prices using comprehensive pattern matching
   app.post("/api/admin/sync-accessory-prices", requireAdminAuth, async (_req: Request, res: Response) => {
     try {
+      console.log("Starting comprehensive accessory price sync...");
       let updatedCount = 0;
       
-      // Use batch SQL updates for speed instead of individual product updates
-      const priceUpdateQueries = [
-        { pattern: '%티파니 T와이어 팔찌 (컬러 화이트골드)%', price: '225000' },
-        { pattern: '%티파니 T와이어 팔찌 (옐로우골드)%', price: '225000' },
-        { pattern: '%샤넬 울 머플러 24a%', price: '257000' },
-        { pattern: '%버버리 캐시미어 체크 머플러%', price: '209000' },
-        { pattern: '%에르메스 스카프%', price: '253000' },
-        { pattern: '%펜디 울 캐시미어 머플러%', price: '230000' },
-        { pattern: '%루이비통 플로럴 스카프%', price: '240000' },
-        { pattern: '%루이비통 캐시미어 그라데이션 모노그램 머플러%', price: '274000' },
-        { pattern: '%루이비통 울 모노그램 머플러%', price: '245000' },
-        { pattern: '%디올 울 캐시미어 오블리크 자카드 머플러%', price: '230000' },
-        { pattern: '%디올 오블리크 100%', price: '257000' },
-        { pattern: '%구찌 자카드 머플러%', price: '257000' },
-        { pattern: '%디올 버킷햇%', price: '200000' },
-        { pattern: '%샤넬 CC 캐시미어 머플러%', price: '257000' },
-        { pattern: '%셀린느 트리오페 머플러%', price: '240000' },
-        { pattern: '%샤넬 스카프%', price: '253000' },
-        { pattern: '%샤넬 22b cc로고 리버시블 퀼팅 머플러%', price: '230000' },
-        { pattern: '%에르메스 실크 트윌리%', price: '225000' },
-        { pattern: '%에르메스 실크 스카프%', price: '330000' },
-        { pattern: '%에르메스 벨트%', price: '223000' },
+      // Comprehensive price rules based on cdamdong.co.kr pricing patterns
+      // Format: { pattern: SQL LIKE pattern, price: correct price in won }
+      const priceRules = [
+        // 머플러/스카프 (Mufflers/Scarves) - 200,000~280,000
+        { pattern: '%버버리%머플러%', price: '209000' },
+        { pattern: '%버버리%스카프%', price: '209000' },
+        { pattern: '%샤넬%머플러%', price: '257000' },
+        { pattern: '%샤넬%스카프%', price: '253000' },
+        { pattern: '%에르메스%스카프%', price: '253000' },
+        { pattern: '%에르메스%트윌리%', price: '225000' },
+        { pattern: '%루이비통%머플러%', price: '245000' },
+        { pattern: '%루이비통%스카프%', price: '240000' },
+        { pattern: '%디올%머플러%', price: '230000' },
+        { pattern: '%디올%스카프%', price: '230000' },
+        { pattern: '%구찌%머플러%', price: '257000' },
+        { pattern: '%구찌%스카프%', price: '240000' },
+        { pattern: '%펜디%머플러%', price: '230000' },
+        { pattern: '%셀린느%머플러%', price: '240000' },
+        { pattern: '%발렌시아가%머플러%', price: '230000' },
+        { pattern: '%로에베%머플러%', price: '245000' },
+        { pattern: '%막스마라%머플러%', price: '220000' },
+        { pattern: '%아크네%머플러%', price: '220000' },
+        { pattern: '%미차%', price: '215000' },
+        
+        // 벨트 (Belts) - 180,000~250,000
+        { pattern: '%에르메스%벨트%', price: '223000' },
+        { pattern: '%구찌%벨트%', price: '195000' },
+        { pattern: '%루이비통%벨트%', price: '210000' },
+        { pattern: '%디올%벨트%', price: '200000' },
+        { pattern: '%페레가모%벨트%', price: '185000' },
+        { pattern: '%버버리%벨트%', price: '190000' },
+        { pattern: '%보테가%벨트%', price: '210000' },
+        
+        // 귀걸이 (Earrings) - 70,000~250,000
         { pattern: '%에르메스 팝아슈 귀걸이%', price: '97000' },
         { pattern: '%에르메스 H 귀걸이%', price: '78000' },
-        { pattern: '%에르메스 팝아슈 목걸이%', price: '140000' },
-        { pattern: '%에르메스 미니 팝아슈 목걸이%', price: '140000' },
-        { pattern: '%에르메스 포커스 벨트%', price: '90000' },
-        { pattern: '%샤넬 제니 머플러%', price: '250000' },
+        { pattern: '%에르메스%귀걸이%', price: '150000' },
+        { pattern: '%샤넬%귀걸이%', price: '178000' },
+        { pattern: '%디올%귀걸이%', price: '188000' },
+        { pattern: '%구찌%귀걸이%', price: '165000' },
+        { pattern: '%미우미우%귀걸이%', price: '205000' },
+        { pattern: '%티파니%귀걸이%', price: '150000' },
+        { pattern: '%불가리%귀걸이%', price: '180000' },
+        { pattern: '%까르띠에%귀걸이%', price: '130000' },
+        { pattern: '%반클리프%귀걸이%', price: '137000' },
+        { pattern: '%셀린느%귀걸이%', price: '170000' },
+        
+        // 목걸이 (Necklaces) - 140,000~350,000
+        { pattern: '%에르메스%목걸이%', price: '140000' },
+        { pattern: '%샤넬%목걸이%', price: '250000' },
+        { pattern: '%디올%목걸이%', price: '230000' },
+        { pattern: '%구찌%목걸이%', price: '207000' },
+        { pattern: '%티파니%목걸이%', price: '155000' },
+        { pattern: '%불가리%목걸이%', price: '246000' },
+        { pattern: '%까르띠에%목걸이%', price: '180000' },
+        { pattern: '%반클리프%목걸이%', price: '278000' },
+        { pattern: '%셀린느%목걸이%', price: '203000' },
+        { pattern: '%루이비통%목걸이%', price: '220000' },
+        { pattern: '%크롬하츠%목걸이%', price: '150000' },
+        
+        // 팔찌/브레이슬릿 (Bracelets) - 150,000~250,000
         { pattern: '%티파니%팔찌%', price: '225000' },
+        { pattern: '%까르띠에%팔찌%', price: '144700' },
+        { pattern: '%까르띠에%브레이슬릿%', price: '144700' },
+        { pattern: '%에르메스%팔찌%', price: '200000' },
+        { pattern: '%에르메스%브레이슬릿%', price: '200000' },
+        { pattern: '%불가리%팔찌%', price: '238000' },
+        { pattern: '%불가리%브레이슬릿%', price: '238000' },
+        { pattern: '%샤넬%팔찌%', price: '180000' },
+        { pattern: '%디올%팔찌%', price: '175000' },
+        { pattern: '%구찌%팔찌%', price: '193000' },
+        { pattern: '%구찌%브레이슬릿%', price: '193000' },
+        { pattern: '%반클리프%팔찌%', price: '207000' },
+        { pattern: '%루이비통%팔찌%', price: '117000' },
+        { pattern: '%크롬하츠%팔찌%', price: '150000' },
+        
+        // 반지 (Rings) - 100,000~200,000
+        { pattern: '%티파니%반지%', price: '203000' },
+        { pattern: '%까르띠에%반지%', price: '180000' },
+        { pattern: '%불가리%반지%', price: '156000' },
+        { pattern: '%샤넬%반지%', price: '160000' },
+        { pattern: '%디올%반지%', price: '150000' },
+        { pattern: '%구찌%반지%', price: '140000' },
+        { pattern: '%에르메스%반지%', price: '105400' },
+        
+        // 모자 (Hats) - 155,000~220,000
+        { pattern: '%버킷햇%', price: '200000' },
+        { pattern: '%볼캡%', price: '155000' },
+        { pattern: '%비니%', price: '180000' },
+        { pattern: '%베레모%', price: '175000' },
+        
+        // 키링 (Keyrings) - 160,000~200,000
+        { pattern: '%키링%', price: '175000' },
+        
+        // 헤어악세사리 - 130,000~180,000
+        { pattern: '%헤어핀%', price: '135000' },
+        { pattern: '%머리띠%', price: '150000' },
+        { pattern: '%헤어밴드%', price: '150000' },
+        
+        // 브로치 - 150,000~250,000
+        { pattern: '%브로치%', price: '200000' },
+        
+        // 안경/선글라스 - 180,000~280,000
+        { pattern: '%안경%', price: '200000' },
+        { pattern: '%선글라스%', price: '220000' },
+        
+        // 넥타이 - 150,000~200,000
+        { pattern: '%넥타이%', price: '175000' },
+        
+        // 시계줄/스트랩 - 100,000~150,000
+        { pattern: '%시계줄%', price: '120000' },
+        { pattern: '%스트랩%', price: '120000' },
       ];
       
-      // Execute batch updates using storage's batch update method
-      for (const update of priceUpdateQueries) {
-        const count = await storage.batchUpdateAccessoryPrices(update.pattern, update.price);
+      // Execute all price updates using batch SQL
+      for (const rule of priceRules) {
+        const count = await storage.batchUpdateAccessoryPrices(rule.pattern, rule.price);
         updatedCount += count;
       }
       
-      // Also fix high prices by dividing them
+      // Fix remaining products with unrealistic high prices
       const highPriceCount = await storage.fixHighAccessoryPrices();
       updatedCount += highPriceCount;
+      
+      console.log(`Accessory price sync complete: ${updatedCount} products updated`);
       
       res.json({ 
         success: true, 
