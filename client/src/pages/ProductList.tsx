@@ -250,6 +250,36 @@ export default function ProductList() {
           </p>
         </div>
 
+        <div className="lg:hidden mb-4">
+          <div className="flex flex-wrap gap-1.5 border-b pb-3">
+            <Link 
+              href="/products"
+              className={cn(
+                "px-2.5 py-1.5 text-xs rounded-full border transition-colors",
+                !categorySlug || categorySlug === "all" 
+                  ? "bg-black text-white border-black" 
+                  : "bg-white text-gray-600 border-gray-300 hover:border-black"
+              )}
+            >
+              전체
+            </Link>
+            {CATEGORIES.map(cat => (
+              <Link 
+                key={cat.slug}
+                href={`/products/${cat.slug}`}
+                className={cn(
+                  "px-2.5 py-1.5 text-xs rounded-full border transition-colors",
+                  categorySlug === cat.slug 
+                    ? "bg-black text-white border-black" 
+                    : "bg-white text-gray-600 border-gray-300 hover:border-black"
+                )}
+              >
+                {cat.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+
         <div className="flex gap-8">
           <aside className="hidden lg:block w-48 flex-shrink-0">
             <FilterSidebar />
@@ -258,20 +288,6 @@ export default function ProductList() {
           <div className="flex-1">
             <div className="flex items-center justify-between mb-6 pb-4 border-b">
               <div className="flex items-center gap-4">
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="lg:hidden flex items-center gap-2">
-                      <Filter className="w-4 h-4" />
-                      필터
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="w-[280px]">
-                    <div className="mt-6">
-                      <FilterSidebar />
-                    </div>
-                  </SheetContent>
-                </Sheet>
-                
                 <span className="text-sm text-gray-500">
                   총 <span className="font-bold text-black" data-testid="text-product-count">{total.toLocaleString()}</span>개
                   {totalPages > 1 && (
