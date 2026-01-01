@@ -24,6 +24,32 @@ const CATEGORIES = [
   { id: "genuine", name: "정품", slug: "genuine" },
 ];
 
+const extractBrandFromName = (name: string): string => {
+  const brandKeywords = [
+    "페레가모", "마르니", "마놀로블라닉", "마놀로 블라닉", "어그", "마린세르",
+    "지미추", "지미 추", "티파니", "반클리프", "불가리", "크롬하츠", "베르사체",
+    "발렌티노", "톰포드", "막스마라", "아크네", "스튜디오", "아미", "메종키츠네",
+    "골든구스", "꼼데가르송", "이자벨마랑", "알렉산더맥퀸", "알렉산더 맥퀸",
+    "자크뮈스", "보테가", "끌로에", "클로에", "지방시", "오프화이트", "릭오웬스",
+    "베트멍", "마르지엘라", "메종마르지엘라", "아미리", "팜엔젤스", "스톤아일랜드",
+    "무스너클", "캐나다구스", "파라점퍼스", "듀베티카", "타티아스", "헤르노",
+    "막스마라", "아크네스튜디오", "톰브라운", "살로몬", "뉴발란스", "아디다스", "나이키"
+  ];
+  
+  for (const brand of brandKeywords) {
+    if (name.toLowerCase().includes(brand.toLowerCase())) {
+      return brand.toUpperCase();
+    }
+  }
+  
+  const firstWord = name.split(' ')[0];
+  if (firstWord && firstWord.length >= 2 && firstWord.length <= 10) {
+    return firstWord.toUpperCase();
+  }
+  
+  return "";
+};
+
 type SortOption = "newest" | "price_asc" | "price_desc" | "popular";
 
 export default function ProductList() {
@@ -437,8 +463,8 @@ export default function ProductList() {
                     <div className={cn(
                       viewMode === "grid" ? "p-3" : "flex-1 flex flex-col justify-center"
                     )}>
-                      <p className="text-xs text-gray-400 mb-1 uppercase">
-                        {brands.find(b => b.id === product.brandId)?.name || "BRAND"}
+                      <p className="text-[11px] md:text-xs text-gray-500 mb-1 font-medium tracking-wide">
+                        {brands.find(b => b.id === product.brandId)?.name?.toUpperCase() || extractBrandFromName(product.name)}
                       </p>
                       <h3 className={cn(
                         "font-medium text-sm mb-2 group-hover:text-gray-600 transition-colors",
