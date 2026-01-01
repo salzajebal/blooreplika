@@ -2932,6 +2932,13 @@ export default function Admin() {
                         <div className="text-sm text-gray-600">
                           <p><strong>상품:</strong> {order.productName}</p>
                           <p><strong>수량:</strong> {order.quantity}개 | <strong>총액:</strong> {Number(order.totalAmount).toLocaleString()}원</p>
+                          {(order.selectedSize || order.selectedColor) && (
+                            <p>
+                              {order.selectedSize && <><strong>사이즈:</strong> {order.selectedSize}</>}
+                              {order.selectedSize && order.selectedColor && " | "}
+                              {order.selectedColor && <><strong>색상:</strong> {order.selectedColor}</>}
+                            </p>
+                          )}
                         </div>
                         <div className="text-sm text-gray-600">
                           <p><strong>주문자:</strong> {order.memberName} ({order.memberEmail})</p>

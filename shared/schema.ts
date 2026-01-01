@@ -188,6 +188,8 @@ export const orders = pgTable("orders", {
   productName: text("product_name"),
   productPrice: integer("product_price"),
   quantity: integer("quantity").default(1),
+  selectedSize: text("selected_size"),
+  selectedColor: text("selected_color"),
   totalAmount: integer("total_amount").notNull(),
   discountAmount: integer("discount_amount").default(0),
   shippingFee: integer("shipping_fee").default(0),

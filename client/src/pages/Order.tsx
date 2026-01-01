@@ -53,6 +53,8 @@ export default function Order() {
     shippingAddressDetail: "",
     shippingMemo: "",
     sameAsOrderer: true,
+    selectedSize: "",
+    selectedColor: "",
   });
 
   useEffect(() => {
@@ -166,6 +168,8 @@ export default function Order() {
           productName: product.name,
           productPrice: product.price,
           quantity,
+          selectedSize: formData.selectedSize || null,
+          selectedColor: formData.selectedColor || null,
           totalAmount: product.price * quantity,
           paymentMethod: paymentMethod || undefined,
           couponPayment: paymentMethod === "coupon" && couponPaymentData ? couponPaymentData : undefined,
@@ -333,6 +337,31 @@ export default function Order() {
                     <span className="text-sm text-gray-500">수량: {quantity}개</span>
                     <span className="font-bold text-primary text-lg">{calculateTotal()}원</span>
                   </div>
+                </div>
+              </div>
+              
+              <div className="grid gap-4 sm:grid-cols-2 mt-4 pt-4 border-t">
+                <div>
+                  <Label htmlFor="selectedSize">사이즈 (선택)</Label>
+                  <Input
+                    id="selectedSize"
+                    name="selectedSize"
+                    value={formData.selectedSize}
+                    onChange={handleInputChange}
+                    placeholder="예: M, L, XL, 260, 270 등"
+                    data-testid="input-selected-size"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="selectedColor">색상 (선택)</Label>
+                  <Input
+                    id="selectedColor"
+                    name="selectedColor"
+                    value={formData.selectedColor}
+                    onChange={handleInputChange}
+                    placeholder="예: 블랙, 화이트, 네이비 등"
+                    data-testid="input-selected-color"
+                  />
                 </div>
               </div>
             </div>
