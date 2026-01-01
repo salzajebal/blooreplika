@@ -2654,5 +2654,79 @@ export async function registerRoutes(
     }
   });
 
+  // Sync accessory prices to match original cdamdong.co.kr
+  app.post("/api/admin/sync-accessory-prices", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const products = await storage.getAllProducts();
+      const accessoryProducts = products.filter(p => p.categoryId === 'accessories');
+      let updatedCount = 0;
+      
+      const priceUpdates: { pattern: string; price: string; exact?: boolean }[] = [
+        { pattern: '티파니 T와이어 팔찌 (컬러 화이트골드)', price: '225000', exact: true },
+        { pattern: '티파니 T와이어 팔찌 (옐로우골드)', price: '225000', exact: true },
+        { pattern: '샤넬 울 머플러 24a', price: '257000' },
+        { pattern: '버버리 캐시미어 체크 머플러', price: '209000' },
+        { pattern: '에르메스 스카프', price: '253000' },
+        { pattern: '펜디 울 캐시미어 머플러', price: '230000' },
+        { pattern: '루이비통 플로럴 스카프', price: '240000' },
+        { pattern: '루이비통 캐시미어 그라데이션 모노그램 머플러', price: '274000' },
+        { pattern: '루이비통 울 모노그램 머플러', price: '245000' },
+        { pattern: '디올 울 캐시미어 오블리크 자카드 머플러', price: '230000' },
+        { pattern: '디올 오블리크 100% 캐시미어 머플러', price: '257000' },
+        { pattern: '구찌 자카드 머플러', price: '257000' },
+        { pattern: '디올 버킷햇', price: '200000' },
+        { pattern: '샤넬 CC 캐시미어 머플러', price: '257000' },
+        { pattern: '셀린느 트리오페 머플러', price: '240000' },
+        { pattern: '샤넬 스카프', price: '253000' },
+        { pattern: '샤넬 22b cc로고 리버시블 퀼팅 머플러', price: '230000' },
+        { pattern: '에르메스 실크 트윌리', price: '225000' },
+        { pattern: '에르메스 실크 스카프', price: '330000' },
+        { pattern: '에르메스 벨트', price: '223000' },
+        { pattern: '에르메스 팝아슈 귀걸이', price: '97000' },
+        { pattern: '에르메스 H 귀걸이', price: '78000' },
+        { pattern: '에르메스 팝아슈 목걸이', price: '140000' },
+        { pattern: '에르메스 미니 팝아슈 목걸이', price: '140000' },
+        { pattern: '에르메스 포커스 벨트', price: '90000' },
+        { pattern: '샤넬 제니 머플러', price: '250000' },
+      ];
+      
+      for (const product of accessoryProducts) {
+        let newPrice: string | null = null;
+        
+        for (const update of priceUpdates) {
+          if (product.name.includes(update.pattern)) {
+            newPrice = update.price;
+            break;
+          }
+        }
+        
+        // For items with very high prices, divide by appropriate factor
+        if (!newPrice && product.price) {
+          const currentPrice = parseInt(product.price);
+          if (currentPrice > 5000000) {
+            newPrice = Math.floor(currentPrice / 100).toString();
+          } else if (currentPrice > 1500000) {
+            newPrice = Math.floor(currentPrice / 10).toString();
+          }
+        }
+        
+        if (newPrice && newPrice !== product.price) {
+          await storage.updateProduct(product.id, { price: newPrice });
+          updatedCount++;
+        }
+      }
+      
+      res.json({ 
+        success: true, 
+        message: `${updatedCount}개 악세사리 상품 가격이 업데이트되었습니다.`,
+        totalAccessories: accessoryProducts.length,
+        updated: updatedCount
+      });
+    } catch (error: any) {
+      console.error("Error syncing accessory prices:", error);
+      res.status(500).json({ success: false, error: error.message || "가격 동기화 중 오류가 발생했습니다." });
+    }
+  });
+
   return httpServer;
 }

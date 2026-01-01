@@ -1026,6 +1026,23 @@ export default function Admin() {
     }
   };
 
+  const handleSyncAccessoryPrices = async () => {
+    try {
+      toast({ title: "동기화 중...", description: "악세사리 가격을 원본 사이트와 동기화하고 있습니다." });
+      const res = await fetchWithAuth("/api/admin/sync-accessory-prices", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: data.message });
+        fetchProducts();
+        fetchStats();
+      } else {
+        toast({ title: "오류", description: data.error || "가격 동기화에 실패했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "가격 동기화에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
   const handleCreate = async () => {
     try {
       const res = await fetchWithAuth("/api/products", {
@@ -1865,6 +1882,10 @@ export default function Admin() {
                 <Button onClick={handleSeedData} variant="outline">
                   <Database className="w-4 h-4 mr-2" />
                   샘플 데이터 생성
+                </Button>
+                <Button onClick={handleSyncAccessoryPrices} variant="outline" className="border-orange-300 text-orange-600 hover:bg-orange-50">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  악세사리 가격 동기화
                 </Button>
               </div>
             </div>
