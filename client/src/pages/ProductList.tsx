@@ -168,10 +168,28 @@ export default function ProductList() {
     return pages;
   };
 
+  const brandsWithProducts = useMemo(() => {
+    const brandIdsInProducts = new Set<string>();
+    const brandNamesInProducts = new Set<string>();
+    
+    products.forEach(p => {
+      if (p.brandId) {
+        brandIdsInProducts.add(p.brandId);
+      }
+      const extractedBrand = extractBrandFromName(p.name);
+      if (extractedBrand) {
+        brandNamesInProducts.add(extractedBrand.toLowerCase());
+      }
+    });
+    
+    return brands.filter(brand => 
+      brandIdsInProducts.has(brand.id) || 
+      brandNamesInProducts.has(brand.name?.toLowerCase())
+    );
+  }, [products, brands]);
+
   const filteredProducts = useMemo(() => {
     let result = [...products];
-    
-    // Category filtering is now done on the API level
     
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -182,7 +200,16 @@ export default function ProductList() {
     }
     
     if (selectedBrand) {
-      result = result.filter(p => p.brandId === selectedBrand);
+      const selectedBrandData = brands.find(b => b.id === selectedBrand);
+      const brandName = selectedBrandData?.name?.toLowerCase() || '';
+      
+      result = result.filter(p => {
+        if (p.brandId === selectedBrand) return true;
+        const extractedBrand = extractBrandFromName(p.name).toLowerCase();
+        if (extractedBrand && brandName && extractedBrand.includes(brandName)) return true;
+        if (brandName && p.name.toLowerCase().includes(brandName)) return true;
+        return false;
+      });
     }
     
     switch (sortBy) {
@@ -201,7 +228,7 @@ export default function ProductList() {
     }
     
     return result;
-  }, [products, searchQuery, selectedBrand, sortBy]);
+  }, [products, searchQuery, selectedBrand, sortBy, brands]);
 
   const FilterSidebar = () => (
     <div className="space-y-6">
@@ -229,7 +256,7 @@ export default function ProductList() {
         </ul>
       </div>
       
-      {brands.length > 0 && (
+      {brandsWithProducts.length > 0 && (
         <div>
           <h3 className="font-bold text-sm mb-3">브랜드</h3>
           <ul className="space-y-2">
@@ -241,7 +268,7 @@ export default function ProductList() {
                 전체
               </button>
             </li>
-            {brands.map(brand => (
+            {brandsWithProducts.map(brand => (
               <li key={brand.id}>
                 <button 
                   onClick={() => setSelectedBrand(brand.id)}
@@ -305,7 +332,7 @@ export default function ProductList() {
             ))}
           </div>
           
-          {brands.length > 0 && (
+          {brandsWithProducts.length > 0 && (
             <div className="mt-3">
               <p className="text-[10px] text-gray-500 mb-2 font-medium">브랜드</p>
               <div className="flex flex-wrap gap-1.5">
@@ -320,7 +347,7 @@ export default function ProductList() {
                 >
                   전체
                 </button>
-                {brands.slice(0, 20).map(brand => (
+                {brandsWithProducts.slice(0, 20).map(brand => (
                   <button 
                     key={brand.id}
                     onClick={() => setSelectedBrand(brand.id)}
