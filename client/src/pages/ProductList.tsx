@@ -286,6 +286,34 @@ export default function ProductList() {
           </aside>
 
           <div className="flex-1">
+            <div className="hidden lg:flex flex-wrap gap-1.5 mb-4">
+              <Link 
+                href="/products"
+                className={cn(
+                  "px-3 py-1.5 text-xs rounded-full border transition-colors",
+                  !categorySlug || categorySlug === "all" 
+                    ? "bg-black text-white border-black" 
+                    : "bg-white text-gray-600 border-gray-300 hover:border-black"
+                )}
+              >
+                전체
+              </Link>
+              {CATEGORIES.map(cat => (
+                <Link 
+                  key={cat.slug}
+                  href={`/products/${cat.slug}`}
+                  className={cn(
+                    "px-3 py-1.5 text-xs rounded-full border transition-colors",
+                    categorySlug === cat.slug 
+                      ? "bg-black text-white border-black" 
+                      : "bg-white text-gray-600 border-gray-300 hover:border-black"
+                  )}
+                >
+                  {cat.name}
+                </Link>
+              ))}
+            </div>
+
             <div className="flex items-center justify-between mb-6 pb-4 border-b">
               <div className="flex items-center gap-4">
                 <span className="text-sm text-gray-500">
