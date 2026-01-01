@@ -214,6 +214,10 @@ export interface IStorage {
   getSiteSetting(key: string): Promise<SiteSetting | undefined>;
   getAllSiteSettings(): Promise<SiteSetting[]>;
   setSiteSetting(key: string, value: string, description?: string): Promise<SiteSetting>;
+  
+  // Batch Price Updates
+  batchUpdateAccessoryPrices(pattern: string, price: string): Promise<number>;
+  fixHighAccessoryPrices(): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1050,6 +1054,37 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return setting;
     }
+  }
+
+  // Batch Price Updates - using direct SQL for speed
+  async batchUpdateAccessoryPrices(pattern: string, price: string): Promise<number> {
+    const result = await db.execute(sql`
+      UPDATE products 
+      SET price = ${price}
+      WHERE category_id = 'accessories' 
+      AND name LIKE ${pattern}
+    `);
+    return Number(result.rowCount) || 0;
+  }
+
+  async fixHighAccessoryPrices(): Promise<number> {
+    // Fix prices over 5 million by dividing by 100
+    const result1 = await db.execute(sql`
+      UPDATE products 
+      SET price = (CAST(price AS INTEGER) / 100)::TEXT
+      WHERE category_id = 'accessories' 
+      AND CAST(price AS INTEGER) > 5000000
+    `);
+    
+    // Fix prices over 1.5 million by dividing by 10
+    const result2 = await db.execute(sql`
+      UPDATE products 
+      SET price = (CAST(price AS INTEGER) / 10)::TEXT
+      WHERE category_id = 'accessories' 
+      AND CAST(price AS INTEGER) > 1500000
+    `);
+    
+    return (Number(result1.rowCount) || 0) + (Number(result2.rowCount) || 0);
   }
 }
 
