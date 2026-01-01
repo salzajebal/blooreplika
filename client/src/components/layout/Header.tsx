@@ -313,17 +313,17 @@ export function Header() {
         </div>
       </nav>
 
-      <nav className="md:hidden bg-white border-b border-gray-200 overflow-x-auto">
-        <div className="flex items-center px-2 py-2 gap-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <nav className="md:hidden bg-white border-b border-gray-200">
+        <div className="flex flex-wrap items-center justify-center px-2 py-2 gap-x-1 gap-y-1">
           {mainNavItems.map((item, index) => (
             <Link 
               key={item.name}
               href={item.path} 
-              className={`px-2 py-1.5 text-xs text-gray-600 hover:text-black transition-colors whitespace-nowrap flex-shrink-0 ${location === item.path ? 'text-black font-medium' : ''}`}
+              className={`px-1.5 py-1 text-[10px] text-gray-600 hover:text-black transition-colors whitespace-nowrap ${location === item.path ? 'text-black font-medium' : ''}`}
               data-testid={`nav-mobile-${item.name}`}
             >
               {item.name}
-              {index < mainNavItems.length - 1 && <span className="ml-2 text-gray-300">|</span>}
+              {index < mainNavItems.length - 1 && <span className="ml-1 text-gray-300">|</span>}
             </Link>
           ))}
         </div>
