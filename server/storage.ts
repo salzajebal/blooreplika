@@ -218,6 +218,7 @@ export interface IStorage {
   // Batch Price Updates
   batchUpdateAccessoryPrices(pattern: string, price: string): Promise<number>;
   fixHighAccessoryPrices(): Promise<number>;
+  setDefaultAccessoryPrices(defaultPrice: string): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1085,6 +1086,24 @@ export class DatabaseStorage implements IStorage {
     `);
     
     return (Number(result1.rowCount) || 0) + (Number(result2.rowCount) || 0);
+  }
+
+  async setDefaultAccessoryPrices(defaultPrice: string): Promise<number> {
+    // Set default price for any accessories that still have unreasonable prices
+    // (either 0, empty, or prices outside a reasonable range like 50K-500K)
+    const result = await db.execute(sql`
+      UPDATE products 
+      SET price = ${defaultPrice}
+      WHERE category_id = 'accessories' 
+      AND (
+        price IS NULL 
+        OR price = '' 
+        OR price = '0'
+        OR CAST(NULLIF(price, '') AS INTEGER) < 50000
+        OR CAST(NULLIF(price, '') AS INTEGER) > 500000
+      )
+    `);
+    return Number(result.rowCount) || 0;
   }
 }
 
