@@ -3013,6 +3013,130 @@ export async function registerRoutes(
     }
   });
 
+  // Crawl reviews from source site
+  app.post("/api/admin/crawl-reviews", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { startPage = 1, endPage = 10, batchSize = 10 } = req.body;
+      console.log(`Starting review crawl from page ${startPage} to ${endPage}...`);
+      
+      let totalCrawled = 0;
+      let totalInserted = 0;
+      const errors: string[] = [];
+      
+      for (let page = startPage; page <= endPage; page += batchSize) {
+        const endBatch = Math.min(page + batchSize - 1, endPage);
+        console.log(`Crawling pages ${page} to ${endBatch}...`);
+        
+        for (let p = page; p <= endBatch; p++) {
+          try {
+            const url = `https://cdamdong.co.kr/shop/itemuselist.php?page=${p}`;
+            const response = await fetch(url);
+            if (!response.ok) {
+              errors.push(`Page ${p}: HTTP ${response.status}`);
+              continue;
+            }
+            
+            const html = await response.text();
+            const $ = cheerio.load(html);
+            
+            // Parse each review item
+            $('.suse_itemuse_list ol li').each((_, el) => {
+              try {
+                const $el = $(el);
+                
+                // Extract product info from the link
+                const productLink = $el.find('a').first();
+                const productName = productLink.text().trim() || '';
+                const productUrl = productLink.attr('href') || '';
+                
+                // Extract title from h2
+                const title = $el.find('h2').text().trim() || '';
+                
+                // Extract author
+                const authorText = $el.find('dl dd').filter((_, dd) => $(dd).prev('dt').text().includes('작성자')).text().trim();
+                const authorName = authorText || '익명';
+                
+                // Extract date
+                const dateText = $el.find('dl dd').filter((_, dd) => $(dd).prev('dt').text().includes('작성일')).text().trim();
+                
+                // Extract rating (count star images)
+                const starImg = $el.find('img[src*="star"]').attr('src') || '';
+                let rating = 5;
+                const starMatch = starImg.match(/star(\d)/);
+                if (starMatch) {
+                  rating = parseInt(starMatch[1]);
+                }
+                
+                // Extract content
+                const content = $el.find('.suse_txt').text().trim() || title;
+                
+                // Extract images
+                const imageUrls: string[] = [];
+                $el.find('img').each((_, img) => {
+                  const src = $(img).attr('src');
+                  if (src && !src.includes('star') && !src.includes('icon')) {
+                    // Convert relative URLs to absolute
+                    const fullUrl = src.startsWith('http') ? src : `https://cdamdong.co.kr${src.startsWith('/') ? '' : '/'}${src}`;
+                    imageUrls.push(fullUrl);
+                  }
+                });
+                
+                // Parse date
+                let displayDate = new Date();
+                if (dateText) {
+                  const dateParts = dateText.match(/(\d{4})-(\d{2})-(\d{2})/);
+                  if (dateParts) {
+                    displayDate = new Date(`${dateParts[1]}-${dateParts[2]}-${dateParts[3]}`);
+                  }
+                }
+                
+                if (title || content) {
+                  // Insert into database
+                  storage.createReview({
+                    authorName,
+                    productName,
+                    rating,
+                    title,
+                    content,
+                    imageUrls,
+                    isVisible: true,
+                    isBest: false,
+                    displayDate,
+                  });
+                  totalInserted++;
+                }
+                
+                totalCrawled++;
+              } catch (itemError) {
+                console.error('Error parsing review item:', itemError);
+              }
+            });
+            
+          } catch (pageError: any) {
+            console.error(`Error crawling page ${p}:`, pageError);
+            errors.push(`Page ${p}: ${pageError.message}`);
+          }
+        }
+        
+        // Small delay between batches to avoid overwhelming the server
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      console.log(`Review crawl complete: ${totalCrawled} reviews processed, ${totalInserted} inserted`);
+      
+      res.json({ 
+        success: true, 
+        message: `${totalInserted}개 리뷰가 크롤링되었습니다.`,
+        totalCrawled,
+        totalInserted,
+        errors: errors.length > 0 ? errors.slice(0, 10) : undefined
+      });
+    } catch (error: any) {
+      console.error("Error crawling reviews:", error);
+      res.status(500).json({ success: false, error: error.message || "리뷰 크롤링 중 오류가 발생했습니다." });
+    }
+  });
+
   // Sync shoe prices
   app.post("/api/admin/sync-shoe-prices", requireAdminAuth, async (_req: Request, res: Response) => {
     try {

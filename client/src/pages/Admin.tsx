@@ -303,27 +303,70 @@ export default function Admin() {
 
   const [reviewCrawlLoading, setReviewCrawlLoading] = useState(false);
   const [noticeCrawlLoading, setNoticeCrawlLoading] = useState(false);
+  const [reviewCrawlStartPage, setReviewCrawlStartPage] = useState(1);
+  const [reviewCrawlEndPage, setReviewCrawlEndPage] = useState(100);
+  const [reviewCrawlProgress, setReviewCrawlProgress] = useState("");
 
-  const crawlReviews = async () => {
+  const crawlReviews = async (startPage = 1, endPage = 100) => {
     setReviewCrawlLoading(true);
+    setReviewCrawlProgress(`페이지 ${startPage}~${endPage} 크롤링 중...`);
     try {
-      const res = await fetchWithAuth("/api/admin/crawl/reviews", {
+      const res = await fetchWithAuth("/api/admin/crawl-reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ maxPages: 10 }),
+        body: JSON.stringify({ startPage, endPage, batchSize: 20 }),
       });
       const data = await res.json();
       if (data.success) {
         toast({ title: "후기 크롤링 완료", description: data.message });
+        setReviewCrawlProgress(`완료: ${data.totalInserted}개 리뷰 추가됨`);
         fetchReviews();
       } else {
         toast({ title: "오류", description: data.error, variant: "destructive" });
+        setReviewCrawlProgress("");
       }
     } catch (error) {
       toast({ title: "오류", description: "후기 크롤링에 실패했습니다.", variant: "destructive" });
+      setReviewCrawlProgress("");
     } finally {
       setReviewCrawlLoading(false);
     }
+  };
+
+  const crawlAllReviews = async () => {
+    if (!confirm("전체 18,000개 이상의 리뷰를 크롤링합니다. 시간이 오래 걸릴 수 있습니다. 계속하시겠습니까?")) return;
+    
+    setReviewCrawlLoading(true);
+    const totalPages = 950; // ~18,000 reviews / ~20 per page
+    const batchSize = 50;
+    let totalInserted = 0;
+    
+    for (let startPage = 1; startPage <= totalPages; startPage += batchSize) {
+      const endPage = Math.min(startPage + batchSize - 1, totalPages);
+      setReviewCrawlProgress(`페이지 ${startPage}~${endPage} / ${totalPages} 크롤링 중... (${totalInserted}개 추가됨)`);
+      
+      try {
+        const res = await fetchWithAuth("/api/admin/crawl-reviews", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ startPage, endPage, batchSize: 10 }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          totalInserted += data.totalInserted || 0;
+        }
+      } catch (error) {
+        console.error(`Error crawling pages ${startPage}-${endPage}:`, error);
+      }
+      
+      // Small delay between batches
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
+    setReviewCrawlProgress(`완료: 총 ${totalInserted}개 리뷰 추가됨`);
+    toast({ title: "전체 크롤링 완료", description: `${totalInserted}개 리뷰가 추가되었습니다.` });
+    fetchReviews();
+    setReviewCrawlLoading(false);
   };
 
   const crawlNotices = async () => {
@@ -4413,26 +4456,82 @@ export default function Admin() {
                 </div>
 
                 <div className="border-t border-gray-200 pt-4">
-                  <h4 className="font-semibold text-gray-800 mb-3">후기 & 공지사항 크롤링</h4>
+                  <h4 className="font-semibold text-gray-800 mb-3">후기 대량 크롤링 (cdamdong.co.kr)</h4>
+                  
+                  {reviewCrawlProgress && (
+                    <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-2 text-blue-700">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm font-medium">{reviewCrawlProgress}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">시작 페이지</label>
+                      <Input
+                        type="number"
+                        value={reviewCrawlStartPage}
+                        onChange={(e) => setReviewCrawlStartPage(Number(e.target.value))}
+                        min={1}
+                        max={1000}
+                        disabled={reviewCrawlLoading}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">끝 페이지</label>
+                      <Input
+                        type="number"
+                        value={reviewCrawlEndPage}
+                        onChange={(e) => setReviewCrawlEndPage(Number(e.target.value))}
+                        min={1}
+                        max={1000}
+                        disabled={reviewCrawlLoading}
+                      />
+                    </div>
+                  </div>
+                  
                   <div className="flex gap-3 mb-4">
                     <Button
-                      data-testid="button-crawl-reviews"
-                      onClick={crawlReviews}
+                      data-testid="button-crawl-reviews-range"
+                      onClick={() => crawlReviews(reviewCrawlStartPage, reviewCrawlEndPage)}
                       disabled={reviewCrawlLoading}
                       className="bg-green-500 hover:bg-green-600 text-white flex-1"
                     >
                       {reviewCrawlLoading ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          후기 크롤링 중...
+                          크롤링 중...
                         </>
                       ) : (
                         <>
                           <Star className="w-4 h-4 mr-2" />
-                          후기 크롤링
+                          범위 크롤링 ({reviewCrawlEndPage - reviewCrawlStartPage + 1}페이지)
                         </>
                       )}
                     </Button>
+                    <Button
+                      data-testid="button-crawl-all-reviews"
+                      onClick={crawlAllReviews}
+                      disabled={reviewCrawlLoading}
+                      className="bg-purple-500 hover:bg-purple-600 text-white flex-1"
+                    >
+                      {reviewCrawlLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          전체 크롤링 중...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4 mr-2" />
+                          전체 크롤링 (18,000+개)
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  
+                  <div className="flex gap-3 mb-4">
                     <Button
                       data-testid="button-crawl-notices"
                       onClick={crawlNotices}
