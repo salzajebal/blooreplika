@@ -228,15 +228,27 @@ function ReviewImageGallery({ images, title }: { images: string[]; title: string
   );
 }
 
+const REVIEWS_PER_PAGE = 12;
+
 export default function Reviews() {
-  const { data: reviews = [], isLoading } = useQuery<Review[]>({
-    queryKey: ["reviews"],
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  const { data: reviewsData, isLoading } = useQuery<{ reviews: Review[]; total: number }>({
+    queryKey: ["reviews", currentPage],
     queryFn: async () => {
-      const res = await fetch("/api/reviews?limit=100");
+      const offset = (currentPage - 1) * REVIEWS_PER_PAGE;
+      const res = await fetch(`/api/reviews?limit=${REVIEWS_PER_PAGE}&offset=${offset}`);
       const data = await res.json();
-      return data.success ? data.data : [];
+      return {
+        reviews: data.success ? data.data : [],
+        total: data.total || 0
+      };
     },
   });
+
+  const reviews = reviewsData?.reviews || [];
+  const totalReviews = reviewsData?.total || 0;
+  const totalPages = Math.ceil(totalReviews / REVIEWS_PER_PAGE);
 
   const getDisplayImages = (review: Review): string[] => {
     let images: string[] = [];
@@ -245,8 +257,75 @@ export default function Reviews() {
     } else if (review.imageUrl) {
       images = [review.imageUrl];
     }
-    // Filter out problematic URLs
     return filterValidImageUrls(images);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    const pages: (number | string)[] = [];
+    const maxVisible = 5;
+    
+    if (totalPages <= maxVisible + 2) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (currentPage > 3) pages.push('...');
+      
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      
+      for (let i = start; i <= end; i++) pages.push(i);
+      
+      if (currentPage < totalPages - 2) pages.push('...');
+      pages.push(totalPages);
+    }
+
+    return (
+      <div className="flex items-center justify-center gap-1 sm:gap-2 mt-8 flex-wrap">
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          data-testid="button-prev-page"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        
+        {pages.map((page, idx) => (
+          page === '...' ? (
+            <span key={`ellipsis-${idx}`} className="px-2 text-gray-400">...</span>
+          ) : (
+            <button
+              key={page}
+              onClick={() => handlePageChange(page as number)}
+              className={`min-w-[40px] px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                currentPage === page
+                  ? 'bg-black text-white'
+                  : 'border border-gray-300 hover:bg-gray-100'
+              }`}
+              data-testid={`button-page-${page}`}
+            >
+              {page}
+            </button>
+          )
+        ))}
+        
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          data-testid="button-next-page"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+    );
   };
 
   return (
@@ -266,7 +345,10 @@ export default function Reviews() {
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">고객 후기</h1>
           <p className="text-gray-600 text-sm md:text-base">청담동에디션을 이용해주신 고객님들의 생생한 후기입니다</p>
-          <p className="text-gray-400 text-sm mt-1">총 {reviews.length}개의 후기</p>
+          <p className="text-gray-400 text-sm mt-1">
+            총 {totalReviews.toLocaleString()}개의 후기 
+            {totalPages > 1 && <span className="ml-2">({currentPage} / {totalPages} 페이지)</span>}
+          </p>
         </div>
 
         {isLoading ? (
@@ -350,6 +432,8 @@ export default function Reviews() {
             })}
           </div>
         )}
+
+        {renderPagination()}
       </main>
 
       <Footer />
