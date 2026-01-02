@@ -32,11 +32,11 @@ function getProxiedImageUrl(url: string): string {
   return url;
 }
 
-// Filter out problematic image URLs (board system thumbnails that return 404)
+// Filter out obviously invalid image URLs
 function filterValidImageUrls(urls: string[]): string[] {
   return urls.filter(url => {
-    // Skip board system thumbnail URLs as they often return 404
-    if (url.includes('/data/file/bestreview/') || url.includes('/data/file/kalreom/')) {
+    // Skip obviously invalid URLs
+    if (!url || url.length < 10) {
       return false;
     }
     return true;
@@ -98,11 +98,20 @@ function ReviewImageGallery({ images, title }: { images: string[]; title: string
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
 
-  if (!images || images.length === 0) return null;
-
   // Filter out problematic URLs and proxy remaining images
-  const validImages = filterValidImageUrls(images);
-  if (validImages.length === 0) return null;
+  const validImages = filterValidImageUrls(images || []);
+  
+  // If no images, show placeholder
+  if (validImages.length === 0) {
+    return (
+      <div className="mb-4 rounded-lg overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 h-48 sm:h-56 flex items-center justify-center">
+        <div className="text-center text-gray-400">
+          <ImageOff className="w-12 h-12 mx-auto mb-2" />
+          <span className="text-sm">이미지 없음</span>
+        </div>
+      </div>
+    );
+  }
   
   const proxiedImages = validImages.map(getProxiedImageUrl);
 
