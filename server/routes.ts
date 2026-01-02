@@ -3076,23 +3076,50 @@ export async function registerRoutes(
                 const contentDiv = $el.find('[id^="sps_con_"]');
                 const content = contentDiv.text().trim() || title;
                 
-                // Extract images from content div
+                // Extract images from content div - get full-size images
                 const imageUrls: string[] = [];
                 contentDiv.find('img').each((_, img) => {
-                  const src = $(img).attr('src');
+                  let src = $(img).attr('src');
                   if (src && !src.includes('star') && !src.includes('icon')) {
+                    // Convert thumbnail URLs to full-size URLs
+                    // Remove thumb- prefix and size suffix like _100x100 or _500x374
+                    src = src.replace(/thumb-/, '').replace(/_\d+x\d+(\.\w+)$/, '$1');
+                    
                     // Convert relative URLs to absolute
                     const fullUrl = src.startsWith('http') ? src : `https://cdamdong.co.kr${src.startsWith('/') ? '' : '/'}${src}`;
-                    imageUrls.push(fullUrl);
+                    if (!imageUrls.includes(fullUrl)) {
+                      imageUrls.push(fullUrl);
+                    }
                   }
                 });
                 
-                // Also add thumbnail image
-                const thumbImg = productLink.find('img').attr('src');
-                if (thumbImg && !thumbImg.includes('star')) {
-                  const fullThumbUrl = thumbImg.startsWith('http') ? thumbImg : `https://cdamdong.co.kr${thumbImg.startsWith('/') ? '' : '/'}${thumbImg}`;
-                  if (!imageUrls.includes(fullThumbUrl)) {
-                    imageUrls.unshift(fullThumbUrl);
+                // Also check for images in view_image.php links (these are full size)
+                contentDiv.find('a[href*="view_image.php"]').each((_, link) => {
+                  const href = $(link).attr('href');
+                  if (href) {
+                    // Extract the actual image URL from view_image.php?fn=...
+                    const fnMatch = href.match(/fn=([^&]+)/);
+                    if (fnMatch) {
+                      let imgPath = decodeURIComponent(fnMatch[1]);
+                      // Convert to full URL
+                      if (!imgPath.startsWith('http')) {
+                        imgPath = `https://cdamdong.co.kr${imgPath.startsWith('/') ? '' : '/'}${imgPath}`;
+                      }
+                      if (!imageUrls.includes(imgPath)) {
+                        imageUrls.push(imgPath);
+                      }
+                    }
+                  }
+                });
+                
+                // If no content images found, try to get from thumbnail (convert to full size)
+                if (imageUrls.length === 0) {
+                  let thumbImg = productLink.find('img').attr('src');
+                  if (thumbImg && !thumbImg.includes('star')) {
+                    // Convert thumbnail to full-size
+                    thumbImg = thumbImg.replace(/thumb-/, '').replace(/_\d+x\d+(\.\w+)$/, '$1');
+                    const fullThumbUrl = thumbImg.startsWith('http') ? thumbImg : `https://cdamdong.co.kr${thumbImg.startsWith('/') ? '' : '/'}${thumbImg}`;
+                    imageUrls.push(fullThumbUrl);
                   }
                 }
                 

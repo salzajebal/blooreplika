@@ -107,20 +107,31 @@ function ReviewImageGallery({ images, title }: { images: string[]; title: string
   const proxiedImages = validImages.map(getProxiedImageUrl);
 
   const handlePrev = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     setCurrentIndex((prev) => (prev === 0 ? proxiedImages.length - 1 : prev - 1));
   };
 
   const handleNext = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     setCurrentIndex((prev) => (prev === proxiedImages.length - 1 ? 0 : prev + 1));
+  };
+
+  const handleImageClick = (e: React.MouseEvent) => {
+    // Only open modal if clicking on the image, not on buttons
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'BUTTON' || target.closest('button')) {
+      return;
+    }
+    setIsOpen(true);
   };
 
   return (
     <>
       <div 
         className="relative mb-4 rounded-lg overflow-hidden cursor-pointer group"
-        onClick={() => setIsOpen(true)}
+        onClick={handleImageClick}
       >
         <LazyImage
           src={proxiedImages[currentIndex]}
@@ -131,18 +142,22 @@ function ReviewImageGallery({ images, title }: { images: string[]; title: string
         {proxiedImages.length > 1 && (
           <>
             <button
+              type="button"
               onClick={handlePrev}
-              className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors z-10"
+              className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/60 hover:bg-black/80 active:bg-black/90 rounded-full flex items-center justify-center text-white transition-colors z-20 shadow-lg"
+              aria-label="이전 이미지"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-6 h-6" />
             </button>
             <button
+              type="button"
               onClick={handleNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-colors z-10"
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/60 hover:bg-black/80 active:bg-black/90 rounded-full flex items-center justify-center text-white transition-colors z-20 shadow-lg"
+              aria-label="다음 이미지"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-6 h-6" />
             </button>
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/50 text-white text-xs px-2 py-1 rounded-full z-10">
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-xs px-3 py-1 rounded-full z-10">
               {currentIndex + 1} / {proxiedImages.length}
             </div>
           </>
