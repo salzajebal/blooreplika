@@ -278,7 +278,10 @@ export function Header() {
               </div>
             </div>
 
-            <div className="md:hidden flex items-center justify-end">
+            <div className="md:hidden flex items-center justify-end gap-3">
+              <Link href="/reviews" className="text-gray-600 text-xs font-medium" data-testid="link-reviews-mobile">
+                후기
+              </Link>
               <Link href="/cart" className="relative text-gray-600" data-testid="button-cart-mobile">
                 <ShoppingBag className="w-5 h-5" />
                 {count > 0 && (
