@@ -3039,40 +3039,46 @@ export async function registerRoutes(
             const html = await response.text();
             const $ = cheerio.load(html);
             
-            // Parse each review item
-            $('.suse_itemuse_list ol li').each((_, el) => {
+            // Parse each review item - structure: ol > li
+            $('ol > li').each((_, el) => {
               try {
                 const $el = $(el);
                 
-                // Extract product info from the link
-                const productLink = $el.find('a').first();
-                const productName = productLink.text().trim() || '';
-                const productUrl = productLink.attr('href') || '';
+                // Check if this is actually a review item (has .sps_img or .sps_section)
+                if (!$el.find('.sps_img').length && !$el.find('.sps_section').length) {
+                  return; // Skip non-review list items
+                }
+                
+                // Extract product info from .sps_img a
+                const productLink = $el.find('.sps_img a');
+                const productName = productLink.find('span').text().trim() || '';
                 
                 // Extract title from h2
-                const title = $el.find('h2').text().trim() || '';
+                const title = $el.find('.sps_section h2').text().trim() || '';
                 
-                // Extract author
-                const authorText = $el.find('dl dd').filter((_, dd) => $(dd).prev('dt').text().includes('작성자')).text().trim();
-                const authorName = authorText || '익명';
+                // Extract author from .sps_dl dd (second dd after 작성자 dt)
+                const authorDd = $el.find('.sps_dl dd').eq(1);
+                const authorName = authorDd.text().trim().replace(/^\s*/, '') || '익명';
                 
-                // Extract date
-                const dateText = $el.find('dl dd').filter((_, dd) => $(dd).prev('dt').text().includes('작성일')).text().trim();
+                // Extract date from .sps_dl dd (third dd after 작성일 dt)
+                const dateDd = $el.find('.sps_dl dd').eq(2);
+                const dateText = dateDd.text().trim();
                 
-                // Extract rating (count star images)
-                const starImg = $el.find('img[src*="star"]').attr('src') || '';
+                // Extract rating from star image
+                const starImg = $el.find('.sps_dl img[src*="star"]').attr('src') || '';
                 let rating = 5;
                 const starMatch = starImg.match(/star(\d)/);
                 if (starMatch) {
                   rating = parseInt(starMatch[1]);
                 }
                 
-                // Extract content
-                const content = $el.find('.suse_txt').text().trim() || title;
+                // Extract content from hidden div (sps_con_X)
+                const contentDiv = $el.find('[id^="sps_con_"]');
+                const content = contentDiv.text().trim() || title;
                 
-                // Extract images
+                // Extract images from content div
                 const imageUrls: string[] = [];
-                $el.find('img').each((_, img) => {
+                contentDiv.find('img').each((_, img) => {
                   const src = $(img).attr('src');
                   if (src && !src.includes('star') && !src.includes('icon')) {
                     // Convert relative URLs to absolute
@@ -3080,6 +3086,15 @@ export async function registerRoutes(
                     imageUrls.push(fullUrl);
                   }
                 });
+                
+                // Also add thumbnail image
+                const thumbImg = productLink.find('img').attr('src');
+                if (thumbImg && !thumbImg.includes('star')) {
+                  const fullThumbUrl = thumbImg.startsWith('http') ? thumbImg : `https://cdamdong.co.kr${thumbImg.startsWith('/') ? '' : '/'}${thumbImg}`;
+                  if (!imageUrls.includes(fullThumbUrl)) {
+                    imageUrls.unshift(fullThumbUrl);
+                  }
+                }
                 
                 // Parse date
                 let displayDate = new Date();
