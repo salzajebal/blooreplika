@@ -14,7 +14,7 @@ export default function Login() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
   });
 
@@ -35,7 +35,7 @@ export default function Login() {
         localStorage.setItem("memberToken", data.token);
         localStorage.setItem("memberId", data.member.id);
         localStorage.setItem("memberName", data.member.name);
-        localStorage.setItem("memberEmail", data.member.email);
+        localStorage.setItem("memberUsername", data.member.username);
         toast({
           title: "로그인 성공",
           description: `${data.member.name}님, 환영합니다!`,
@@ -44,7 +44,7 @@ export default function Login() {
       } else {
         toast({
           title: "로그인 실패",
-          description: data.error || "이메일 또는 비밀번호를 확인해주세요.",
+          description: data.error || "아이디 또는 비밀번호를 확인해주세요.",
           variant: "destructive",
         });
       }
@@ -75,16 +75,16 @@ export default function Login() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-gray-700 font-medium">이메일</Label>
+                <Label htmlFor="username" className="text-gray-700 font-medium">아이디</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="이메일을 입력하세요"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  id="username"
+                  type="text"
+                  placeholder="아이디를 입력하세요"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   required
                   className="h-11"
-                  data-testid="input-email"
+                  data-testid="input-username"
                 />
               </div>
 

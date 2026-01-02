@@ -20,7 +20,8 @@ export type User = typeof users.$inferSelect;
 // Members table (site users/customers)
 export const members = pgTable("members", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: text("email").notNull().unique(),
+  username: text("username").notNull().unique(),
+  email: text("email"),
   password: text("password").notNull(),
   name: text("name").notNull(),
   phone: text("phone"),
@@ -51,7 +52,7 @@ export type Member = typeof members.$inferSelect;
 export const memberSessions = pgTable("member_sessions", {
   token: varchar("token").primaryKey(),
   memberId: varchar("member_id").notNull(),
-  email: text("email").notNull(),
+  username: text("username").notNull(),
   name: text("name").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   expiresAt: timestamp("expires_at"),

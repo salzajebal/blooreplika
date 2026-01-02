@@ -1145,19 +1145,23 @@ export async function registerRoutes(
 
   app.post("/api/members/signup", async (req: Request, res: Response) => {
     try {
-      const { email, password, name, phone, address } = req.body;
+      const { username, password, name, phone, address } = req.body;
       
-      if (!email || !password || !name) {
-        return res.status(400).json({ success: false, error: "이메일, 비밀번호, 이름은 필수 입력사항입니다." });
+      if (!username || !password || !name) {
+        return res.status(400).json({ success: false, error: "아이디, 비밀번호, 이름은 필수 입력사항입니다." });
       }
       
-      const existingMember = await storage.getMemberByEmail(email);
+      if (!/^[a-zA-Z0-9]{4,20}$/.test(username)) {
+        return res.status(400).json({ success: false, error: "아이디는 영문, 숫자 4-20자만 사용 가능합니다." });
+      }
+      
+      const existingMember = await storage.getMemberByUsername(username);
       if (existingMember) {
-        return res.status(400).json({ success: false, error: "이미 가입된 이메일입니다." });
+        return res.status(400).json({ success: false, error: "이미 사용 중인 아이디입니다." });
       }
       
       const member = await storage.createMember({
-        email,
+        username,
         password,
         name,
         phone: phone || null,
@@ -1167,7 +1171,7 @@ export async function registerRoutes(
       res.status(201).json({ 
         success: true, 
         message: "회원가입이 완료되었습니다.",
-        data: { id: member.id, email: member.email, name: member.name }
+        data: { id: member.id, username: member.username, name: member.name }
       });
     } catch (error) {
       console.error("Error during signup:", error);
@@ -1177,11 +1181,11 @@ export async function registerRoutes(
 
   app.post("/api/members/login", async (req: Request, res: Response) => {
     try {
-      const { email, password } = req.body;
+      const { username, password } = req.body;
       
-      const member = await storage.getMemberByEmail(email);
+      const member = await storage.getMemberByUsername(username);
       if (!member) {
-        return res.status(401).json({ success: false, error: "이메일 또는 비밀번호가 일치하지 않습니다." });
+        return res.status(401).json({ success: false, error: "아이디 또는 비밀번호가 일치하지 않습니다." });
       }
       
       if (member.password !== password) {
@@ -1192,7 +1196,7 @@ export async function registerRoutes(
       await storage.createMemberSession({
         token,
         memberId: member.id,
-        email: member.email,
+        username: member.username,
         name: member.name
       });
       
@@ -1204,7 +1208,7 @@ export async function registerRoutes(
         member: {
           id: member.id,
           name: member.name,
-          email: member.email,
+          username: member.username,
           phone: member.phone,
           pointBalance: member.pointBalance || 0,
           isFrozen: member.isFrozen || false
