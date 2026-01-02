@@ -2878,5 +2878,207 @@ export async function registerRoutes(
     }
   });
 
+  // Sync wallet prices
+  app.post("/api/admin/sync-wallet-prices", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      console.log("Starting wallet price sync...");
+      let updatedCount = 0;
+      
+      const priceRules = [
+        { pattern: '%에르메스%지갑%', price: '350000' },
+        { pattern: '%에르메스%카드지갑%', price: '280000' },
+        { pattern: '%에르메스%장지갑%', price: '380000' },
+        { pattern: '%샤넬%지갑%', price: '340000' },
+        { pattern: '%샤넬%카드지갑%', price: '260000' },
+        { pattern: '%샤넬%장지갑%', price: '360000' },
+        { pattern: '%루이비통%지갑%', price: '290000' },
+        { pattern: '%루이비통%카드지갑%', price: '230000' },
+        { pattern: '%루이비통%장지갑%', price: '320000' },
+        { pattern: '%디올%지갑%', price: '320000' },
+        { pattern: '%디올%카드지갑%', price: '250000' },
+        { pattern: '%구찌%지갑%', price: '280000' },
+        { pattern: '%구찌%카드지갑%', price: '220000' },
+        { pattern: '%프라다%지갑%', price: '300000' },
+        { pattern: '%프라다%카드지갑%', price: '240000' },
+        { pattern: '%보테가%지갑%', price: '350000' },
+        { pattern: '%보테가%카드지갑%', price: '280000' },
+        { pattern: '%셀린느%지갑%', price: '320000' },
+        { pattern: '%셀린느%카드지갑%', price: '260000' },
+        { pattern: '%펜디%지갑%', price: '290000' },
+        { pattern: '%발렌시아가%지갑%', price: '280000' },
+        { pattern: '%버버리%지갑%', price: '260000' },
+        { pattern: '%고야드%지갑%', price: '350000' },
+        { pattern: '%미우미우%지갑%', price: '270000' },
+        { pattern: '%로에베%지갑%', price: '310000' },
+      ];
+      
+      for (const rule of priceRules) {
+        const count = await storage.batchUpdateCategoryPrices('wallets', rule.pattern, rule.price);
+        updatedCount += count;
+      }
+      
+      const highPriceCount = await storage.fixHighCategoryPrices('wallets');
+      updatedCount += highPriceCount;
+      
+      const defaultCount = await storage.setDefaultCategoryPrices('wallets', '280000');
+      updatedCount += defaultCount;
+      
+      console.log(`Wallet price sync complete: ${updatedCount} products updated`);
+      
+      res.json({ 
+        success: true, 
+        message: `${updatedCount}개 지갑 상품 가격이 업데이트되었습니다.`,
+        updated: updatedCount
+      });
+    } catch (error: any) {
+      console.error("Error syncing wallet prices:", error);
+      res.status(500).json({ success: false, error: error.message || "가격 동기화 중 오류가 발생했습니다." });
+    }
+  });
+
+  // Sync bag prices
+  app.post("/api/admin/sync-bag-prices", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      console.log("Starting bag price sync...");
+      let updatedCount = 0;
+      
+      const priceRules = [
+        { pattern: '%에르메스%버킨%', price: '650000' },
+        { pattern: '%에르메스%켈리%', price: '580000' },
+        { pattern: '%에르메스%린디%', price: '450000' },
+        { pattern: '%에르메스%피코탄%', price: '380000' },
+        { pattern: '%에르메스%볼리드%', price: '420000' },
+        { pattern: '%에르메스%가든파티%', price: '350000' },
+        { pattern: '%에르메스%에블린%', price: '320000' },
+        { pattern: '%에르메스%컨스탄스%', price: '480000' },
+        { pattern: '%샤넬%클래식%', price: '520000' },
+        { pattern: '%샤넬%보이백%', price: '480000' },
+        { pattern: '%샤넬%가브리엘%', price: '450000' },
+        { pattern: '%샤넬%19%', price: '460000' },
+        { pattern: '%샤넬%22%', price: '470000' },
+        { pattern: '%샤넬%코코핸들%', price: '440000' },
+        { pattern: '%샤넬%드로스트링%', price: '420000' },
+        { pattern: '%루이비통%네버풀%', price: '350000' },
+        { pattern: '%루이비통%스피디%', price: '320000' },
+        { pattern: '%루이비통%알마%', price: '380000' },
+        { pattern: '%루이비통%카퓌신%', price: '450000' },
+        { pattern: '%루이비통%트위스트%', price: '420000' },
+        { pattern: '%루이비통%메티스%', price: '400000' },
+        { pattern: '%디올%레이디%', price: '480000' },
+        { pattern: '%디올%새들%', price: '420000' },
+        { pattern: '%디올%북토트%', price: '380000' },
+        { pattern: '%디올%바비%', price: '350000' },
+        { pattern: '%구찌%마몬트%', price: '380000' },
+        { pattern: '%구찌%디오니소스%', price: '400000' },
+        { pattern: '%구찌%호스빗%', price: '360000' },
+        { pattern: '%프라다%갈레리아%', price: '420000' },
+        { pattern: '%프라다%리에디션%', price: '350000' },
+        { pattern: '%보테가%카세트%', price: '450000' },
+        { pattern: '%보테가%조디%', price: '480000' },
+        { pattern: '%보테가%파데드%', price: '420000' },
+        { pattern: '%셀린느%트리오페%', price: '380000' },
+        { pattern: '%셀린느%벨트백%', price: '400000' },
+        { pattern: '%셀린느%러기지%', price: '420000' },
+        { pattern: '%로에베%퍼즐%', price: '420000' },
+        { pattern: '%로에베%해먹%', price: '380000' },
+        { pattern: '%발렌시아가%르카골%', price: '350000' },
+        { pattern: '%발렌시아가%시티%', price: '380000' },
+        { pattern: '%펜디%바게트%', price: '400000' },
+        { pattern: '%펜디%피카부%', price: '450000' },
+        { pattern: '%고야드%생루이%', price: '420000' },
+        { pattern: '%고야드%앙주%', price: '380000' },
+      ];
+      
+      for (const rule of priceRules) {
+        const count = await storage.batchUpdateCategoryPrices('bags', rule.pattern, rule.price);
+        updatedCount += count;
+      }
+      
+      const highPriceCount = await storage.fixHighCategoryPrices('bags');
+      updatedCount += highPriceCount;
+      
+      const defaultCount = await storage.setDefaultCategoryPrices('bags', '380000');
+      updatedCount += defaultCount;
+      
+      console.log(`Bag price sync complete: ${updatedCount} products updated`);
+      
+      res.json({ 
+        success: true, 
+        message: `${updatedCount}개 가방 상품 가격이 업데이트되었습니다.`,
+        updated: updatedCount
+      });
+    } catch (error: any) {
+      console.error("Error syncing bag prices:", error);
+      res.status(500).json({ success: false, error: error.message || "가격 동기화 중 오류가 발생했습니다." });
+    }
+  });
+
+  // Sync shoe prices
+  app.post("/api/admin/sync-shoe-prices", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      console.log("Starting shoe price sync...");
+      let updatedCount = 0;
+      
+      const priceRules = [
+        { pattern: '%발렌시아가%러너%', price: '320000' },
+        { pattern: '%발렌시아가%트리플%', price: '350000' },
+        { pattern: '%발렌시아가%스피드%', price: '280000' },
+        { pattern: '%발렌시아가%디펜더%', price: '340000' },
+        { pattern: '%구찌%라이톤%', price: '330000' },
+        { pattern: '%구찌%스크리너%', price: '320000' },
+        { pattern: '%구찌%에이스%', price: '290000' },
+        { pattern: '%프라다%클라우드버스트%', price: '310000' },
+        { pattern: '%프라다%아메리카스컵%', price: '290000' },
+        { pattern: '%루이비통%트레일%', price: '350000' },
+        { pattern: '%루이비통%아크라이트%', price: '340000' },
+        { pattern: '%루이비통%런어웨이%', price: '330000' },
+        { pattern: '%디올%B22%', price: '360000' },
+        { pattern: '%디올%B23%', price: '320000' },
+        { pattern: '%디올%B30%', price: '340000' },
+        { pattern: '%샤넬%스니커즈%', price: '350000' },
+        { pattern: '%골든구스%', price: '280000' },
+        { pattern: '%나이키%', price: '250000' },
+        { pattern: '%아디다스%', price: '220000' },
+        { pattern: '%뉴발란스%', price: '240000' },
+        { pattern: '%살로몬%', price: '260000' },
+        { pattern: '%버버리%', price: '300000' },
+        { pattern: '%보테가%', price: '350000' },
+        { pattern: '%미우미우%', price: '290000' },
+        { pattern: '%로에베%', price: '320000' },
+        { pattern: '%마놀로%', price: '340000' },
+        { pattern: '%지미추%', price: '320000' },
+        { pattern: '%페레가모%', price: '290000' },
+        { pattern: '%샌들%', price: '250000' },
+        { pattern: '%슬리퍼%', price: '220000' },
+        { pattern: '%로퍼%', price: '280000' },
+        { pattern: '%부츠%', price: '320000' },
+        { pattern: '%힐%', price: '290000' },
+        { pattern: '%펌프스%', price: '300000' },
+      ];
+      
+      for (const rule of priceRules) {
+        const count = await storage.batchUpdateCategoryPrices('shoes', rule.pattern, rule.price);
+        updatedCount += count;
+      }
+      
+      const highPriceCount = await storage.fixHighCategoryPrices('shoes');
+      updatedCount += highPriceCount;
+      
+      const defaultCount = await storage.setDefaultCategoryPrices('shoes', '300000');
+      updatedCount += defaultCount;
+      
+      console.log(`Shoe price sync complete: ${updatedCount} products updated`);
+      
+      res.json({ 
+        success: true, 
+        message: `${updatedCount}개 신발 상품 가격이 업데이트되었습니다.`,
+        updated: updatedCount
+      });
+    } catch (error: any) {
+      console.error("Error syncing shoe prices:", error);
+      res.status(500).json({ success: false, error: error.message || "가격 동기화 중 오류가 발생했습니다." });
+    }
+  });
+
   return httpServer;
 }

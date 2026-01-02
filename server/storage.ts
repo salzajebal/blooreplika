@@ -219,6 +219,9 @@ export interface IStorage {
   batchUpdateAccessoryPrices(pattern: string, price: string): Promise<number>;
   fixHighAccessoryPrices(): Promise<number>;
   setDefaultAccessoryPrices(defaultPrice: string): Promise<number>;
+  batchUpdateCategoryPrices(categoryId: string, pattern: string, price: string): Promise<number>;
+  fixHighCategoryPrices(categoryId: string): Promise<number>;
+  setDefaultCategoryPrices(categoryId: string, defaultPrice: string): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1101,6 +1104,52 @@ export class DatabaseStorage implements IStorage {
         OR price = '0'
         OR CAST(NULLIF(price, '') AS INTEGER) < 50000
         OR CAST(NULLIF(price, '') AS INTEGER) > 500000
+      )
+    `);
+    return Number(result.rowCount) || 0;
+  }
+
+  async batchUpdateCategoryPrices(categoryId: string, pattern: string, price: string): Promise<number> {
+    const result = await db.execute(sql`
+      UPDATE products 
+      SET price = ${price}
+      WHERE category_id = ${categoryId}
+      AND name LIKE ${pattern}
+    `);
+    return Number(result.rowCount) || 0;
+  }
+
+  async fixHighCategoryPrices(categoryId: string): Promise<number> {
+    // Fix prices over 5 million by dividing by 100
+    const result1 = await db.execute(sql`
+      UPDATE products 
+      SET price = (CAST(price AS INTEGER) / 100)::TEXT
+      WHERE category_id = ${categoryId}
+      AND CAST(price AS INTEGER) > 5000000
+    `);
+    
+    // Fix prices over 1.5 million by dividing by 10
+    const result2 = await db.execute(sql`
+      UPDATE products 
+      SET price = (CAST(price AS INTEGER) / 10)::TEXT
+      WHERE category_id = ${categoryId}
+      AND CAST(price AS INTEGER) > 1500000
+    `);
+    
+    return (Number(result1.rowCount) || 0) + (Number(result2.rowCount) || 0);
+  }
+
+  async setDefaultCategoryPrices(categoryId: string, defaultPrice: string): Promise<number> {
+    const result = await db.execute(sql`
+      UPDATE products 
+      SET price = ${defaultPrice}
+      WHERE category_id = ${categoryId}
+      AND (
+        price IS NULL 
+        OR price = '' 
+        OR price = '0'
+        OR CAST(NULLIF(price, '') AS INTEGER) < 50000
+        OR CAST(NULLIF(price, '') AS INTEGER) > 700000
       )
     `);
     return Number(result.rowCount) || 0;

@@ -1043,6 +1043,57 @@ export default function Admin() {
     }
   };
 
+  const handleSyncWalletPrices = async () => {
+    try {
+      toast({ title: "동기화 중...", description: "지갑 가격을 동기화하고 있습니다." });
+      const res = await fetchWithAuth("/api/admin/sync-wallet-prices", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: data.message });
+        fetchProducts();
+        fetchStats();
+      } else {
+        toast({ title: "오류", description: data.error || "가격 동기화에 실패했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "가격 동기화에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleSyncBagPrices = async () => {
+    try {
+      toast({ title: "동기화 중...", description: "가방 가격을 동기화하고 있습니다." });
+      const res = await fetchWithAuth("/api/admin/sync-bag-prices", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: data.message });
+        fetchProducts();
+        fetchStats();
+      } else {
+        toast({ title: "오류", description: data.error || "가격 동기화에 실패했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "가격 동기화에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleSyncShoePrices = async () => {
+    try {
+      toast({ title: "동기화 중...", description: "신발 가격을 동기화하고 있습니다." });
+      const res = await fetchWithAuth("/api/admin/sync-shoe-prices", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: data.message });
+        fetchProducts();
+        fetchStats();
+      } else {
+        toast({ title: "오류", description: data.error || "가격 동기화에 실패했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "가격 동기화에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
   const handleCreate = async () => {
     try {
       const res = await fetchWithAuth("/api/products", {
@@ -1886,6 +1937,18 @@ export default function Admin() {
                 <Button onClick={handleSyncAccessoryPrices} variant="outline" className="border-orange-300 text-orange-600 hover:bg-orange-50">
                   <RefreshCw className="w-4 h-4 mr-2" />
                   악세사리 가격 동기화
+                </Button>
+                <Button onClick={handleSyncWalletPrices} variant="outline" className="border-purple-300 text-purple-600 hover:bg-purple-50">
+                  <Wallet className="w-4 h-4 mr-2" />
+                  지갑 가격 동기화
+                </Button>
+                <Button onClick={handleSyncBagPrices} variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50">
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  가방 가격 동기화
+                </Button>
+                <Button onClick={handleSyncShoePrices} variant="outline" className="border-green-300 text-green-600 hover:bg-green-50">
+                  <Package className="w-4 h-4 mr-2" />
+                  신발 가격 동기화
                 </Button>
               </div>
             </div>
