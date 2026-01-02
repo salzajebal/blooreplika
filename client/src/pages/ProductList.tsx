@@ -105,22 +105,18 @@ export default function ProductList() {
       try {
         const offset = (currentPage - 1) * ITEMS_PER_PAGE;
         const categoryParam = categorySlug && categorySlug !== "all" ? `&categoryId=${categorySlug}` : "";
-        const [productsRes, brandsRes] = await Promise.all([
-          fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}`),
-          fetch("/api/brands")
-        ]);
+        const productsRes = await fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}`);
         
         if (cancelled) return;
         
         const productsData = await productsRes.json();
-        const brandsData = await brandsRes.json();
         
         if (productsData.success) {
           setProducts(productsData.data);
           setTotal(productsData.total || 0);
-        }
-        if (brandsData.success) {
-          setBrands(brandsData.data);
+          if (productsData.categoryBrands) {
+            setBrands(productsData.categoryBrands);
+          }
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -138,6 +134,7 @@ export default function ProductList() {
 
   useEffect(() => {
     setCurrentPage(1);
+    setSelectedBrand(null);
   }, [categorySlug]);
 
   const goToPage = (page: number) => {
@@ -172,24 +169,8 @@ export default function ProductList() {
   };
 
   const brandsWithProducts = useMemo(() => {
-    const brandIdsInProducts = new Set<string>();
-    const brandNamesInProducts = new Set<string>();
-    
-    products.forEach(p => {
-      if (p.brandId) {
-        brandIdsInProducts.add(p.brandId);
-      }
-      const extractedBrand = extractBrandFromName(p.name);
-      if (extractedBrand) {
-        brandNamesInProducts.add(extractedBrand.toLowerCase());
-      }
-    });
-    
-    return brands.filter(brand => 
-      brandIdsInProducts.has(brand.id) || 
-      brandNamesInProducts.has(brand.name?.toLowerCase())
-    );
-  }, [products, brands]);
+    return brands;
+  }, [brands]);
 
   const filteredProducts = useMemo(() => {
     let result = [...products];
@@ -275,9 +256,12 @@ export default function ProductList() {
               <li key={brand.id}>
                 <button 
                   onClick={() => setSelectedBrand(brand.id)}
-                  className={cn("text-sm hover:text-black transition-colors text-left", selectedBrand === brand.id ? "font-bold text-black" : "text-gray-500")}
+                  className={cn("text-sm hover:text-black transition-colors text-left flex items-center gap-1", selectedBrand === brand.id ? "font-bold text-black" : "text-gray-500")}
                 >
                   {brand.name}
+                  {brand.productCount && (
+                    <span className="text-xs text-gray-400">({brand.productCount})</span>
+                  )}
                 </button>
               </li>
             ))}

@@ -171,7 +171,10 @@ export async function registerRoutes(
           : undefined;
       
       // Use database-level pagination for performance
-      const { products: productList, total } = await storage.getProductsPaginated(limitNum, offsetNum, catFilter);
+      const [{ products: productList, total }, categoryBrands] = await Promise.all([
+        storage.getProductsPaginated(limitNum, offsetNum, catFilter),
+        storage.getBrandsWithProductCount(catFilter)
+      ]);
       
       res.json({ 
         success: true, 
@@ -179,7 +182,8 @@ export async function registerRoutes(
         total,
         limit: limitNum,
         offset: offsetNum,
-        hasMore: offsetNum + limitNum < total
+        hasMore: offsetNum + limitNum < total,
+        categoryBrands: categoryBrands.map(cb => ({ ...cb.brand, productCount: cb.productCount }))
       });
     } catch (error) {
       console.error("Error fetching products:", error);

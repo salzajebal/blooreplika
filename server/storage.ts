@@ -61,6 +61,7 @@ export interface IStorage {
   
   // Brands
   getAllBrands(): Promise<Brand[]>;
+  getBrandsWithProductCount(categoryId?: string): Promise<{ brand: Brand; productCount: number }[]>;
   getBrand(id: string): Promise<Brand | undefined>;
   createBrand(brand: InsertBrand): Promise<Brand>;
   updateBrand(id: string, brand: Partial<InsertBrand>): Promise<Brand | undefined>;
@@ -362,6 +363,32 @@ export class DatabaseStorage implements IStorage {
   // Brands
   async getAllBrands(): Promise<Brand[]> {
     return db.select().from(brands).orderBy(brands.sortOrder);
+  }
+
+  async getBrandsWithProductCount(categoryId?: string): Promise<{ brand: Brand; productCount: number }[]> {
+    const allBrands = await db.select().from(brands).orderBy(brands.sortOrder);
+    
+    const results: { brand: Brand; productCount: number }[] = [];
+    
+    for (const brand of allBrands) {
+      let countResult;
+      if (categoryId) {
+        countResult = await db.select({ count: sql<number>`count(*)::int` })
+          .from(products)
+          .where(sql`${products.brandId} = ${brand.id} AND ${products.categoryId} = ${categoryId}`);
+      } else {
+        countResult = await db.select({ count: sql<number>`count(*)::int` })
+          .from(products)
+          .where(eq(products.brandId, brand.id));
+      }
+      
+      const productCount = countResult[0]?.count || 0;
+      if (productCount > 0) {
+        results.push({ brand, productCount });
+      }
+    }
+    
+    return results.sort((a, b) => b.productCount - a.productCount);
   }
 
   async getBrand(id: string): Promise<Brand | undefined> {
