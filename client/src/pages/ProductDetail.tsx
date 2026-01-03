@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Heart, ChevronRight, Truck, Shield, ShoppingBag, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useGlobalSale } from "@/hooks/use-global-sale";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import type { Product, Brand, Review } from "@shared/schema";
@@ -14,6 +15,7 @@ export default function ProductDetail() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { toggleItem, isInWishlist } = useWishlist();
+  const { salePercent, calculateSalePrice, hasSale } = useGlobalSale();
   const [product, setProduct] = useState<Product | null>(null);
   const [brand, setBrand] = useState<Brand | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -299,9 +301,22 @@ export default function ProductDetail() {
               </div>
 
               <div className="space-y-2 text-sm">
-                <div className="flex">
+                <div className="flex items-center">
                   <span className="text-gray-500 w-24">판매가격</span>
-                  <span className="font-bold text-gray-900" data-testid="price-product-detail">{Number(product.price).toLocaleString()}원</span>
+                  {hasSale ? (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-gray-400 line-through">{Number(product.price).toLocaleString()}원</span>
+                      <span className="font-bold text-red-500 text-lg" data-testid="price-product-detail">{calculateSalePrice(Number(product.price)).toLocaleString()}원</span>
+                      <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded font-bold">{salePercent}% OFF</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
+                        <span className="text-gray-400 line-through">{Number(product.originalPrice).toLocaleString()}원</span>
+                      )}
+                      <span className="font-bold text-gray-900" data-testid="price-product-detail">{Number(product.price).toLocaleString()}원</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex">
                   <span className="text-gray-500 w-24">포인트</span>

@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo } from "react";
 import type { Product } from "@shared/schema";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
+import { useGlobalSale } from "@/hooks/use-global-sale";
 import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -67,6 +68,7 @@ export default function ProductList() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const { toggleItem, isInWishlist } = useWishlist();
   const { toast } = useToast();
+  const { salePercent, calculateSalePrice, hasSale } = useGlobalSale();
 
   const categoryInfo = CATEGORIES.find(c => c.slug === categorySlug);
   const searchParams = new URLSearchParams(location.split("?")[1] || "");
@@ -519,15 +521,31 @@ export default function ProductList() {
                       )}>
                         {product.name}
                       </h3>
-                      <div className="flex items-center gap-2">
-                        {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-                          <span className="text-xs text-gray-400 line-through">
-                            {Number(product.originalPrice).toLocaleString()}원
-                          </span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {hasSale ? (
+                          <>
+                            <span className="text-xs text-gray-400 line-through">
+                              {Number(product.price).toLocaleString()}원
+                            </span>
+                            <span className="font-bold text-red-500" data-testid={`price-product-${product.id}`}>
+                              {calculateSalePrice(Number(product.price)).toLocaleString()}원
+                            </span>
+                            <span className="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded font-bold">
+                              {salePercent}%
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
+                              <span className="text-xs text-gray-400 line-through">
+                                {Number(product.originalPrice).toLocaleString()}원
+                              </span>
+                            )}
+                            <span className="font-bold" data-testid={`price-product-${product.id}`}>
+                              {Number(product.price).toLocaleString()}원
+                            </span>
+                          </>
                         )}
-                        <span className="font-bold" data-testid={`price-product-${product.id}`}>
-                          {Number(product.price).toLocaleString()}원
-                        </span>
                       </div>
                       {(product.reviewCount || 0) > 0 && (
                         <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
