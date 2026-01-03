@@ -243,7 +243,7 @@ export function Header() {
             <div className="hidden md:block"></div>
 
             <Link href="/" className="flex items-center justify-self-center" data-testid="link-home">
-              <img src="/images/logo.gif" alt="청담동에디션" className="h-8 md:h-20 w-auto object-contain" />
+              <img src="/images/logo.gif" alt="청담동에디션" className="h-14 md:h-20 w-auto object-contain" />
             </Link>
 
             <div className="hidden md:flex items-center justify-end gap-5">
