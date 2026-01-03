@@ -179,6 +179,9 @@ export default function Admin() {
     accountHolder: "",
   });
   const [depositAccountLoading, setDepositAccountLoading] = useState(false);
+  
+  const [globalSalePercent, setGlobalSalePercent] = useState<number>(0);
+  const [globalSaleLoading, setGlobalSaleLoading] = useState(false);
 
   const [productCount, setProductCount] = useState<number | null>(null);
   const [productCountLoading, setProductCountLoading] = useState(false);
@@ -813,6 +816,16 @@ export default function Admin() {
     } catch (error) {
       console.log("Deposit account settings not found");
     }
+    
+    try {
+      const res = await fetch("/api/settings/global_sale_percent");
+      const data = await res.json();
+      if (data.success && data.data) {
+        setGlobalSalePercent(parseInt(data.data.value) || 0);
+      }
+    } catch (error) {
+      console.log("Global sale setting not found");
+    }
   };
 
   const saveSiteSettings = async () => {
@@ -857,6 +870,30 @@ export default function Admin() {
       toast({ title: "오류", description: "설정 저장에 실패했습니다.", variant: "destructive" });
     } finally {
       setDepositAccountLoading(false);
+    }
+  };
+  
+  const saveGlobalSaleSetting = async () => {
+    setGlobalSaleLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/settings/global_sale_percent", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          value: globalSalePercent.toString(),
+          description: "전체 상품 할인율 (%)"
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: globalSalePercent > 0 ? `전체 상품 ${globalSalePercent}% 할인이 적용되었습니다.` : "할인이 해제되었습니다." });
+      } else {
+        toast({ title: "오류", description: "설정 저장에 실패했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "설정 저장에 실패했습니다.", variant: "destructive" });
+    } finally {
+      setGlobalSaleLoading(false);
     }
   };
 
@@ -4292,6 +4329,89 @@ export default function Admin() {
                     <li className="flex items-start gap-2">
                       <span className="text-amber-500 mt-1">•</span>
                       <span>계좌정보 변경 시 즉시 반영됩니다.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Tag className="w-5 h-5 text-red-600" />
+                  전체 세일 설정
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">모든 상품에 일괄 할인율을 적용합니다.</p>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-bold text-sm">%</span>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-900 mb-2">전체 상품 할인율</h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        설정한 할인율이 모든 상품에 적용됩니다. 0%로 설정하면 할인이 해제됩니다.
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            data-testid="input-global-sale-percent"
+                            type="number"
+                            min="0"
+                            max="90"
+                            value={globalSalePercent}
+                            onChange={(e) => setGlobalSalePercent(Math.max(0, Math.min(90, parseInt(e.target.value) || 0)))}
+                            className="w-24 text-center text-lg font-bold"
+                          />
+                          <span className="text-lg font-bold text-gray-700">%</span>
+                        </div>
+                        <Button
+                          data-testid="button-save-global-sale"
+                          onClick={saveGlobalSaleSetting}
+                          disabled={globalSaleLoading}
+                          className="bg-red-500 hover:bg-red-600 text-white"
+                        >
+                          {globalSaleLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                          적용
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Eye className="w-4 h-4" />
+                    현재 할인 상태
+                  </h4>
+                  {globalSalePercent > 0 ? (
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex items-center px-3 py-1 bg-red-500 text-white text-sm font-bold rounded-full">
+                        SALE {globalSalePercent}% OFF
+                      </span>
+                      <span className="text-sm text-gray-600">모든 상품에 할인이 적용 중입니다.</span>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm">현재 할인이 적용되지 않은 상태입니다.</p>
+                  )}
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-red-500 mt-1">•</span>
+                      <span>할인율은 1~90% 사이로 설정할 수 있습니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-red-500 mt-1">•</span>
+                      <span>적용 시 모든 상품 페이지에 원래 가격과 할인가가 함께 표시됩니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-red-500 mt-1">•</span>
+                      <span>0%로 설정하면 할인이 해제됩니다.</span>
                     </li>
                   </ul>
                 </div>
