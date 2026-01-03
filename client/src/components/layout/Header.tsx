@@ -32,6 +32,7 @@ const mainNavItems = [
   { name: '시계', path: '/products/watches' },
   { name: '정품', path: '/products/genuine' },
   { name: '커뮤니티', path: '/comparison' },
+  { name: '상품후기', path: '/reviews' },
 ];
 
 export function Header() {
@@ -279,9 +280,6 @@ export function Header() {
             </div>
 
             <div className="md:hidden flex items-center justify-end gap-3">
-              <Link href="/reviews" className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full" data-testid="link-reviews-mobile">
-                후기
-              </Link>
               <Link href="/cart" className="relative text-gray-600" data-testid="button-cart-mobile">
                 <ShoppingBag className="w-5 h-5" />
                 {count > 0 && (
