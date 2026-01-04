@@ -36,7 +36,8 @@ export function useGlobalSale() {
 
   const calculateSalePrice = (originalPrice: number): number => {
     if (salePercent <= 0) return originalPrice;
-    return Math.floor(originalPrice * (1 - salePercent / 100));
+    const rawPrice = originalPrice * (1 - salePercent / 100);
+    return Math.round(rawPrice / 1000) * 1000;
   };
 
   const hasSale = salePercent > 0;
