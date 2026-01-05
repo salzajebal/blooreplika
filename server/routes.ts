@@ -2274,6 +2274,17 @@ export async function registerRoutes(
     res.json({ success: true, ...dittoholicProgress });
   });
 
+  // Delete all domestic category products
+  app.delete("/api/admin/products/domestic", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const deletedCount = await storage.deleteProductsByCategory("domestic");
+      res.json({ success: true, deletedCount });
+    } catch (error: any) {
+      console.error("Error deleting domestic products:", error);
+      res.status(500).json({ success: false, message: error.message || "삭제 중 오류가 발생했습니다." });
+    }
+  });
+
   // Crawl from dittoholic.com (Shopify store)
   app.post("/api/admin/crawl/dittoholic/start", requireAdminAuth, async (req: Request, res: Response) => {
     if (dittoholicProgress.status === 'running') {
@@ -2421,6 +2432,33 @@ export async function registerRoutes(
                 }
               }
               
+              const domesticDetailContent = `명품 레플리카 사이트 1위 디토홀릭 이용해야 하는 이유!!
+
+아직도 미러급 , SA급, 하이엔드급 제품이 있냐고 여쭤보시는 고객님들이 아직도 많으신데, 그건 전부 레플리카 판매자들이 만들어낸 이야기일 뿐입니다.
+더 이상 속지 마시길 부탁 드리겠습니다. 
+
+그리고 자체 제작 사이트 1:1비교제작 사이트라고 완벽한 퀄리티의 제품입니다. 라고 하면서 정품과 레플 비교 사진 찍어서 단가 조금 올려서 판매하면
+
+사람들 인식은 자동으로 "아 여기 정말 좋은 곳이구나" 하면서 구입 하시고 저희에게 한탄 하시는 고객님들 정말 한 두 분이 아닙니다. 1:1제작? 자체 제작? 절대 불가능 하다고 말씀 드리고 싶습니다.
+
+저희 사이트에 판매 중인 제품이 수 천 종류가 넘는데 아무리 큰 레플리카 판매 사이트라고 하더라도 직접 제작하는 품목이 100개 이상 넘길 수가 없습니다.
+
+절,대,로,요 저희도 직접 제작하는 제품이 몇 가지 있기는 하지만 퀄리티 때문이 아닌 단가 절감을 위해서 인기 있는 종목의 제품만 직접 생산을 할 뿐 퀄리티와는 거리가 멀다고 보시면 됩니다.
+저희 같은 영세업자가 명품 레플리카 사이트에 판매하는 제품 수가 수 백에서 수 천가지가 되는데 그걸 하나하나 직접 생산 한다구요? 정품과 1:1비교 제작을 해 가면서요?
+
+절대~~ 말이 안되는 말들에 현혹되지 마시길 부탁 드리겠습니다.
+
+퀄리티 좋은 사이트를 찾는 팁을 드리자면 좋은 사이트를 확인하실 때 레플리카사이트후기 보시면 바로 답이 나옵니다.
+
+그리고 레플리카 사이트의 기본인 레플리카신발, 레플리카가방, 후기를 보시면 그 사이트의 기본 퀄리티를 느끼실 수 있으십니다.
+
+저희 디토홀릭은 레플리카 구매대행을 시작으로 레플리카도매업, 레플리카쇼핑몰 병행하며 14년 동안의 경험을 바탕으로 거래처 공장들 300여 곳 그리고 대표님께서 직접 눈으로 본 후 다른 공장 제품들과 비교하고 최대한 저렴한 금액으로 고퀄리티의 제품을 받아보실 수 있도록 14년 째 발로 뛰고 계십니다.
+
+저희가 롱런 할수있던 이유는 양심적이고 아직도 발로 뛰시는 운영진들이 있어서가 아닐까 싶습니다. 
+정말 REAL 진심을 담은 디토홀릭의 운영진의 푸념 이었습니다 긴 글 읽어주셔서 감사합니다`;
+
+              const detailImageUrls = imageUrls.length > 1 ? imageUrls.slice(1) : [];
+
               await storage.createProduct({
                 name: `(국내배송) ${product.title}`,
                 categoryId: "domestic",
@@ -2429,9 +2467,10 @@ export async function registerRoutes(
                 price: price,
                 originalPrice: comparePrice,
                 description: product.body_html?.replace(/<[^>]*>/g, '').slice(0, 500) || product.title,
-                detailContent: "",
+                detailContent: domesticDetailContent,
                 imageUrl: imageUrl,
                 imageUrls: imageUrls.length > 0 ? imageUrls : [imageUrl],
+                detailImageUrls: detailImageUrls.length > 0 ? detailImageUrls : undefined,
                 options: sizeOptions.length > 0 ? JSON.stringify(sizeOptions) : undefined,
                 isBest: false,
                 isNew: i < 10,

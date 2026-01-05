@@ -231,6 +231,29 @@ export default function Admin() {
     { subcategoryId: "domestic-wallets", name: "지갑" },
   ];
   const [selectedDittoholicCategories, setSelectedDittoholicCategories] = useState<string[]>([]);
+  const [deletingDomestic, setDeletingDomestic] = useState(false);
+
+  const deleteDomesticProducts = async () => {
+    if (!confirm("국내배송 카테고리의 모든 상품을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+      return;
+    }
+    setDeletingDomestic(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/products/domestic", { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "삭제 완료", description: `${data.deletedCount}개의 국내배송 상품이 삭제되었습니다.` });
+        fetchProducts();
+        fetchProductCount();
+      } else {
+        toast({ title: "오류", description: data.message || "삭제 중 오류가 발생했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "삭제 요청 중 오류가 발생했습니다.", variant: "destructive" });
+    } finally {
+      setDeletingDomestic(false);
+    }
+  };
 
   const fetchProductCount = async () => {
     setProductCountLoading(true);
@@ -4884,26 +4907,47 @@ export default function Admin() {
                       </div>
                     )}
 
-                    <Button
-                      data-testid="button-start-dittoholic-crawl"
-                      onClick={startDittoholicCrawl}
-                      disabled={dittoholicProgress.status === 'running'}
-                      className="bg-purple-500 hover:bg-purple-600 text-white w-full"
-                    >
-                      {dittoholicProgress.status === 'running' ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          크롤링 중...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-4 h-4 mr-2" />
-                          {selectedDittoholicCategories.length > 0 
-                            ? `선택 카테고리 크롤링 (${selectedDittoholicCategories.length}개)`
-                            : 'dittoholic 전체 크롤링 시작'}
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        data-testid="button-delete-domestic-products"
+                        onClick={deleteDomesticProducts}
+                        disabled={deletingDomestic || dittoholicProgress.status === 'running'}
+                        variant="destructive"
+                        className="flex-1"
+                      >
+                        {deletingDomestic ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            삭제 중...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            국내배송 상품 전체 삭제
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        data-testid="button-start-dittoholic-crawl"
+                        onClick={startDittoholicCrawl}
+                        disabled={dittoholicProgress.status === 'running' || deletingDomestic}
+                        className="bg-purple-500 hover:bg-purple-600 text-white flex-1"
+                      >
+                        {dittoholicProgress.status === 'running' ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            크롤링 중...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4 mr-2" />
+                            {selectedDittoholicCategories.length > 0 
+                              ? `선택 카테고리 크롤링 (${selectedDittoholicCategories.length}개)`
+                              : 'dittoholic 전체 크롤링 시작'}
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
 
