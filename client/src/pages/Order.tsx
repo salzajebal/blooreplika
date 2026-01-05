@@ -82,9 +82,9 @@ export default function Order() {
       try {
         const res = await fetch("/api/settings/deposit_account");
         const data = await res.json();
-        if (data.success && data.data) {
+        if (data.success && data.data?.value) {
           try {
-            const parsed = JSON.parse(data.data);
+            const parsed = JSON.parse(data.data.value);
             if (parsed.bankName && parsed.accountNumber) {
               setDepositAccount(parsed);
             }
