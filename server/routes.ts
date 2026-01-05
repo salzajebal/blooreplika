@@ -2390,27 +2390,21 @@ export async function registerRoutes(
                 ? Math.round(parseFloat(product.variants[0].compare_at_price))
                 : undefined;
               
-              // Fetch individual product JSON to get all images
-              let imageUrl = product.images?.[0]?.src || "";
-              let imageUrls = product.images?.map((img: any) => img.src) || [];
+              // Main product image from images array
+              const imageUrl = product.images?.[0]?.src || "";
+              const imageUrls = product.images?.map((img: any) => img.src) || [];
               
-              try {
-                const productHandle = product.handle;
-                if (productHandle) {
-                  const productUrl = `https://dittoholic.com/products/${encodeURIComponent(productHandle)}.json`;
-                  const productResponse = await fetch(productUrl, { headers });
-                  if (productResponse.ok) {
-                    const productData = await productResponse.json();
-                    if (productData.product?.images && productData.product.images.length > 0) {
-                      imageUrl = productData.product.images[0].src;
-                      imageUrls = productData.product.images.map((img: any) => img.src);
-                    }
-                  }
-                  await delay(100); // Small delay between product fetches
+              // Extract detail images from body_html (they are embedded as <img> tags)
+              const bodyHtml = product.body_html || "";
+              const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
+              const detailImagesFromHtml: string[] = [];
+              let match;
+              while ((match = imgRegex.exec(bodyHtml)) !== null) {
+                const imgSrc = match[1];
+                // Filter out small icons and only keep cdn.shopify.com images
+                if (imgSrc && imgSrc.includes('cdn.shopify.com') && !imgSrc.includes('icon')) {
+                  detailImagesFromHtml.push(imgSrc);
                 }
-              } catch (imgError) {
-                // Use fallback images from collection listing
-                console.log(`Could not fetch full images for ${product.handle}, using fallback`);
               }
               
               // Extract size options
@@ -2477,8 +2471,6 @@ export async function registerRoutes(
 저희가 롱런 할수있던 이유는 양심적이고 아직도 발로 뛰시는 운영진들이 있어서가 아닐까 싶습니다. 
 정말 REAL 진심을 담은 디토홀릭의 운영진의 푸념 이었습니다 긴 글 읽어주셔서 감사합니다`;
 
-              const detailImageUrls = imageUrls.length > 1 ? imageUrls.slice(1) : [];
-
               await storage.createProduct({
                 name: `(국내배송) ${product.title}`,
                 categoryId: "domestic",
@@ -2490,7 +2482,7 @@ export async function registerRoutes(
                 detailContent: domesticDetailContent,
                 imageUrl: imageUrl,
                 imageUrls: imageUrls.length > 0 ? imageUrls : [imageUrl],
-                detailImageUrls: detailImageUrls.length > 0 ? detailImageUrls : undefined,
+                detailImageUrls: detailImagesFromHtml.length > 0 ? detailImagesFromHtml : undefined,
                 options: sizeOptions.length > 0 ? JSON.stringify(sizeOptions) : undefined,
                 isBest: false,
                 isNew: i < 10,
