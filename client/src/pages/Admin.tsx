@@ -210,6 +210,28 @@ export default function Admin() {
   ];
   const [selectedCrawlCategories, setSelectedCrawlCategories] = useState<string[]>([]);
 
+  // Dittoholic crawl state
+  const [dittoholicProgress, setDittoholicProgress] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    message: string;
+    category: string;
+  }>({ status: 'idle', total: 0, current: 0, message: '', category: '' });
+  const [clearBeforeDittoholic, setClearBeforeDittoholic] = useState(false);
+  const dittoholicIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const DITTOHOLIC_CATEGORIES = [
+    { localId: "watches", name: "시계" },
+    { localId: "tops", name: "상의" },
+    { localId: "outer", name: "아우터" },
+    { localId: "accessories", name: "악세사리" },
+    { localId: "bottoms", name: "하의" },
+    { localId: "bags", name: "가방" },
+    { localId: "wallets", name: "지갑" },
+  ];
+  const [selectedDittoholicCategories, setSelectedDittoholicCategories] = useState<string[]>([]);
+
   const fetchProductCount = async () => {
     setProductCountLoading(true);
     try {
@@ -302,6 +324,73 @@ export default function Admin() {
     } catch (error) {
       toast({ title: "오류", description: "상품을 삭제할 수 없습니다.", variant: "destructive" });
     }
+  };
+
+  // Dittoholic crawl functions
+  const fetchDittoholicProgress = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/dittoholic/progress", { method: "GET" });
+      const data = await res.json();
+      if (data.success) {
+        setDittoholicProgress({
+          status: data.status,
+          total: data.total,
+          current: data.current,
+          message: data.message,
+          category: data.category || '',
+        });
+        if (data.status === 'completed' || data.status === 'error') {
+          if (dittoholicIntervalRef.current) {
+            clearInterval(dittoholicIntervalRef.current);
+            dittoholicIntervalRef.current = null;
+          }
+          fetchProductCount();
+          fetchProducts();
+        }
+      }
+    } catch {}
+  };
+
+  const startDittoholicCrawl = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/dittoholic/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          clearExisting: clearBeforeDittoholic,
+          selectedCategories: selectedDittoholicCategories.length > 0 ? selectedDittoholicCategories : undefined
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const categoryText = selectedDittoholicCategories.length > 0 
+          ? `${selectedDittoholicCategories.length}개 카테고리` 
+          : "전체 카테고리";
+        toast({ title: "dittoholic 크롤링 시작", description: `${categoryText} 크롤링이 시작되었습니다.` });
+        setDittoholicProgress({ status: 'running', total: 0, current: 0, message: '시작 중...', category: '' });
+        dittoholicIntervalRef.current = setInterval(fetchDittoholicProgress, 500);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+  
+  const toggleDittoholicCategory = (localId: string) => {
+    setSelectedDittoholicCategories(prev => 
+      prev.includes(localId) 
+        ? prev.filter(id => id !== localId)
+        : [...prev, localId]
+    );
+  };
+  
+  const selectAllDittoholicCategories = () => {
+    setSelectedDittoholicCategories(DITTOHOLIC_CATEGORIES.map(c => c.localId));
+  };
+  
+  const deselectAllDittoholicCategories = () => {
+    setSelectedDittoholicCategories([]);
   };
 
   const [reviewCrawlLoading, setReviewCrawlLoading] = useState(false);
@@ -4686,6 +4775,145 @@ export default function Admin() {
                     <li className="flex items-start gap-2">
                       <span className="text-blue-500 mt-1">•</span>
                       <span>진행 상황이 실시간으로 표시됩니다.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Dittoholic Crawl Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Download className="w-5 h-5 text-purple-600" />
+                  dittoholic.com 크롤링
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">dittoholic.com에서 국내배송 상품을 크롤링합니다. (약 2,000개)</p>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="clearBeforeDittoholic"
+                        checked={clearBeforeDittoholic}
+                        onChange={(e) => setClearBeforeDittoholic(e.target.checked)}
+                        className="w-4 h-4 text-purple-600 rounded"
+                      />
+                      <label htmlFor="clearBeforeDittoholic" className="text-sm text-gray-700">
+                        크롤링 전 기존 상품 모두 삭제
+                      </label>
+                    </div>
+                    
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-medium text-gray-800">카테고리 선택 (선택안하면 전체)</h5>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={selectAllDittoholicCategories}>전체 선택</Button>
+                          <Button size="sm" variant="outline" onClick={deselectAllDittoholicCategories}>선택 해제</Button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {DITTOHOLIC_CATEGORIES.map((cat) => (
+                          <label 
+                            key={cat.localId}
+                            className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
+                              selectedDittoholicCategories.includes(cat.localId) 
+                                ? 'bg-purple-50 border-purple-300' 
+                                : 'bg-white border-gray-200 hover:border-purple-200'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedDittoholicCategories.includes(cat.localId)}
+                              onChange={() => toggleDittoholicCategory(cat.localId)}
+                              className="w-4 h-4 text-purple-600 rounded"
+                            />
+                            <span className="text-sm">{cat.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {selectedDittoholicCategories.length > 0 && (
+                        <p className="text-xs text-purple-600 mt-2">
+                          선택된 카테고리: {selectedDittoholicCategories.map(id => DITTOHOLIC_CATEGORIES.find(c => c.localId === id)?.name).join(', ')}
+                        </p>
+                      )}
+                    </div>
+
+                    {dittoholicProgress.status !== 'idle' && (
+                      <div className={`p-4 rounded-lg ${
+                        dittoholicProgress.status === 'running' ? 'bg-purple-50 border border-purple-200' :
+                        dittoholicProgress.status === 'completed' ? 'bg-green-50 border border-green-200' :
+                        'bg-red-50 border border-red-200'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          {dittoholicProgress.status === 'running' && <Loader2 className="w-4 h-4 text-purple-600 animate-spin" />}
+                          {dittoholicProgress.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                          {dittoholicProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                          <span className={`text-sm font-medium ${
+                            dittoholicProgress.status === 'running' ? 'text-purple-700' :
+                            dittoholicProgress.status === 'completed' ? 'text-green-700' :
+                            'text-red-700'
+                          }`}>
+                            {dittoholicProgress.message}
+                          </span>
+                        </div>
+                        
+                        {dittoholicProgress.status === 'running' && dittoholicProgress.total > 0 && (
+                          <div className="space-y-2">
+                            <div className="w-full bg-purple-100 rounded-full h-3">
+                              <div 
+                                className="bg-purple-500 h-3 rounded-full transition-all duration-300"
+                                style={{ width: `${Math.round((dittoholicProgress.current / dittoholicProgress.total) * 100)}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-xs text-purple-600">
+                              <span>{dittoholicProgress.current.toLocaleString()} / {dittoholicProgress.total.toLocaleString()}</span>
+                              <span>{Math.round((dittoholicProgress.current / dittoholicProgress.total) * 100)}%</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <Button
+                      data-testid="button-start-dittoholic-crawl"
+                      onClick={startDittoholicCrawl}
+                      disabled={dittoholicProgress.status === 'running'}
+                      className="bg-purple-500 hover:bg-purple-600 text-white w-full"
+                    >
+                      {dittoholicProgress.status === 'running' ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          크롤링 중...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4 mr-2" />
+                          {selectedDittoholicCategories.length > 0 
+                            ? `선택 카테고리 크롤링 (${selectedDittoholicCategories.length}개)`
+                            : 'dittoholic 전체 크롤링 시작'}
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-500 mt-1">•</span>
+                      <span>dittoholic.com의 국내배송 카테고리(7개)에서 상품을 크롤링합니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-500 mt-1">•</span>
+                      <span>시계, 상의, 아우터, 악세사리, 하의, 가방, 지갑 카테고리가 포함됩니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-500 mt-1">•</span>
+                      <span>Shopify 기반 사이트로 빠른 크롤링이 가능합니다.</span>
                     </li>
                   </ul>
                 </div>

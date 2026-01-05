@@ -2362,6 +2362,7 @@ export async function registerRoutes(
           dittoholicProgress.current = 0;
           
           // Insert products
+          let insertErrors = 0;
           for (let i = 0; i < allProducts.length; i++) {
             const product = allProducts[i];
             try {
@@ -2375,9 +2376,6 @@ export async function registerRoutes(
               
               const imageUrl = product.images?.[0]?.src || "";
               const imageUrls = product.images?.map((img: any) => img.src) || [];
-              
-              // Extract brand from vendor or tags
-              let brandName = product.vendor || "";
               
               // Extract size options
               const sizeOptions = product.variants
@@ -2401,12 +2399,18 @@ export async function registerRoutes(
               });
               
               totalInserted++;
-              dittoholicProgress.current = i + 1;
-              dittoholicProgress.message = `[${category.name}] 저장 중... (${i + 1}/${allProducts.length})`;
               
-            } catch (error) {
-              console.error(`Error inserting product:`, error);
+            } catch (error: any) {
+              insertErrors++;
+              console.error(`Error inserting product ${product.title}:`, error?.message || error);
             }
+            
+            dittoholicProgress.current = i + 1;
+            dittoholicProgress.message = `[${category.name}] 저장 중... (${i + 1}/${allProducts.length})${insertErrors > 0 ? ` (오류: ${insertErrors})` : ''}`;
+          }
+          
+          if (insertErrors > 0) {
+            console.log(`[${category.name}] ${insertErrors} errors during insert`);
           }
           
           console.log(`[${category.name}] Inserted products, total: ${totalInserted}`);
