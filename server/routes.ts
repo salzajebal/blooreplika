@@ -2291,17 +2291,17 @@ export async function registerRoutes(
     // Run crawl in background
     (async () => {
       const DITTOHOLIC_CATEGORIES = [
-        { handle: "국내배송-watch", name: "시계", localId: "watches" },
-        { handle: "국내배송-top", name: "상의", localId: "tops" },
-        { handle: "국내배송-outer", name: "아우터", localId: "outer" },
-        { handle: "국내배송-acc", name: "악세사리", localId: "accessories" },
-        { handle: "국내배송-pants", name: "하의", localId: "bottoms" },
-        { handle: "국내배송-bag", name: "가방", localId: "bags" },
-        { handle: "국내배송-wallet", name: "지갑", localId: "wallets" },
+        { handle: "국내배송-watch", name: "시계", subcategoryId: "domestic-watches" },
+        { handle: "국내배송-top", name: "상의", subcategoryId: "domestic-tops" },
+        { handle: "국내배송-outer", name: "아우터", subcategoryId: "domestic-outer" },
+        { handle: "국내배송-acc", name: "악세사리", subcategoryId: "domestic-accessories" },
+        { handle: "국내배송-pants", name: "하의", subcategoryId: "domestic-bottoms" },
+        { handle: "국내배송-bag", name: "가방", subcategoryId: "domestic-bags" },
+        { handle: "국내배송-wallet", name: "지갑", subcategoryId: "domestic-wallets" },
       ];
       
       const CATEGORIES = selectedCategories && selectedCategories.length > 0
-        ? DITTOHOLIC_CATEGORIES.filter(c => selectedCategories.includes(c.localId))
+        ? DITTOHOLIC_CATEGORIES.filter(c => selectedCategories.includes(c.subcategoryId))
         : DITTOHOLIC_CATEGORIES;
       
       const headers = {
@@ -2384,7 +2384,8 @@ export async function registerRoutes(
               
               await storage.createProduct({
                 name: `(국내배송) ${product.title}`,
-                categoryId: category.localId,
+                categoryId: "domestic",
+                subcategoryId: category.subcategoryId,
                 price: price,
                 originalPrice: comparePrice,
                 description: product.body_html?.replace(/<[^>]*>/g, '').slice(0, 500) || product.title,

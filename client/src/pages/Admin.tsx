@@ -222,13 +222,13 @@ export default function Admin() {
   const dittoholicIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const DITTOHOLIC_CATEGORIES = [
-    { localId: "watches", name: "시계" },
-    { localId: "tops", name: "상의" },
-    { localId: "outer", name: "아우터" },
-    { localId: "accessories", name: "악세사리" },
-    { localId: "bottoms", name: "하의" },
-    { localId: "bags", name: "가방" },
-    { localId: "wallets", name: "지갑" },
+    { subcategoryId: "domestic-watches", name: "시계" },
+    { subcategoryId: "domestic-tops", name: "상의" },
+    { subcategoryId: "domestic-outer", name: "아우터" },
+    { subcategoryId: "domestic-accessories", name: "악세사리" },
+    { subcategoryId: "domestic-bottoms", name: "하의" },
+    { subcategoryId: "domestic-bags", name: "가방" },
+    { subcategoryId: "domestic-wallets", name: "지갑" },
   ];
   const [selectedDittoholicCategories, setSelectedDittoholicCategories] = useState<string[]>([]);
 
@@ -377,16 +377,16 @@ export default function Admin() {
     }
   };
   
-  const toggleDittoholicCategory = (localId: string) => {
+  const toggleDittoholicCategory = (subcategoryId: string) => {
     setSelectedDittoholicCategories(prev => 
-      prev.includes(localId) 
-        ? prev.filter(id => id !== localId)
-        : [...prev, localId]
+      prev.includes(subcategoryId) 
+        ? prev.filter(id => id !== subcategoryId)
+        : [...prev, subcategoryId]
     );
   };
   
   const selectAllDittoholicCategories = () => {
-    setSelectedDittoholicCategories(DITTOHOLIC_CATEGORIES.map(c => c.localId));
+    setSelectedDittoholicCategories(DITTOHOLIC_CATEGORIES.map(c => c.subcategoryId));
   };
   
   const deselectAllDittoholicCategories = () => {
@@ -4824,17 +4824,17 @@ export default function Admin() {
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                         {DITTOHOLIC_CATEGORIES.map((cat) => (
                           <label 
-                            key={cat.localId}
+                            key={cat.subcategoryId}
                             className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
-                              selectedDittoholicCategories.includes(cat.localId) 
+                              selectedDittoholicCategories.includes(cat.subcategoryId) 
                                 ? 'bg-purple-50 border-purple-300' 
                                 : 'bg-white border-gray-200 hover:border-purple-200'
                             }`}
                           >
                             <input
                               type="checkbox"
-                              checked={selectedDittoholicCategories.includes(cat.localId)}
-                              onChange={() => toggleDittoholicCategory(cat.localId)}
+                              checked={selectedDittoholicCategories.includes(cat.subcategoryId)}
+                              onChange={() => toggleDittoholicCategory(cat.subcategoryId)}
                               className="w-4 h-4 text-purple-600 rounded"
                             />
                             <span className="text-sm">{cat.name}</span>
@@ -4843,7 +4843,7 @@ export default function Admin() {
                       </div>
                       {selectedDittoholicCategories.length > 0 && (
                         <p className="text-xs text-purple-600 mt-2">
-                          선택된 카테고리: {selectedDittoholicCategories.map(id => DITTOHOLIC_CATEGORIES.find(c => c.localId === id)?.name).join(', ')}
+                          선택된 카테고리: {selectedDittoholicCategories.map(id => DITTOHOLIC_CATEGORIES.find(c => c.subcategoryId === id)?.name).join(', ')}
                         </p>
                       )}
                     </div>
