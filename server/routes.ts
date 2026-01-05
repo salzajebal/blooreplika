@@ -2429,7 +2429,7 @@ export async function registerRoutes(
                 price: price,
                 originalPrice: comparePrice,
                 description: product.body_html?.replace(/<[^>]*>/g, '').slice(0, 500) || product.title,
-                detailContent: product.body_html || "",
+                detailContent: "",
                 imageUrl: imageUrl,
                 imageUrls: imageUrls.length > 0 ? imageUrls : [imageUrl],
                 options: sizeOptions.length > 0 ? JSON.stringify(sizeOptions) : undefined,
