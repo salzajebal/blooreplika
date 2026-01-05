@@ -59,6 +59,12 @@ export default function Order() {
     selectedColor: "",
   });
 
+  const [depositAccount, setDepositAccount] = useState<{
+    bankName: string;
+    accountNumber: string;
+    accountHolder: string;
+  } | null>(null);
+
   useEffect(() => {
     const memberName = localStorage.getItem("memberName") || "";
     const memberEmail = localStorage.getItem("memberEmail") || "";
@@ -69,6 +75,24 @@ export default function Order() {
       memberEmail,
       shippingName: memberName,
     }));
+  }, []);
+
+  useEffect(() => {
+    const fetchDepositAccount = async () => {
+      try {
+        const res = await fetch("/api/settings/deposit_account");
+        const data = await res.json();
+        if (data.success && data.data) {
+          try {
+            const parsed = JSON.parse(data.data);
+            if (parsed.bankName && parsed.accountNumber) {
+              setDepositAccount(parsed);
+            }
+          } catch {}
+        }
+      } catch {}
+    };
+    fetchDepositAccount();
   }, []);
 
   useEffect(() => {
@@ -569,11 +593,28 @@ export default function Order() {
                     <MessageCircle className="w-5 h-5" />
                     계좌이체 안내
                   </h3>
-                  <p className="text-amber-800 text-sm">
-                    주문서 작성 완료 후, <strong>결제계좌 정보</strong>는 카카오톡 상담을 통해 안내받으실 수 있습니다.
-                    <br />
-                    주문 완료 페이지에서 카카오톡 링크를 클릭해주세요.
-                  </p>
+                  {depositAccount ? (
+                    <div className="text-amber-800 text-sm space-y-2">
+                      <p>주문서 작성 완료 후, 아래 계좌로 입금해주세요.</p>
+                      <div className="bg-white/50 rounded-lg p-3 border border-amber-200">
+                        <div className="grid grid-cols-[80px_1fr] gap-1">
+                          <span className="text-amber-700">은행명:</span>
+                          <span className="font-bold text-amber-900">{depositAccount.bankName}</span>
+                          <span className="text-amber-700">계좌번호:</span>
+                          <span className="font-bold text-amber-900">{depositAccount.accountNumber}</span>
+                          <span className="text-amber-700">예금주:</span>
+                          <span className="font-bold text-amber-900">{depositAccount.accountHolder}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-amber-600">※ 입금 시 주문자명으로 입금해주세요.</p>
+                    </div>
+                  ) : (
+                    <p className="text-amber-800 text-sm">
+                      주문서 작성 완료 후, <strong>결제계좌 정보</strong>는 카카오톡 상담을 통해 안내받으실 수 있습니다.
+                      <br />
+                      주문 완료 페이지에서 카카오톡 링크를 클릭해주세요.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
