@@ -2313,6 +2313,9 @@ export async function registerRoutes(
       
       const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
       
+      // Brand cache for performance
+      const brandCache = new Map<string, string>();
+      
       try {
         if (clearExisting) {
           dittoholicProgress.message = '기존 상품 삭제 중...';
@@ -2384,10 +2387,45 @@ export async function registerRoutes(
                 ?.map((v: any) => v.title)
                 .filter((t: string) => t && t !== "Default Title") || [];
               
+              // Extract brand from product vendor or title (using cached brands)
+              let brandId: string | undefined = undefined;
+              const vendorName = product.vendor?.trim();
+              if (vendorName && vendorName.length > 0) {
+                // Check cache first
+                if (brandCache.has(vendorName.toLowerCase())) {
+                  brandId = brandCache.get(vendorName.toLowerCase());
+                } else {
+                  // Try to find existing brand or create new one
+                  const existingBrands = await storage.getAllBrands();
+                  let foundBrand = existingBrands.find(b => 
+                    b.name.toLowerCase() === vendorName.toLowerCase() ||
+                    b.slug === vendorName.toLowerCase().replace(/\s+/g, '')
+                  );
+                  
+                  if (!foundBrand) {
+                    // Create new brand
+                    try {
+                      foundBrand = await storage.createBrand({
+                        name: vendorName,
+                        slug: vendorName.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9가-힣]/g, ''),
+                        sortOrder: 200,
+                        isActive: true,
+                      });
+                    } catch {}
+                  }
+                  
+                  if (foundBrand) {
+                    brandId = foundBrand.id;
+                    brandCache.set(vendorName.toLowerCase(), foundBrand.id);
+                  }
+                }
+              }
+              
               await storage.createProduct({
                 name: `(국내배송) ${product.title}`,
                 categoryId: "domestic",
                 subcategoryId: category.subcategoryId,
+                brandId: brandId,
                 price: price,
                 originalPrice: comparePrice,
                 description: product.body_html?.replace(/<[^>]*>/g, '').slice(0, 500) || product.title,
