@@ -2258,6 +2258,172 @@ export async function registerRoutes(
     })();
   });
 
+  // Progress tracking for dittoholic crawling
+  const dittoholicProgress: {
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    message: string;
+    category: string;
+  } = { status: 'idle', total: 0, current: 0, message: '', category: '' };
+
+  // Get dittoholic crawl progress
+  app.get("/api/admin/crawl/dittoholic/progress", requireAdminAuth, async (_req: Request, res: Response) => {
+    res.json({ success: true, ...dittoholicProgress });
+  });
+
+  // Crawl from dittoholic.com (Shopify store)
+  app.post("/api/admin/crawl/dittoholic/start", requireAdminAuth, async (req: Request, res: Response) => {
+    if (dittoholicProgress.status === 'running') {
+      return res.status(400).json({ success: false, error: "이미 크롤링이 진행 중입니다." });
+    }
+    
+    const { clearExisting, selectedCategories } = req.body;
+    
+    dittoholicProgress.status = 'running';
+    dittoholicProgress.total = 0;
+    dittoholicProgress.current = 0;
+    dittoholicProgress.message = '크롤링 준비 중...';
+    dittoholicProgress.category = '';
+    
+    res.json({ success: true, message: "dittoholic.com 크롤링이 시작되었습니다." });
+    
+    // Run crawl in background
+    (async () => {
+      const DITTOHOLIC_CATEGORIES = [
+        { handle: "국내배송-watch", name: "시계", localId: "watches" },
+        { handle: "국내배송-top", name: "상의", localId: "tops" },
+        { handle: "국내배송-outer", name: "아우터", localId: "outer" },
+        { handle: "국내배송-acc", name: "악세사리", localId: "accessories" },
+        { handle: "국내배송-pants", name: "하의", localId: "bottoms" },
+        { handle: "국내배송-bag", name: "가방", localId: "bags" },
+        { handle: "국내배송-wallet", name: "지갑", localId: "wallets" },
+      ];
+      
+      const CATEGORIES = selectedCategories && selectedCategories.length > 0
+        ? DITTOHOLIC_CATEGORIES.filter(c => selectedCategories.includes(c.localId))
+        : DITTOHOLIC_CATEGORIES;
+      
+      const headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "application/json",
+      };
+      
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      
+      try {
+        if (clearExisting) {
+          dittoholicProgress.message = '기존 상품 삭제 중...';
+          const existingProducts = await storage.getAllProducts();
+          for (const p of existingProducts) {
+            await storage.deleteProduct(p.id);
+          }
+        }
+        
+        let totalInserted = 0;
+        
+        for (const category of CATEGORIES) {
+          dittoholicProgress.category = category.name;
+          dittoholicProgress.message = `[${category.name}] 상품 수집 중...`;
+          
+          let page = 1;
+          let hasMore = true;
+          const allProducts: any[] = [];
+          
+          // Fetch all pages from Shopify JSON API
+          while (hasMore) {
+            try {
+              const url = `https://dittoholic.com/collections/${encodeURIComponent(category.handle)}/products.json?page=${page}&limit=250`;
+              const response = await fetch(url, { headers });
+              
+              if (!response.ok) {
+                console.log(`[${category.name}] Page ${page} returned ${response.status}`);
+                break;
+              }
+              
+              const data = await response.json();
+              
+              if (!data.products || data.products.length === 0) {
+                hasMore = false;
+              } else {
+                allProducts.push(...data.products);
+                dittoholicProgress.message = `[${category.name}] 페이지 ${page} 수집... (${allProducts.length}개)`;
+                page++;
+                await delay(500); // Rate limiting
+              }
+            } catch (error) {
+              console.error(`Error fetching page ${page}:`, error);
+              break;
+            }
+          }
+          
+          console.log(`[${category.name}] Found ${allProducts.length} products`);
+          dittoholicProgress.total = allProducts.length;
+          dittoholicProgress.current = 0;
+          
+          // Insert products
+          for (let i = 0; i < allProducts.length; i++) {
+            const product = allProducts[i];
+            try {
+              const price = product.variants?.[0]?.price 
+                ? Math.round(parseFloat(product.variants[0].price))
+                : 0;
+              
+              const comparePrice = product.variants?.[0]?.compare_at_price
+                ? Math.round(parseFloat(product.variants[0].compare_at_price))
+                : undefined;
+              
+              const imageUrl = product.images?.[0]?.src || "";
+              const imageUrls = product.images?.map((img: any) => img.src) || [];
+              
+              // Extract brand from vendor or tags
+              let brandName = product.vendor || "";
+              
+              // Extract size options
+              const sizeOptions = product.variants
+                ?.map((v: any) => v.title)
+                .filter((t: string) => t && t !== "Default Title") || [];
+              
+              await storage.createProduct({
+                name: `(국내배송) ${product.title}`,
+                categoryId: category.localId,
+                price: price,
+                originalPrice: comparePrice,
+                description: product.body_html?.replace(/<[^>]*>/g, '').slice(0, 500) || product.title,
+                detailContent: product.body_html || "",
+                imageUrl: imageUrl,
+                imageUrls: imageUrls.length > 0 ? imageUrls : [imageUrl],
+                options: sizeOptions.length > 0 ? JSON.stringify(sizeOptions) : undefined,
+                isBest: false,
+                isNew: i < 10,
+                isActive: product.variants?.[0]?.available !== false,
+                isSoldOut: product.variants?.[0]?.available === false,
+              });
+              
+              totalInserted++;
+              dittoholicProgress.current = i + 1;
+              dittoholicProgress.message = `[${category.name}] 저장 중... (${i + 1}/${allProducts.length})`;
+              
+            } catch (error) {
+              console.error(`Error inserting product:`, error);
+            }
+          }
+          
+          console.log(`[${category.name}] Inserted products, total: ${totalInserted}`);
+        }
+        
+        dittoholicProgress.status = 'completed';
+        dittoholicProgress.message = `완료! 총 ${totalInserted}개 상품이 크롤링되었습니다.`;
+        console.log(`Dittoholic crawl complete: ${totalInserted} products`);
+        
+      } catch (error: any) {
+        dittoholicProgress.status = 'error';
+        dittoholicProgress.message = `오류: ${error.message || '알 수 없는 오류'}`;
+        console.error('Dittoholic crawl error:', error);
+      }
+    })();
+  });
+
   // Crawl reviews from cdamdong.co.kr (bestreview and kalreom boards)
   app.post("/api/admin/crawl/reviews", requireAdminAuth, async (req: Request, res: Response) => {
     const headers = {
