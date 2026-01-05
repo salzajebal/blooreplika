@@ -893,14 +893,17 @@ export default function Admin() {
     }
     
     try {
-      const res = await fetch("/api/settings/deposit-account");
+      const res = await fetch("/api/settings/deposit_account");
       if (res.ok) {
         const data = await res.json();
-        setDepositAccountSettings({
-          bankName: data.bankName || "",
-          accountNumber: data.accountNumber || "",
-          accountHolder: data.accountHolder || "",
-        });
+        if (data.success && data.data?.value) {
+          const parsed = JSON.parse(data.data.value);
+          setDepositAccountSettings({
+            bankName: parsed.bankName || "",
+            accountNumber: parsed.accountNumber || "",
+            accountHolder: parsed.accountHolder || "",
+          });
+        }
       }
     } catch (error) {
       console.log("Deposit account settings not found");
@@ -944,10 +947,13 @@ export default function Admin() {
   const saveDepositAccountSettings = async () => {
     setDepositAccountLoading(true);
     try {
-      const res = await fetchWithAuth("/api/admin/settings/deposit-account", {
+      const res = await fetchWithAuth("/api/admin/settings/deposit_account", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(depositAccountSettings),
+        body: JSON.stringify({ 
+          value: JSON.stringify(depositAccountSettings),
+          description: "입금 계좌 정보"
+        }),
       });
       const data = await res.json();
       if (data.success) {
