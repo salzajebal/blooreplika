@@ -2377,7 +2377,7 @@ export async function registerRoutes(
           dittoholicProgress.total = allProducts.length;
           dittoholicProgress.current = 0;
           
-          // Insert products
+          // Insert products with full image fetch
           let insertErrors = 0;
           for (let i = 0; i < allProducts.length; i++) {
             const product = allProducts[i];
@@ -2390,8 +2390,28 @@ export async function registerRoutes(
                 ? Math.round(parseFloat(product.variants[0].compare_at_price))
                 : undefined;
               
-              const imageUrl = product.images?.[0]?.src || "";
-              const imageUrls = product.images?.map((img: any) => img.src) || [];
+              // Fetch individual product JSON to get all images
+              let imageUrl = product.images?.[0]?.src || "";
+              let imageUrls = product.images?.map((img: any) => img.src) || [];
+              
+              try {
+                const productHandle = product.handle;
+                if (productHandle) {
+                  const productUrl = `https://dittoholic.com/products/${encodeURIComponent(productHandle)}.json`;
+                  const productResponse = await fetch(productUrl, { headers });
+                  if (productResponse.ok) {
+                    const productData = await productResponse.json();
+                    if (productData.product?.images && productData.product.images.length > 0) {
+                      imageUrl = productData.product.images[0].src;
+                      imageUrls = productData.product.images.map((img: any) => img.src);
+                    }
+                  }
+                  await delay(100); // Small delay between product fetches
+                }
+              } catch (imgError) {
+                // Use fallback images from collection listing
+                console.log(`Could not fetch full images for ${product.handle}, using fallback`);
+              }
               
               // Extract size options
               const sizeOptions = product.variants
