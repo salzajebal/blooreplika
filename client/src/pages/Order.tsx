@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useGlobalSale } from "@/hooks/use-global-sale";
 import { CheckCircle, Package, User, MapPin, MessageCircle, CreditCard, Building2 } from "lucide-react";
 import { CardPaymentForm, type CouponPaymentData } from "@/components/checkout/CardPaymentForm";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ export default function Order() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { calculateSalePrice, hasSale } = useGlobalSale();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -113,9 +115,15 @@ export default function Order() {
     }
   }, [formData.memberName, formData.memberPhone, formData.sameAsOrderer]);
 
+  const getEffectivePrice = () => {
+    if (!product) return 0;
+    return hasSale ? calculateSalePrice(product.price) : product.price;
+  };
+
   const calculateTotal = () => {
     if (!product) return "0";
-    return (product.price * quantity).toLocaleString();
+    const effectivePrice = getEffectivePrice();
+    return (effectivePrice * quantity).toLocaleString();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -166,11 +174,11 @@ export default function Order() {
           shippingMemo: formData.shippingMemo,
           productId: product.id,
           productName: product.name,
-          productPrice: product.price,
+          productPrice: getEffectivePrice(),
           quantity,
           selectedSize: formData.selectedSize || null,
           selectedColor: formData.selectedColor || null,
-          totalAmount: product.price * quantity,
+          totalAmount: getEffectivePrice() * quantity,
           paymentMethod: paymentMethod || undefined,
           couponPayment: paymentMethod === "coupon" && couponPaymentData ? couponPaymentData : undefined,
         }),
@@ -551,7 +559,7 @@ export default function Order() {
                     setCouponPaymentData(data);
                     setCardPaymentValid(isValid);
                   }}
-                  totalAmount={product ? product.price * quantity : 0}
+                  totalAmount={product ? getEffectivePrice() * quantity : 0}
                 />
               )}
 
