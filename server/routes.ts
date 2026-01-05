@@ -2435,8 +2435,8 @@ export async function registerRoutes(
                 options: sizeOptions.length > 0 ? JSON.stringify(sizeOptions) : undefined,
                 isBest: false,
                 isNew: i < 10,
-                isActive: product.variants?.[0]?.available !== false,
-                isSoldOut: product.variants?.[0]?.available === false,
+                isActive: true,
+                isSoldOut: false,
               });
               
               totalInserted++;
