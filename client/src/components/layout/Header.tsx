@@ -31,8 +31,19 @@ const mainNavItems = [
   { name: '가방', path: '/products/bags' },
   { name: '시계', path: '/products/watches' },
   { name: '정품', path: '/products/genuine' },
+  { name: '국내배송', path: '/products/domestic' },
   { name: '커뮤니티', path: '/comparison' },
   { name: '상품후기', path: '/reviews' },
+];
+
+const domesticSubItems = [
+  { name: '시계', path: '/products/domestic?sub=domestic-watches' },
+  { name: '상의', path: '/products/domestic?sub=domestic-tops' },
+  { name: '아우터', path: '/products/domestic?sub=domestic-outer' },
+  { name: '악세사리', path: '/products/domestic?sub=domestic-accessories' },
+  { name: '하의', path: '/products/domestic?sub=domestic-bottoms' },
+  { name: '가방', path: '/products/domestic?sub=domestic-bags' },
+  { name: '지갑', path: '/products/domestic?sub=domestic-wallets' },
 ];
 
 export function Header() {

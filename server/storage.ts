@@ -36,7 +36,7 @@ export interface IStorage {
   
   // Products
   getAllProducts(): Promise<Product[]>;
-  getProductsPaginated(limit: number, offset: number, categoryId?: string): Promise<{ products: Product[], total: number }>;
+  getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string): Promise<{ products: Product[], total: number }>;
   getProductsCount(categoryId?: string): Promise<number>;
   getProductsByCategory(categoryId: string): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
@@ -248,10 +248,24 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(products).orderBy(desc(products.createdAt));
   }
   
-  async getProductsPaginated(limit: number, offset: number, categoryId?: string): Promise<{ products: Product[], total: number }> {
+  async getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string): Promise<{ products: Product[], total: number }> {
     // Execute count and data queries in parallel for performance
     // Use explicit query building to avoid where(undefined) issues
-    if (categoryId) {
+    if (categoryId && subcategoryId) {
+      // Both category and subcategory filter - most restrictive
+      const [countResult, productList] = await Promise.all([
+        db.select({ count: sql<number>`count(*)::int` }).from(products).where(and(eq(products.categoryId, categoryId), eq(products.subcategoryId, subcategoryId))),
+        db.select().from(products).where(and(eq(products.categoryId, categoryId), eq(products.subcategoryId, subcategoryId))).orderBy(desc(products.createdAt)).limit(limit).offset(offset)
+      ]);
+      return { products: productList, total: countResult[0]?.count || 0 };
+    } else if (subcategoryId) {
+      // Subcategory filter only - but still filter by parent category for safety
+      const [countResult, productList] = await Promise.all([
+        db.select({ count: sql<number>`count(*)::int` }).from(products).where(eq(products.subcategoryId, subcategoryId)),
+        db.select().from(products).where(eq(products.subcategoryId, subcategoryId)).orderBy(desc(products.createdAt)).limit(limit).offset(offset)
+      ]);
+      return { products: productList, total: countResult[0]?.count || 0 };
+    } else if (categoryId) {
       const [countResult, productList] = await Promise.all([
         db.select({ count: sql<number>`count(*)::int` }).from(products).where(eq(products.categoryId, categoryId)),
         db.select().from(products).where(eq(products.categoryId, categoryId)).orderBy(desc(products.createdAt)).limit(limit).offset(offset)

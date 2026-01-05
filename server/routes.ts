@@ -157,7 +157,7 @@ export async function registerRoutes(
   
   app.get("/api/products", async (req: Request, res: Response) => {
     try {
-      const { category, categoryId, limit, offset } = req.query;
+      const { category, categoryId, subcategoryId, limit, offset } = req.query;
       
       // Default limit for production performance (always use pagination)
       const limitNum = limit ? parseInt(limit as string, 10) : 60;
@@ -170,9 +170,11 @@ export async function registerRoutes(
           ? category as string 
           : undefined;
       
+      const subCatFilter = subcategoryId ? subcategoryId as string : undefined;
+      
       // Use database-level pagination for performance
       const [{ products: productList, total }, categoryBrands] = await Promise.all([
-        storage.getProductsPaginated(limitNum, offsetNum, catFilter),
+        storage.getProductsPaginated(limitNum, offsetNum, catFilter, subCatFilter),
         storage.getBrandsWithProductCount(catFilter)
       ]);
       

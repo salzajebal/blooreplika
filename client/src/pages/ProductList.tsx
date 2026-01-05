@@ -73,6 +73,7 @@ export default function ProductList() {
   const categoryInfo = CATEGORIES.find(c => c.slug === categorySlug);
   const searchParams = new URLSearchParams(location.split("?")[1] || "");
   const searchQuery = searchParams.get("q");
+  const subcategoryId = searchParams.get("sub");
 
   const handleWishlistToggle = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
@@ -107,7 +108,8 @@ export default function ProductList() {
       try {
         const offset = (currentPage - 1) * ITEMS_PER_PAGE;
         const categoryParam = categorySlug && categorySlug !== "all" ? `&categoryId=${categorySlug}` : "";
-        const productsRes = await fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}`);
+        const subcategoryParam = subcategoryId ? `&subcategoryId=${subcategoryId}` : "";
+        const productsRes = await fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}${subcategoryParam}`);
         
         if (cancelled) return;
         
@@ -132,12 +134,12 @@ export default function ProductList() {
     fetchData();
     
     return () => { cancelled = true; };
-  }, [categorySlug, currentPage]);
+  }, [categorySlug, currentPage, subcategoryId]);
 
   useEffect(() => {
     setCurrentPage(1);
     setSelectedBrand(null);
-  }, [categorySlug]);
+  }, [categorySlug, subcategoryId]);
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
