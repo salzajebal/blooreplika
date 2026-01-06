@@ -275,25 +275,63 @@ export default function Order() {
 
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 sm:p-6 mb-6">
                 <h2 className="font-bold text-amber-900 mb-3 flex items-center justify-center gap-2">
-                  <MessageCircle className="w-5 h-5" />
+                  <Building2 className="w-5 h-5" />
                   결제계좌 안내
                 </h2>
-                <p className="text-amber-800 mb-4">
-                  결제계좌 정보는 <strong>카카오톡 상담</strong>을 통해 안내받으실 수 있습니다.
-                  <br />
-                  아래 버튼을 눌러 카카오톡으로 이동해주세요.
-                </p>
                 
-                <a
-                  href={KAKAO_LINK}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-bold py-4 px-8 rounded-lg text-lg transition-colors"
-                  data-testid="link-kakao-payment"
-                >
-                  <KakaoIcon className="w-6 h-6" />
-                  카카오톡으로 결제계좌 안내받기
-                </a>
+                {depositAccount ? (
+                  <div className="space-y-4">
+                    <div className="bg-white rounded-lg p-4 border border-amber-300">
+                      <div className="grid gap-2 text-left">
+                        <div className="flex justify-between items-center py-1 border-b border-gray-100">
+                          <span className="text-gray-600 text-sm">은행</span>
+                          <span className="font-bold text-gray-900">{depositAccount.bankName}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-1 border-b border-gray-100">
+                          <span className="text-gray-600 text-sm">계좌번호</span>
+                          <span className="font-bold text-gray-900 font-mono">{depositAccount.accountNumber}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-1">
+                          <span className="text-gray-600 text-sm">예금주</span>
+                          <span className="font-bold text-gray-900">{depositAccount.accountHolder}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-amber-800 text-sm">
+                      위 계좌로 <strong>{calculateTotal()}원</strong>을 입금해 주세요.
+                      <br />
+                      입금 확인 후 상품이 발송됩니다.
+                    </p>
+                    <a
+                      href={KAKAO_LINK}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-bold py-3 px-6 rounded-lg transition-colors"
+                      data-testid="link-kakao-inquiry"
+                    >
+                      <KakaoIcon className="w-5 h-5" />
+                      카카오톡 문의하기
+                    </a>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-amber-800 mb-4">
+                      결제계좌 정보는 <strong>카카오톡 상담</strong>을 통해 안내받으실 수 있습니다.
+                      <br />
+                      아래 버튼을 눌러 카카오톡으로 이동해주세요.
+                    </p>
+                    <a
+                      href={KAKAO_LINK}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-bold py-4 px-8 rounded-lg text-lg transition-colors"
+                      data-testid="link-kakao-payment"
+                    >
+                      <KakaoIcon className="w-6 h-6" />
+                      카카오톡으로 결제계좌 안내받기
+                    </a>
+                  </>
+                )}
               </div>
 
               <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
