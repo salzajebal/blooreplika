@@ -1624,7 +1624,7 @@ export default function Admin() {
 
   const handleCreateReview = async () => {
     try {
-      const res = await fetchWithAuth("/api/reviews", {
+      const res = await fetchWithAuth("/api/admin/reviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1654,7 +1654,7 @@ export default function Admin() {
       console.log("Review ID:", id);
       console.log("Form data:", reviewFormData);
       
-      const res = await fetchWithAuth(`/api/reviews/${id}`, {
+      const res = await fetchWithAuth(`/api/admin/reviews/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1693,7 +1693,7 @@ export default function Admin() {
   const handleDeleteReview = async (id: string) => {
     if (!confirm("정말로 이 후기를 삭제하시겠습니까?")) return;
     try {
-      const res = await fetchWithAuth(`/api/reviews/${id}`, { method: "DELETE" });
+      const res = await fetchWithAuth(`/api/admin/reviews/${id}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         toast({ title: "성공", description: "후기가 삭제되었습니다." });
@@ -3859,7 +3859,7 @@ export default function Admin() {
                 <thead className="bg-gray-50 border-b">
                   <tr>
                     <th className="px-4 py-3 text-left font-medium">작성자</th>
-                    <th className="px-4 py-3 text-left font-medium">제목</th>
+                    <th className="px-4 py-3 text-left font-medium">제목/내용</th>
                     <th className="px-4 py-3 text-left font-medium">별점</th>
                     <th className="px-4 py-3 text-left font-medium">작성일</th>
                     <th className="px-4 py-3 text-left font-medium">공개</th>
@@ -3879,11 +3879,21 @@ export default function Admin() {
                             />
                           </td>
                           <td className="px-4 py-3">
-                            <Input
-                              value={reviewFormData.title}
-                              onChange={(e) => setReviewFormData({ ...reviewFormData, title: e.target.value })}
-                              className="h-8"
-                            />
+                            <div className="space-y-2">
+                              <Input
+                                value={reviewFormData.title}
+                                onChange={(e) => setReviewFormData({ ...reviewFormData, title: e.target.value })}
+                                className="h-8"
+                                placeholder="제목"
+                              />
+                              <Textarea
+                                value={reviewFormData.content}
+                                onChange={(e) => setReviewFormData({ ...reviewFormData, content: e.target.value })}
+                                rows={2}
+                                className="text-sm"
+                                placeholder="내용"
+                              />
+                            </div>
                           </td>
                           <td className="px-4 py-3">
                             <select
@@ -3937,7 +3947,12 @@ export default function Admin() {
                       ) : (
                         <>
                           <td className="px-4 py-3 font-medium">{review.authorName}</td>
-                          <td className="px-4 py-3">{review.title}</td>
+                          <td className="px-4 py-3">
+                            <div>
+                              <div className="font-medium">{review.title || "(제목 없음)"}</div>
+                              <div className="text-sm text-gray-500 truncate max-w-[200px]">{review.content}</div>
+                            </div>
+                          </td>
                           <td className="px-4 py-3">
                             <div className="flex text-amber-400">
                               {[...Array(review.rating || 5)].map((_, i) => (

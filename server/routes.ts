@@ -1581,7 +1581,76 @@ export async function registerRoutes(
       res.json({ success: true, data: reviews });
     } catch (error) {
       console.error("Error fetching reviews:", error);
-      res.status(500).json({ success: false, error: "리뷰를 불러올 수 없습니다." });
+      res.status(500).json({ success: false, error: "후기를 불러올 수 없습니다." });
+    }
+  });
+
+  app.post("/api/admin/reviews", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { authorName, productId, productName, rating, title, content, displayDate, isVisible, imageUrl } = req.body;
+      
+      if (!authorName || !content) {
+        return res.status(400).json({ success: false, error: "작성자명과 내용은 필수입니다." });
+      }
+      
+      const parsedRating = typeof rating === "number" && rating >= 1 && rating <= 5 ? rating : 5;
+      
+      const review = await storage.createReview({
+        authorName,
+        productId: productId || null,
+        productName: productName || null,
+        rating: parsedRating,
+        title: title || null,
+        content,
+        displayDate: displayDate ? new Date(displayDate) : new Date(),
+        isVisible: isVisible !== false,
+        imageUrl: imageUrl || null,
+        memberId: null,
+        orderId: null,
+      });
+      
+      res.status(201).json({ success: true, data: review });
+    } catch (error) {
+      console.error("Error creating admin review:", error);
+      res.status(500).json({ success: false, error: "후기 등록에 실패했습니다." });
+    }
+  });
+
+  app.put("/api/admin/reviews/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { authorName, productName, rating, title, content, displayDate, isVisible, imageUrl } = req.body;
+      
+      const updateData: Record<string, any> = {};
+      if (authorName !== undefined) updateData.authorName = authorName;
+      if (productName !== undefined) updateData.productName = productName;
+      if (rating !== undefined) updateData.rating = Math.min(5, Math.max(1, Number(rating)));
+      if (title !== undefined) updateData.title = title;
+      if (content !== undefined) updateData.content = content;
+      if (displayDate !== undefined) updateData.displayDate = new Date(displayDate);
+      if (isVisible !== undefined) updateData.isVisible = isVisible;
+      if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+      
+      const review = await storage.updateReview(req.params.id, updateData);
+      if (!review) {
+        return res.status(404).json({ success: false, error: "후기를 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: review });
+    } catch (error) {
+      console.error("Error updating review:", error);
+      res.status(500).json({ success: false, error: "후기 수정에 실패했습니다." });
+    }
+  });
+
+  app.delete("/api/admin/reviews/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteReview(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "후기를 찾을 수 없습니다." });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      res.status(500).json({ success: false, error: "후기 삭제에 실패했습니다." });
     }
   });
 
