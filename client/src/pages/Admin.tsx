@@ -1826,7 +1826,7 @@ export default function Admin() {
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
               <Lock className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-gray-900">관리자 로그인</h1>
@@ -1877,7 +1877,7 @@ export default function Admin() {
               data-testid="button-login"
               type="submit"
               disabled={loginLoading}
-              className="w-full h-12 bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-medium"
+              className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium"
             >
               {loginLoading ? "로그인 중..." : "로그인"}
             </Button>
@@ -1901,15 +1901,15 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 font-sans">
+    <div className="min-h-screen bg-slate-100 font-sans">
       {chatNotification && chatNotification.show && (
         <div 
           className="fixed top-4 right-4 z-[200] animate-in slide-in-from-right duration-300 cursor-pointer"
           onClick={() => handleNotificationClick(chatNotification.conversationId)}
         >
-          <div className="bg-white rounded-xl shadow-2xl border-l-4 border-yellow-500 p-4 max-w-sm">
+          <div className="bg-white rounded-xl shadow-2xl border-l-4 border-blue-500 p-4 max-w-sm">
             <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                 <MessageCircle className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
@@ -1922,7 +1922,7 @@ export default function Admin() {
                     <X className="w-4 h-4" />
                   </button>
                 </div>
-                <p className="text-xs text-yellow-600 font-medium mb-1">{chatNotification.memberName}님</p>
+                <p className="text-xs text-blue-600 font-medium mb-1">{chatNotification.memberName}님</p>
                 <p className="text-sm text-gray-600 truncate">{chatNotification.message}</p>
                 <p className="text-xs text-gray-400 mt-2">클릭하여 확인하기</p>
               </div>
@@ -1935,138 +1935,276 @@ export default function Admin() {
         </div>
       )}
       
-      <div className="bg-gray-900 text-white">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-              <span className="font-bold text-black text-sm">CD</span>
-            </div>
-            <div>
-              <h1 className="font-bold">청담동에디션</h1>
-              <p className="text-xs text-gray-400">관리자 패널</p>
+      <div className="flex h-screen overflow-hidden">
+        {/* Left Sidebar */}
+        <aside className="w-64 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white flex-shrink-0 hidden lg:flex flex-col">
+          {/* Logo */}
+          <div className="p-6 border-b border-slate-700/50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                <span className="font-bold text-white text-sm">CD</span>
+              </div>
+              <div>
+                <h1 className="font-bold text-white">청담동에디션</h1>
+                <p className="text-xs text-slate-400">Admin Console</p>
+              </div>
             </div>
           </div>
-          <Button 
-            data-testid="button-logout"
-            variant="ghost" 
-            onClick={handleLogout}
-            className="text-gray-300 hover:text-white hover:bg-gray-800"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            로그아웃
-          </Button>
-        </div>
-      </div>
-      
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
-          <Button
-            data-testid="tab-dashboard"
-            variant={activeTab === "dashboard" ? "default" : "outline"}
-            onClick={() => setActiveTab("dashboard")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "dashboard" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <BarChart3 className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">대시보드</span>
-          </Button>
-          <Button
-            data-testid="tab-products"
-            variant={activeTab === "products" ? "default" : "outline"}
-            onClick={() => setActiveTab("products")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "products" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <Package className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">상품 관리</span>
-          </Button>
-          <Button
-            data-testid="tab-members"
-            variant={activeTab === "members" ? "default" : "outline"}
-            onClick={() => setActiveTab("members")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "members" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <Users className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">회원 관리</span>
-          </Button>
-          <Button
-            data-testid="tab-orders"
-            variant={activeTab === "orders" ? "default" : "outline"}
-            onClick={() => setActiveTab("orders")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "orders" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <ShoppingCart className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">주문 관리</span>
-            {adminOrders.filter(o => o.status === "pending").length > 0 && (
-              <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
-                {adminOrders.filter(o => o.status === "pending").length}
-              </span>
-            )}
-          </Button>
-          <Button
-            data-testid="tab-coupon-payments"
-            variant={activeTab === "couponPayments" ? "default" : "outline"}
-            onClick={() => setActiveTab("couponPayments")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "couponPayments" ? "bg-purple-500 hover:bg-purple-600" : ""}`}
-          >
-            <Wallet className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">카드결제</span>
-            {couponPayments.filter(p => p.status === "pending").length > 0 && (
-              <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
-                {couponPayments.filter(p => p.status === "pending").length}
-              </span>
-            )}
-          </Button>
-          <Button
-            data-testid="tab-brands"
-            variant={activeTab === "brands" ? "default" : "outline"}
-            onClick={() => setActiveTab("brands")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "brands" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <Tag className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">브랜드 관리</span>
-          </Button>
-          <Button
-            data-testid="tab-reviews"
-            variant={activeTab === "reviews" ? "default" : "outline"}
-            onClick={() => setActiveTab("reviews")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "reviews" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <Star className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">후기 관리</span>
-          </Button>
-          <Button
-            data-testid="tab-notices"
-            variant={activeTab === "notices" ? "default" : "outline"}
-            onClick={() => setActiveTab("notices")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "notices" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <Bell className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">공지 관리</span>
-          </Button>
-          <Button
-            data-testid="tab-chat"
-            variant={activeTab === "chat" ? "default" : "outline"}
-            onClick={() => setActiveTab("chat")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "chat" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <MessageCircle className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">실시간 채팅</span>
-            {chatConversations.filter(c => c.status === "open").length > 0 && (
-              <span className="ml-1 md:ml-2 bg-green-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
-                {chatConversations.filter(c => c.status === "open").length}
-              </span>
-            )}
-          </Button>
-          <Button
-            data-testid="tab-settings"
-            variant={activeTab === "settings" ? "default" : "outline"}
-            onClick={() => setActiveTab("settings")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "settings" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <Settings className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">설정</span>
-          </Button>
-        </div>
 
+          {/* Navigation */}
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+            <p className="text-xs text-slate-500 uppercase tracking-wider px-3 mb-3">메인</p>
+            <button
+              data-testid="tab-dashboard"
+              onClick={() => setActiveTab("dashboard")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                activeTab === "dashboard" 
+                  ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30" 
+                  : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+              }`}
+            >
+              <BarChart3 className="w-5 h-5" />
+              대시보드
+            </button>
+
+            <p className="text-xs text-slate-500 uppercase tracking-wider px-3 mt-6 mb-3">상품/주문</p>
+            <button
+              data-testid="tab-products"
+              onClick={() => setActiveTab("products")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                activeTab === "products" 
+                  ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30" 
+                  : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+              }`}
+            >
+              <Package className="w-5 h-5" />
+              상품 관리
+            </button>
+            <button
+              data-testid="tab-brands"
+              onClick={() => setActiveTab("brands")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                activeTab === "brands" 
+                  ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30" 
+                  : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+              }`}
+            >
+              <Tag className="w-5 h-5" />
+              브랜드 관리
+            </button>
+            <button
+              data-testid="tab-orders"
+              onClick={() => setActiveTab("orders")}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                activeTab === "orders" 
+                  ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30" 
+                  : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+              }`}
+            >
+              <span className="flex items-center gap-3">
+                <ShoppingCart className="w-5 h-5" />
+                주문 관리
+              </span>
+              {adminOrders.filter(o => o.status === "pending").length > 0 && (
+                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                  {adminOrders.filter(o => o.status === "pending").length}
+                </span>
+              )}
+            </button>
+            <button
+              data-testid="tab-coupon-payments"
+              onClick={() => setActiveTab("couponPayments")}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                activeTab === "couponPayments" 
+                  ? "bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-lg shadow-purple-500/30" 
+                  : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+              }`}
+            >
+              <span className="flex items-center gap-3">
+                <Wallet className="w-5 h-5" />
+                카드결제
+              </span>
+              {couponPayments.filter(p => p.status === "pending").length > 0 && (
+                <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                  {couponPayments.filter(p => p.status === "pending").length}
+                </span>
+              )}
+            </button>
+
+            <p className="text-xs text-slate-500 uppercase tracking-wider px-3 mt-6 mb-3">회원</p>
+            <button
+              data-testid="tab-members"
+              onClick={() => setActiveTab("members")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                activeTab === "members" 
+                  ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30" 
+                  : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+              }`}
+            >
+              <Users className="w-5 h-5" />
+              회원 관리
+            </button>
+            <button
+              data-testid="tab-chat"
+              onClick={() => setActiveTab("chat")}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                activeTab === "chat" 
+                  ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30" 
+                  : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+              }`}
+            >
+              <span className="flex items-center gap-3">
+                <MessageCircle className="w-5 h-5" />
+                실시간 채팅
+              </span>
+              {chatConversations.filter(c => c.status === "open").length > 0 && (
+                <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
+                  {chatConversations.filter(c => c.status === "open").length}
+                </span>
+              )}
+            </button>
+
+            <p className="text-xs text-slate-500 uppercase tracking-wider px-3 mt-6 mb-3">콘텐츠</p>
+            <button
+              data-testid="tab-reviews"
+              onClick={() => setActiveTab("reviews")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                activeTab === "reviews" 
+                  ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30" 
+                  : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+              }`}
+            >
+              <Star className="w-5 h-5" />
+              후기 관리
+            </button>
+            <button
+              data-testid="tab-notices"
+              onClick={() => setActiveTab("notices")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                activeTab === "notices" 
+                  ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30" 
+                  : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+              }`}
+            >
+              <Bell className="w-5 h-5" />
+              공지 관리
+            </button>
+
+            <p className="text-xs text-slate-500 uppercase tracking-wider px-3 mt-6 mb-3">시스템</p>
+            <button
+              data-testid="tab-settings"
+              onClick={() => setActiveTab("settings")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                activeTab === "settings" 
+                  ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30" 
+                  : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+              }`}
+            >
+              <Settings className="w-5 h-5" />
+              설정
+            </button>
+          </nav>
+
+          {/* Logout */}
+          <div className="p-4 border-t border-slate-700/50">
+            <button 
+              data-testid="button-logout"
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-red-500/20 transition-all"
+            >
+              <LogOut className="w-5 h-5" />
+              로그아웃
+            </button>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Top Header (Mobile + Desktop) */}
+          <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              {/* Mobile Menu */}
+              <div className="lg:hidden flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                  <span className="font-bold text-white text-xs">CD</span>
+                </div>
+                <span className="font-semibold text-slate-800">청담동에디션</span>
+              </div>
+              <h2 className="hidden lg:block text-lg font-semibold text-slate-800">
+                {activeTab === "dashboard" && "대시보드"}
+                {activeTab === "products" && "상품 관리"}
+                {activeTab === "brands" && "브랜드 관리"}
+                {activeTab === "orders" && "주문 관리"}
+                {activeTab === "couponPayments" && "카드결제 관리"}
+                {activeTab === "members" && "회원 관리"}
+                {activeTab === "chat" && "실시간 채팅"}
+                {activeTab === "reviews" && "후기 관리"}
+                {activeTab === "notices" && "공지 관리"}
+                {activeTab === "settings" && "설정"}
+              </h2>
+            </div>
+            <Button 
+              variant="ghost" 
+              onClick={handleLogout}
+              className="lg:hidden text-slate-600 hover:text-slate-900"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </header>
+
+          {/* Mobile Navigation */}
+          <div className="lg:hidden bg-white border-b border-slate-200 overflow-x-auto">
+            <div className="flex gap-1 p-2">
+              <button onClick={() => setActiveTab("dashboard")} className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium ${activeTab === "dashboard" ? "bg-blue-500 text-white" : "text-slate-600"}`}>
+                <BarChart3 className="w-4 h-4" />
+              </button>
+              <button onClick={() => setActiveTab("products")} className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium ${activeTab === "products" ? "bg-blue-500 text-white" : "text-slate-600"}`}>
+                <Package className="w-4 h-4" />
+              </button>
+              <button onClick={() => setActiveTab("brands")} className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium ${activeTab === "brands" ? "bg-blue-500 text-white" : "text-slate-600"}`}>
+                <Tag className="w-4 h-4" />
+              </button>
+              <button onClick={() => setActiveTab("orders")} className={`relative flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium ${activeTab === "orders" ? "bg-blue-500 text-white" : "text-slate-600"}`}>
+                <ShoppingCart className="w-4 h-4" />
+                {adminOrders.filter(o => o.status === "pending").length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                    {adminOrders.filter(o => o.status === "pending").length}
+                  </span>
+                )}
+              </button>
+              <button onClick={() => setActiveTab("couponPayments")} className={`relative flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium ${activeTab === "couponPayments" ? "bg-purple-500 text-white" : "text-slate-600"}`}>
+                <Wallet className="w-4 h-4" />
+                {couponPayments.filter(p => p.status === "pending").length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                    {couponPayments.filter(p => p.status === "pending").length}
+                  </span>
+                )}
+              </button>
+              <button onClick={() => setActiveTab("members")} className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium ${activeTab === "members" ? "bg-blue-500 text-white" : "text-slate-600"}`}>
+                <Users className="w-4 h-4" />
+              </button>
+              <button onClick={() => setActiveTab("chat")} className={`relative flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium ${activeTab === "chat" ? "bg-blue-500 text-white" : "text-slate-600"}`}>
+                <MessageCircle className="w-4 h-4" />
+                {chatConversations.filter(c => c.status === "open").length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-green-500 text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full">
+                    {chatConversations.filter(c => c.status === "open").length}
+                  </span>
+                )}
+              </button>
+              <button onClick={() => setActiveTab("reviews")} className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium ${activeTab === "reviews" ? "bg-blue-500 text-white" : "text-slate-600"}`}>
+                <Star className="w-4 h-4" />
+              </button>
+              <button onClick={() => setActiveTab("notices")} className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium ${activeTab === "notices" ? "bg-blue-500 text-white" : "text-slate-600"}`}>
+                <Bell className="w-4 h-4" />
+              </button>
+              <button onClick={() => setActiveTab("settings")} className={`flex-shrink-0 px-3 py-2 rounded-lg text-xs font-medium ${activeTab === "settings" ? "bg-blue-500 text-white" : "text-slate-600"}`}>
+                <Settings className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Page Content */}
+          <main className="flex-1 overflow-y-auto p-6">
         {activeTab === "dashboard" && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -2076,8 +2214,8 @@ export default function Admin() {
                     <p className="text-gray-500 text-sm">전체 상품</p>
                     <p className="text-3xl font-bold text-gray-900 mt-1">{stats?.totalProducts || 0}</p>
                   </div>
-                  <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                    <Package className="w-6 h-6 text-yellow-600" />
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Package className="w-6 h-6 text-blue-600" />
                   </div>
                 </div>
               </div>
@@ -2110,7 +2248,7 @@ export default function Admin() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {stats?.productsByCategory.map((cat) => (
                   <div key={cat.id} className="bg-gray-50 rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-yellow-600">{cat.count}</p>
+                    <p className="text-2xl font-bold text-blue-600">{cat.count}</p>
                     <p className="text-sm text-gray-600 mt-1">{cat.name}</p>
                   </div>
                 ))}
@@ -2164,7 +2302,7 @@ export default function Admin() {
                 <Button 
                   data-testid="button-add-product"
                   onClick={() => setShowAddForm(true)} 
-                  className="bg-yellow-500 hover:bg-yellow-600"
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   상품 추가
@@ -2288,7 +2426,7 @@ export default function Admin() {
                         accept="image/*"
                         onChange={handleProductImageUpload}
                         disabled={uploadingProductImage || formData.imageUrls.length >= 10}
-                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100 disabled:opacity-50"
+                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
                         data-testid="input-product-image-file"
                       />
                       {uploadingProductImage && (
@@ -2318,7 +2456,7 @@ export default function Admin() {
                               <X className="w-3 h-3" />
                             </Button>
                             {index === 0 && (
-                              <span className="absolute bottom-1 left-1 bg-yellow-500 text-white text-xs px-1 py-0.5 rounded text-[10px]">대표</span>
+                              <span className="absolute bottom-1 left-1 bg-blue-500 text-white text-xs px-1 py-0.5 rounded text-[10px]">대표</span>
                             )}
                           </div>
                         ))}
@@ -2354,7 +2492,7 @@ export default function Admin() {
                   className="mb-4"
                 />
                 <div className="flex gap-2">
-                  <Button data-testid="button-save-product" onClick={handleCreate} className="bg-yellow-500 hover:bg-yellow-600">저장</Button>
+                  <Button data-testid="button-save-product" onClick={handleCreate} className="bg-blue-600 hover:bg-blue-700">저장</Button>
                   <Button variant="outline" onClick={() => setShowAddForm(false)}>취소</Button>
                 </div>
               </div>
@@ -2404,7 +2542,7 @@ export default function Admin() {
                             {CATEGORY_OPTIONS.find(c => c.id === product.categoryId)?.name || product.categoryId || "-"}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-yellow-600 font-bold">{product.price}원</td>
+                        <td className="px-4 py-3 text-blue-600 font-bold">{product.price}원</td>
                         <td className="px-4 py-3 text-gray-600">{product.stock ?? "-"}</td>
                         <td className="px-4 py-3 text-center">
                           {product.isBest && <span className="bg-gray-900 text-white px-2 py-0.5 rounded text-[10px] mr-1">Best</span>}
@@ -2473,7 +2611,7 @@ export default function Admin() {
                           setProductPage(pageNum);
                           fetchProducts(pageNum, productSearch, productFilter);
                         }}
-                        className={pageNum === productPage ? "bg-yellow-500 hover:bg-yellow-600" : ""}
+                        className={pageNum === productPage ? "bg-blue-600 hover:bg-blue-700" : ""}
                       >
                         {pageNum}
                       </Button>
@@ -2636,7 +2774,7 @@ export default function Admin() {
                                   <X className="w-3 h-3" />
                                 </Button>
                                 {index === 0 && (
-                                  <span className="absolute bottom-1 left-1 bg-yellow-500 text-white text-xs px-1.5 py-0.5 rounded">대표</span>
+                                  <span className="absolute bottom-1 left-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded">대표</span>
                                 )}
                               </div>
                             ))}
@@ -2648,7 +2786,7 @@ export default function Admin() {
                             accept="image/*"
                             onChange={handleProductImageUpload}
                             disabled={uploadingProductImage || formData.imageUrls.length >= 10}
-                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100 disabled:opacity-50"
+                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
                             data-testid="input-edit-product-image"
                           />
                           {uploadingProductImage && (
@@ -2674,7 +2812,7 @@ export default function Admin() {
                       </Button>
                       <Button 
                         onClick={() => editingId && handleUpdate(editingId)}
-                        className="bg-yellow-500 hover:bg-yellow-600"
+                        className="bg-blue-600 hover:bg-blue-700"
                       >
                         저장
                       </Button>
@@ -2701,7 +2839,7 @@ export default function Admin() {
                 <Button 
                   data-testid="button-add-member"
                   onClick={() => setShowAddMemberForm(true)} 
-                  className="bg-yellow-500 hover:bg-yellow-600"
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   회원 추가
@@ -2813,7 +2951,7 @@ export default function Admin() {
                   </label>
                 </div>
                 <div className="flex gap-2">
-                  <Button data-testid="button-save-member" onClick={handleCreateMember} className="bg-yellow-500 hover:bg-yellow-600">저장</Button>
+                  <Button data-testid="button-save-member" onClick={handleCreateMember} className="bg-blue-600 hover:bg-blue-700">저장</Button>
                   <Button variant="outline" onClick={() => setShowAddMemberForm(false)}>취소</Button>
                 </div>
               </div>
@@ -2915,7 +3053,7 @@ export default function Admin() {
                     </div>
                   </div>
                   <div className="flex gap-2 mt-6">
-                    <Button onClick={() => handleUpdateMember(editingMemberId)} className="bg-yellow-500 hover:bg-yellow-600">저장</Button>
+                    <Button onClick={() => handleUpdateMember(editingMemberId)} className="bg-blue-600 hover:bg-blue-700">저장</Button>
                     <Button variant="outline" onClick={() => { setShowEditMemberModal(false); setEditingMemberId(null); }}>취소</Button>
                   </div>
                 </div>
@@ -2937,7 +3075,7 @@ export default function Admin() {
                         <div className="flex items-center gap-2 mb-2">
                           <span className="font-bold text-lg text-gray-900">{member.name}</span>
                           {member.isAdmin ? (
-                            <span className="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded text-xs font-medium">관리자</span>
+                            <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded text-xs font-medium">관리자</span>
                           ) : (
                             <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs">일반</span>
                           )}
@@ -3139,7 +3277,7 @@ export default function Admin() {
               </div>
               <div className="flex gap-3">
                 <select
-                  className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
+                  className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   value={orderFilter}
                   onChange={(e) => setOrderFilter(e.target.value as typeof orderFilter)}
                 >
@@ -3170,7 +3308,7 @@ export default function Admin() {
                     key={order.id}
                     className={`p-4 border rounded-lg ${
                       order.status === "pending"
-                        ? "border-yellow-300 bg-yellow-50"
+                        ? "border-blue-300 bg-blue-50"
                         : order.status === "confirmed"
                         ? "border-blue-300 bg-blue-50"
                         : order.status === "shipped"
@@ -3187,7 +3325,7 @@ export default function Admin() {
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-lg">{order.orderNumber}</span>
                           <span className={`text-xs px-2 py-1 rounded-full ${
-                            order.status === "pending" ? "bg-yellow-200 text-yellow-800" :
+                            order.status === "pending" ? "bg-amber-200 text-amber-800" :
                             order.status === "confirmed" ? "bg-blue-200 text-blue-800" :
                             order.status === "shipped" ? "bg-purple-200 text-purple-800" :
                             order.status === "delivered" ? "bg-green-200 text-green-800" :
@@ -3237,7 +3375,7 @@ export default function Admin() {
                       </div>
                       <div className="flex flex-col gap-2">
                         <select
-                          className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-yellow-500"
+                          className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                           value={order.status || "pending"}
                           onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
                         >
@@ -3248,7 +3386,7 @@ export default function Admin() {
                           <option value="cancelled">취소됨</option>
                         </select>
                         <select
-                          className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-yellow-500"
+                          className="px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
                           value={order.paymentStatus || "pending"}
                           onChange={(e) => handleUpdatePaymentStatus(order.id, e.target.value)}
                         >
@@ -3306,7 +3444,7 @@ export default function Admin() {
                       <tr 
                         key={payment.id} 
                         className={`border-b hover:bg-gray-50 ${
-                          payment.status === "pending" ? "bg-yellow-50" : 
+                          payment.status === "pending" ? "bg-blue-50" : 
                           payment.status === "checked" ? "bg-green-50" : ""
                         }`}
                         data-testid={`coupon-payment-row-${payment.id}`}
@@ -3341,7 +3479,7 @@ export default function Admin() {
                         </td>
                         <td className="p-3">
                           <span className={`text-xs px-2 py-1 rounded-full ${
-                            payment.status === "pending" ? "bg-yellow-200 text-yellow-800" :
+                            payment.status === "pending" ? "bg-amber-200 text-amber-800" :
                             payment.status === "checked" ? "bg-green-200 text-green-800" :
                             payment.status === "rejected" ? "bg-red-200 text-red-800" :
                             "bg-gray-200 text-gray-800"
@@ -3411,7 +3549,7 @@ export default function Admin() {
                     setShowAddBrandForm(true);
                     setBrandFormData({ name: "", slug: "", logoUrl: "", description: "" });
                   }}
-                  className="bg-yellow-500 hover:bg-yellow-600"
+                  className="bg-blue-600 hover:bg-blue-700"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   브랜드 추가
@@ -3461,7 +3599,7 @@ export default function Admin() {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-4">
-                  <Button onClick={handleCreateBrand} className="bg-yellow-500 hover:bg-yellow-600" data-testid="button-save-brand">
+                  <Button onClick={handleCreateBrand} className="bg-blue-600 hover:bg-blue-700" data-testid="button-save-brand">
                     <Check className="w-4 h-4 mr-2" />
                     저장
                   </Button>
@@ -3582,7 +3720,7 @@ export default function Admin() {
                   setShowAddReviewForm(true);
                   setReviewFormData({ authorName: "", productName: "", rating: 5, title: "", content: "", imageUrl: "", isVisible: true, displayDate: new Date().toISOString().slice(0, 16) });
                 }}
-                className="bg-yellow-500 hover:bg-yellow-600"
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 후기 추가
@@ -3704,7 +3842,7 @@ export default function Admin() {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-4">
-                  <Button onClick={handleCreateReview} className="bg-yellow-500 hover:bg-yellow-600" data-testid="button-save-review">
+                  <Button onClick={handleCreateReview} className="bg-blue-600 hover:bg-blue-700" data-testid="button-save-review">
                     <Check className="w-4 h-4 mr-2" />
                     저장
                   </Button>
@@ -3801,7 +3939,7 @@ export default function Admin() {
                           <td className="px-4 py-3 font-medium">{review.authorName}</td>
                           <td className="px-4 py-3">{review.title}</td>
                           <td className="px-4 py-3">
-                            <div className="flex text-yellow-400">
+                            <div className="flex text-amber-400">
                               {[...Array(review.rating || 5)].map((_, i) => (
                                 <Star key={i} className="w-4 h-4 fill-current" />
                               ))}
@@ -3854,7 +3992,7 @@ export default function Admin() {
                   setShowAddNoticeForm(true);
                   setNoticeFormData({ title: "", content: "", category: "general", isPinned: false, isVisible: true, displayDate: new Date().toISOString().slice(0, 16), viewCount: 0 });
                 }}
-                className="bg-yellow-500 hover:bg-yellow-600"
+                className="bg-blue-600 hover:bg-blue-700"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 공지 추가
@@ -3941,7 +4079,7 @@ export default function Admin() {
                   </div>
                 </div>
                 <div className="flex gap-2 mt-4">
-                  <Button onClick={handleCreateNotice} className="bg-yellow-500 hover:bg-yellow-600" data-testid="button-save-notice">
+                  <Button onClick={handleCreateNotice} className="bg-blue-600 hover:bg-blue-700" data-testid="button-save-notice">
                     <Check className="w-4 h-4 mr-2" />
                     저장
                   </Button>
@@ -4110,7 +4248,7 @@ export default function Admin() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-bold flex items-center gap-2">
-                      <MessageCircle className="w-5 h-5 text-yellow-600" />
+                      <MessageCircle className="w-5 h-5 text-blue-600" />
                       실시간 1:1 상담
                     </h3>
                     <p className="text-sm text-gray-500 mt-1">고객과 실시간으로 상담하세요.</p>
@@ -4142,7 +4280,7 @@ export default function Admin() {
                           data-testid={`chat-conversation-${conv.id}`}
                           onClick={() => selectConversation(conv)}
                           className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                            selectedConversation?.id === conv.id ? "bg-yellow-50 border-l-4 border-yellow-500" : ""
+                            selectedConversation?.id === conv.id ? "bg-blue-50 border-l-4 border-blue-500" : ""
                           }`}
                         >
                           <div className="flex items-start justify-between">
@@ -4155,7 +4293,7 @@ export default function Admin() {
                                   conv.status === "open" 
                                     ? "bg-green-100 text-green-700" 
                                     : conv.status === "pending"
-                                    ? "bg-yellow-100 text-yellow-700"
+                                    ? "bg-blue-100 text-blue-700"
                                     : "bg-gray-100 text-gray-600"
                                 }`}>
                                   {conv.status === "open" ? "진행중" : conv.status === "pending" ? "대기중" : "종료"}
@@ -4206,12 +4344,12 @@ export default function Admin() {
                           >
                             <div className={`max-w-[80%] rounded-lg px-4 py-2 ${
                               msg.senderType === "admin" 
-                                ? "bg-yellow-500 text-black" 
+                                ? "bg-blue-500 text-black" 
                                 : "bg-white text-gray-900 border border-gray-200"
                             }`}>
                               <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                               <p className={`text-xs mt-1 ${
-                                msg.senderType === "admin" ? "text-yellow-900" : "text-gray-400"
+                                msg.senderType === "admin" ? "text-blue-900" : "text-gray-400"
                               }`}>
                                 {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString("ko-KR") : ""}
                               </p>
@@ -4241,7 +4379,7 @@ export default function Admin() {
                               data-testid="button-send-message"
                               onClick={sendChatMessage}
                               disabled={!newMessage.trim() || !isChatConnected}
-                              className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                              className="bg-blue-600 hover:bg-blue-700 text-black"
                             >
                               <Send className="w-4 h-4" />
                             </Button>
@@ -4269,16 +4407,16 @@ export default function Admin() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
               <div className="p-6 border-b border-gray-100">
                 <h3 className="text-lg font-bold flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-yellow-600" />
+                  <Settings className="w-5 h-5 text-blue-600" />
                   사이트 설정
                 </h3>
                 <p className="text-sm text-gray-500 mt-1">카카오톡 문의 링크 및 사이트 설정을 관리합니다.</p>
               </div>
               
               <div className="p-6 space-y-6">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-yellow-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
                       <svg viewBox="0 0 24 24" className="w-6 h-6 text-black" fill="currentColor">
                         <path d="M12 3C6.48 3 2 6.58 2 11c0 2.84 1.83 5.33 4.56 6.78-.12.47-.44 1.75-.51 2.02-.08.32.12.64.46.64.25 0 .5-.11.67-.27.11-.1 1.41-1.14 2.1-1.7.56.07 1.14.11 1.72.11 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
                       </svg>
@@ -4306,7 +4444,7 @@ export default function Admin() {
                           data-testid="button-save-kakao-link"
                           onClick={saveSiteSettings}
                           disabled={settingsLoading}
-                          className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                          className="bg-blue-600 hover:bg-blue-700 text-black"
                         >
                           {settingsLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : "저장"}
                         </Button>
@@ -4340,15 +4478,15 @@ export default function Admin() {
                   <h4 className="font-semibold text-gray-700 mb-3">도움말</h4>
                   <ul className="text-sm text-gray-600 space-y-2">
                     <li className="flex items-start gap-2">
-                      <span className="text-yellow-500 mt-1">•</span>
+                      <span className="text-blue-500 mt-1">•</span>
                       <span>카카오톡 오픈채팅 링크는 카카오톡 앱에서 생성할 수 있습니다.</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-yellow-500 mt-1">•</span>
+                      <span className="text-blue-500 mt-1">•</span>
                       <span>링크 변경 시 사이트 전체의 모든 "카카오톡 문의" 버튼에 즉시 반영됩니다.</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-yellow-500 mt-1">•</span>
+                      <span className="text-blue-500 mt-1">•</span>
                       <span>올바른 URL 형식인지 "테스트" 버튼으로 확인하세요.</span>
                     </li>
                   </ul>
@@ -4971,6 +5109,8 @@ export default function Admin() {
             </div>
           </div>
         )}
+          </main>
+        </div>
       </div>
     </div>
   );
