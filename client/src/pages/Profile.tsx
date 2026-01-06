@@ -151,7 +151,7 @@ export default function Profile() {
       setDepositAmount("");
       setBankName("");
       setDepositorName("");
-      alert("입금신청이 접수되었습니다. 관리자 승인 후 포인트가 충전됩니다.");
+      alert("포인트 충전 신청이 접수되었습니다. 관리자 승인 후 포인트가 충전됩니다.");
     },
     onError: (error: Error) => {
       alert(error.message);
@@ -168,7 +168,7 @@ export default function Profile() {
 
   const handleDepositSubmit = () => {
     if (memberInfo?.isFrozen) {
-      alert("계정이 동결되어 입금신청을 할 수 없습니다.");
+      alert("계정이 동결되어 포인트 충전을 할 수 없습니다.");
       return;
     }
     
@@ -322,8 +322,8 @@ export default function Profile() {
                     <TabsTrigger value="info" className="text-xs md:text-sm py-2 px-1 md:px-3">내 정보</TabsTrigger>
                     <TabsTrigger value="orders" className="text-xs md:text-sm py-2 px-1 md:px-3">주문내역</TabsTrigger>
                     <TabsTrigger value="menu" className="text-xs md:text-sm py-2 px-1 md:px-3">메뉴</TabsTrigger>
-                    <TabsTrigger value="deposit" className="text-xs md:text-sm py-2 px-1 md:px-3">입금신청</TabsTrigger>
-                    <TabsTrigger value="points" className="text-xs md:text-sm py-2 px-1 md:px-3">포인트</TabsTrigger>
+                    <TabsTrigger value="deposit" className="text-xs md:text-sm py-2 px-1 md:px-3">포인트충전</TabsTrigger>
+                    <TabsTrigger value="points" className="text-xs md:text-sm py-2 px-1 md:px-3">포인트환급</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="info" className="mt-4">
@@ -495,9 +495,9 @@ export default function Profile() {
                   <TabsContent value="deposit" className="mt-4">
                     <div className="space-y-4">
                       <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                        <h3 className="font-bold text-amber-800 mb-2">입금 안내</h3>
+                        <h3 className="font-bold text-amber-800 mb-2">포인트 충전 안내</h3>
                         <div className="text-sm text-amber-700">
-                          <p>입금 관련 상세 안내는 카카오톡 고객센터로 연락 바랍니다.</p>
+                          <p>포인트 충전 관련 상세 안내는 카카오톡 고객센터로 연락 바랍니다.</p>
                         </div>
                       </div>
 
@@ -508,16 +508,16 @@ export default function Profile() {
                             disabled={memberInfo?.isFrozen}
                           >
                             <Plus className="w-4 h-4 mr-2" />
-                            입금 신청하기
+                            포인트 충전 신청
                           </Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
-                            <DialogTitle>입금 신청</DialogTitle>
+                            <DialogTitle>포인트 충전 신청</DialogTitle>
                           </DialogHeader>
                           <div className="space-y-4 pt-4">
                             <div>
-                              <Label htmlFor="amount">입금 금액 (원)</Label>
+                              <Label htmlFor="amount">충전 금액 (원)</Label>
                               <Input
                                 id="amount"
                                 type="text"
@@ -556,10 +556,10 @@ export default function Profile() {
                       </Dialog>
 
                       <div className="space-y-3">
-                        <h3 className="font-bold text-gray-900">입금 신청 내역</h3>
+                        <h3 className="font-bold text-gray-900">포인트 충전 신청 내역</h3>
                         {!depositRequests?.length ? (
                           <p className="text-sm text-gray-500 text-center py-8">
-                            입금 신청 내역이 없습니다.
+                            포인트 충전 신청 내역이 없습니다.
                           </p>
                         ) : (
                           depositRequests.map((request) => (
@@ -591,39 +591,53 @@ export default function Profile() {
                   </TabsContent>
 
                   <TabsContent value="points" className="mt-4">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-bold text-gray-900">포인트 사용 내역</h3>
-                        <span className="text-sm text-gray-500">
-                          현재 잔액: <span className="font-bold text-primary">{(memberInfo?.pointBalance || 0).toLocaleString()}P</span>
-                        </span>
+                    <div className="space-y-4">
+                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h3 className="font-bold text-green-800 mb-2">포인트 환급 안내</h3>
+                        <div className="text-sm text-green-700">
+                          <p>현재 포인트 잔액: <span className="font-bold">{(memberInfo?.pointBalance || 0).toLocaleString()}P</span></p>
+                          <p className="mt-1">포인트 환급 관련 상세 안내는 카카오톡 고객센터로 연락 바랍니다.</p>
+                        </div>
                       </div>
-                      
-                      {!pointTransactions?.length ? (
-                        <p className="text-sm text-gray-500 text-center py-8">
-                          포인트 내역이 없습니다.
-                        </p>
-                      ) : (
-                        pointTransactions.map((transaction) => (
-                          <div
-                            key={transaction.id}
-                            className="p-4 border rounded-lg bg-white flex justify-between items-center"
-                          >
-                            <div>
-                              <p className="font-medium text-gray-900">{transaction.description}</p>
-                              <p className="text-xs text-gray-500">{formatDate(transaction.createdAt)}</p>
+
+                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                        <h4 className="font-medium text-gray-800 mb-2">환급 계좌 정보</h4>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <p>은행: {memberInfo?.bank || "미등록"}</p>
+                          <p>계좌번호: {memberInfo?.accountNumber || "미등록"}</p>
+                          <p>예금주: {memberInfo?.accountHolder || memberInfo?.name || "미등록"}</p>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">※ 계좌정보 수정은 관리자에게 문의해주세요.</p>
+                      </div>
+
+                      <div className="space-y-3">
+                        <h3 className="font-bold text-gray-900">포인트 사용/충전 내역</h3>
+                        {!pointTransactions?.length ? (
+                          <p className="text-sm text-gray-500 text-center py-8">
+                            포인트 내역이 없습니다.
+                          </p>
+                        ) : (
+                          pointTransactions.map((transaction) => (
+                            <div
+                              key={transaction.id}
+                              className="p-4 border rounded-lg bg-white flex justify-between items-center"
+                            >
+                              <div>
+                                <p className="font-medium text-gray-900">{transaction.description}</p>
+                                <p className="text-xs text-gray-500">{formatDate(transaction.createdAt)}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className={`font-bold ${transaction.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                  {transaction.amount >= 0 ? "+" : ""}{transaction.amount.toLocaleString()}P
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  잔액: {transaction.balanceAfter.toLocaleString()}P
+                                </p>
+                              </div>
                             </div>
-                            <div className="text-right">
-                              <p className={`font-bold ${transaction.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
-                                {transaction.amount >= 0 ? "+" : ""}{transaction.amount.toLocaleString()}P
-                              </p>
-                              <p className="text-xs text-gray-500">
-                                잔액: {transaction.balanceAfter.toLocaleString()}P
-                              </p>
-                            </div>
-                          </div>
-                        ))
-                      )}
+                          ))
+                        )}
+                      </div>
                     </div>
                   </TabsContent>
                 </Tabs>
