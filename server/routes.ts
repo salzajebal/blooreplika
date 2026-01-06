@@ -2526,16 +2526,62 @@ export async function registerRoutes(
               const imageUrl = product.images?.[0]?.src || "";
               const imageUrls = product.images?.map((img: any) => img.src) || [];
               
-              // Extract detail images from body_html (they are embedded as <img> tags)
+              // Extract detail images from body_html using cheerio for proper HTML parsing
               const bodyHtml = product.body_html || "";
-              const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
               const detailImagesFromHtml: string[] = [];
-              let match;
-              while ((match = imgRegex.exec(bodyHtml)) !== null) {
-                const imgSrc = match[1];
-                // Filter out small icons and only keep cdn.shopify.com images
-                if (imgSrc && imgSrc.includes('cdn.shopify.com') && !imgSrc.includes('icon')) {
-                  detailImagesFromHtml.push(imgSrc);
+              
+              if (bodyHtml) {
+                const $body = cheerio.load(bodyHtml);
+                
+                // Extract all images from img tags
+                $body('img').each((_, el) => {
+                  const src = $body(el).attr('src') || $body(el).attr('data-src') || $body(el).attr('data-lazy-src') || '';
+                  if (src && !detailImagesFromHtml.includes(src)) {
+                    // Accept Shopify CDN images, also allow other CDN sources
+                    if ((src.includes('cdn.shopify.com') || src.includes('https://')) && !src.includes('icon')) {
+                      // Clean up the URL - remove query params that resize images too small
+                      let cleanSrc = src;
+                      if (cleanSrc.includes('cdn.shopify.com')) {
+                        // Remove size constraints to get original image
+                        cleanSrc = cleanSrc.replace(/_\d+x\d*(\.\w+)/, '$1').replace(/\?.*$/, '');
+                      }
+                      if (!detailImagesFromHtml.includes(cleanSrc)) {
+                        detailImagesFromHtml.push(cleanSrc);
+                      }
+                    }
+                  }
+                });
+                
+                // Also check for images in srcset attributes
+                $body('img[srcset], source[srcset]').each((_, el) => {
+                  const srcset = $body(el).attr('srcset') || '';
+                  const srcsetUrls = srcset.split(',').map(s => s.trim().split(' ')[0]);
+                  srcsetUrls.forEach(url => {
+                    if (url && (url.includes('cdn.shopify.com') || url.startsWith('https://')) && !url.includes('icon')) {
+                      let cleanUrl = url.replace(/_\d+x\d*(\.\w+)/, '$1').replace(/\?.*$/, '');
+                      if (!detailImagesFromHtml.includes(cleanUrl)) {
+                        detailImagesFromHtml.push(cleanUrl);
+                      }
+                    }
+                  });
+                });
+                
+                // Also extract images from anchor tags that link to images
+                $body('a[href*=".jpg"], a[href*=".jpeg"], a[href*=".png"], a[href*=".webp"], a[href*=".gif"]').each((_, el) => {
+                  const href = $body(el).attr('href') || '';
+                  if (href && !detailImagesFromHtml.includes(href)) {
+                    detailImagesFromHtml.push(href);
+                  }
+                });
+                
+                // Fallback: use regex to find any remaining image URLs in the HTML
+                const imgUrlRegex = /(https?:\/\/[^\s"'<>]+\.(?:jpg|jpeg|png|webp|gif))/gi;
+                let match;
+                while ((match = imgUrlRegex.exec(bodyHtml)) !== null) {
+                  const imgUrl = match[1].replace(/\?.*$/, ''); // Remove query params
+                  if (!detailImagesFromHtml.includes(imgUrl) && !imgUrl.includes('icon')) {
+                    detailImagesFromHtml.push(imgUrl);
+                  }
                 }
               }
               
