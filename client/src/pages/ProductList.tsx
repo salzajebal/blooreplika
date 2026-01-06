@@ -96,7 +96,7 @@ export default function ProductList() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const ITEMS_PER_PAGE = 60;
+  const ITEMS_PER_PAGE = 24; // Reduced for faster initial loading
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   useEffect(() => {
@@ -475,6 +475,8 @@ export default function ProductList() {
                         <img 
                           src={getProxiedImageUrl(product.imageUrl)} 
                           alt={product.name} 
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
                         />

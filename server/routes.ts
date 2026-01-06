@@ -159,7 +159,7 @@ export async function registerRoutes(
     try {
       const { category, categoryId, subcategoryId, limit, offset } = req.query;
       
-      // Default limit for production performance (always use pagination)
+      // Default limit for production performance (keep 60 for backend compatibility)
       const limitNum = limit ? parseInt(limit as string, 10) : 60;
       const offsetNum = offset ? parseInt(offset as string, 10) : 0;
       
@@ -178,6 +178,8 @@ export async function registerRoutes(
         storage.getBrandsWithProductCount(catFilter)
       ]);
       
+      // Add caching headers for better performance
+      res.setHeader("Cache-Control", "public, max-age=30, stale-while-revalidate=60");
       res.json({ 
         success: true, 
         data: productList,

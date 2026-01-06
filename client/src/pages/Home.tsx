@@ -650,6 +650,8 @@ function ProductSection({ products }: { products: any[] }) {
               <img 
                 src={getProxiedImageUrl(product.imageUrl)} 
                 alt={product.name} 
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
                 onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
               />
