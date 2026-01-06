@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { useGlobalSale } from "@/hooks/use-global-sale";
 import { CheckCircle, Package, User, MapPin, MessageCircle, CreditCard, Building2 } from "lucide-react";
 import { CardPaymentForm, type CouponPaymentData } from "@/components/checkout/CardPaymentForm";
 import { cn } from "@/lib/utils";
@@ -29,7 +28,6 @@ export default function Order() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { calculateSalePrice, hasSale } = useGlobalSale();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,15 +53,7 @@ export default function Order() {
     shippingAddressDetail: "",
     shippingMemo: "",
     sameAsOrderer: true,
-    selectedSize: "",
-    selectedColor: "",
   });
-
-  const [depositAccount, setDepositAccount] = useState<{
-    bankName: string;
-    accountNumber: string;
-    accountHolder: string;
-  } | null>(null);
 
   useEffect(() => {
     const memberName = localStorage.getItem("memberName") || "";
@@ -75,24 +65,6 @@ export default function Order() {
       memberEmail,
       shippingName: memberName,
     }));
-  }, []);
-
-  useEffect(() => {
-    const fetchDepositAccount = async () => {
-      try {
-        const res = await fetch("/api/settings/deposit_account");
-        const data = await res.json();
-        if (data.success && data.data?.value) {
-          try {
-            const parsed = JSON.parse(data.data.value);
-            if (parsed.bankName && parsed.accountNumber) {
-              setDepositAccount(parsed);
-            }
-          } catch {}
-        }
-      } catch {}
-    };
-    fetchDepositAccount();
   }, []);
 
   useEffect(() => {
@@ -139,15 +111,9 @@ export default function Order() {
     }
   }, [formData.memberName, formData.memberPhone, formData.sameAsOrderer]);
 
-  const getEffectivePrice = () => {
-    if (!product) return 0;
-    return hasSale ? calculateSalePrice(product.price) : product.price;
-  };
-
   const calculateTotal = () => {
     if (!product) return "0";
-    const effectivePrice = getEffectivePrice();
-    return (effectivePrice * quantity).toLocaleString();
+    return (product.price * quantity).toLocaleString();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -198,11 +164,9 @@ export default function Order() {
           shippingMemo: formData.shippingMemo,
           productId: product.id,
           productName: product.name,
-          productPrice: getEffectivePrice(),
+          productPrice: product.price,
           quantity,
-          selectedSize: formData.selectedSize || null,
-          selectedColor: formData.selectedColor || null,
-          totalAmount: getEffectivePrice() * quantity,
+          totalAmount: product.price * quantity,
           paymentMethod: paymentMethod || undefined,
           couponPayment: paymentMethod === "coupon" && couponPaymentData ? couponPaymentData : undefined,
         }),
@@ -265,9 +229,54 @@ export default function Order() {
                 <CheckCircle className="w-12 h-12 text-green-600" />
               </div>
               
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
                 주문이 완료되었습니다
               </h1>
+              
+              <p className="text-gray-600 mb-6">
+                주문번호: <span className="font-bold text-primary">{orderNumber}</span>
+              </p>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 sm:p-6 mb-6">
+                <h2 className="font-bold text-amber-900 mb-3 flex items-center justify-center gap-2">
+                  <MessageCircle className="w-5 h-5" />
+                  결제계좌 안내
+                </h2>
+                <p className="text-amber-800 mb-4">
+                  결제계좌 정보는 <strong>카카오톡 상담</strong>을 통해 안내받으실 수 있습니다.
+                  <br />
+                  아래 버튼을 눌러 카카오톡으로 이동해주세요.
+                </p>
+                
+                <a
+                  href={KAKAO_LINK}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-bold py-4 px-8 rounded-lg text-lg transition-colors"
+                  data-testid="link-kakao-payment"
+                >
+                  <KakaoIcon className="w-6 h-6" />
+                  카카오톡으로 결제계좌 안내받기
+                </a>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+                <h3 className="font-bold text-gray-900 mb-3">주문 상품 정보</h3>
+                <div className="flex gap-4">
+                  <div className="w-20 h-20 bg-white rounded border overflow-hidden shrink-0">
+                    <img
+                      src={product.imageUrl || "/images/placeholder.png"}
+                      alt={product.name}
+                      className="w-full h-full object-contain p-2"
+                    />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{product.name}</p>
+                    <p className="text-sm text-gray-500">수량: {quantity}개</p>
+                    <p className="text-primary font-bold mt-1">{calculateTotal()}원</p>
+                  </div>
+                </div>
+              </div>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button
@@ -276,6 +285,12 @@ export default function Order() {
                   className="sm:w-auto"
                 >
                   홈으로 돌아가기
+                </Button>
+                <Button
+                  onClick={() => setLocation("/profile")}
+                  className="sm:w-auto"
+                >
+                  주문 내역 확인
                 </Button>
               </div>
             </div>
@@ -318,31 +333,6 @@ export default function Order() {
                     <span className="text-sm text-gray-500">수량: {quantity}개</span>
                     <span className="font-bold text-primary text-lg">{calculateTotal()}원</span>
                   </div>
-                </div>
-              </div>
-              
-              <div className="grid gap-4 sm:grid-cols-2 mt-4 pt-4 border-t">
-                <div>
-                  <Label htmlFor="selectedSize">사이즈 (선택)</Label>
-                  <Input
-                    id="selectedSize"
-                    name="selectedSize"
-                    value={formData.selectedSize}
-                    onChange={handleInputChange}
-                    placeholder="예: M, L, XL, 260, 270 등"
-                    data-testid="input-selected-size"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="selectedColor">색상 (선택)</Label>
-                  <Input
-                    id="selectedColor"
-                    name="selectedColor"
-                    value={formData.selectedColor}
-                    onChange={handleInputChange}
-                    placeholder="예: 블랙, 화이트, 네이비 등"
-                    data-testid="input-selected-color"
-                  />
                 </div>
               </div>
             </div>
@@ -532,7 +522,7 @@ export default function Order() {
                     setCouponPaymentData(data);
                     setCardPaymentValid(isValid);
                   }}
-                  totalAmount={product ? getEffectivePrice() * quantity : 0}
+                  totalAmount={product ? product.price * quantity : 0}
                 />
               )}
 
@@ -542,28 +532,11 @@ export default function Order() {
                     <MessageCircle className="w-5 h-5" />
                     계좌이체 안내
                   </h3>
-                  {depositAccount ? (
-                    <div className="text-amber-800 text-sm space-y-2">
-                      <p>주문서 작성 완료 후, 아래 계좌로 입금해주세요.</p>
-                      <div className="bg-white/50 rounded-lg p-3 border border-amber-200">
-                        <div className="grid grid-cols-[80px_1fr] gap-1">
-                          <span className="text-amber-700">은행명:</span>
-                          <span className="font-bold text-amber-900">{depositAccount.bankName}</span>
-                          <span className="text-amber-700">계좌번호:</span>
-                          <span className="font-bold text-amber-900">{depositAccount.accountNumber}</span>
-                          <span className="text-amber-700">예금주:</span>
-                          <span className="font-bold text-amber-900">{depositAccount.accountHolder}</span>
-                        </div>
-                      </div>
-                      <p className="text-xs text-amber-600">※ 입금 시 주문자명으로 입금해주세요.</p>
-                    </div>
-                  ) : (
-                    <p className="text-amber-800 text-sm">
-                      주문서 작성 완료 후, <strong>결제계좌 정보</strong>는 카카오톡 상담을 통해 안내받으실 수 있습니다.
-                      <br />
-                      주문 완료 페이지에서 카카오톡 링크를 클릭해주세요.
-                    </p>
-                  )}
+                  <p className="text-amber-800 text-sm">
+                    주문서 작성 완료 후, <strong>결제계좌 정보</strong>는 카카오톡 상담을 통해 안내받으실 수 있습니다.
+                    <br />
+                    주문 완료 페이지에서 카카오톡 링크를 클릭해주세요.
+                  </p>
                 </div>
               )}
             </div>

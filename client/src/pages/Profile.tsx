@@ -6,8 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Heart, LogOut, ChevronRight, Package, Wallet, Clock, CheckCircle, XCircle, AlertTriangle, Plus, Mail, Phone, MapPin, Building2, CreditCard, Info, Star, Pencil } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
+import { User, Heart, LogOut, ChevronRight, Package, Wallet, Clock, CheckCircle, XCircle, AlertTriangle, Plus, Mail, Phone, MapPin, Building2, CreditCard, Info } from "lucide-react";
 import { Link } from "wouter";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -48,18 +47,12 @@ interface PointTransaction {
 interface Order {
   id: string;
   orderNumber: string;
-  productId: string;
   productName: string;
   quantity: number;
   totalAmount: string;
   status: "pending" | "confirmed" | "shipped" | "delivered" | "cancelled";
   paymentStatus: "pending" | "paid" | "refunded";
   createdAt: string;
-}
-
-interface MemberReview {
-  id: string;
-  orderId: string;
 }
 
 export default function Profile() {
@@ -69,11 +62,6 @@ export default function Profile() {
   const [depositAmount, setDepositAmount] = useState("");
   const [bankName, setBankName] = useState("");
   const [depositorName, setDepositorName] = useState("");
-  
-  const [showReviewForm, setShowReviewForm] = useState(false);
-  const [reviewOrder, setReviewOrder] = useState<Order | null>(null);
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewContent, setReviewContent] = useState("");
   
   const memberToken = localStorage.getItem("memberToken");
   const isLoggedIn = memberToken !== null;
@@ -143,48 +131,6 @@ export default function Profile() {
     enabled: isLoggedIn && !!memberId,
   });
 
-  const { data: memberReviews } = useQuery<MemberReview[]>({
-    queryKey: ["member-reviews", memberId],
-    queryFn: async () => {
-      const res = await fetch(`/api/members/reviews`, {
-        headers: {
-          Authorization: `Bearer ${memberToken}`,
-        },
-      });
-      const data = await res.json();
-      if (!data.success) return [];
-      return data.data;
-    },
-    enabled: isLoggedIn && !!memberId,
-  });
-
-  const reviewMutation = useMutation({
-    mutationFn: async (request: { orderId: string; productId: string; productName: string; rating: number; content: string; authorName: string }) => {
-      const res = await fetch("/api/members/reviews", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${memberToken}`,
-        },
-        body: JSON.stringify(request),
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error);
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["member-reviews", memberId] });
-      setShowReviewForm(false);
-      setReviewOrder(null);
-      setReviewRating(5);
-      setReviewContent("");
-      alert("후기가 등록되었습니다. 감사합니다!");
-    },
-    onError: (error: Error) => {
-      alert(error.message);
-    },
-  });
-
   const depositMutation = useMutation({
     mutationFn: async (request: { amount: number; bankName: string; depositorName: string }) => {
       const res = await fetch("/api/members/deposit-requests", {
@@ -205,7 +151,7 @@ export default function Profile() {
       setDepositAmount("");
       setBankName("");
       setDepositorName("");
-      alert("포인트 충전 신청이 접수되었습니다. 관리자 승인 후 포인트가 충전됩니다.");
+      alert("입금신청이 접수되었습니다. 관리자 승인 후 포인트가 충전됩니다.");
     },
     onError: (error: Error) => {
       alert(error.message);
@@ -222,7 +168,7 @@ export default function Profile() {
 
   const handleDepositSubmit = () => {
     if (memberInfo?.isFrozen) {
-      alert("계정이 동결되어 포인트 충전을 할 수 없습니다.");
+      alert("계정이 동결되어 입금신청을 할 수 없습니다.");
       return;
     }
     
@@ -238,33 +184,6 @@ export default function Profile() {
     }
     
     depositMutation.mutate({ amount, bankName, depositorName });
-  };
-
-  const handleReviewSubmit = () => {
-    if (!reviewOrder || !reviewContent.trim()) {
-      alert("후기 내용을 입력해주세요.");
-      return;
-    }
-    
-    reviewMutation.mutate({
-      orderId: reviewOrder.id,
-      productId: reviewOrder.productId || "",
-      productName: reviewOrder.productName || "",
-      rating: reviewRating,
-      content: reviewContent,
-      authorName: memberInfo?.name || "회원",
-    });
-  };
-
-  const hasReviewForOrder = (orderId: string) => {
-    return memberReviews?.some(r => r.orderId === orderId) || false;
-  };
-
-  const openReviewForm = (order: Order) => {
-    setReviewOrder(order);
-    setReviewRating(5);
-    setReviewContent("");
-    setShowReviewForm(true);
   };
 
   const formatDate = (dateStr: string) => {
@@ -403,8 +322,8 @@ export default function Profile() {
                     <TabsTrigger value="info" className="text-xs md:text-sm py-2 px-1 md:px-3">내 정보</TabsTrigger>
                     <TabsTrigger value="orders" className="text-xs md:text-sm py-2 px-1 md:px-3">주문내역</TabsTrigger>
                     <TabsTrigger value="menu" className="text-xs md:text-sm py-2 px-1 md:px-3">메뉴</TabsTrigger>
-                    <TabsTrigger value="deposit" className="text-xs md:text-sm py-2 px-1 md:px-3">포인트충전</TabsTrigger>
-                    <TabsTrigger value="points" className="text-xs md:text-sm py-2 px-1 md:px-3">포인트환급</TabsTrigger>
+                    <TabsTrigger value="deposit" className="text-xs md:text-sm py-2 px-1 md:px-3">입금신청</TabsTrigger>
+                    <TabsTrigger value="points" className="text-xs md:text-sm py-2 px-1 md:px-3">포인트</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="info" className="mt-4">
@@ -527,24 +446,6 @@ export default function Profile() {
                                   {order.paymentStatus === "paid" && "결제 완료"}
                                   {order.paymentStatus === "refunded" && "환불됨"}
                                 </span>
-                                {order.status === "delivered" && !hasReviewForOrder(order.id) && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="ml-auto text-xs h-7 border-primary text-primary hover:bg-primary hover:text-white"
-                                    onClick={() => openReviewForm(order)}
-                                    data-testid={`button-write-review-${order.id}`}
-                                  >
-                                    <Pencil className="w-3 h-3 mr-1" />
-                                    후기 작성
-                                  </Button>
-                                )}
-                                {order.status === "delivered" && hasReviewForOrder(order.id) && (
-                                  <span className="ml-auto text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
-                                    <CheckCircle className="w-3 h-3 inline mr-1" />
-                                    후기 작성완료
-                                  </span>
-                                )}
                               </div>
                             </div>
                           ))}
@@ -594,9 +495,9 @@ export default function Profile() {
                   <TabsContent value="deposit" className="mt-4">
                     <div className="space-y-4">
                       <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                        <h3 className="font-bold text-amber-800 mb-2">포인트 충전 안내</h3>
+                        <h3 className="font-bold text-amber-800 mb-2">입금 안내</h3>
                         <div className="text-sm text-amber-700">
-                          <p>포인트 충전 관련 상세 안내는 카카오톡 고객센터로 연락 바랍니다.</p>
+                          <p>입금 관련 상세 안내는 카카오톡 고객센터로 연락 바랍니다.</p>
                         </div>
                       </div>
 
@@ -607,16 +508,16 @@ export default function Profile() {
                             disabled={memberInfo?.isFrozen}
                           >
                             <Plus className="w-4 h-4 mr-2" />
-                            포인트 충전 신청
+                            입금 신청하기
                           </Button>
                         </DialogTrigger>
                         <DialogContent>
                           <DialogHeader>
-                            <DialogTitle>포인트 충전 신청</DialogTitle>
+                            <DialogTitle>입금 신청</DialogTitle>
                           </DialogHeader>
                           <div className="space-y-4 pt-4">
                             <div>
-                              <Label htmlFor="amount">충전 금액 (원)</Label>
+                              <Label htmlFor="amount">입금 금액 (원)</Label>
                               <Input
                                 id="amount"
                                 type="text"
@@ -655,10 +556,10 @@ export default function Profile() {
                       </Dialog>
 
                       <div className="space-y-3">
-                        <h3 className="font-bold text-gray-900">포인트 충전 신청 내역</h3>
+                        <h3 className="font-bold text-gray-900">입금 신청 내역</h3>
                         {!depositRequests?.length ? (
                           <p className="text-sm text-gray-500 text-center py-8">
-                            포인트 충전 신청 내역이 없습니다.
+                            입금 신청 내역이 없습니다.
                           </p>
                         ) : (
                           depositRequests.map((request) => (
@@ -690,53 +591,39 @@ export default function Profile() {
                   </TabsContent>
 
                   <TabsContent value="points" className="mt-4">
-                    <div className="space-y-4">
-                      <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                        <h3 className="font-bold text-green-800 mb-2">포인트 환급 안내</h3>
-                        <div className="text-sm text-green-700">
-                          <p>현재 포인트 잔액: <span className="font-bold">{(memberInfo?.pointBalance || 0).toLocaleString()}P</span></p>
-                          <p className="mt-1">포인트 환급 관련 상세 안내는 카카오톡 고객센터로 연락 바랍니다.</p>
-                        </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <h3 className="font-bold text-gray-900">포인트 사용 내역</h3>
+                        <span className="text-sm text-gray-500">
+                          현재 잔액: <span className="font-bold text-primary">{(memberInfo?.pointBalance || 0).toLocaleString()}P</span>
+                        </span>
                       </div>
-
-                      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                        <h4 className="font-medium text-gray-800 mb-2">환급 계좌 정보</h4>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <p>은행: {memberInfo?.bank || "미등록"}</p>
-                          <p>계좌번호: {memberInfo?.accountNumber || "미등록"}</p>
-                          <p>예금주: {memberInfo?.accountHolder || memberInfo?.name || "미등록"}</p>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2">※ 계좌정보 수정은 관리자에게 문의해주세요.</p>
-                      </div>
-
-                      <div className="space-y-3">
-                        <h3 className="font-bold text-gray-900">포인트 사용/충전 내역</h3>
-                        {!pointTransactions?.length ? (
-                          <p className="text-sm text-gray-500 text-center py-8">
-                            포인트 내역이 없습니다.
-                          </p>
-                        ) : (
-                          pointTransactions.map((transaction) => (
-                            <div
-                              key={transaction.id}
-                              className="p-4 border rounded-lg bg-white flex justify-between items-center"
-                            >
-                              <div>
-                                <p className="font-medium text-gray-900">{transaction.description}</p>
-                                <p className="text-xs text-gray-500">{formatDate(transaction.createdAt)}</p>
-                              </div>
-                              <div className="text-right">
-                                <p className={`font-bold ${transaction.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
-                                  {transaction.amount >= 0 ? "+" : ""}{transaction.amount.toLocaleString()}P
-                                </p>
-                                <p className="text-xs text-gray-500">
-                                  잔액: {transaction.balanceAfter.toLocaleString()}P
-                                </p>
-                              </div>
+                      
+                      {!pointTransactions?.length ? (
+                        <p className="text-sm text-gray-500 text-center py-8">
+                          포인트 내역이 없습니다.
+                        </p>
+                      ) : (
+                        pointTransactions.map((transaction) => (
+                          <div
+                            key={transaction.id}
+                            className="p-4 border rounded-lg bg-white flex justify-between items-center"
+                          >
+                            <div>
+                              <p className="font-medium text-gray-900">{transaction.description}</p>
+                              <p className="text-xs text-gray-500">{formatDate(transaction.createdAt)}</p>
                             </div>
-                          ))
-                        )}
-                      </div>
+                            <div className="text-right">
+                              <p className={`font-bold ${transaction.amount >= 0 ? "text-green-600" : "text-red-600"}`}>
+                                {transaction.amount >= 0 ? "+" : ""}{transaction.amount.toLocaleString()}P
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                잔액: {transaction.balanceAfter.toLocaleString()}P
+                              </p>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -764,60 +651,6 @@ export default function Profile() {
           </div>
         </div>
       </main>
-
-      <Dialog open={showReviewForm} onOpenChange={setShowReviewForm}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>후기 작성</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-4">
-            {reviewOrder && (
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="font-medium text-gray-900">{reviewOrder.productName}</p>
-                <p className="text-sm text-gray-500">주문번호: {reviewOrder.orderNumber}</p>
-              </div>
-            )}
-            
-            <div>
-              <Label className="mb-2 block">별점</Label>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setReviewRating(star)}
-                    className="p-1 hover:scale-110 transition-transform"
-                  >
-                    <Star 
-                      className={`w-8 h-8 ${star <= reviewRating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="reviewContent">후기 내용</Label>
-              <Textarea
-                id="reviewContent"
-                placeholder="상품에 대한 솔직한 후기를 작성해주세요."
-                value={reviewContent}
-                onChange={(e) => setReviewContent(e.target.value)}
-                rows={4}
-                className="mt-1"
-              />
-            </div>
-            
-            <Button
-              className="w-full"
-              onClick={handleReviewSubmit}
-              disabled={reviewMutation.isPending}
-            >
-              {reviewMutation.isPending ? "등록 중..." : "후기 등록하기"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Footer />
     </div>

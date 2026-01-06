@@ -157,7 +157,7 @@ export async function registerRoutes(
   
   app.get("/api/products", async (req: Request, res: Response) => {
     try {
-      const { category, categoryId, subcategoryId, limit, offset } = req.query;
+      const { category, categoryId, limit, offset } = req.query;
       
       // Default limit for production performance (always use pagination)
       const limitNum = limit ? parseInt(limit as string, 10) : 60;
@@ -170,13 +170,8 @@ export async function registerRoutes(
           ? category as string 
           : undefined;
       
-      const subCatFilter = subcategoryId ? subcategoryId as string : undefined;
-      
       // Use database-level pagination for performance
-      const [{ products: productList, total }, categoryBrands] = await Promise.all([
-        storage.getProductsPaginated(limitNum, offsetNum, catFilter, subCatFilter),
-        storage.getBrandsWithProductCount(catFilter)
-      ]);
+      const { products: productList, total } = await storage.getProductsPaginated(limitNum, offsetNum, catFilter);
       
       res.json({ 
         success: true, 
@@ -184,8 +179,7 @@ export async function registerRoutes(
         total,
         limit: limitNum,
         offset: offsetNum,
-        hasMore: offsetNum + limitNum < total,
-        categoryBrands: categoryBrands.map(cb => ({ ...cb.brand, productCount: cb.productCount }))
+        hasMore: offsetNum + limitNum < total
       });
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -1147,23 +1141,19 @@ export async function registerRoutes(
 
   app.post("/api/members/signup", async (req: Request, res: Response) => {
     try {
-      const { username, password, name, phone, address } = req.body;
+      const { email, password, name, phone, address } = req.body;
       
-      if (!username || !password || !name) {
-        return res.status(400).json({ success: false, error: "아이디, 비밀번호, 이름은 필수 입력사항입니다." });
+      if (!email || !password || !name) {
+        return res.status(400).json({ success: false, error: "이메일, 비밀번호, 이름은 필수 입력사항입니다." });
       }
       
-      if (!/^[a-zA-Z0-9]{4,20}$/.test(username)) {
-        return res.status(400).json({ success: false, error: "아이디는 영문, 숫자 4-20자만 사용 가능합니다." });
-      }
-      
-      const existingMember = await storage.getMemberByUsername(username);
+      const existingMember = await storage.getMemberByEmail(email);
       if (existingMember) {
-        return res.status(400).json({ success: false, error: "이미 사용 중인 아이디입니다." });
+        return res.status(400).json({ success: false, error: "이미 가입된 이메일입니다." });
       }
       
       const member = await storage.createMember({
-        username,
+        email,
         password,
         name,
         phone: phone || null,
@@ -1173,7 +1163,7 @@ export async function registerRoutes(
       res.status(201).json({ 
         success: true, 
         message: "회원가입이 완료되었습니다.",
-        data: { id: member.id, username: member.username, name: member.name }
+        data: { id: member.id, email: member.email, name: member.name }
       });
     } catch (error) {
       console.error("Error during signup:", error);
@@ -1183,11 +1173,11 @@ export async function registerRoutes(
 
   app.post("/api/members/login", async (req: Request, res: Response) => {
     try {
-      const { username, password } = req.body;
+      const { email, password } = req.body;
       
-      const member = await storage.getMemberByUsername(username);
+      const member = await storage.getMemberByEmail(email);
       if (!member) {
-        return res.status(401).json({ success: false, error: "아이디 또는 비밀번호가 일치하지 않습니다." });
+        return res.status(401).json({ success: false, error: "이메일 또는 비밀번호가 일치하지 않습니다." });
       }
       
       if (member.password !== password) {
@@ -1198,7 +1188,7 @@ export async function registerRoutes(
       await storage.createMemberSession({
         token,
         memberId: member.id,
-        username: member.username,
+        email: member.email,
         name: member.name
       });
       
@@ -1210,7 +1200,7 @@ export async function registerRoutes(
         member: {
           id: member.id,
           name: member.name,
-          username: member.username,
+          email: member.email,
           phone: member.phone,
           pointBalance: member.pointBalance || 0,
           isFrozen: member.isFrozen || false
@@ -1561,14 +1551,8 @@ export async function registerRoutes(
   
   app.get("/api/reviews", async (req: Request, res: Response) => {
     try {
-      const limit = parseInt(req.query.limit as string) || 100;
-      const offset = parseInt(req.query.offset as string) || 0;
-      
-      const allReviews = await storage.getVisibleReviews();
-      const total = allReviews.length;
-      const paginatedReviews = allReviews.slice(offset, offset + limit);
-      
-      res.json({ success: true, data: paginatedReviews, total });
+      const reviews = await storage.getVisibleReviews();
+      res.json({ success: true, data: reviews });
     } catch (error) {
       console.error("Error fetching reviews:", error);
       res.status(500).json({ success: false, error: "리뷰를 불러올 수 없습니다." });
@@ -1581,76 +1565,7 @@ export async function registerRoutes(
       res.json({ success: true, data: reviews });
     } catch (error) {
       console.error("Error fetching reviews:", error);
-      res.status(500).json({ success: false, error: "후기를 불러올 수 없습니다." });
-    }
-  });
-
-  app.post("/api/admin/reviews", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const { authorName, productId, productName, rating, title, content, displayDate, isVisible, imageUrl } = req.body;
-      
-      if (!authorName || !content) {
-        return res.status(400).json({ success: false, error: "작성자명과 내용은 필수입니다." });
-      }
-      
-      const parsedRating = typeof rating === "number" && rating >= 1 && rating <= 5 ? rating : 5;
-      
-      const review = await storage.createReview({
-        authorName,
-        productId: productId || null,
-        productName: productName || null,
-        rating: parsedRating,
-        title: title || null,
-        content,
-        displayDate: displayDate ? new Date(displayDate) : new Date(),
-        isVisible: isVisible !== false,
-        imageUrl: imageUrl || null,
-        memberId: null,
-        orderId: null,
-      });
-      
-      res.status(201).json({ success: true, data: review });
-    } catch (error) {
-      console.error("Error creating admin review:", error);
-      res.status(500).json({ success: false, error: "후기 등록에 실패했습니다." });
-    }
-  });
-
-  app.put("/api/admin/reviews/:id", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const { authorName, productName, rating, title, content, displayDate, isVisible, imageUrl } = req.body;
-      
-      const updateData: Record<string, any> = {};
-      if (authorName !== undefined) updateData.authorName = authorName;
-      if (productName !== undefined) updateData.productName = productName;
-      if (rating !== undefined) updateData.rating = Math.min(5, Math.max(1, Number(rating)));
-      if (title !== undefined) updateData.title = title;
-      if (content !== undefined) updateData.content = content;
-      if (displayDate !== undefined) updateData.displayDate = new Date(displayDate);
-      if (isVisible !== undefined) updateData.isVisible = isVisible;
-      if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
-      
-      const review = await storage.updateReview(req.params.id, updateData);
-      if (!review) {
-        return res.status(404).json({ success: false, error: "후기를 찾을 수 없습니다." });
-      }
-      res.json({ success: true, data: review });
-    } catch (error) {
-      console.error("Error updating review:", error);
-      res.status(500).json({ success: false, error: "후기 수정에 실패했습니다." });
-    }
-  });
-
-  app.delete("/api/admin/reviews/:id", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const success = await storage.deleteReview(req.params.id);
-      if (!success) {
-        return res.status(404).json({ success: false, error: "후기를 찾을 수 없습니다." });
-      }
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Error deleting review:", error);
-      res.status(500).json({ success: false, error: "후기 삭제에 실패했습니다." });
+      res.status(500).json({ success: false, error: "리뷰를 불러올 수 없습니다." });
     }
   });
 
@@ -2011,69 +1926,6 @@ export async function registerRoutes(
     }
   });
 
-  // Get member's reviews (to check which orders have reviews)
-  app.get("/api/members/reviews", async (req: Request, res: Response) => {
-    const token = req.headers.authorization?.replace("Bearer ", "");
-    const session = await getMemberFromToken(token);
-    
-    if (!session) {
-      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
-    }
-    
-    try {
-      const memberReviews = await storage.getReviewsByMember(session.memberId);
-      res.json({ success: true, data: memberReviews.map(r => ({ id: r.id, orderId: r.orderId })) });
-    } catch (error) {
-      console.error("Error fetching member reviews:", error);
-      res.status(500).json({ success: false, error: "리뷰를 불러올 수 없습니다." });
-    }
-  });
-
-  // Create review for an order (member)
-  app.post("/api/members/reviews", async (req: Request, res: Response) => {
-    const token = req.headers.authorization?.replace("Bearer ", "");
-    const session = await getMemberFromToken(token);
-    
-    if (!session) {
-      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
-    }
-    
-    try {
-      const { orderId, productId, productName, rating, content, authorName } = req.body;
-      
-      if (!orderId || typeof orderId !== "string") {
-        return res.status(400).json({ success: false, error: "주문 ID가 누락되었습니다." });
-      }
-      if (!content || typeof content !== "string" || content.trim().length === 0) {
-        return res.status(400).json({ success: false, error: "후기 내용을 입력해주세요." });
-      }
-      
-      const parsedRating = typeof rating === "number" && rating >= 1 && rating <= 5 ? rating : 5;
-      
-      // Check if review already exists for this order (efficient lookup)
-      const existingReview = await storage.getReviewByOrderAndMember(orderId, session.memberId);
-      if (existingReview) {
-        return res.status(400).json({ success: false, error: "이미 해당 주문에 대한 후기가 있습니다." });
-      }
-      
-      const review = await storage.createReview({
-        memberId: session.memberId,
-        orderId,
-        productId: productId || null,
-        productName: productName || null,
-        authorName: authorName || "회원",
-        rating: parsedRating,
-        content: content.trim(),
-        isVisible: true,
-      });
-      
-      res.status(201).json({ success: true, data: review });
-    } catch (error) {
-      console.error("Error creating member review:", error);
-      res.status(500).json({ success: false, error: "후기 등록에 실패했습니다." });
-    }
-  });
-
   app.get("/api/orders/lookup", async (req: Request, res: Response) => {
     try {
       const { orderNumber, phone } = req.query;
@@ -2388,312 +2240,6 @@ export async function registerRoutes(
         crawlProgress.status = 'error';
         crawlProgress.message = `오류: ${error.message || '알 수 없는 오류'}`;
         console.error('Crawl error:', error);
-      }
-    })();
-  });
-
-  // Progress tracking for dittoholic crawling
-  const dittoholicProgress: {
-    status: 'idle' | 'running' | 'completed' | 'error';
-    total: number;
-    current: number;
-    message: string;
-    category: string;
-  } = { status: 'idle', total: 0, current: 0, message: '', category: '' };
-
-  // Get dittoholic crawl progress
-  app.get("/api/admin/crawl/dittoholic/progress", requireAdminAuth, async (_req: Request, res: Response) => {
-    res.json({ success: true, ...dittoholicProgress });
-  });
-
-  // Delete all domestic category products
-  app.delete("/api/admin/products/domestic", requireAdminAuth, async (_req: Request, res: Response) => {
-    try {
-      const deletedCount = await storage.deleteProductsByCategory("domestic");
-      res.json({ success: true, deletedCount });
-    } catch (error: any) {
-      console.error("Error deleting domestic products:", error);
-      res.status(500).json({ success: false, message: error.message || "삭제 중 오류가 발생했습니다." });
-    }
-  });
-
-  // Crawl from dittoholic.com (Shopify store)
-  app.post("/api/admin/crawl/dittoholic/start", requireAdminAuth, async (req: Request, res: Response) => {
-    if (dittoholicProgress.status === 'running') {
-      return res.status(400).json({ success: false, error: "이미 크롤링이 진행 중입니다." });
-    }
-    
-    const { clearExisting, selectedCategories } = req.body;
-    
-    dittoholicProgress.status = 'running';
-    dittoholicProgress.total = 0;
-    dittoholicProgress.current = 0;
-    dittoholicProgress.message = '크롤링 준비 중...';
-    dittoholicProgress.category = '';
-    
-    res.json({ success: true, message: "dittoholic.com 크롤링이 시작되었습니다." });
-    
-    // Run crawl in background
-    (async () => {
-      const DITTOHOLIC_CATEGORIES = [
-        { handle: "국내배송-watch", name: "시계", subcategoryId: "domestic-watches" },
-        { handle: "국내배송-top", name: "상의", subcategoryId: "domestic-tops" },
-        { handle: "국내배송-outer", name: "아우터", subcategoryId: "domestic-outer" },
-        { handle: "국내배송-acc", name: "악세사리", subcategoryId: "domestic-accessories" },
-        { handle: "국내배송-pants", name: "하의", subcategoryId: "domestic-bottoms" },
-        { handle: "국내배송-bag", name: "가방", subcategoryId: "domestic-bags" },
-        { handle: "국내배송-wallet", name: "지갑", subcategoryId: "domestic-wallets" },
-      ];
-      
-      const CATEGORIES = selectedCategories && selectedCategories.length > 0
-        ? DITTOHOLIC_CATEGORIES.filter(c => selectedCategories.includes(c.subcategoryId))
-        : DITTOHOLIC_CATEGORIES;
-      
-      const headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Accept": "application/json",
-      };
-      
-      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-      
-      // Brand cache for performance
-      const brandCache = new Map<string, string>();
-      
-      try {
-        if (clearExisting) {
-          dittoholicProgress.message = '기존 상품 삭제 중...';
-          const existingProducts = await storage.getAllProducts();
-          for (const p of existingProducts) {
-            await storage.deleteProduct(p.id);
-          }
-        }
-        
-        let totalInserted = 0;
-        
-        for (const category of CATEGORIES) {
-          dittoholicProgress.category = category.name;
-          dittoholicProgress.message = `[${category.name}] 상품 수집 중...`;
-          
-          let page = 1;
-          let hasMore = true;
-          const allProducts: any[] = [];
-          
-          // Fetch all pages from Shopify JSON API
-          while (hasMore) {
-            try {
-              const url = `https://dittoholic.com/collections/${encodeURIComponent(category.handle)}/products.json?page=${page}&limit=250`;
-              const response = await fetch(url, { headers });
-              
-              if (!response.ok) {
-                console.log(`[${category.name}] Page ${page} returned ${response.status}`);
-                break;
-              }
-              
-              const data = await response.json();
-              
-              if (!data.products || data.products.length === 0) {
-                hasMore = false;
-              } else {
-                allProducts.push(...data.products);
-                dittoholicProgress.message = `[${category.name}] 페이지 ${page} 수집... (${allProducts.length}개)`;
-                page++;
-                await delay(500); // Rate limiting
-              }
-            } catch (error) {
-              console.error(`Error fetching page ${page}:`, error);
-              break;
-            }
-          }
-          
-          console.log(`[${category.name}] Found ${allProducts.length} products`);
-          dittoholicProgress.total = allProducts.length;
-          dittoholicProgress.current = 0;
-          
-          // Insert products with full image fetch
-          let insertErrors = 0;
-          for (let i = 0; i < allProducts.length; i++) {
-            const product = allProducts[i];
-            try {
-              const price = product.variants?.[0]?.price 
-                ? Math.round(parseFloat(product.variants[0].price))
-                : 0;
-              
-              const comparePrice = product.variants?.[0]?.compare_at_price
-                ? Math.round(parseFloat(product.variants[0].compare_at_price))
-                : undefined;
-              
-              // Main product image from images array
-              const imageUrl = product.images?.[0]?.src || "";
-              const imageUrls = product.images?.map((img: any) => img.src) || [];
-              
-              // Extract detail images from body_html using cheerio for proper HTML parsing
-              const bodyHtml = product.body_html || "";
-              const detailImagesFromHtml: string[] = [];
-              
-              if (bodyHtml) {
-                const $body = cheerio.load(bodyHtml);
-                
-                // Extract all images from img tags
-                $body('img').each((_, el) => {
-                  const src = $body(el).attr('src') || $body(el).attr('data-src') || $body(el).attr('data-lazy-src') || '';
-                  if (src && !detailImagesFromHtml.includes(src)) {
-                    // Accept Shopify CDN images, also allow other CDN sources
-                    if ((src.includes('cdn.shopify.com') || src.includes('https://')) && !src.includes('icon')) {
-                      // Clean up the URL - remove query params that resize images too small
-                      let cleanSrc = src;
-                      if (cleanSrc.includes('cdn.shopify.com')) {
-                        // Remove size constraints to get original image
-                        cleanSrc = cleanSrc.replace(/_\d+x\d*(\.\w+)/, '$1').replace(/\?.*$/, '');
-                      }
-                      if (!detailImagesFromHtml.includes(cleanSrc)) {
-                        detailImagesFromHtml.push(cleanSrc);
-                      }
-                    }
-                  }
-                });
-                
-                // Also check for images in srcset attributes
-                $body('img[srcset], source[srcset]').each((_, el) => {
-                  const srcset = $body(el).attr('srcset') || '';
-                  const srcsetUrls = srcset.split(',').map(s => s.trim().split(' ')[0]);
-                  srcsetUrls.forEach(url => {
-                    if (url && (url.includes('cdn.shopify.com') || url.startsWith('https://')) && !url.includes('icon')) {
-                      let cleanUrl = url.replace(/_\d+x\d*(\.\w+)/, '$1').replace(/\?.*$/, '');
-                      if (!detailImagesFromHtml.includes(cleanUrl)) {
-                        detailImagesFromHtml.push(cleanUrl);
-                      }
-                    }
-                  });
-                });
-                
-                // Also extract images from anchor tags that link to images
-                $body('a[href*=".jpg"], a[href*=".jpeg"], a[href*=".png"], a[href*=".webp"], a[href*=".gif"]').each((_, el) => {
-                  const href = $body(el).attr('href') || '';
-                  if (href && !detailImagesFromHtml.includes(href)) {
-                    detailImagesFromHtml.push(href);
-                  }
-                });
-                
-                // Fallback: use regex to find any remaining image URLs in the HTML
-                const imgUrlRegex = /(https?:\/\/[^\s"'<>]+\.(?:jpg|jpeg|png|webp|gif))/gi;
-                let match;
-                while ((match = imgUrlRegex.exec(bodyHtml)) !== null) {
-                  const imgUrl = match[1].replace(/\?.*$/, ''); // Remove query params
-                  if (!detailImagesFromHtml.includes(imgUrl) && !imgUrl.includes('icon')) {
-                    detailImagesFromHtml.push(imgUrl);
-                  }
-                }
-              }
-              
-              // Extract size options
-              const sizeOptions = product.variants
-                ?.map((v: any) => v.title)
-                .filter((t: string) => t && t !== "Default Title") || [];
-              
-              // Extract brand from product vendor or title (using cached brands)
-              let brandId: string | undefined = undefined;
-              const vendorName = product.vendor?.trim();
-              if (vendorName && vendorName.length > 0) {
-                // Check cache first
-                if (brandCache.has(vendorName.toLowerCase())) {
-                  brandId = brandCache.get(vendorName.toLowerCase());
-                } else {
-                  // Try to find existing brand or create new one
-                  const existingBrands = await storage.getAllBrands();
-                  let foundBrand = existingBrands.find(b => 
-                    b.name.toLowerCase() === vendorName.toLowerCase() ||
-                    b.slug === vendorName.toLowerCase().replace(/\s+/g, '')
-                  );
-                  
-                  if (!foundBrand) {
-                    // Create new brand
-                    try {
-                      foundBrand = await storage.createBrand({
-                        name: vendorName,
-                        slug: vendorName.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9가-힣]/g, ''),
-                        sortOrder: 200,
-                        isActive: true,
-                      });
-                    } catch {}
-                  }
-                  
-                  if (foundBrand) {
-                    brandId = foundBrand.id;
-                    brandCache.set(vendorName.toLowerCase(), foundBrand.id);
-                  }
-                }
-              }
-              
-              const domesticDetailContent = `명품 레플리카 사이트 1위 디토홀릭 이용해야 하는 이유!!
-
-아직도 미러급 , SA급, 하이엔드급 제품이 있냐고 여쭤보시는 고객님들이 아직도 많으신데, 그건 전부 레플리카 판매자들이 만들어낸 이야기일 뿐입니다.
-더 이상 속지 마시길 부탁 드리겠습니다. 
-
-그리고 자체 제작 사이트 1:1비교제작 사이트라고 완벽한 퀄리티의 제품입니다. 라고 하면서 정품과 레플 비교 사진 찍어서 단가 조금 올려서 판매하면
-
-사람들 인식은 자동으로 "아 여기 정말 좋은 곳이구나" 하면서 구입 하시고 저희에게 한탄 하시는 고객님들 정말 한 두 분이 아닙니다. 1:1제작? 자체 제작? 절대 불가능 하다고 말씀 드리고 싶습니다.
-
-저희 사이트에 판매 중인 제품이 수 천 종류가 넘는데 아무리 큰 레플리카 판매 사이트라고 하더라도 직접 제작하는 품목이 100개 이상 넘길 수가 없습니다.
-
-절,대,로,요 저희도 직접 제작하는 제품이 몇 가지 있기는 하지만 퀄리티 때문이 아닌 단가 절감을 위해서 인기 있는 종목의 제품만 직접 생산을 할 뿐 퀄리티와는 거리가 멀다고 보시면 됩니다.
-저희 같은 영세업자가 명품 레플리카 사이트에 판매하는 제품 수가 수 백에서 수 천가지가 되는데 그걸 하나하나 직접 생산 한다구요? 정품과 1:1비교 제작을 해 가면서요?
-
-절대~~ 말이 안되는 말들에 현혹되지 마시길 부탁 드리겠습니다.
-
-퀄리티 좋은 사이트를 찾는 팁을 드리자면 좋은 사이트를 확인하실 때 레플리카사이트후기 보시면 바로 답이 나옵니다.
-
-그리고 레플리카 사이트의 기본인 레플리카신발, 레플리카가방, 후기를 보시면 그 사이트의 기본 퀄리티를 느끼실 수 있으십니다.
-
-저희 디토홀릭은 레플리카 구매대행을 시작으로 레플리카도매업, 레플리카쇼핑몰 병행하며 14년 동안의 경험을 바탕으로 거래처 공장들 300여 곳 그리고 대표님께서 직접 눈으로 본 후 다른 공장 제품들과 비교하고 최대한 저렴한 금액으로 고퀄리티의 제품을 받아보실 수 있도록 14년 째 발로 뛰고 계십니다.
-
-저희가 롱런 할수있던 이유는 양심적이고 아직도 발로 뛰시는 운영진들이 있어서가 아닐까 싶습니다. 
-정말 REAL 진심을 담은 디토홀릭의 운영진의 푸념 이었습니다 긴 글 읽어주셔서 감사합니다`;
-
-              await storage.createProduct({
-                name: `(국내배송) ${product.title}`,
-                categoryId: "domestic",
-                subcategoryId: category.subcategoryId,
-                brandId: brandId,
-                price: price,
-                originalPrice: comparePrice,
-                description: product.body_html?.replace(/<[^>]*>/g, '').slice(0, 500) || product.title,
-                detailContent: domesticDetailContent,
-                imageUrl: imageUrl,
-                imageUrls: imageUrls.length > 0 ? imageUrls : [imageUrl],
-                detailImageUrls: detailImagesFromHtml.length > 0 ? detailImagesFromHtml : undefined,
-                options: sizeOptions.length > 0 ? JSON.stringify(sizeOptions) : undefined,
-                isBest: false,
-                isNew: i < 10,
-                isActive: true,
-                isSoldOut: false,
-              });
-              
-              totalInserted++;
-              
-            } catch (error: any) {
-              insertErrors++;
-              console.error(`Error inserting product ${product.title}:`, error?.message || error);
-            }
-            
-            dittoholicProgress.current = i + 1;
-            dittoholicProgress.message = `[${category.name}] 저장 중... (${i + 1}/${allProducts.length})${insertErrors > 0 ? ` (오류: ${insertErrors})` : ''}`;
-          }
-          
-          if (insertErrors > 0) {
-            console.log(`[${category.name}] ${insertErrors} errors during insert`);
-          }
-          
-          console.log(`[${category.name}] Inserted products, total: ${totalInserted}`);
-        }
-        
-        dittoholicProgress.status = 'completed';
-        dittoholicProgress.message = `완료! 총 ${totalInserted}개 상품이 크롤링되었습니다.`;
-        console.log(`Dittoholic crawl complete: ${totalInserted} products`);
-        
-      } catch (error: any) {
-        dittoholicProgress.status = 'error';
-        dittoholicProgress.message = `오류: ${error.message || '알 수 없는 오류'}`;
-        console.error('Dittoholic crawl error:', error);
       }
     })();
   });
@@ -3105,598 +2651,6 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("Notice crawl error:", error);
       res.status(500).json({ success: false, error: error.message || "공지사항 크롤링 중 오류가 발생했습니다." });
-    }
-  });
-
-  // Sync ALL accessory prices using comprehensive pattern matching
-  app.post("/api/admin/sync-accessory-prices", requireAdminAuth, async (_req: Request, res: Response) => {
-    try {
-      console.log("Starting comprehensive accessory price sync...");
-      let updatedCount = 0;
-      
-      // COMPLETE price rules covering ALL accessory types
-      const priceRules = [
-        // === 머플러/스카프 (Mufflers/Scarves) ===
-        { pattern: '%버버리%머플러%', price: '209000' },
-        { pattern: '%버버리%스카프%', price: '209000' },
-        { pattern: '%샤넬%머플러%', price: '257000' },
-        { pattern: '%샤넬%스카프%', price: '253000' },
-        { pattern: '%에르메스%스카프%', price: '253000' },
-        { pattern: '%에르메스%트윌리%', price: '225000' },
-        { pattern: '%루이비통%머플러%', price: '245000' },
-        { pattern: '%루이비통%스카프%', price: '240000' },
-        { pattern: '%디올%머플러%', price: '230000' },
-        { pattern: '%디올%스카프%', price: '230000' },
-        { pattern: '%구찌%머플러%', price: '257000' },
-        { pattern: '%구찌%스카프%', price: '240000' },
-        { pattern: '%펜디%머플러%', price: '230000' },
-        { pattern: '%셀린느%머플러%', price: '240000' },
-        { pattern: '%발렌시아가%머플러%', price: '230000' },
-        { pattern: '%로에베%머플러%', price: '245000' },
-        { pattern: '%막스마라%머플러%', price: '220000' },
-        { pattern: '%아크네%머플러%', price: '220000' },
-        { pattern: '%미차%', price: '215000' },
-        
-        // === 벨트 (Belts) ===
-        { pattern: '%에르메스%벨트%', price: '223000' },
-        { pattern: '%구찌%벨트%', price: '195000' },
-        { pattern: '%루이비통%벨트%', price: '210000' },
-        { pattern: '%디올%벨트%', price: '200000' },
-        { pattern: '%페레가모%벨트%', price: '185000' },
-        { pattern: '%버버리%벨트%', price: '190000' },
-        { pattern: '%보테가%벨트%', price: '210000' },
-        
-        // === 귀걸이/이어링 (Earrings) ===
-        { pattern: '%에르메스 팝아슈 귀걸이%', price: '97000' },
-        { pattern: '%에르메스 H 귀걸이%', price: '78000' },
-        { pattern: '%에르메스%귀걸이%', price: '150000' },
-        { pattern: '%에르메스%이어링%', price: '200000' },
-        { pattern: '%샤넬%귀걸이%', price: '178000' },
-        { pattern: '%샤넬%이어링%', price: '270000' },
-        { pattern: '%디올%귀걸이%', price: '188000' },
-        { pattern: '%디올%이어링%', price: '188000' },
-        { pattern: '%구찌%귀걸이%', price: '165000' },
-        { pattern: '%구찌%이어링%', price: '165000' },
-        { pattern: '%미우미우%귀걸이%', price: '205000' },
-        { pattern: '%미우미우%이어링%', price: '205000' },
-        { pattern: '%티파니%귀걸이%', price: '150000' },
-        { pattern: '%티파니%이어링%', price: '150000' },
-        { pattern: '%불가리%귀걸이%', price: '180000' },
-        { pattern: '%불가리%이어링%', price: '180000' },
-        { pattern: '%까르띠에%귀걸이%', price: '130000' },
-        { pattern: '%까르띠에%이어링%', price: '130000' },
-        { pattern: '%반클리프%귀걸이%', price: '137000' },
-        { pattern: '%반클리프%이어링%', price: '137000' },
-        { pattern: '%셀린느%귀걸이%', price: '170000' },
-        { pattern: '%셀린느%이어링%', price: '170000' },
-        
-        // === 목걸이/네크리스/펜던트/초커 (Necklaces/Pendants/Chokers) ===
-        { pattern: '%에르메스%목걸이%', price: '140000' },
-        { pattern: '%에르메스%네크리스%', price: '80000' },
-        { pattern: '%에르메스%펜던트%', price: '140000' },
-        { pattern: '%샤넬%목걸이%', price: '250000' },
-        { pattern: '%샤넬%초커%', price: '220000' },
-        { pattern: '%샤넬%펜던트%', price: '220000' },
-        { pattern: '%디올%목걸이%', price: '230000' },
-        { pattern: '%디올%펜던트%', price: '200000' },
-        { pattern: '%구찌%목걸이%', price: '207000' },
-        { pattern: '%구찌%펜던트%', price: '180000' },
-        { pattern: '%티파니%목걸이%', price: '155000' },
-        { pattern: '%티파니%펜던트%', price: '155000' },
-        { pattern: '%불가리%목걸이%', price: '246000' },
-        { pattern: '%불가리%펜던트%', price: '200000' },
-        { pattern: '%까르띠에%목걸이%', price: '180000' },
-        { pattern: '%까르띠에%펜던트%', price: '180000' },
-        { pattern: '%반클리프%목걸이%', price: '278000' },
-        { pattern: '%반클리프%펜던트%', price: '250000' },
-        { pattern: '%셀린느%목걸이%', price: '203000' },
-        { pattern: '%셀린느%펜던트%', price: '180000' },
-        { pattern: '%루이비통%목걸이%', price: '220000' },
-        { pattern: '%루이비통%펜던트%', price: '180000' },
-        { pattern: '%크롬하츠%목걸이%', price: '150000' },
-        { pattern: '%크롬하츠%펜던트%', price: '200000' },
-        
-        // === 팔찌/브레이슬릿/뱅글 (Bracelets/Bangles) ===
-        { pattern: '%티파니%팔찌%', price: '225000' },
-        { pattern: '%티파니%뱅글%', price: '142000' },
-        { pattern: '%까르띠에%팔찌%', price: '144700' },
-        { pattern: '%까르띠에%브레이슬릿%', price: '144700' },
-        { pattern: '%까르띠에%뱅글%', price: '150000' },
-        { pattern: '%에르메스%팔찌%', price: '200000' },
-        { pattern: '%에르메스%브레이슬릿%', price: '200000' },
-        { pattern: '%에르메스%뱅글%', price: '200000' },
-        { pattern: '%불가리%팔찌%', price: '238000' },
-        { pattern: '%불가리%브레이슬릿%', price: '238000' },
-        { pattern: '%샤넬%팔찌%', price: '180000' },
-        { pattern: '%샤넬%뱅글%', price: '180000' },
-        { pattern: '%디올%팔찌%', price: '175000' },
-        { pattern: '%구찌%팔찌%', price: '193000' },
-        { pattern: '%구찌%브레이슬릿%', price: '193000' },
-        { pattern: '%반클리프%팔찌%', price: '207000' },
-        { pattern: '%반클리프%뱅글%', price: '207000' },
-        { pattern: '%루이비통%팔찌%', price: '117000' },
-        { pattern: '%크롬하츠%팔찌%', price: '150000' },
-        
-        // === 반지/링 (Rings) ===
-        { pattern: '%티파니%반지%', price: '203000' },
-        { pattern: '%티파니%링%', price: '80000' },
-        { pattern: '%까르띠에%반지%', price: '180000' },
-        { pattern: '%까르띠에%링%', price: '180000' },
-        { pattern: '%까르띠에 러브%링%', price: '350000' },
-        { pattern: '%불가리%반지%', price: '156000' },
-        { pattern: '%불가리%링%', price: '156000' },
-        { pattern: '%샤넬%반지%', price: '160000' },
-        { pattern: '%샤넬%링%', price: '160000' },
-        { pattern: '%디올%반지%', price: '150000' },
-        { pattern: '%디올%링%', price: '150000' },
-        { pattern: '%구찌%반지%', price: '140000' },
-        { pattern: '%구찌%링%', price: '140000' },
-        { pattern: '%에르메스%반지%', price: '105400' },
-        { pattern: '%에르메스%링%', price: '105400' },
-        { pattern: '%에르메스 더블링%', price: '105400' },
-        { pattern: '%펜디%링%', price: '240000' },
-        { pattern: '%크롬하츠%링%', price: '180000' },
-        
-        // === 모자 (Hats/Caps) ===
-        { pattern: '%버킷햇%', price: '200000' },
-        { pattern: '%볼캡%', price: '155000' },
-        { pattern: '%비니%', price: '180000' },
-        { pattern: '%베레모%', price: '175000' },
-        { pattern: '%썬캡%', price: '215000' },
-        { pattern: '%썬바이저%', price: '215000' },
-        { pattern: '% 모자 %', price: '200000' },
-        { pattern: '%> 모자%', price: '200000' },
-        
-        // === 키링/참 (Keyrings/Charms) ===
-        { pattern: '%키링%', price: '175000' },
-        { pattern: '%클립%', price: '160000' },
-        { pattern: '%참%펜던트%', price: '180000' },
-        
-        // === 헤어악세사리 ===
-        { pattern: '%헤어핀%', price: '135000' },
-        { pattern: '%머리띠%', price: '150000' },
-        { pattern: '%헤어밴드%', price: '150000' },
-        { pattern: '%헤어클립%', price: '140000' },
-        
-        // === 브로치/핀 ===
-        { pattern: '%브로치%', price: '200000' },
-        
-        // === 안경/선글라스 ===
-        { pattern: '%안경%', price: '200000' },
-        { pattern: '%선글라스%', price: '220000' },
-        
-        // === 넥타이 ===
-        { pattern: '%넥타이%', price: '175000' },
-        
-        // === 시계줄/스트랩 ===
-        { pattern: '%시계줄%', price: '120000' },
-        { pattern: '%스트랩%', price: '120000' },
-        
-        // === 담요/블랭킷 (Blankets) ===
-        { pattern: '%담요%', price: '230000' },
-        { pattern: '%블랭킷%', price: '230000' },
-        
-        // === 기타 (ETC) ===
-        { pattern: '%고야드%클립%', price: '160000' },
-        { pattern: '%고야드%', price: '170000' },
-      ];
-      
-      // Execute all price updates using batch SQL
-      for (const rule of priceRules) {
-        const count = await storage.batchUpdateAccessoryPrices(rule.pattern, rule.price);
-        updatedCount += count;
-      }
-      
-      // Apply default prices to ANY remaining accessories by type keyword
-      const fallbackRules = [
-        { pattern: '%머플러%', price: '230000' },
-        { pattern: '%스카프%', price: '230000' },
-        { pattern: '%벨트%', price: '200000' },
-        { pattern: '%귀걸이%', price: '150000' },
-        { pattern: '%이어링%', price: '170000' },
-        { pattern: '%목걸이%', price: '180000' },
-        { pattern: '%펜던트%', price: '180000' },
-        { pattern: '%초커%', price: '200000' },
-        { pattern: '%팔찌%', price: '180000' },
-        { pattern: '%브레이슬릿%', price: '180000' },
-        { pattern: '%뱅글%', price: '170000' },
-        { pattern: '%반지%', price: '150000' },
-        { pattern: '%링 %', price: '150000' },
-        { pattern: '%링>%', price: '150000' },
-        { pattern: '%네크리스%', price: '100000' },
-      ];
-      
-      for (const rule of fallbackRules) {
-        const count = await storage.batchUpdateAccessoryPrices(rule.pattern, rule.price);
-        updatedCount += count;
-      }
-      
-      // Fix remaining products with unrealistic high prices
-      const highPriceCount = await storage.fixHighAccessoryPrices();
-      updatedCount += highPriceCount;
-      
-      // Set default price for any remaining accessories without valid prices
-      const defaultCount = await storage.setDefaultAccessoryPrices('180000');
-      updatedCount += defaultCount;
-      
-      console.log(`Accessory price sync complete: ${updatedCount} products updated`);
-      
-      res.json({ 
-        success: true, 
-        message: `${updatedCount}개 악세사리 상품 가격이 업데이트되었습니다.`,
-        updated: updatedCount
-      });
-    } catch (error: any) {
-      console.error("Error syncing accessory prices:", error);
-      res.status(500).json({ success: false, error: error.message || "가격 동기화 중 오류가 발생했습니다." });
-    }
-  });
-
-  // Sync wallet prices
-  app.post("/api/admin/sync-wallet-prices", requireAdminAuth, async (_req: Request, res: Response) => {
-    try {
-      console.log("Starting wallet price sync...");
-      let updatedCount = 0;
-      
-      const priceRules = [
-        { pattern: '%에르메스%지갑%', price: '350000' },
-        { pattern: '%에르메스%카드지갑%', price: '280000' },
-        { pattern: '%에르메스%장지갑%', price: '380000' },
-        { pattern: '%샤넬%지갑%', price: '340000' },
-        { pattern: '%샤넬%카드지갑%', price: '260000' },
-        { pattern: '%샤넬%장지갑%', price: '360000' },
-        { pattern: '%루이비통%지갑%', price: '290000' },
-        { pattern: '%루이비통%카드지갑%', price: '230000' },
-        { pattern: '%루이비통%장지갑%', price: '320000' },
-        { pattern: '%디올%지갑%', price: '320000' },
-        { pattern: '%디올%카드지갑%', price: '250000' },
-        { pattern: '%구찌%지갑%', price: '280000' },
-        { pattern: '%구찌%카드지갑%', price: '220000' },
-        { pattern: '%프라다%지갑%', price: '300000' },
-        { pattern: '%프라다%카드지갑%', price: '240000' },
-        { pattern: '%보테가%지갑%', price: '350000' },
-        { pattern: '%보테가%카드지갑%', price: '280000' },
-        { pattern: '%셀린느%지갑%', price: '320000' },
-        { pattern: '%셀린느%카드지갑%', price: '260000' },
-        { pattern: '%펜디%지갑%', price: '290000' },
-        { pattern: '%발렌시아가%지갑%', price: '280000' },
-        { pattern: '%버버리%지갑%', price: '260000' },
-        { pattern: '%고야드%지갑%', price: '350000' },
-        { pattern: '%미우미우%지갑%', price: '270000' },
-        { pattern: '%로에베%지갑%', price: '310000' },
-      ];
-      
-      for (const rule of priceRules) {
-        const count = await storage.batchUpdateCategoryPrices('wallets', rule.pattern, rule.price);
-        updatedCount += count;
-      }
-      
-      const highPriceCount = await storage.fixHighCategoryPrices('wallets');
-      updatedCount += highPriceCount;
-      
-      const defaultCount = await storage.setDefaultCategoryPrices('wallets', '280000');
-      updatedCount += defaultCount;
-      
-      console.log(`Wallet price sync complete: ${updatedCount} products updated`);
-      
-      res.json({ 
-        success: true, 
-        message: `${updatedCount}개 지갑 상품 가격이 업데이트되었습니다.`,
-        updated: updatedCount
-      });
-    } catch (error: any) {
-      console.error("Error syncing wallet prices:", error);
-      res.status(500).json({ success: false, error: error.message || "가격 동기화 중 오류가 발생했습니다." });
-    }
-  });
-
-  // Sync bag prices
-  app.post("/api/admin/sync-bag-prices", requireAdminAuth, async (_req: Request, res: Response) => {
-    try {
-      console.log("Starting bag price sync...");
-      let updatedCount = 0;
-      
-      const priceRules = [
-        { pattern: '%에르메스%버킨%', price: '650000' },
-        { pattern: '%에르메스%켈리%', price: '580000' },
-        { pattern: '%에르메스%린디%', price: '450000' },
-        { pattern: '%에르메스%피코탄%', price: '380000' },
-        { pattern: '%에르메스%볼리드%', price: '420000' },
-        { pattern: '%에르메스%가든파티%', price: '350000' },
-        { pattern: '%에르메스%에블린%', price: '320000' },
-        { pattern: '%에르메스%컨스탄스%', price: '480000' },
-        { pattern: '%샤넬%클래식%', price: '520000' },
-        { pattern: '%샤넬%보이백%', price: '480000' },
-        { pattern: '%샤넬%가브리엘%', price: '450000' },
-        { pattern: '%샤넬%19%', price: '460000' },
-        { pattern: '%샤넬%22%', price: '470000' },
-        { pattern: '%샤넬%코코핸들%', price: '440000' },
-        { pattern: '%샤넬%드로스트링%', price: '420000' },
-        { pattern: '%루이비통%네버풀%', price: '350000' },
-        { pattern: '%루이비통%스피디%', price: '320000' },
-        { pattern: '%루이비통%알마%', price: '380000' },
-        { pattern: '%루이비통%카퓌신%', price: '450000' },
-        { pattern: '%루이비통%트위스트%', price: '420000' },
-        { pattern: '%루이비통%메티스%', price: '400000' },
-        { pattern: '%디올%레이디%', price: '480000' },
-        { pattern: '%디올%새들%', price: '420000' },
-        { pattern: '%디올%북토트%', price: '380000' },
-        { pattern: '%디올%바비%', price: '350000' },
-        { pattern: '%구찌%마몬트%', price: '380000' },
-        { pattern: '%구찌%디오니소스%', price: '400000' },
-        { pattern: '%구찌%호스빗%', price: '360000' },
-        { pattern: '%프라다%갈레리아%', price: '420000' },
-        { pattern: '%프라다%리에디션%', price: '350000' },
-        { pattern: '%보테가%카세트%', price: '450000' },
-        { pattern: '%보테가%조디%', price: '480000' },
-        { pattern: '%보테가%파데드%', price: '420000' },
-        { pattern: '%셀린느%트리오페%', price: '380000' },
-        { pattern: '%셀린느%벨트백%', price: '400000' },
-        { pattern: '%셀린느%러기지%', price: '420000' },
-        { pattern: '%로에베%퍼즐%', price: '420000' },
-        { pattern: '%로에베%해먹%', price: '380000' },
-        { pattern: '%발렌시아가%르카골%', price: '350000' },
-        { pattern: '%발렌시아가%시티%', price: '380000' },
-        { pattern: '%펜디%바게트%', price: '400000' },
-        { pattern: '%펜디%피카부%', price: '450000' },
-        { pattern: '%고야드%생루이%', price: '420000' },
-        { pattern: '%고야드%앙주%', price: '380000' },
-      ];
-      
-      for (const rule of priceRules) {
-        const count = await storage.batchUpdateCategoryPrices('bags', rule.pattern, rule.price);
-        updatedCount += count;
-      }
-      
-      const highPriceCount = await storage.fixHighCategoryPrices('bags');
-      updatedCount += highPriceCount;
-      
-      const defaultCount = await storage.setDefaultCategoryPrices('bags', '380000');
-      updatedCount += defaultCount;
-      
-      console.log(`Bag price sync complete: ${updatedCount} products updated`);
-      
-      res.json({ 
-        success: true, 
-        message: `${updatedCount}개 가방 상품 가격이 업데이트되었습니다.`,
-        updated: updatedCount
-      });
-    } catch (error: any) {
-      console.error("Error syncing bag prices:", error);
-      res.status(500).json({ success: false, error: error.message || "가격 동기화 중 오류가 발생했습니다." });
-    }
-  });
-
-  // Crawl reviews from source site
-  app.post("/api/admin/crawl-reviews", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const { startPage = 1, endPage = 10, batchSize = 10 } = req.body;
-      console.log(`Starting review crawl from page ${startPage} to ${endPage}...`);
-      
-      let totalCrawled = 0;
-      let totalInserted = 0;
-      const errors: string[] = [];
-      
-      for (let page = startPage; page <= endPage; page += batchSize) {
-        const endBatch = Math.min(page + batchSize - 1, endPage);
-        console.log(`Crawling pages ${page} to ${endBatch}...`);
-        
-        for (let p = page; p <= endBatch; p++) {
-          try {
-            const url = `https://cdamdong.co.kr/shop/itemuselist.php?page=${p}`;
-            const response = await fetch(url);
-            if (!response.ok) {
-              errors.push(`Page ${p}: HTTP ${response.status}`);
-              continue;
-            }
-            
-            const html = await response.text();
-            const $ = cheerio.load(html);
-            
-            // Parse each review item - structure: ol > li
-            $('ol > li').each((_, el) => {
-              try {
-                const $el = $(el);
-                
-                // Check if this is actually a review item (has .sps_img or .sps_section)
-                if (!$el.find('.sps_img').length && !$el.find('.sps_section').length) {
-                  return; // Skip non-review list items
-                }
-                
-                // Extract product info from .sps_img a
-                const productLink = $el.find('.sps_img a');
-                const productName = productLink.find('span').text().trim() || '';
-                
-                // Extract title from h2
-                const title = $el.find('.sps_section h2').text().trim() || '';
-                
-                // Extract author from .sps_dl dd (second dd after 작성자 dt)
-                const authorDd = $el.find('.sps_dl dd').eq(1);
-                const authorName = authorDd.text().trim().replace(/^\s*/, '') || '익명';
-                
-                // Extract date from .sps_dl dd (third dd after 작성일 dt)
-                const dateDd = $el.find('.sps_dl dd').eq(2);
-                const dateText = dateDd.text().trim();
-                
-                // Extract rating from star image
-                const starImg = $el.find('.sps_dl img[src*="star"]').attr('src') || '';
-                let rating = 5;
-                const starMatch = starImg.match(/star(\d)/);
-                if (starMatch) {
-                  rating = parseInt(starMatch[1]);
-                }
-                
-                // Extract content from hidden div (sps_con_X)
-                const contentDiv = $el.find('[id^="sps_con_"]');
-                const content = contentDiv.text().trim() || title;
-                
-                // Extract images from content div - get full-size images
-                const imageUrls: string[] = [];
-                contentDiv.find('img').each((_, img) => {
-                  let src = $(img).attr('src');
-                  if (src && !src.includes('star') && !src.includes('icon')) {
-                    // Convert thumbnail URLs to full-size URLs
-                    // Remove thumb- prefix and size suffix like _100x100 or _500x374
-                    src = src.replace(/thumb-/, '').replace(/_\d+x\d+(\.\w+)$/, '$1');
-                    
-                    // Convert relative URLs to absolute
-                    const fullUrl = src.startsWith('http') ? src : `https://cdamdong.co.kr${src.startsWith('/') ? '' : '/'}${src}`;
-                    if (!imageUrls.includes(fullUrl)) {
-                      imageUrls.push(fullUrl);
-                    }
-                  }
-                });
-                
-                // Also check for images in view_image.php links (these are full size)
-                contentDiv.find('a[href*="view_image.php"]').each((_, link) => {
-                  const href = $(link).attr('href');
-                  if (href) {
-                    // Extract the actual image URL from view_image.php?fn=...
-                    const fnMatch = href.match(/fn=([^&]+)/);
-                    if (fnMatch) {
-                      let imgPath = decodeURIComponent(fnMatch[1]);
-                      // Convert to full URL
-                      if (!imgPath.startsWith('http')) {
-                        imgPath = `https://cdamdong.co.kr${imgPath.startsWith('/') ? '' : '/'}${imgPath}`;
-                      }
-                      if (!imageUrls.includes(imgPath)) {
-                        imageUrls.push(imgPath);
-                      }
-                    }
-                  }
-                });
-                
-                // If no content images found, try to get from thumbnail (convert to full size)
-                if (imageUrls.length === 0) {
-                  let thumbImg = productLink.find('img').attr('src');
-                  if (thumbImg && !thumbImg.includes('star')) {
-                    // Convert thumbnail to full-size
-                    thumbImg = thumbImg.replace(/thumb-/, '').replace(/_\d+x\d+(\.\w+)$/, '$1');
-                    const fullThumbUrl = thumbImg.startsWith('http') ? thumbImg : `https://cdamdong.co.kr${thumbImg.startsWith('/') ? '' : '/'}${thumbImg}`;
-                    imageUrls.push(fullThumbUrl);
-                  }
-                }
-                
-                // Parse date
-                let displayDate = new Date();
-                if (dateText) {
-                  const dateParts = dateText.match(/(\d{4})-(\d{2})-(\d{2})/);
-                  if (dateParts) {
-                    displayDate = new Date(`${dateParts[1]}-${dateParts[2]}-${dateParts[3]}`);
-                  }
-                }
-                
-                if (title || content) {
-                  // Insert into database
-                  storage.createReview({
-                    authorName,
-                    productName,
-                    rating,
-                    title,
-                    content,
-                    imageUrls,
-                    isVisible: true,
-                    isBest: false,
-                    displayDate,
-                  });
-                  totalInserted++;
-                }
-                
-                totalCrawled++;
-              } catch (itemError) {
-                console.error('Error parsing review item:', itemError);
-              }
-            });
-            
-          } catch (pageError: any) {
-            console.error(`Error crawling page ${p}:`, pageError);
-            errors.push(`Page ${p}: ${pageError.message}`);
-          }
-        }
-        
-        // Small delay between batches to avoid overwhelming the server
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-      
-      console.log(`Review crawl complete: ${totalCrawled} reviews processed, ${totalInserted} inserted`);
-      
-      res.json({ 
-        success: true, 
-        message: `${totalInserted}개 리뷰가 크롤링되었습니다.`,
-        totalCrawled,
-        totalInserted,
-        errors: errors.length > 0 ? errors.slice(0, 10) : undefined
-      });
-    } catch (error: any) {
-      console.error("Error crawling reviews:", error);
-      res.status(500).json({ success: false, error: error.message || "리뷰 크롤링 중 오류가 발생했습니다." });
-    }
-  });
-
-  // Sync shoe prices
-  app.post("/api/admin/sync-shoe-prices", requireAdminAuth, async (_req: Request, res: Response) => {
-    try {
-      console.log("Starting shoe price sync...");
-      let updatedCount = 0;
-      
-      const priceRules = [
-        { pattern: '%발렌시아가%러너%', price: '320000' },
-        { pattern: '%발렌시아가%트리플%', price: '350000' },
-        { pattern: '%발렌시아가%스피드%', price: '280000' },
-        { pattern: '%발렌시아가%디펜더%', price: '340000' },
-        { pattern: '%구찌%라이톤%', price: '330000' },
-        { pattern: '%구찌%스크리너%', price: '320000' },
-        { pattern: '%구찌%에이스%', price: '290000' },
-        { pattern: '%프라다%클라우드버스트%', price: '310000' },
-        { pattern: '%프라다%아메리카스컵%', price: '290000' },
-        { pattern: '%루이비통%트레일%', price: '350000' },
-        { pattern: '%루이비통%아크라이트%', price: '340000' },
-        { pattern: '%루이비통%런어웨이%', price: '330000' },
-        { pattern: '%디올%B22%', price: '360000' },
-        { pattern: '%디올%B23%', price: '320000' },
-        { pattern: '%디올%B30%', price: '340000' },
-        { pattern: '%샤넬%스니커즈%', price: '350000' },
-        { pattern: '%골든구스%', price: '280000' },
-        { pattern: '%나이키%', price: '250000' },
-        { pattern: '%아디다스%', price: '220000' },
-        { pattern: '%뉴발란스%', price: '240000' },
-        { pattern: '%살로몬%', price: '260000' },
-        { pattern: '%버버리%', price: '300000' },
-        { pattern: '%보테가%', price: '350000' },
-        { pattern: '%미우미우%', price: '290000' },
-        { pattern: '%로에베%', price: '320000' },
-        { pattern: '%마놀로%', price: '340000' },
-        { pattern: '%지미추%', price: '320000' },
-        { pattern: '%페레가모%', price: '290000' },
-        { pattern: '%샌들%', price: '250000' },
-        { pattern: '%슬리퍼%', price: '220000' },
-        { pattern: '%로퍼%', price: '280000' },
-        { pattern: '%부츠%', price: '320000' },
-        { pattern: '%힐%', price: '290000' },
-        { pattern: '%펌프스%', price: '300000' },
-      ];
-      
-      for (const rule of priceRules) {
-        const count = await storage.batchUpdateCategoryPrices('shoes', rule.pattern, rule.price);
-        updatedCount += count;
-      }
-      
-      const highPriceCount = await storage.fixHighCategoryPrices('shoes');
-      updatedCount += highPriceCount;
-      
-      const defaultCount = await storage.setDefaultCategoryPrices('shoes', '300000');
-      updatedCount += defaultCount;
-      
-      console.log(`Shoe price sync complete: ${updatedCount} products updated`);
-      
-      res.json({ 
-        success: true, 
-        message: `${updatedCount}개 신발 상품 가격이 업데이트되었습니다.`,
-        updated: updatedCount
-      });
-    } catch (error: any) {
-      console.error("Error syncing shoe prices:", error);
-      res.status(500).json({ success: false, error: error.message || "가격 동기화 중 오류가 발생했습니다." });
     }
   });
 

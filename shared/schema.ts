@@ -20,8 +20,7 @@ export type User = typeof users.$inferSelect;
 // Members table (site users/customers)
 export const members = pgTable("members", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull().unique(),
-  email: text("email"),
+  email: text("email").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
   phone: text("phone"),
@@ -52,7 +51,7 @@ export type Member = typeof members.$inferSelect;
 export const memberSessions = pgTable("member_sessions", {
   token: varchar("token").primaryKey(),
   memberId: varchar("member_id").notNull(),
-  username: text("username").notNull(),
+  email: text("email").notNull(),
   name: text("name").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   expiresAt: timestamp("expires_at"),
@@ -189,8 +188,6 @@ export const orders = pgTable("orders", {
   productName: text("product_name"),
   productPrice: integer("product_price"),
   quantity: integer("quantity").default(1),
-  selectedSize: text("selected_size"),
-  selectedColor: text("selected_color"),
   totalAmount: integer("total_amount").notNull(),
   discountAmount: integer("discount_amount").default(0),
   shippingFee: integer("shipping_fee").default(0),

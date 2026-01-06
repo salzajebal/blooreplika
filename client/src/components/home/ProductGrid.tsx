@@ -7,7 +7,6 @@ import { Link } from "wouter";
 import type { Product } from "@shared/schema";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
-import { useGlobalSale } from "@/hooks/use-global-sale";
 
 const DEFAULT_CATEGORIES = [
   { id: "outer", name: "아우터" },
@@ -27,7 +26,6 @@ export function ProductGrid() {
   const [currentPage, setCurrentPage] = useState(1);
   const { toggleItem, isInWishlist } = useWishlist();
   const { toast } = useToast();
-  const { salePercent, calculateSalePrice, hasSale } = useGlobalSale();
 
   const totalPages = Math.ceil(totalCount / PRODUCTS_PER_PAGE);
 
@@ -245,38 +243,12 @@ export function ProductGrid() {
                 </div>
                 
                 <div className="pt-2 sm:pt-3 border-t border-dashed border-gray-100 w-full mt-1 sm:mt-2">
-                  {hasSale ? (
-                    <div className="flex flex-col items-center gap-0.5">
-                      <div className="flex items-center gap-1">
-                        <span className="text-[10px] sm:text-xs text-gray-400 line-through">
-                          {product.price.toLocaleString()}원
-                        </span>
-                        <span className="text-[9px] sm:text-[10px] bg-red-500 text-white px-1 py-0.5 rounded font-bold">
-                          {salePercent}%
-                        </span>
-                      </div>
-                      <div className="flex justify-center items-baseline gap-0.5 sm:gap-1">
-                        <span className="text-sm sm:text-base md:text-lg font-bold text-red-500" data-testid={`price-product-${product.id}`}>
-                          {calculateSalePrice(product.price).toLocaleString()}
-                        </span>
-                        <span className="text-[10px] sm:text-xs text-gray-500">원</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-0.5">
-                      {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-                        <span className="text-[10px] sm:text-xs text-gray-400 line-through">
-                          {Number(product.originalPrice).toLocaleString()}원
-                        </span>
-                      )}
-                      <div className="flex justify-center items-baseline gap-0.5 sm:gap-1">
-                        <span className="text-sm sm:text-base md:text-lg font-bold text-primary" data-testid={`price-product-${product.id}`}>
-                          {product.price.toLocaleString()}
-                        </span>
-                        <span className="text-[10px] sm:text-xs text-gray-500">원</span>
-                      </div>
-                    </div>
-                  )}
+                  <div className="flex justify-center items-baseline gap-0.5 sm:gap-1">
+                    <span className="text-sm sm:text-base md:text-lg font-bold text-primary" data-testid={`price-product-${product.id}`}>
+                      {product.price.toLocaleString()}
+                    </span>
+                    <span className="text-[10px] sm:text-xs text-gray-500">원</span>
+                  </div>
                 </div>
               </div>
             </Link>
