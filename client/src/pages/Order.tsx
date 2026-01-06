@@ -265,54 +265,9 @@ export default function Order() {
                 <CheckCircle className="w-12 h-12 text-green-600" />
               </div>
               
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
                 주문이 완료되었습니다
               </h1>
-              
-              <p className="text-gray-600 mb-6">
-                주문번호: <span className="font-bold text-primary">{orderNumber}</span>
-              </p>
-
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 sm:p-6 mb-6">
-                <h2 className="font-bold text-amber-900 mb-3 flex items-center justify-center gap-2">
-                  <MessageCircle className="w-5 h-5" />
-                  결제계좌 안내
-                </h2>
-                <p className="text-amber-800 mb-4">
-                  결제계좌 정보는 <strong>카카오톡 상담</strong>을 통해 안내받으실 수 있습니다.
-                  <br />
-                  아래 버튼을 눌러 카카오톡으로 이동해주세요.
-                </p>
-                
-                <a
-                  href={KAKAO_LINK}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-bold py-4 px-8 rounded-lg text-lg transition-colors"
-                  data-testid="link-kakao-payment"
-                >
-                  <KakaoIcon className="w-6 h-6" />
-                  카카오톡으로 결제계좌 안내받기
-                </a>
-              </div>
-
-              <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
-                <h3 className="font-bold text-gray-900 mb-3">주문 상품 정보</h3>
-                <div className="flex gap-4">
-                  <div className="w-20 h-20 bg-white rounded border overflow-hidden shrink-0">
-                    <img
-                      src={product.imageUrl || "/images/placeholder.png"}
-                      alt={product.name}
-                      className="w-full h-full object-contain p-2"
-                    />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{product.name}</p>
-                    <p className="text-sm text-gray-500">수량: {quantity}개</p>
-                    <p className="text-primary font-bold mt-1">{calculateTotal()}원</p>
-                  </div>
-                </div>
-              </div>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button
@@ -321,12 +276,6 @@ export default function Order() {
                   className="sm:w-auto"
                 >
                   홈으로 돌아가기
-                </Button>
-                <Button
-                  onClick={() => setLocation("/profile")}
-                  className="sm:w-auto"
-                >
-                  주문 내역 확인
                 </Button>
               </div>
             </div>
