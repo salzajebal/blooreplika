@@ -1942,6 +1942,69 @@ export async function registerRoutes(
     }
   });
 
+  // Get member's reviews (to check which orders have reviews)
+  app.get("/api/members/reviews", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    const session = await getMemberFromToken(token);
+    
+    if (!session) {
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+    }
+    
+    try {
+      const memberReviews = await storage.getReviewsByMember(session.memberId);
+      res.json({ success: true, data: memberReviews.map(r => ({ id: r.id, orderId: r.orderId })) });
+    } catch (error) {
+      console.error("Error fetching member reviews:", error);
+      res.status(500).json({ success: false, error: "리뷰를 불러올 수 없습니다." });
+    }
+  });
+
+  // Create review for an order (member)
+  app.post("/api/members/reviews", async (req: Request, res: Response) => {
+    const token = req.headers.authorization?.replace("Bearer ", "");
+    const session = await getMemberFromToken(token);
+    
+    if (!session) {
+      return res.status(401).json({ success: false, error: "로그인이 필요합니다." });
+    }
+    
+    try {
+      const { orderId, productId, productName, rating, content, authorName } = req.body;
+      
+      if (!orderId || typeof orderId !== "string") {
+        return res.status(400).json({ success: false, error: "주문 ID가 누락되었습니다." });
+      }
+      if (!content || typeof content !== "string" || content.trim().length === 0) {
+        return res.status(400).json({ success: false, error: "후기 내용을 입력해주세요." });
+      }
+      
+      const parsedRating = typeof rating === "number" && rating >= 1 && rating <= 5 ? rating : 5;
+      
+      // Check if review already exists for this order (efficient lookup)
+      const existingReview = await storage.getReviewByOrderAndMember(orderId, session.memberId);
+      if (existingReview) {
+        return res.status(400).json({ success: false, error: "이미 해당 주문에 대한 후기가 있습니다." });
+      }
+      
+      const review = await storage.createReview({
+        memberId: session.memberId,
+        orderId,
+        productId: productId || null,
+        productName: productName || null,
+        authorName: authorName || "회원",
+        rating: parsedRating,
+        content: content.trim(),
+        isVisible: true,
+      });
+      
+      res.status(201).json({ success: true, data: review });
+    } catch (error) {
+      console.error("Error creating member review:", error);
+      res.status(500).json({ success: false, error: "후기 등록에 실패했습니다." });
+    }
+  });
+
   app.get("/api/orders/lookup", async (req: Request, res: Response) => {
     try {
       const { orderNumber, phone } = req.query;
