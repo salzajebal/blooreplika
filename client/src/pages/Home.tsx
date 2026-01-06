@@ -333,7 +333,7 @@ function MainBannerSlider() {
           className="absolute inset-0 transition-opacity duration-700"
           style={{
             opacity: index === currentSlide ? 1 : 0,
-            backgroundImage: `url(${getProxiedImageUrl(url)})`,
+            backgroundImage: `url(${getProxiedImageUrl(url, "large")})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             filter: 'blur(8px)',
@@ -356,7 +356,7 @@ function MainBannerSlider() {
             className="w-full flex-shrink-0 relative"
           >
             <img 
-              src={getProxiedImageUrl(url)}
+              src={getProxiedImageUrl(url, "large")}
               alt={`배너 ${index + 1}`}
               className="w-full h-auto max-h-[250px] md:max-h-[500px] object-contain"
             />

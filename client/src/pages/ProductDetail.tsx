@@ -204,7 +204,8 @@ export default function ProductDetail() {
                   src={getProxiedImageUrl(
                     product.imageUrls && product.imageUrls.length > 0
                       ? product.imageUrls[selectedImageIndex] || product.imageUrls[0]
-                      : product.imageUrl
+                      : product.imageUrl,
+                    "large"
                   )}
                   alt={product.name}
                   className="w-full h-full object-contain p-4 sm:p-8"
@@ -436,7 +437,7 @@ export default function ProductDetail() {
                 {product.detailImageUrls.map((imgUrl, index) => (
                   <div key={index} className="flex justify-center">
                     <img
-                      src={getProxiedImageUrl(imgUrl)}
+                      src={getProxiedImageUrl(imgUrl, "large")}
                       alt={`${product.name} 상세 설명 이미지 ${index + 1}`}
                       className="max-w-full rounded-lg shadow-sm"
                       style={{ maxHeight: 'none' }}
@@ -451,7 +452,7 @@ export default function ProductDetail() {
                 {product.imageUrls.slice(1).map((imgUrl, index) => (
                   <div key={index} className="flex justify-center">
                     <img
-                      src={getProxiedImageUrl(imgUrl)}
+                      src={getProxiedImageUrl(imgUrl, "large")}
                       alt={`${product.name} 상세 이미지 ${index + 1}`}
                       className="max-w-full rounded-lg shadow-sm"
                       style={{ maxHeight: 'none' }}

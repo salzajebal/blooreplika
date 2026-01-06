@@ -89,6 +89,12 @@ export async function registerRoutes(
   app.get("/api/image-proxy", async (req: Request, res: Response) => {
     try {
       let imageUrl = req.query.url as string;
+      // Validate and clamp width/quality to reasonable bounds
+      const rawWidth = parseInt(req.query.w as string) || 400;
+      const rawQuality = parseInt(req.query.q as string) || 75;
+      const width = Math.min(Math.max(rawWidth, 100), 1600); // 100-1600px
+      const quality = Math.min(Math.max(rawQuality, 30), 95); // 30-95%
+      
       if (!imageUrl) {
         return res.status(400).json({ success: false, error: "URL parameter required" });
       }
@@ -102,8 +108,10 @@ export async function registerRoutes(
         // If decode fails, use as-is
       }
       
-      // Only allow proxying from cdamdong.co.kr
-      if (!imageUrl.includes("cdamdong.co.kr")) {
+      // Allow proxying from cdamdong.co.kr and cdn.shopify.com
+      const allowedDomains = ["cdamdong.co.kr", "cdn.shopify.com"];
+      const isAllowed = allowedDomains.some(domain => imageUrl.includes(domain));
+      if (!isAllowed) {
         return res.status(403).json({ success: false, error: "Domain not allowed" });
       }
       
@@ -115,7 +123,7 @@ export async function registerRoutes(
       const response = await fetch(imageUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Referer": "https://cdamdong.co.kr/",
+          "Referer": imageUrl.includes("cdamdong.co.kr") ? "https://cdamdong.co.kr/" : "https://dittoholic.com/",
           "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
           "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
         },
@@ -124,7 +132,6 @@ export async function registerRoutes(
       
       if (!response.ok) {
         console.log(`Image proxy failed for ${imageUrl}: ${response.status}`);
-        // Return a local SVG placeholder instead of external redirect
         const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
           <rect fill="#f3f4f6" width="400" height="300"/>
           <text x="200" y="150" text-anchor="middle" fill="#9ca3af" font-family="sans-serif" font-size="14">이미지 없음</text>
@@ -134,15 +141,24 @@ export async function registerRoutes(
         return res.send(placeholderSvg);
       }
       
-      const contentType = response.headers.get("content-type") || "image/jpeg";
-      const buffer = await response.arrayBuffer();
+      const buffer = Buffer.from(await response.arrayBuffer());
       
-      res.setHeader("Content-Type", contentType);
-      res.setHeader("Cache-Control", "public, max-age=86400"); // Cache for 24 hours
-      res.send(Buffer.from(buffer));
+      // Use sharp to resize and compress image to WebP
+      const sharp = (await import("sharp")).default;
+      const optimizedImage = await sharp(buffer)
+        .resize(width, null, { 
+          withoutEnlargement: true,
+          fit: "inside"
+        })
+        .webp({ quality })
+        .toBuffer();
+      
+      res.setHeader("Content-Type", "image/webp");
+      res.setHeader("Cache-Control", "public, max-age=604800, immutable"); // Cache for 7 days
+      res.setHeader("Vary", "Accept");
+      res.send(optimizedImage);
     } catch (error) {
       console.error("Image proxy error:", error);
-      // Return local SVG placeholder on error instead of external redirect
       const placeholderSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
         <rect fill="#f3f4f6" width="400" height="300"/>
         <text x="200" y="150" text-anchor="middle" fill="#9ca3af" font-family="sans-serif" font-size="14">이미지 없음</text>
