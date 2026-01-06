@@ -469,24 +469,9 @@ export default function ProductDetail() {
 
             <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
               <h3 className="font-bold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">배송 및 교환/반품 안내</h3>
-              <div className="grid md:grid-cols-2 gap-4 sm:gap-6 text-xs sm:text-sm text-gray-600">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">배송 안내</h4>
-                  <ul className="space-y-1">
-                    <li>• 배송비: 전 상품 무료 배송</li>
-                    <li>• 배송 기간: 결제 확인 후 1~3일 이내</li>
-                    <li>• 배송사: CJ대한통운</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">교환/반품 안내</h4>
-                  <ul className="space-y-1">
-                    <li>• 상품 수령 후 7일 이내 교환/반품 가능</li>
-                    <li>• 단순 변심 시 왕복 배송비 고객 부담</li>
-                    <li>• 제품 하자 시 무료 교환 및 반품</li>
-                  </ul>
-                </div>
-              </div>
+              <p className="text-sm text-gray-600 text-center py-4">
+                상세페이지를 참조해 주세요.
+              </p>
             </div>
           </div>
 
