@@ -179,6 +179,9 @@ export default function Admin() {
     accountHolder: "",
   });
   const [depositAccountLoading, setDepositAccountLoading] = useState(false);
+  
+  const [globalSalePercent, setGlobalSalePercent] = useState<number>(0);
+  const [globalSaleLoading, setGlobalSaleLoading] = useState(false);
 
   const [productCount, setProductCount] = useState<number | null>(null);
   const [productCountLoading, setProductCountLoading] = useState(false);
@@ -206,6 +209,51 @@ export default function Admin() {
     { localId: "genuine", name: "정품" },
   ];
   const [selectedCrawlCategories, setSelectedCrawlCategories] = useState<string[]>([]);
+
+  // Dittoholic crawl state
+  const [dittoholicProgress, setDittoholicProgress] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    message: string;
+    category: string;
+  }>({ status: 'idle', total: 0, current: 0, message: '', category: '' });
+  const [clearBeforeDittoholic, setClearBeforeDittoholic] = useState(false);
+  const dittoholicIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const DITTOHOLIC_CATEGORIES = [
+    { subcategoryId: "domestic-watches", name: "시계" },
+    { subcategoryId: "domestic-tops", name: "상의" },
+    { subcategoryId: "domestic-outer", name: "아우터" },
+    { subcategoryId: "domestic-accessories", name: "악세사리" },
+    { subcategoryId: "domestic-bottoms", name: "하의" },
+    { subcategoryId: "domestic-bags", name: "가방" },
+    { subcategoryId: "domestic-wallets", name: "지갑" },
+  ];
+  const [selectedDittoholicCategories, setSelectedDittoholicCategories] = useState<string[]>([]);
+  const [deletingDomestic, setDeletingDomestic] = useState(false);
+
+  const deleteDomesticProducts = async () => {
+    if (!confirm("국내배송 카테고리의 모든 상품을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+      return;
+    }
+    setDeletingDomestic(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/products/domestic", { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "삭제 완료", description: `${data.deletedCount}개의 국내배송 상품이 삭제되었습니다.` });
+        fetchProducts();
+        fetchProductCount();
+      } else {
+        toast({ title: "오류", description: data.message || "삭제 중 오류가 발생했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "삭제 요청 중 오류가 발생했습니다.", variant: "destructive" });
+    } finally {
+      setDeletingDomestic(false);
+    }
+  };
 
   const fetchProductCount = async () => {
     setProductCountLoading(true);
@@ -301,29 +349,139 @@ export default function Admin() {
     }
   };
 
-  const [reviewCrawlLoading, setReviewCrawlLoading] = useState(false);
-  const [noticeCrawlLoading, setNoticeCrawlLoading] = useState(false);
-
-  const crawlReviews = async () => {
-    setReviewCrawlLoading(true);
+  // Dittoholic crawl functions
+  const fetchDittoholicProgress = async () => {
     try {
-      const res = await fetchWithAuth("/api/admin/crawl/reviews", {
+      const res = await fetchWithAuth("/api/admin/crawl/dittoholic/progress", { method: "GET" });
+      const data = await res.json();
+      if (data.success) {
+        setDittoholicProgress({
+          status: data.status,
+          total: data.total,
+          current: data.current,
+          message: data.message,
+          category: data.category || '',
+        });
+        if (data.status === 'completed' || data.status === 'error') {
+          if (dittoholicIntervalRef.current) {
+            clearInterval(dittoholicIntervalRef.current);
+            dittoholicIntervalRef.current = null;
+          }
+          fetchProductCount();
+          fetchProducts();
+        }
+      }
+    } catch {}
+  };
+
+  const startDittoholicCrawl = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/dittoholic/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ maxPages: 10 }),
+        body: JSON.stringify({ 
+          clearExisting: clearBeforeDittoholic,
+          selectedCategories: selectedDittoholicCategories.length > 0 ? selectedDittoholicCategories : undefined
+        }),
       });
       const data = await res.json();
       if (data.success) {
-        toast({ title: "후기 크롤링 완료", description: data.message });
-        fetchReviews();
+        const categoryText = selectedDittoholicCategories.length > 0 
+          ? `${selectedDittoholicCategories.length}개 카테고리` 
+          : "전체 카테고리";
+        toast({ title: "dittoholic 크롤링 시작", description: `${categoryText} 크롤링이 시작되었습니다.` });
+        setDittoholicProgress({ status: 'running', total: 0, current: 0, message: '시작 중...', category: '' });
+        dittoholicIntervalRef.current = setInterval(fetchDittoholicProgress, 500);
       } else {
         toast({ title: "오류", description: data.error, variant: "destructive" });
       }
     } catch (error) {
+      toast({ title: "오류", description: "크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+  
+  const toggleDittoholicCategory = (subcategoryId: string) => {
+    setSelectedDittoholicCategories(prev => 
+      prev.includes(subcategoryId) 
+        ? prev.filter(id => id !== subcategoryId)
+        : [...prev, subcategoryId]
+    );
+  };
+  
+  const selectAllDittoholicCategories = () => {
+    setSelectedDittoholicCategories(DITTOHOLIC_CATEGORIES.map(c => c.subcategoryId));
+  };
+  
+  const deselectAllDittoholicCategories = () => {
+    setSelectedDittoholicCategories([]);
+  };
+
+  const [reviewCrawlLoading, setReviewCrawlLoading] = useState(false);
+  const [noticeCrawlLoading, setNoticeCrawlLoading] = useState(false);
+  const [reviewCrawlStartPage, setReviewCrawlStartPage] = useState(1);
+  const [reviewCrawlEndPage, setReviewCrawlEndPage] = useState(100);
+  const [reviewCrawlProgress, setReviewCrawlProgress] = useState("");
+
+  const crawlReviews = async (startPage = 1, endPage = 100) => {
+    setReviewCrawlLoading(true);
+    setReviewCrawlProgress(`페이지 ${startPage}~${endPage} 크롤링 중...`);
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl-reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ startPage, endPage, batchSize: 20 }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "후기 크롤링 완료", description: data.message });
+        setReviewCrawlProgress(`완료: ${data.totalInserted}개 리뷰 추가됨`);
+        fetchReviews();
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+        setReviewCrawlProgress("");
+      }
+    } catch (error) {
       toast({ title: "오류", description: "후기 크롤링에 실패했습니다.", variant: "destructive" });
+      setReviewCrawlProgress("");
     } finally {
       setReviewCrawlLoading(false);
     }
+  };
+
+  const crawlAllReviews = async () => {
+    if (!confirm("전체 18,000개 이상의 리뷰를 크롤링합니다. 시간이 오래 걸릴 수 있습니다. 계속하시겠습니까?")) return;
+    
+    setReviewCrawlLoading(true);
+    const totalPages = 950; // ~18,000 reviews / ~20 per page
+    const batchSize = 50;
+    let totalInserted = 0;
+    
+    for (let startPage = 1; startPage <= totalPages; startPage += batchSize) {
+      const endPage = Math.min(startPage + batchSize - 1, totalPages);
+      setReviewCrawlProgress(`페이지 ${startPage}~${endPage} / ${totalPages} 크롤링 중... (${totalInserted}개 추가됨)`);
+      
+      try {
+        const res = await fetchWithAuth("/api/admin/crawl-reviews", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ startPage, endPage, batchSize: 10 }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          totalInserted += data.totalInserted || 0;
+        }
+      } catch (error) {
+        console.error(`Error crawling pages ${startPage}-${endPage}:`, error);
+      }
+      
+      // Small delay between batches
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+    
+    setReviewCrawlProgress(`완료: 총 ${totalInserted}개 리뷰 추가됨`);
+    toast({ title: "전체 크롤링 완료", description: `${totalInserted}개 리뷰가 추가되었습니다.` });
+    fetchReviews();
+    setReviewCrawlLoading(false);
   };
 
   const crawlNotices = async () => {
@@ -758,17 +916,30 @@ export default function Admin() {
     }
     
     try {
-      const res = await fetch("/api/settings/deposit-account");
+      const res = await fetch("/api/settings/deposit_account");
       if (res.ok) {
         const data = await res.json();
-        setDepositAccountSettings({
-          bankName: data.bankName || "",
-          accountNumber: data.accountNumber || "",
-          accountHolder: data.accountHolder || "",
-        });
+        if (data.success && data.data?.value) {
+          const parsed = JSON.parse(data.data.value);
+          setDepositAccountSettings({
+            bankName: parsed.bankName || "",
+            accountNumber: parsed.accountNumber || "",
+            accountHolder: parsed.accountHolder || "",
+          });
+        }
       }
     } catch (error) {
       console.log("Deposit account settings not found");
+    }
+    
+    try {
+      const res = await fetch("/api/settings/global_sale_percent");
+      const data = await res.json();
+      if (data.success && data.data) {
+        setGlobalSalePercent(parseInt(data.data.value) || 0);
+      }
+    } catch (error) {
+      console.log("Global sale setting not found");
     }
   };
 
@@ -799,10 +970,13 @@ export default function Admin() {
   const saveDepositAccountSettings = async () => {
     setDepositAccountLoading(true);
     try {
-      const res = await fetchWithAuth("/api/admin/settings/deposit-account", {
+      const res = await fetchWithAuth("/api/admin/settings/deposit_account", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(depositAccountSettings),
+        body: JSON.stringify({ 
+          value: JSON.stringify(depositAccountSettings),
+          description: "입금 계좌 정보"
+        }),
       });
       const data = await res.json();
       if (data.success) {
@@ -814,6 +988,30 @@ export default function Admin() {
       toast({ title: "오류", description: "설정 저장에 실패했습니다.", variant: "destructive" });
     } finally {
       setDepositAccountLoading(false);
+    }
+  };
+  
+  const saveGlobalSaleSetting = async () => {
+    setGlobalSaleLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/settings/global_sale_percent", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          value: globalSalePercent.toString(),
+          description: "전체 상품 할인율 (%)"
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: globalSalePercent > 0 ? `전체 상품 ${globalSalePercent}% 할인이 적용되었습니다.` : "할인이 해제되었습니다." });
+      } else {
+        toast({ title: "오류", description: "설정 저장에 실패했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "설정 저장에 실패했습니다.", variant: "destructive" });
+    } finally {
+      setGlobalSaleLoading(false);
     }
   };
 
@@ -1023,6 +1221,74 @@ export default function Admin() {
       }
     } catch (error) {
       toast({ title: "오류", description: "데이터 생성에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleSyncAccessoryPrices = async () => {
+    try {
+      toast({ title: "동기화 중...", description: "악세사리 가격을 원본 사이트와 동기화하고 있습니다." });
+      const res = await fetchWithAuth("/api/admin/sync-accessory-prices", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: data.message });
+        fetchProducts();
+        fetchStats();
+      } else {
+        toast({ title: "오류", description: data.error || "가격 동기화에 실패했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "가격 동기화에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleSyncWalletPrices = async () => {
+    try {
+      toast({ title: "동기화 중...", description: "지갑 가격을 동기화하고 있습니다." });
+      const res = await fetchWithAuth("/api/admin/sync-wallet-prices", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: data.message });
+        fetchProducts();
+        fetchStats();
+      } else {
+        toast({ title: "오류", description: data.error || "가격 동기화에 실패했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "가격 동기화에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleSyncBagPrices = async () => {
+    try {
+      toast({ title: "동기화 중...", description: "가방 가격을 동기화하고 있습니다." });
+      const res = await fetchWithAuth("/api/admin/sync-bag-prices", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: data.message });
+        fetchProducts();
+        fetchStats();
+      } else {
+        toast({ title: "오류", description: data.error || "가격 동기화에 실패했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "가격 동기화에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleSyncShoePrices = async () => {
+    try {
+      toast({ title: "동기화 중...", description: "신발 가격을 동기화하고 있습니다." });
+      const res = await fetchWithAuth("/api/admin/sync-shoe-prices", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: data.message });
+        fetchProducts();
+        fetchStats();
+      } else {
+        toast({ title: "오류", description: data.error || "가격 동기화에 실패했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "가격 동기화에 실패했습니다.", variant: "destructive" });
     }
   };
 
@@ -1865,6 +2131,22 @@ export default function Admin() {
                 <Button onClick={handleSeedData} variant="outline">
                   <Database className="w-4 h-4 mr-2" />
                   샘플 데이터 생성
+                </Button>
+                <Button onClick={handleSyncAccessoryPrices} variant="outline" className="border-orange-300 text-orange-600 hover:bg-orange-50">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  악세사리 가격 동기화
+                </Button>
+                <Button onClick={handleSyncWalletPrices} variant="outline" className="border-purple-300 text-purple-600 hover:bg-purple-50">
+                  <Wallet className="w-4 h-4 mr-2" />
+                  지갑 가격 동기화
+                </Button>
+                <Button onClick={handleSyncBagPrices} variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50">
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  가방 가격 동기화
+                </Button>
+                <Button onClick={handleSyncShoePrices} variant="outline" className="border-green-300 text-green-600 hover:bg-green-50">
+                  <Package className="w-4 h-4 mr-2" />
+                  신발 가격 동기화
                 </Button>
               </div>
             </div>
@@ -2932,6 +3214,13 @@ export default function Admin() {
                         <div className="text-sm text-gray-600">
                           <p><strong>상품:</strong> {order.productName}</p>
                           <p><strong>수량:</strong> {order.quantity}개 | <strong>총액:</strong> {Number(order.totalAmount).toLocaleString()}원</p>
+                          {(order.selectedSize || order.selectedColor) && (
+                            <p>
+                              {order.selectedSize && <><strong>사이즈:</strong> {order.selectedSize}</>}
+                              {order.selectedSize && order.selectedColor && " | "}
+                              {order.selectedColor && <><strong>색상:</strong> {order.selectedColor}</>}
+                            </p>
+                          )}
                         </div>
                         <div className="text-sm text-gray-600">
                           <p><strong>주문자:</strong> {order.memberName} ({order.memberEmail})</p>
@@ -4167,6 +4456,89 @@ export default function Admin() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
               <div className="p-6 border-b border-gray-100">
                 <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Tag className="w-5 h-5 text-red-600" />
+                  전체 세일 설정
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">모든 상품에 일괄 할인율을 적용합니다.</p>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-bold text-sm">%</span>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-900 mb-2">전체 상품 할인율</h4>
+                      <p className="text-sm text-gray-600 mb-4">
+                        설정한 할인율이 모든 상품에 적용됩니다. 0%로 설정하면 할인이 해제됩니다.
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
+                          <Input
+                            data-testid="input-global-sale-percent"
+                            type="number"
+                            min="0"
+                            max="90"
+                            value={globalSalePercent}
+                            onChange={(e) => setGlobalSalePercent(Math.max(0, Math.min(90, parseInt(e.target.value) || 0)))}
+                            className="w-24 text-center text-lg font-bold"
+                          />
+                          <span className="text-lg font-bold text-gray-700">%</span>
+                        </div>
+                        <Button
+                          data-testid="button-save-global-sale"
+                          onClick={saveGlobalSaleSetting}
+                          disabled={globalSaleLoading}
+                          className="bg-red-500 hover:bg-red-600 text-white"
+                        >
+                          {globalSaleLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                          적용
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                    <Eye className="w-4 h-4" />
+                    현재 할인 상태
+                  </h4>
+                  {globalSalePercent > 0 ? (
+                    <div className="flex items-center gap-3">
+                      <span className="inline-flex items-center px-3 py-1 bg-red-500 text-white text-sm font-bold rounded-full">
+                        SALE {globalSalePercent}% OFF
+                      </span>
+                      <span className="text-sm text-gray-600">모든 상품에 할인이 적용 중입니다.</span>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm">현재 할인이 적용되지 않은 상태입니다.</p>
+                  )}
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-red-500 mt-1">•</span>
+                      <span>할인율은 1~90% 사이로 설정할 수 있습니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-red-500 mt-1">•</span>
+                      <span>적용 시 모든 상품 페이지에 원래 가격과 할인가가 함께 표시됩니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-red-500 mt-1">•</span>
+                      <span>0%로 설정하면 할인이 해제됩니다.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
                   <Download className="w-5 h-5 text-blue-600" />
                   cdamdong.co.kr 크롤링
                 </h3>
@@ -4322,26 +4694,82 @@ export default function Admin() {
                 </div>
 
                 <div className="border-t border-gray-200 pt-4">
-                  <h4 className="font-semibold text-gray-800 mb-3">후기 & 공지사항 크롤링</h4>
+                  <h4 className="font-semibold text-gray-800 mb-3">후기 대량 크롤링 (cdamdong.co.kr)</h4>
+                  
+                  {reviewCrawlProgress && (
+                    <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-2 text-blue-700">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="text-sm font-medium">{reviewCrawlProgress}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">시작 페이지</label>
+                      <Input
+                        type="number"
+                        value={reviewCrawlStartPage}
+                        onChange={(e) => setReviewCrawlStartPage(Number(e.target.value))}
+                        min={1}
+                        max={1000}
+                        disabled={reviewCrawlLoading}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-gray-600 mb-1">끝 페이지</label>
+                      <Input
+                        type="number"
+                        value={reviewCrawlEndPage}
+                        onChange={(e) => setReviewCrawlEndPage(Number(e.target.value))}
+                        min={1}
+                        max={1000}
+                        disabled={reviewCrawlLoading}
+                      />
+                    </div>
+                  </div>
+                  
                   <div className="flex gap-3 mb-4">
                     <Button
-                      data-testid="button-crawl-reviews"
-                      onClick={crawlReviews}
+                      data-testid="button-crawl-reviews-range"
+                      onClick={() => crawlReviews(reviewCrawlStartPage, reviewCrawlEndPage)}
                       disabled={reviewCrawlLoading}
                       className="bg-green-500 hover:bg-green-600 text-white flex-1"
                     >
                       {reviewCrawlLoading ? (
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          후기 크롤링 중...
+                          크롤링 중...
                         </>
                       ) : (
                         <>
                           <Star className="w-4 h-4 mr-2" />
-                          후기 크롤링
+                          범위 크롤링 ({reviewCrawlEndPage - reviewCrawlStartPage + 1}페이지)
                         </>
                       )}
                     </Button>
+                    <Button
+                      data-testid="button-crawl-all-reviews"
+                      onClick={crawlAllReviews}
+                      disabled={reviewCrawlLoading}
+                      className="bg-purple-500 hover:bg-purple-600 text-white flex-1"
+                    >
+                      {reviewCrawlLoading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          전체 크롤링 중...
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4 mr-2" />
+                          전체 크롤링 (18,000+개)
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  
+                  <div className="flex gap-3 mb-4">
                     <Button
                       data-testid="button-crawl-notices"
                       onClick={crawlNotices}
@@ -4376,6 +4804,166 @@ export default function Admin() {
                     <li className="flex items-start gap-2">
                       <span className="text-blue-500 mt-1">•</span>
                       <span>진행 상황이 실시간으로 표시됩니다.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Dittoholic Crawl Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Download className="w-5 h-5 text-purple-600" />
+                  dittoholic.com 크롤링
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">dittoholic.com에서 국내배송 상품을 크롤링합니다. (약 2,000개)</p>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="clearBeforeDittoholic"
+                        checked={clearBeforeDittoholic}
+                        onChange={(e) => setClearBeforeDittoholic(e.target.checked)}
+                        className="w-4 h-4 text-purple-600 rounded"
+                      />
+                      <label htmlFor="clearBeforeDittoholic" className="text-sm text-gray-700">
+                        크롤링 전 기존 상품 모두 삭제
+                      </label>
+                    </div>
+                    
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-medium text-gray-800">카테고리 선택 (선택안하면 전체)</h5>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={selectAllDittoholicCategories}>전체 선택</Button>
+                          <Button size="sm" variant="outline" onClick={deselectAllDittoholicCategories}>선택 해제</Button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {DITTOHOLIC_CATEGORIES.map((cat) => (
+                          <label 
+                            key={cat.subcategoryId}
+                            className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
+                              selectedDittoholicCategories.includes(cat.subcategoryId) 
+                                ? 'bg-purple-50 border-purple-300' 
+                                : 'bg-white border-gray-200 hover:border-purple-200'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedDittoholicCategories.includes(cat.subcategoryId)}
+                              onChange={() => toggleDittoholicCategory(cat.subcategoryId)}
+                              className="w-4 h-4 text-purple-600 rounded"
+                            />
+                            <span className="text-sm">{cat.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {selectedDittoholicCategories.length > 0 && (
+                        <p className="text-xs text-purple-600 mt-2">
+                          선택된 카테고리: {selectedDittoholicCategories.map(id => DITTOHOLIC_CATEGORIES.find(c => c.subcategoryId === id)?.name).join(', ')}
+                        </p>
+                      )}
+                    </div>
+
+                    {dittoholicProgress.status !== 'idle' && (
+                      <div className={`p-4 rounded-lg ${
+                        dittoholicProgress.status === 'running' ? 'bg-purple-50 border border-purple-200' :
+                        dittoholicProgress.status === 'completed' ? 'bg-green-50 border border-green-200' :
+                        'bg-red-50 border border-red-200'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          {dittoholicProgress.status === 'running' && <Loader2 className="w-4 h-4 text-purple-600 animate-spin" />}
+                          {dittoholicProgress.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                          {dittoholicProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                          <span className={`text-sm font-medium ${
+                            dittoholicProgress.status === 'running' ? 'text-purple-700' :
+                            dittoholicProgress.status === 'completed' ? 'text-green-700' :
+                            'text-red-700'
+                          }`}>
+                            {dittoholicProgress.message}
+                          </span>
+                        </div>
+                        
+                        {dittoholicProgress.status === 'running' && dittoholicProgress.total > 0 && (
+                          <div className="space-y-2">
+                            <div className="w-full bg-purple-100 rounded-full h-3">
+                              <div 
+                                className="bg-purple-500 h-3 rounded-full transition-all duration-300"
+                                style={{ width: `${Math.round((dittoholicProgress.current / dittoholicProgress.total) * 100)}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-xs text-purple-600">
+                              <span>{dittoholicProgress.current.toLocaleString()} / {dittoholicProgress.total.toLocaleString()}</span>
+                              <span>{Math.round((dittoholicProgress.current / dittoholicProgress.total) * 100)}%</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex gap-2">
+                      <Button
+                        data-testid="button-delete-domestic-products"
+                        onClick={deleteDomesticProducts}
+                        disabled={deletingDomestic || dittoholicProgress.status === 'running'}
+                        variant="destructive"
+                        className="flex-1"
+                      >
+                        {deletingDomestic ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            삭제 중...
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            국내배송 상품 전체 삭제
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        data-testid="button-start-dittoholic-crawl"
+                        onClick={startDittoholicCrawl}
+                        disabled={dittoholicProgress.status === 'running' || deletingDomestic}
+                        className="bg-purple-500 hover:bg-purple-600 text-white flex-1"
+                      >
+                        {dittoholicProgress.status === 'running' ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            크롤링 중...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4 mr-2" />
+                            {selectedDittoholicCategories.length > 0 
+                              ? `선택 카테고리 크롤링 (${selectedDittoholicCategories.length}개)`
+                              : 'dittoholic 전체 크롤링 시작'}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-500 mt-1">•</span>
+                      <span>dittoholic.com의 국내배송 카테고리(7개)에서 상품을 크롤링합니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-500 mt-1">•</span>
+                      <span>시계, 상의, 아우터, 악세사리, 하의, 가방, 지갑 카테고리가 포함됩니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-500 mt-1">•</span>
+                      <span>Shopify 기반 사이트로 빠른 크롤링이 가능합니다.</span>
                     </li>
                   </ul>
                 </div>

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useGlobalSale } from "@/hooks/use-global-sale";
 import { CheckCircle, Package, User, MapPin, MessageCircle, CreditCard, Building2 } from "lucide-react";
 import { CardPaymentForm, type CouponPaymentData } from "@/components/checkout/CardPaymentForm";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ export default function Order() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { calculateSalePrice, hasSale } = useGlobalSale();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,7 +55,15 @@ export default function Order() {
     shippingAddressDetail: "",
     shippingMemo: "",
     sameAsOrderer: true,
+    selectedSize: "",
+    selectedColor: "",
   });
+
+  const [depositAccount, setDepositAccount] = useState<{
+    bankName: string;
+    accountNumber: string;
+    accountHolder: string;
+  } | null>(null);
 
   useEffect(() => {
     const memberName = localStorage.getItem("memberName") || "";
@@ -65,6 +75,24 @@ export default function Order() {
       memberEmail,
       shippingName: memberName,
     }));
+  }, []);
+
+  useEffect(() => {
+    const fetchDepositAccount = async () => {
+      try {
+        const res = await fetch("/api/settings/deposit_account");
+        const data = await res.json();
+        if (data.success && data.data?.value) {
+          try {
+            const parsed = JSON.parse(data.data.value);
+            if (parsed.bankName && parsed.accountNumber) {
+              setDepositAccount(parsed);
+            }
+          } catch {}
+        }
+      } catch {}
+    };
+    fetchDepositAccount();
   }, []);
 
   useEffect(() => {
@@ -111,9 +139,15 @@ export default function Order() {
     }
   }, [formData.memberName, formData.memberPhone, formData.sameAsOrderer]);
 
+  const getEffectivePrice = () => {
+    if (!product) return 0;
+    return hasSale ? calculateSalePrice(product.price) : product.price;
+  };
+
   const calculateTotal = () => {
     if (!product) return "0";
-    return (product.price * quantity).toLocaleString();
+    const effectivePrice = getEffectivePrice();
+    return (effectivePrice * quantity).toLocaleString();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -164,9 +198,11 @@ export default function Order() {
           shippingMemo: formData.shippingMemo,
           productId: product.id,
           productName: product.name,
-          productPrice: product.price,
+          productPrice: getEffectivePrice(),
           quantity,
-          totalAmount: product.price * quantity,
+          selectedSize: formData.selectedSize || null,
+          selectedColor: formData.selectedColor || null,
+          totalAmount: getEffectivePrice() * quantity,
           paymentMethod: paymentMethod || undefined,
           couponPayment: paymentMethod === "coupon" && couponPaymentData ? couponPaymentData : undefined,
         }),
@@ -333,6 +369,31 @@ export default function Order() {
                     <span className="text-sm text-gray-500">수량: {quantity}개</span>
                     <span className="font-bold text-primary text-lg">{calculateTotal()}원</span>
                   </div>
+                </div>
+              </div>
+              
+              <div className="grid gap-4 sm:grid-cols-2 mt-4 pt-4 border-t">
+                <div>
+                  <Label htmlFor="selectedSize">사이즈 (선택)</Label>
+                  <Input
+                    id="selectedSize"
+                    name="selectedSize"
+                    value={formData.selectedSize}
+                    onChange={handleInputChange}
+                    placeholder="예: M, L, XL, 260, 270 등"
+                    data-testid="input-selected-size"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="selectedColor">색상 (선택)</Label>
+                  <Input
+                    id="selectedColor"
+                    name="selectedColor"
+                    value={formData.selectedColor}
+                    onChange={handleInputChange}
+                    placeholder="예: 블랙, 화이트, 네이비 등"
+                    data-testid="input-selected-color"
+                  />
                 </div>
               </div>
             </div>
@@ -522,7 +583,7 @@ export default function Order() {
                     setCouponPaymentData(data);
                     setCardPaymentValid(isValid);
                   }}
-                  totalAmount={product ? product.price * quantity : 0}
+                  totalAmount={product ? getEffectivePrice() * quantity : 0}
                 />
               )}
 
@@ -532,11 +593,28 @@ export default function Order() {
                     <MessageCircle className="w-5 h-5" />
                     계좌이체 안내
                   </h3>
-                  <p className="text-amber-800 text-sm">
-                    주문서 작성 완료 후, <strong>결제계좌 정보</strong>는 카카오톡 상담을 통해 안내받으실 수 있습니다.
-                    <br />
-                    주문 완료 페이지에서 카카오톡 링크를 클릭해주세요.
-                  </p>
+                  {depositAccount ? (
+                    <div className="text-amber-800 text-sm space-y-2">
+                      <p>주문서 작성 완료 후, 아래 계좌로 입금해주세요.</p>
+                      <div className="bg-white/50 rounded-lg p-3 border border-amber-200">
+                        <div className="grid grid-cols-[80px_1fr] gap-1">
+                          <span className="text-amber-700">은행명:</span>
+                          <span className="font-bold text-amber-900">{depositAccount.bankName}</span>
+                          <span className="text-amber-700">계좌번호:</span>
+                          <span className="font-bold text-amber-900">{depositAccount.accountNumber}</span>
+                          <span className="text-amber-700">예금주:</span>
+                          <span className="font-bold text-amber-900">{depositAccount.accountHolder}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-amber-600">※ 입금 시 주문자명으로 입금해주세요.</p>
+                    </div>
+                  ) : (
+                    <p className="text-amber-800 text-sm">
+                      주문서 작성 완료 후, <strong>결제계좌 정보</strong>는 카카오톡 상담을 통해 안내받으실 수 있습니다.
+                      <br />
+                      주문 완료 페이지에서 카카오톡 링크를 클릭해주세요.
+                    </p>
+                  )}
                 </div>
               )}
             </div>

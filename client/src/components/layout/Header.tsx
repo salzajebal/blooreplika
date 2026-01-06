@@ -31,7 +31,19 @@ const mainNavItems = [
   { name: '가방', path: '/products/bags' },
   { name: '시계', path: '/products/watches' },
   { name: '정품', path: '/products/genuine' },
+  { name: '국내배송', path: '/products/domestic' },
   { name: '커뮤니티', path: '/comparison' },
+  { name: '상품후기', path: '/reviews' },
+];
+
+const domesticSubItems = [
+  { name: '시계', path: '/products/domestic?sub=domestic-watches' },
+  { name: '상의', path: '/products/domestic?sub=domestic-tops' },
+  { name: '아우터', path: '/products/domestic?sub=domestic-outer' },
+  { name: '악세사리', path: '/products/domestic?sub=domestic-accessories' },
+  { name: '하의', path: '/products/domestic?sub=domestic-bottoms' },
+  { name: '가방', path: '/products/domestic?sub=domestic-bags' },
+  { name: '지갑', path: '/products/domestic?sub=domestic-wallets' },
 ];
 
 export function Header() {
@@ -110,6 +122,42 @@ export function Header() {
 
   return (
     <header className="w-full sticky top-0 z-50 bg-white">
+      <div className="md:hidden bg-gray-100 text-gray-600 text-[10px]">
+        <div className="px-2 h-7 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {memberName ? (
+              <>
+                <span className="text-gray-800 font-medium">{memberName}님</span>
+                <span className="text-gray-300">|</span>
+                <button onClick={handleLogout} className="hover:text-black">로그아웃</button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="hover:text-black">로그인</Link>
+                <span className="text-gray-300">|</span>
+                <Link href="/signup" className="hover:text-black">회원가입</Link>
+              </>
+            )}
+            <span className="text-gray-300">|</span>
+            <Link href="/orders" className="hover:text-black">주문조회</Link>
+            <span className="text-gray-300">|</span>
+            <Link href="/profile" className="hover:text-black">마이쇼핑</Link>
+          </div>
+          <form onSubmit={handleSearch} className="flex items-center">
+            <input 
+              type="text" 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="검색" 
+              className="w-16 border border-gray-300 px-1.5 py-0.5 text-[10px] focus:outline-none bg-white"
+            />
+            <button type="submit" className="bg-gray-200 border border-gray-300 border-l-0 px-1 py-0.5">
+              <Search className="w-3 h-3 text-gray-500" />
+            </button>
+          </form>
+        </div>
+      </div>
+
       <div className="hidden md:block bg-[#333] text-white text-xs">
         <div className="max-w-[1200px] mx-auto px-4 h-8 flex items-center justify-between">
           <div className="relative overflow-hidden h-4 w-[300px]">
@@ -153,7 +201,7 @@ export function Header() {
                     <Menu className="w-6 h-6" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[280px] overflow-y-auto p-0">
+                <SheetContent side="left" className="w-[280px] overflow-y-auto p-0" hideCloseButton>
                   <div className="bg-[#333] text-white p-4 flex items-center justify-between">
                     <span className="font-bold">메뉴</span>
                     <SheetClose asChild>
@@ -207,7 +255,7 @@ export function Header() {
             <div className="hidden md:block"></div>
 
             <Link href="/" className="flex items-center justify-self-center" data-testid="link-home">
-              <img src="/images/logo.gif" alt="청담동에디션" className="h-10 md:h-20" />
+              <img src="/images/logo.gif" alt="청담동에디션" className="h-12 md:h-16 w-auto scale-150 md:scale-125" />
             </Link>
 
             <div className="hidden md:flex items-center justify-end gap-5">
@@ -242,7 +290,7 @@ export function Header() {
               </div>
             </div>
 
-            <div className="md:hidden flex items-center justify-end">
+            <div className="md:hidden flex items-center justify-end gap-3">
               <Link href="/cart" className="relative text-gray-600" data-testid="button-cart-mobile">
                 <ShoppingBag className="w-5 h-5" />
                 {count > 0 && (
@@ -277,17 +325,17 @@ export function Header() {
         </div>
       </nav>
 
-      <nav className="md:hidden bg-white border-b border-gray-200 overflow-x-auto">
-        <div className="flex items-center px-2 py-2 gap-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+      <nav className="md:hidden bg-white border-b border-gray-200">
+        <div className="flex flex-wrap items-center justify-center px-2 py-2 gap-x-1 gap-y-1">
           {mainNavItems.map((item, index) => (
             <Link 
               key={item.name}
               href={item.path} 
-              className={`px-2 py-1.5 text-xs text-gray-600 hover:text-black transition-colors whitespace-nowrap flex-shrink-0 ${location === item.path ? 'text-black font-medium' : ''}`}
+              className={`px-1.5 py-1 text-[10px] text-gray-600 hover:text-black transition-colors whitespace-nowrap ${location === item.path ? 'text-black font-medium' : ''}`}
               data-testid={`nav-mobile-${item.name}`}
             >
               {item.name}
-              {index < mainNavItems.length - 1 && <span className="ml-2 text-gray-300">|</span>}
+              {index < mainNavItems.length - 1 && <span className="ml-1 text-gray-300">|</span>}
             </Link>
           ))}
         </div>

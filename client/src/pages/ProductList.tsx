@@ -7,6 +7,7 @@ import { useState, useEffect, useMemo } from "react";
 import type { Product } from "@shared/schema";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
+import { useGlobalSale } from "@/hooks/use-global-sale";
 import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -24,6 +25,35 @@ const CATEGORIES = [
   { id: "genuine", name: "정품", slug: "genuine" },
 ];
 
+const extractBrandFromName = (name: string): string => {
+  const brandKeywords = [
+    "몽클레어", "발렌시아가", "버버리", "셀린느", "미우미우", "샤넬", "프라다",
+    "루이비통", "펜디", "디올", "톰브라운", "구찌", "에르메스", "보테가",
+    "페레가모", "마르니", "마놀로블라닉", "마놀로 블라닉", "어그", "마린세르",
+    "지미추", "지미 추", "티파니", "반클리프", "불가리", "크롬하츠", "베르사체",
+    "발렌티노", "톰포드", "막스마라", "아크네", "스튜디오", "아미", "메종키츠네",
+    "골든구스", "꼼데가르송", "이자벨마랑", "알렉산더맥퀸", "알렉산더 맥퀸",
+    "자크뮈스", "끌로에", "클로에", "지방시", "오프화이트", "릭오웬스",
+    "베트멍", "마르지엘라", "메종마르지엘라", "아미리", "팜엔젤스", "스톤아일랜드",
+    "무스너클", "캐나다구스", "파라점퍼스", "듀베티카", "타티아스", "헤르노",
+    "아크네스튜디오", "살로몬", "뉴발란스", "아디다스", "나이키", "로에베",
+    "까르띠에", "고야드"
+  ];
+  
+  for (const brand of brandKeywords) {
+    if (name.toLowerCase().includes(brand.toLowerCase())) {
+      return brand.toUpperCase();
+    }
+  }
+  
+  const firstWord = name.split(' ')[0];
+  if (firstWord && firstWord.length >= 2 && firstWord.length <= 10) {
+    return firstWord.toUpperCase();
+  }
+  
+  return "";
+};
+
 type SortOption = "newest" | "price_asc" | "price_desc" | "popular";
 
 export default function ProductList() {
@@ -38,10 +68,12 @@ export default function ProductList() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const { toggleItem, isInWishlist } = useWishlist();
   const { toast } = useToast();
+  const { salePercent, calculateSalePrice, hasSale } = useGlobalSale();
 
   const categoryInfo = CATEGORIES.find(c => c.slug === categorySlug);
   const searchParams = new URLSearchParams(location.split("?")[1] || "");
   const searchQuery = searchParams.get("q");
+  const subcategoryId = searchParams.get("sub");
 
   const handleWishlistToggle = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
@@ -76,22 +108,19 @@ export default function ProductList() {
       try {
         const offset = (currentPage - 1) * ITEMS_PER_PAGE;
         const categoryParam = categorySlug && categorySlug !== "all" ? `&categoryId=${categorySlug}` : "";
-        const [productsRes, brandsRes] = await Promise.all([
-          fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}`),
-          fetch("/api/brands")
-        ]);
+        const subcategoryParam = subcategoryId ? `&subcategoryId=${subcategoryId}` : "";
+        const productsRes = await fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}${subcategoryParam}`);
         
         if (cancelled) return;
         
         const productsData = await productsRes.json();
-        const brandsData = await brandsRes.json();
         
         if (productsData.success) {
           setProducts(productsData.data);
           setTotal(productsData.total || 0);
-        }
-        if (brandsData.success) {
-          setBrands(brandsData.data);
+          if (productsData.categoryBrands) {
+            setBrands(productsData.categoryBrands);
+          }
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -105,11 +134,12 @@ export default function ProductList() {
     fetchData();
     
     return () => { cancelled = true; };
-  }, [categorySlug, currentPage]);
+  }, [categorySlug, currentPage, subcategoryId]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [categorySlug]);
+    setSelectedBrand(null);
+  }, [categorySlug, subcategoryId]);
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -142,10 +172,12 @@ export default function ProductList() {
     return pages;
   };
 
+  const brandsWithProducts = useMemo(() => {
+    return brands;
+  }, [brands]);
+
   const filteredProducts = useMemo(() => {
     let result = [...products];
-    
-    // Category filtering is now done on the API level
     
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -156,7 +188,16 @@ export default function ProductList() {
     }
     
     if (selectedBrand) {
-      result = result.filter(p => p.brandId === selectedBrand);
+      const selectedBrandData = brands.find(b => b.id === selectedBrand);
+      const brandName = selectedBrandData?.name?.toLowerCase() || '';
+      
+      result = result.filter(p => {
+        if (p.brandId === selectedBrand) return true;
+        const extractedBrand = extractBrandFromName(p.name).toLowerCase();
+        if (extractedBrand && brandName && extractedBrand.includes(brandName)) return true;
+        if (brandName && p.name.toLowerCase().includes(brandName)) return true;
+        return false;
+      });
     }
     
     switch (sortBy) {
@@ -175,7 +216,7 @@ export default function ProductList() {
     }
     
     return result;
-  }, [products, searchQuery, selectedBrand, sortBy]);
+  }, [products, searchQuery, selectedBrand, sortBy, brands]);
 
   const FilterSidebar = () => (
     <div className="space-y-6">
@@ -203,7 +244,7 @@ export default function ProductList() {
         </ul>
       </div>
       
-      {brands.length > 0 && (
+      {brandsWithProducts.length > 0 && (
         <div>
           <h3 className="font-bold text-sm mb-3">브랜드</h3>
           <ul className="space-y-2">
@@ -215,13 +256,16 @@ export default function ProductList() {
                 전체
               </button>
             </li>
-            {brands.map(brand => (
+            {brandsWithProducts.map(brand => (
               <li key={brand.id}>
                 <button 
                   onClick={() => setSelectedBrand(brand.id)}
-                  className={cn("text-sm hover:text-black transition-colors text-left", selectedBrand === brand.id ? "font-bold text-black" : "text-gray-500")}
+                  className={cn("text-sm hover:text-black transition-colors text-left flex items-center gap-1", selectedBrand === brand.id ? "font-bold text-black" : "text-gray-500")}
                 >
                   {brand.name}
+                  {brand.productCount && (
+                    <span className="text-xs text-gray-400">({brand.productCount})</span>
+                  )}
                 </button>
               </li>
             ))}
@@ -250,28 +294,105 @@ export default function ProductList() {
           </p>
         </div>
 
+        <div className="lg:hidden mb-4">
+          <div className="flex flex-wrap gap-1.5 border-b pb-3">
+            <Link 
+              href="/products"
+              className={cn(
+                "px-2.5 py-1.5 text-xs rounded-full border transition-colors",
+                !categorySlug || categorySlug === "all" 
+                  ? "bg-black text-white border-black" 
+                  : "bg-white text-gray-600 border-gray-300 hover:border-black"
+              )}
+            >
+              전체
+            </Link>
+            {CATEGORIES.map(cat => (
+              <Link 
+                key={cat.slug}
+                href={`/products/${cat.slug}`}
+                className={cn(
+                  "px-2.5 py-1.5 text-xs rounded-full border transition-colors",
+                  categorySlug === cat.slug 
+                    ? "bg-black text-white border-black" 
+                    : "bg-white text-gray-600 border-gray-300 hover:border-black"
+                )}
+              >
+                {cat.name}
+              </Link>
+            ))}
+          </div>
+          
+          {brandsWithProducts.length > 0 && (
+            <div className="mt-3">
+              <p className="text-[10px] text-gray-500 mb-2 font-medium">브랜드</p>
+              <div className="flex flex-wrap gap-1.5">
+                <button 
+                  onClick={() => setSelectedBrand(null)}
+                  className={cn(
+                    "px-2.5 py-1 text-[10px] rounded-full border transition-colors",
+                    !selectedBrand 
+                      ? "bg-gray-800 text-white border-gray-800" 
+                      : "bg-white text-gray-600 border-gray-300 hover:border-gray-800"
+                  )}
+                >
+                  전체
+                </button>
+                {brandsWithProducts.slice(0, 20).map(brand => (
+                  <button 
+                    key={brand.id}
+                    onClick={() => setSelectedBrand(brand.id)}
+                    className={cn(
+                      "px-2.5 py-1 text-[10px] rounded-full border transition-colors",
+                      selectedBrand === brand.id 
+                        ? "bg-gray-800 text-white border-gray-800" 
+                        : "bg-white text-gray-600 border-gray-300 hover:border-gray-800"
+                    )}
+                  >
+                    {brand.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="flex gap-8">
           <aside className="hidden lg:block w-48 flex-shrink-0">
             <FilterSidebar />
           </aside>
 
           <div className="flex-1">
+            <div className="hidden lg:flex flex-wrap gap-1.5 mb-4">
+              <Link 
+                href="/products"
+                className={cn(
+                  "px-3 py-1.5 text-xs rounded-full border transition-colors",
+                  !categorySlug || categorySlug === "all" 
+                    ? "bg-black text-white border-black" 
+                    : "bg-white text-gray-600 border-gray-300 hover:border-black"
+                )}
+              >
+                전체
+              </Link>
+              {CATEGORIES.map(cat => (
+                <Link 
+                  key={cat.slug}
+                  href={`/products/${cat.slug}`}
+                  className={cn(
+                    "px-3 py-1.5 text-xs rounded-full border transition-colors",
+                    categorySlug === cat.slug 
+                      ? "bg-black text-white border-black" 
+                      : "bg-white text-gray-600 border-gray-300 hover:border-black"
+                  )}
+                >
+                  {cat.name}
+                </Link>
+              ))}
+            </div>
+
             <div className="flex items-center justify-between mb-6 pb-4 border-b">
               <div className="flex items-center gap-4">
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" size="sm" className="lg:hidden flex items-center gap-2">
-                      <Filter className="w-4 h-4" />
-                      필터
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="w-[280px]">
-                    <div className="mt-6">
-                      <FilterSidebar />
-                    </div>
-                  </SheetContent>
-                </Sheet>
-                
                 <span className="text-sm text-gray-500">
                   총 <span className="font-bold text-black" data-testid="text-product-count">{total.toLocaleString()}</span>개
                   {totalPages > 1 && (
@@ -393,8 +514,8 @@ export default function ProductList() {
                     <div className={cn(
                       viewMode === "grid" ? "p-3" : "flex-1 flex flex-col justify-center"
                     )}>
-                      <p className="text-xs text-gray-400 mb-1 uppercase">
-                        {brands.find(b => b.id === product.brandId)?.name || "BRAND"}
+                      <p className="text-[11px] md:text-xs text-gray-500 mb-1 font-medium tracking-wide">
+                        {brands.find(b => b.id === product.brandId)?.name?.toUpperCase() || extractBrandFromName(product.name)}
                       </p>
                       <h3 className={cn(
                         "font-medium text-sm mb-2 group-hover:text-gray-600 transition-colors",
@@ -402,15 +523,31 @@ export default function ProductList() {
                       )}>
                         {product.name}
                       </h3>
-                      <div className="flex items-center gap-2">
-                        {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-                          <span className="text-xs text-gray-400 line-through">
-                            {Number(product.originalPrice).toLocaleString()}원
-                          </span>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {hasSale ? (
+                          <>
+                            <span className="text-xs text-gray-400 line-through">
+                              {Number(product.price).toLocaleString()}원
+                            </span>
+                            <span className="font-bold text-red-500" data-testid={`price-product-${product.id}`}>
+                              {calculateSalePrice(Number(product.price)).toLocaleString()}원
+                            </span>
+                            <span className="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded font-bold">
+                              {salePercent}%
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
+                              <span className="text-xs text-gray-400 line-through">
+                                {Number(product.originalPrice).toLocaleString()}원
+                              </span>
+                            )}
+                            <span className="font-bold" data-testid={`price-product-${product.id}`}>
+                              {Number(product.price).toLocaleString()}원
+                            </span>
+                          </>
                         )}
-                        <span className="font-bold" data-testid={`price-product-${product.id}`}>
-                          {Number(product.price).toLocaleString()}원
-                        </span>
                       </div>
                       {(product.reviewCount || 0) > 0 && (
                         <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">

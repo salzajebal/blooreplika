@@ -35,7 +35,7 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
+    username: "",
     password: "",
     passwordConfirm: "",
     phone: "",
@@ -85,7 +85,7 @@ export default function Signup() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: formData.name,
-          email: formData.email,
+          username: formData.username,
           password: formData.password,
           phone: formData.phone,
           address: formData.address,
@@ -150,17 +150,19 @@ export default function Signup() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">이메일(아이디) <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">아이디 <span className="text-red-500">*</span></label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <Input
-                    type="email"
-                    placeholder="이메일 주소를 입력해주세요"
+                    type="text"
+                    placeholder="아이디를 입력해주세요 (영문, 숫자 4-20자)"
                     className="pl-10 h-12 rounded-none"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    data-testid="input-email"
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    data-testid="input-username"
                     required
+                    minLength={4}
+                    maxLength={20}
                   />
                 </div>
               </div>

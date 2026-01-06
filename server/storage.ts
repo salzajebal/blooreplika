@@ -36,13 +36,14 @@ export interface IStorage {
   
   // Products
   getAllProducts(): Promise<Product[]>;
-  getProductsPaginated(limit: number, offset: number, categoryId?: string): Promise<{ products: Product[], total: number }>;
+  getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string): Promise<{ products: Product[], total: number }>;
   getProductsCount(categoryId?: string): Promise<number>;
   getProductsByCategory(categoryId: string): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<boolean>;
+  deleteProductsByCategory(categoryId: string): Promise<number>;
   
   // Categories
   getAllCategories(): Promise<Category[]>;
@@ -61,6 +62,7 @@ export interface IStorage {
   
   // Brands
   getAllBrands(): Promise<Brand[]>;
+  getBrandsWithProductCount(categoryId?: string): Promise<{ brand: Brand; productCount: number }[]>;
   getBrand(id: string): Promise<Brand | undefined>;
   createBrand(brand: InsertBrand): Promise<Brand>;
   updateBrand(id: string, brand: Partial<InsertBrand>): Promise<Brand | undefined>;
@@ -70,6 +72,7 @@ export interface IStorage {
   getAllMembers(): Promise<Member[]>;
   getMember(id: string): Promise<Member | undefined>;
   getMemberByEmail(email: string): Promise<Member | undefined>;
+  getMemberByUsername(username: string): Promise<Member | undefined>;
   createMember(member: InsertMember): Promise<Member>;
   updateMember(id: string, member: Partial<InsertMember>): Promise<Member | undefined>;
   deleteMember(id: string): Promise<boolean>;
@@ -214,6 +217,14 @@ export interface IStorage {
   getSiteSetting(key: string): Promise<SiteSetting | undefined>;
   getAllSiteSettings(): Promise<SiteSetting[]>;
   setSiteSetting(key: string, value: string, description?: string): Promise<SiteSetting>;
+  
+  // Batch Price Updates
+  batchUpdateAccessoryPrices(pattern: string, price: string): Promise<number>;
+  fixHighAccessoryPrices(): Promise<number>;
+  setDefaultAccessoryPrices(defaultPrice: string): Promise<number>;
+  batchUpdateCategoryPrices(categoryId: string, pattern: string, price: string): Promise<number>;
+  fixHighCategoryPrices(categoryId: string): Promise<number>;
+  setDefaultCategoryPrices(categoryId: string, defaultPrice: string): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -238,10 +249,24 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(products).orderBy(desc(products.createdAt));
   }
   
-  async getProductsPaginated(limit: number, offset: number, categoryId?: string): Promise<{ products: Product[], total: number }> {
+  async getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string): Promise<{ products: Product[], total: number }> {
     // Execute count and data queries in parallel for performance
     // Use explicit query building to avoid where(undefined) issues
-    if (categoryId) {
+    if (categoryId && subcategoryId) {
+      // Both category and subcategory filter - most restrictive
+      const [countResult, productList] = await Promise.all([
+        db.select({ count: sql<number>`count(*)::int` }).from(products).where(and(eq(products.categoryId, categoryId), eq(products.subcategoryId, subcategoryId))),
+        db.select().from(products).where(and(eq(products.categoryId, categoryId), eq(products.subcategoryId, subcategoryId))).orderBy(desc(products.createdAt)).limit(limit).offset(offset)
+      ]);
+      return { products: productList, total: countResult[0]?.count || 0 };
+    } else if (subcategoryId) {
+      // Subcategory filter only - but still filter by parent category for safety
+      const [countResult, productList] = await Promise.all([
+        db.select({ count: sql<number>`count(*)::int` }).from(products).where(eq(products.subcategoryId, subcategoryId)),
+        db.select().from(products).where(eq(products.subcategoryId, subcategoryId)).orderBy(desc(products.createdAt)).limit(limit).offset(offset)
+      ]);
+      return { products: productList, total: countResult[0]?.count || 0 };
+    } else if (categoryId) {
       const [countResult, productList] = await Promise.all([
         db.select({ count: sql<number>`count(*)::int` }).from(products).where(eq(products.categoryId, categoryId)),
         db.select().from(products).where(eq(products.categoryId, categoryId)).orderBy(desc(products.createdAt)).limit(limit).offset(offset)
@@ -287,6 +312,11 @@ export class DatabaseStorage implements IStorage {
   async deleteProduct(id: string): Promise<boolean> {
     const result = await db.delete(products).where(eq(products.id, id)).returning();
     return result.length > 0;
+  }
+
+  async deleteProductsByCategory(categoryId: string): Promise<number> {
+    const result = await db.delete(products).where(eq(products.categoryId, categoryId)).returning();
+    return result.length;
   }
 
   // Categories
@@ -356,6 +386,32 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(brands).orderBy(brands.sortOrder);
   }
 
+  async getBrandsWithProductCount(categoryId?: string): Promise<{ brand: Brand; productCount: number }[]> {
+    const allBrands = await db.select().from(brands).orderBy(brands.sortOrder);
+    
+    const results: { brand: Brand; productCount: number }[] = [];
+    
+    for (const brand of allBrands) {
+      let countResult;
+      if (categoryId) {
+        countResult = await db.select({ count: sql<number>`count(*)::int` })
+          .from(products)
+          .where(sql`${products.brandId} = ${brand.id} AND ${products.categoryId} = ${categoryId}`);
+      } else {
+        countResult = await db.select({ count: sql<number>`count(*)::int` })
+          .from(products)
+          .where(eq(products.brandId, brand.id));
+      }
+      
+      const productCount = countResult[0]?.count || 0;
+      if (productCount > 0) {
+        results.push({ brand, productCount });
+      }
+    }
+    
+    return results.sort((a, b) => b.productCount - a.productCount);
+  }
+
   async getBrand(id: string): Promise<Brand | undefined> {
     const [brand] = await db.select().from(brands).where(eq(brands.id, id));
     return brand;
@@ -391,6 +447,11 @@ export class DatabaseStorage implements IStorage {
 
   async getMemberByEmail(email: string): Promise<Member | undefined> {
     const [member] = await db.select().from(members).where(eq(members.email, email));
+    return member;
+  }
+
+  async getMemberByUsername(username: string): Promise<Member | undefined> {
+    const [member] = await db.select().from(members).where(eq(members.username, username));
     return member;
   }
 
@@ -1050,6 +1111,101 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return setting;
     }
+  }
+
+  // Batch Price Updates - using direct SQL for speed
+  async batchUpdateAccessoryPrices(pattern: string, price: string): Promise<number> {
+    const result = await db.execute(sql`
+      UPDATE products 
+      SET price = ${price}
+      WHERE category_id = 'accessories' 
+      AND name LIKE ${pattern}
+    `);
+    return Number(result.rowCount) || 0;
+  }
+
+  async fixHighAccessoryPrices(): Promise<number> {
+    // Fix prices over 5 million by dividing by 100
+    const result1 = await db.execute(sql`
+      UPDATE products 
+      SET price = (CAST(price AS INTEGER) / 100)::TEXT
+      WHERE category_id = 'accessories' 
+      AND CAST(price AS INTEGER) > 5000000
+    `);
+    
+    // Fix prices over 1.5 million by dividing by 10
+    const result2 = await db.execute(sql`
+      UPDATE products 
+      SET price = (CAST(price AS INTEGER) / 10)::TEXT
+      WHERE category_id = 'accessories' 
+      AND CAST(price AS INTEGER) > 1500000
+    `);
+    
+    return (Number(result1.rowCount) || 0) + (Number(result2.rowCount) || 0);
+  }
+
+  async setDefaultAccessoryPrices(defaultPrice: string): Promise<number> {
+    // Set default price for any accessories that still have unreasonable prices
+    // (either 0, empty, or prices outside a reasonable range like 50K-500K)
+    const result = await db.execute(sql`
+      UPDATE products 
+      SET price = ${defaultPrice}
+      WHERE category_id = 'accessories' 
+      AND (
+        price IS NULL 
+        OR price = '' 
+        OR price = '0'
+        OR CAST(NULLIF(price, '') AS INTEGER) < 50000
+        OR CAST(NULLIF(price, '') AS INTEGER) > 500000
+      )
+    `);
+    return Number(result.rowCount) || 0;
+  }
+
+  async batchUpdateCategoryPrices(categoryId: string, pattern: string, price: string): Promise<number> {
+    const result = await db.execute(sql`
+      UPDATE products 
+      SET price = ${price}
+      WHERE category_id = ${categoryId}
+      AND name LIKE ${pattern}
+    `);
+    return Number(result.rowCount) || 0;
+  }
+
+  async fixHighCategoryPrices(categoryId: string): Promise<number> {
+    // Fix prices over 5 million by dividing by 100
+    const result1 = await db.execute(sql`
+      UPDATE products 
+      SET price = (CAST(price AS INTEGER) / 100)::TEXT
+      WHERE category_id = ${categoryId}
+      AND CAST(price AS INTEGER) > 5000000
+    `);
+    
+    // Fix prices over 1.5 million by dividing by 10
+    const result2 = await db.execute(sql`
+      UPDATE products 
+      SET price = (CAST(price AS INTEGER) / 10)::TEXT
+      WHERE category_id = ${categoryId}
+      AND CAST(price AS INTEGER) > 1500000
+    `);
+    
+    return (Number(result1.rowCount) || 0) + (Number(result2.rowCount) || 0);
+  }
+
+  async setDefaultCategoryPrices(categoryId: string, defaultPrice: string): Promise<number> {
+    const result = await db.execute(sql`
+      UPDATE products 
+      SET price = ${defaultPrice}
+      WHERE category_id = ${categoryId}
+      AND (
+        price IS NULL 
+        OR price = '' 
+        OR price = '0'
+        OR CAST(NULLIF(price, '') AS INTEGER) < 50000
+        OR CAST(NULLIF(price, '') AS INTEGER) > 700000
+      )
+    `);
+    return Number(result.rowCount) || 0;
   }
 }
 
