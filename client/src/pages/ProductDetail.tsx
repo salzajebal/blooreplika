@@ -357,34 +357,7 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              {hasOptions && (
-                <div className="border-t border-gray-200 pt-4">
-                  <h3 className="font-bold text-gray-900 mb-3">선택옵션</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm text-gray-600 mb-1 block">{optionLabel}</label>
-                      <select 
-                        className="w-full border border-gray-300 rounded px-3 py-2.5 text-sm focus:outline-none focus:border-gray-500"
-                        value={selectedOption}
-                        onChange={(e) => setSelectedOption(e.target.value)}
-                        data-testid="select-option"
-                      >
-                        <option value="">선택</option>
-                        {options.length > 0 ? (
-                          options.map((option, index) => (
-                            <option key={index} value={option}>{option}</option>
-                          ))
-                        ) : (
-                          defaultOptions.map((option, index) => (
-                            <option key={index} value={option}>{option}</option>
-                          ))
-                        )}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-
+              
               <div className="space-y-2 pt-2">
                 <Button
                   size="lg"
