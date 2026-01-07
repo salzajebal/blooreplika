@@ -121,6 +121,11 @@ export async function registerRoutes(
   
   // ==================== IMAGE PROXY API ====================
   
+  // In-memory image cache for faster subsequent loads
+  const imageCache = new Map<string, { buffer: Buffer; timestamp: number }>();
+  const IMAGE_CACHE_TTL = 600000; // 10 minutes in milliseconds
+  const MAX_IMAGE_CACHE_SIZE = 100; // Maximum cached images
+  
   app.get("/api/image-proxy", async (req: Request, res: Response) => {
     try {
       let imageUrl = req.query.url as string;
@@ -153,6 +158,17 @@ export async function registerRoutes(
       // Ensure URL is absolute
       if (!imageUrl.startsWith("http")) {
         imageUrl = `https://cdamdong.co.kr${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
+      }
+      
+      // Check image cache first
+      const imageCacheKey = `${imageUrl}:${width}:${quality}`;
+      const cachedImage = imageCache.get(imageCacheKey);
+      if (cachedImage && (Date.now() - cachedImage.timestamp) < IMAGE_CACHE_TTL) {
+        res.setHeader("Content-Type", "image/webp");
+        res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+        res.setHeader("Vary", "Accept");
+        res.setHeader("X-Image-Cache", "HIT");
+        return res.send(cachedImage.buffer);
       }
       
       const response = await fetch(imageUrl, {
@@ -188,9 +204,17 @@ export async function registerRoutes(
         .webp({ quality })
         .toBuffer();
       
+      // Store in cache (with size limit management)
+      if (imageCache.size >= MAX_IMAGE_CACHE_SIZE) {
+        const oldestKey = imageCache.keys().next().value;
+        if (oldestKey) imageCache.delete(oldestKey);
+      }
+      imageCache.set(imageCacheKey, { buffer: optimizedImage, timestamp: Date.now() });
+      
       res.setHeader("Content-Type", "image/webp");
       res.setHeader("Cache-Control", "public, max-age=604800, immutable"); // Cache for 7 days
       res.setHeader("Vary", "Accept");
+      res.setHeader("X-Image-Cache", "MISS");
       res.send(optimizedImage);
     } catch (error) {
       console.error("Image proxy error:", error);

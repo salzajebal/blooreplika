@@ -1,12 +1,18 @@
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&h=500&fit=crop";
 
-type ImageSize = "thumb" | "medium" | "large";
+type ImageSize = "thumb" | "medium" | "large" | "mobile";
 
 const SIZE_CONFIG: Record<ImageSize, { width: number; quality: number }> = {
-  thumb: { width: 400, quality: 75 },
-  medium: { width: 800, quality: 80 },
-  large: { width: 1200, quality: 85 },
+  mobile: { width: 200, quality: 60 },
+  thumb: { width: 400, quality: 70 },
+  medium: { width: 800, quality: 75 },
+  large: { width: 1200, quality: 80 },
 };
+
+export function isMobile(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.innerWidth < 768;
+}
 
 export function getProxiedImageUrl(
   imageUrl: string | null | undefined,
