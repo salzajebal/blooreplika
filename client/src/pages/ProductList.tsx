@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Heart, Package, Star, Grid, List, ChevronDown, Filter, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useState, useEffect, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Product } from "@shared/schema";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
@@ -11,6 +12,20 @@ import { useGlobalSale } from "@/hooks/use-global-sale";
 import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+
+function ProductSkeleton() {
+  return (
+    <div className="bg-white border border-gray-100 animate-pulse">
+      <div className="aspect-square bg-gray-200" />
+      <div className="p-3">
+        <div className="h-3 bg-gray-200 rounded w-16 mb-2" />
+        <div className="h-4 bg-gray-200 rounded w-full mb-2" />
+        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+        <div className="h-5 bg-gray-200 rounded w-24" />
+      </div>
+    </div>
+  );
+}
 
 const CATEGORIES = [
   { id: "outer", name: "아우터", slug: "outer" },
@@ -60,9 +75,7 @@ export default function ProductList() {
   const [match, params] = useRoute("/products/:category");
   const [location] = useLocation();
   const categorySlug = match ? params.category : "all";
-  const [products, setProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -95,46 +108,45 @@ export default function ProductList() {
   };
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const ITEMS_PER_PAGE = 16; // Reduced for faster initial loading
+  const ITEMS_PER_PAGE = 16;
+  const queryClient = useQueryClient();
+
+  const fetchProducts = async (page: number) => {
+    const offset = (page - 1) * ITEMS_PER_PAGE;
+    const categoryParam = categorySlug && categorySlug !== "all" ? `&categoryId=${categorySlug}` : "";
+    const subcategoryParam = subcategoryId ? `&subcategoryId=${subcategoryId}` : "";
+    const res = await fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}${subcategoryParam}`);
+    const data = await res.json();
+    return data;
+  };
+
+  const { data: productsData, isLoading: loading, isFetching, isPlaceholderData } = useQuery({
+    queryKey: ['products', categorySlug, subcategoryId, currentPage],
+    queryFn: () => fetchProducts(currentPage),
+    placeholderData: (previousData) => previousData,
+    staleTime: 30000,
+  });
+
+  const products = productsData?.success ? productsData.data : [];
+  const total = productsData?.total || 0;
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
+  const showLoadingOverlay = isFetching && products.length > 0;
 
   useEffect(() => {
-    let cancelled = false;
-    
-    const fetchData = async () => {
-      setLoading(true);
-      
-      try {
-        const offset = (currentPage - 1) * ITEMS_PER_PAGE;
-        const categoryParam = categorySlug && categorySlug !== "all" ? `&categoryId=${categorySlug}` : "";
-        const subcategoryParam = subcategoryId ? `&subcategoryId=${subcategoryId}` : "";
-        const productsRes = await fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}${subcategoryParam}`);
-        
-        if (cancelled) return;
-        
-        const productsData = await productsRes.json();
-        
-        if (productsData.success) {
-          setProducts(productsData.data);
-          setTotal(productsData.total || 0);
-          if (productsData.categoryBrands) {
-            setBrands(productsData.categoryBrands);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
-    
-    fetchData();
-    
-    return () => { cancelled = true; };
-  }, [categorySlug, currentPage, subcategoryId]);
+    if (productsData?.categoryBrands) {
+      setBrands(productsData.categoryBrands);
+    }
+  }, [productsData]);
+
+  useEffect(() => {
+    if (currentPage < totalPages) {
+      queryClient.prefetchQuery({
+        queryKey: ['products', categorySlug, subcategoryId, currentPage + 1],
+        queryFn: () => fetchProducts(currentPage + 1),
+        staleTime: 30000,
+      });
+    }
+  }, [currentPage, totalPages, categorySlug, subcategoryId, queryClient]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -444,18 +456,31 @@ export default function ProductList() {
               </div>
             )}
 
-            {loading ? (
-              <div className="py-20 text-center">
-                <div className="animate-spin w-8 h-8 border-2 border-black border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-gray-500">상품을 불러오는 중...</p>
-              </div>
-            ) : filteredProducts.length > 0 ? (
-              <>
+            {loading && !products.length ? (
               <div className={cn(
                 "gap-4 md:gap-6",
                 viewMode === "grid" 
                   ? "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4" 
                   : "flex flex-col"
+              )}>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <ProductSkeleton key={i} />
+                ))}
+              </div>
+            ) : filteredProducts.length > 0 ? (
+              <>
+              {showLoadingOverlay && (
+                <div className="flex items-center justify-center py-2 mb-4">
+                  <div className="animate-spin w-5 h-5 border-2 border-black border-t-transparent rounded-full mr-2"></div>
+                  <span className="text-sm text-gray-500">불러오는 중...</span>
+                </div>
+              )}
+              <div className={cn(
+                "gap-4 md:gap-6",
+                viewMode === "grid" 
+                  ? "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4" 
+                  : "flex flex-col",
+                showLoadingOverlay && "opacity-60 pointer-events-none"
               )}>
                 {filteredProducts.map((product) => (
                   <Link 
