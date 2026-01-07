@@ -2450,6 +2450,33 @@ export async function registerRoutes(
     }
   });
 
+  // Get genuine product count
+  app.get("/api/admin/products/genuine/count", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const count = await storage.getGenuineProductCount();
+      res.json({ success: true, count });
+    } catch (error: any) {
+      console.error("Error getting genuine product count:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  // Apply discount to genuine products
+  app.post("/api/admin/products/genuine/apply-discount", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { discountPercent } = req.body;
+      if (typeof discountPercent !== 'number' || discountPercent < 0 || discountPercent > 100) {
+        return res.status(400).json({ success: false, message: "할인율은 0~100 사이의 숫자여야 합니다." });
+      }
+      const affectedCount = await storage.applyGenuineDiscount(discountPercent);
+      invalidateProductCache();
+      res.json({ success: true, affectedCount });
+    } catch (error: any) {
+      console.error("Error applying genuine discount:", error);
+      res.status(500).json({ success: false, message: error.message || "할인 적용 중 오류가 발생했습니다." });
+    }
+  });
+
   // Crawl from dittoholic.com (Shopify store)
   app.post("/api/admin/crawl/dittoholic/start", requireAdminAuth, async (req: Request, res: Response) => {
     if (dittoholicProgress.status === 'running') {

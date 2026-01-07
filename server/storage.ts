@@ -229,6 +229,10 @@ export interface IStorage {
   // Domestic Price Adjustment
   getDomesticProductCount(): Promise<number>;
   adjustDomesticPrices(delta: number): Promise<number>;
+  
+  // Genuine Product Discount
+  getGenuineProductCount(): Promise<number>;
+  applyGenuineDiscount(discountPercent: number): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1227,6 +1231,26 @@ export class DatabaseStorage implements IStorage {
       UPDATE products 
       SET price = (CAST(NULLIF(price, '') AS INTEGER) + ${delta})::TEXT
       WHERE category_id = 'domestic'
+      AND price IS NOT NULL 
+      AND price != ''
+    `);
+    return Number(result.rowCount) || 0;
+  }
+
+  // Genuine Product Discount
+  async getGenuineProductCount(): Promise<number> {
+    const [result] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(products)
+      .where(eq(products.categoryId, 'genuine'));
+    return result?.count || 0;
+  }
+
+  async applyGenuineDiscount(discountPercent: number): Promise<number> {
+    const multiplier = (100 - discountPercent) / 100;
+    const result = await db.execute(sql`
+      UPDATE products 
+      SET price = ROUND(CAST(NULLIF(price, '') AS NUMERIC) * ${multiplier})::TEXT
+      WHERE category_id = 'genuine'
       AND price IS NOT NULL 
       AND price != ''
     `);

@@ -234,6 +234,8 @@ export default function Admin() {
   const [deletingDomestic, setDeletingDomestic] = useState(false);
   const [adjustingDomesticPrice, setAdjustingDomesticPrice] = useState(false);
   const [priceAdjustDelta, setPriceAdjustDelta] = useState<number>(10000);
+  const [applyingGenuineDiscount, setApplyingGenuineDiscount] = useState(false);
+  const [genuineDiscountPercent, setGenuineDiscountPercent] = useState<number>(20);
 
   const deleteDomesticProducts = async () => {
     if (!confirm("국내배송 카테고리의 모든 상품을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
