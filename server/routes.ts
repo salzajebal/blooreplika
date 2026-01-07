@@ -230,9 +230,45 @@ export async function registerRoutes(
   
   // ==================== PRODUCTS API ====================
   
+  // Separate brands cache with longer TTL (10 minutes)
+  const brandsCache = new Map<string, { data: unknown[]; timestamp: number }>();
+  const BRANDS_CACHE_TTL = 600000; // 10 minutes
+  
+  // Separate counts cache with medium TTL (5 minutes)
+  const countsCache = new Map<string, { total: number; timestamp: number }>();
+  const COUNTS_CACHE_TTL = 300000; // 5 minutes
+  
+  // Brands endpoint with aggressive caching
+  app.get("/api/brands", async (req: Request, res: Response) => {
+    try {
+      const { categoryId } = req.query;
+      const catFilter = categoryId && categoryId !== "all" ? categoryId as string : undefined;
+      const cacheKey = `brands:${catFilter || 'all'}`;
+      
+      const cached = brandsCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp) < BRANDS_CACHE_TTL) {
+        res.setHeader("X-Cache", "HIT");
+        res.setHeader("Cache-Control", "public, max-age=600");
+        return res.json({ success: true, data: cached.data });
+      }
+      
+      const categoryBrands = await storage.getBrandsWithProductCount(catFilter);
+      const brandsData = categoryBrands.map(cb => ({ ...cb.brand, productCount: cb.productCount }));
+      
+      brandsCache.set(cacheKey, { data: brandsData, timestamp: Date.now() });
+      
+      res.setHeader("X-Cache", "MISS");
+      res.setHeader("Cache-Control", "public, max-age=600");
+      res.json({ success: true, data: brandsData });
+    } catch (error) {
+      console.error("Error fetching brands:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch brands" });
+    }
+  });
+  
   app.get("/api/products", async (req: Request, res: Response) => {
     try {
-      const { category, categoryId, subcategoryId, limit, offset } = req.query;
+      const { category, categoryId, subcategoryId, limit, offset, includeBrands } = req.query;
       
       // Default limit for production performance (keep 60 for backend compatibility)
       const limitNum = limit ? parseInt(limit as string, 10) : 60;
@@ -247,10 +283,10 @@ export async function registerRoutes(
       
       const subCatFilter = subcategoryId ? subcategoryId as string : undefined;
       
-      // Check cache first
-      const cacheKey = `products:${catFilter || 'all'}:${subCatFilter || 'all'}:${limitNum}:${offsetNum}`;
-      type CachedResult = { products: unknown[]; total: number; brands: unknown[] };
-      const cached = getCached<CachedResult>(cacheKey);
+      // Check product cache first (without brands for speed)
+      const productCacheKey = `products:${catFilter || 'all'}:${subCatFilter || 'all'}:${limitNum}:${offsetNum}`;
+      type CachedProducts = { products: unknown[]; total: number };
+      const cached = getCached<CachedProducts>(productCacheKey);
       
       if (cached) {
         res.setHeader("X-Cache", "HIT");
@@ -261,21 +297,15 @@ export async function registerRoutes(
           total: cached.total,
           limit: limitNum,
           offset: offsetNum,
-          hasMore: offsetNum + limitNum < cached.total,
-          categoryBrands: cached.brands
+          hasMore: offsetNum + limitNum < cached.total
         });
       }
       
-      // Use database-level pagination for performance
-      const [{ products: productList, total }, categoryBrands] = await Promise.all([
-        storage.getProductsPaginated(limitNum, offsetNum, catFilter, subCatFilter),
-        storage.getBrandsWithProductCount(catFilter)
-      ]);
-      
-      const brandsData = categoryBrands.map(cb => ({ ...cb.brand, productCount: cb.productCount }));
+      // Fetch only products (brands loaded separately via /api/brands)
+      const { products: productList, total } = await storage.getProductsPaginated(limitNum, offsetNum, catFilter, subCatFilter);
       
       // Store in cache
-      setCache(cacheKey, { products: productList, total, brands: brandsData });
+      setCache(productCacheKey, { products: productList, total });
       
       // Add caching headers for better performance
       res.setHeader("X-Cache", "MISS");
@@ -286,8 +316,7 @@ export async function registerRoutes(
         total,
         limit: limitNum,
         offset: offsetNum,
-        hasMore: offsetNum + limitNum < total,
-        categoryBrands: brandsData
+        hasMore: offsetNum + limitNum < total
       });
     } catch (error) {
       console.error("Error fetching products:", error);

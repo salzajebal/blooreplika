@@ -127,16 +127,28 @@ export default function ProductList() {
     staleTime: 30000,
   });
 
+  // Load brands separately with longer cache (10 minutes)
+  const { data: brandsData } = useQuery({
+    queryKey: ['brands', categorySlug],
+    queryFn: async () => {
+      const categoryParam = categorySlug && categorySlug !== "all" ? `?categoryId=${categorySlug}` : "";
+      const res = await fetch(`/api/brands${categoryParam}`);
+      const data = await res.json();
+      return data.success ? data.data : [];
+    },
+    staleTime: 600000, // 10 minutes
+  });
+
   const products = productsData?.success ? productsData.data : [];
   const total = productsData?.total || 0;
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
   const showLoadingOverlay = isFetching && products.length > 0;
 
   useEffect(() => {
-    if (productsData?.categoryBrands) {
-      setBrands(productsData.categoryBrands);
+    if (brandsData) {
+      setBrands(brandsData);
     }
-  }, [productsData]);
+  }, [brandsData]);
 
   useEffect(() => {
     if (currentPage < totalPages) {
