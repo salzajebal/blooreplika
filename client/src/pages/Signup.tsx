@@ -253,7 +253,7 @@ export default function Signup() {
                       required
                     />
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">영문, 숫자, 특수문자 조합 8자리 이상</p>
+                  <p className="text-xs text-gray-400 mt-1">영문, 숫자 8자리 이상</p>
                 </div>
               </div>
 
