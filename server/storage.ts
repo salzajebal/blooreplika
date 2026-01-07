@@ -36,7 +36,7 @@ export interface IStorage {
   
   // Products
   getAllProducts(): Promise<Product[]>;
-  getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string): Promise<{ products: Product[], total: number }>;
+  getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string): Promise<{ products: Product[], total: number }>;
   getProductsCount(categoryId?: string): Promise<number>;
   getProductsByCategory(categoryId: string): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
@@ -249,7 +249,7 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(products).orderBy(desc(products.createdAt));
   }
   
-  async getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string): Promise<{ products: Product[], total: number }> {
+  async getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string): Promise<{ products: Product[], total: number }> {
     // Lean select for listings - only essential fields for performance
     const leanSelect = {
       id: products.id,
@@ -267,32 +267,20 @@ export class DatabaseStorage implements IStorage {
       createdAt: products.createdAt,
     };
     
+    // Build where conditions dynamically
+    const conditions: any[] = [];
+    if (categoryId) conditions.push(eq(products.categoryId, categoryId));
+    if (subcategoryId) conditions.push(eq(products.subcategoryId, subcategoryId));
+    if (search) conditions.push(sql`${products.name} ILIKE ${'%' + search + '%'}`);
+    
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    
     // Execute count and data queries in parallel for performance
-    if (categoryId && subcategoryId) {
-      const [countResult, productList] = await Promise.all([
-        db.select({ count: sql<number>`count(*)::int` }).from(products).where(and(eq(products.categoryId, categoryId), eq(products.subcategoryId, subcategoryId))),
-        db.select(leanSelect).from(products).where(and(eq(products.categoryId, categoryId), eq(products.subcategoryId, subcategoryId))).orderBy(desc(products.createdAt)).limit(limit).offset(offset)
-      ]);
-      return { products: productList as Product[], total: countResult[0]?.count || 0 };
-    } else if (subcategoryId) {
-      const [countResult, productList] = await Promise.all([
-        db.select({ count: sql<number>`count(*)::int` }).from(products).where(eq(products.subcategoryId, subcategoryId)),
-        db.select(leanSelect).from(products).where(eq(products.subcategoryId, subcategoryId)).orderBy(desc(products.createdAt)).limit(limit).offset(offset)
-      ]);
-      return { products: productList as Product[], total: countResult[0]?.count || 0 };
-    } else if (categoryId) {
-      const [countResult, productList] = await Promise.all([
-        db.select({ count: sql<number>`count(*)::int` }).from(products).where(eq(products.categoryId, categoryId)),
-        db.select(leanSelect).from(products).where(eq(products.categoryId, categoryId)).orderBy(desc(products.createdAt)).limit(limit).offset(offset)
-      ]);
-      return { products: productList as Product[], total: countResult[0]?.count || 0 };
-    } else {
-      const [countResult, productList] = await Promise.all([
-        db.select({ count: sql<number>`count(*)::int` }).from(products),
-        db.select(leanSelect).from(products).orderBy(desc(products.createdAt)).limit(limit).offset(offset)
-      ]);
-      return { products: productList as Product[], total: countResult[0]?.count || 0 };
-    }
+    const [countResult, productList] = await Promise.all([
+      db.select({ count: sql<number>`count(*)::int` }).from(products).where(whereClause),
+      db.select(leanSelect).from(products).where(whereClause).orderBy(desc(products.createdAt)).limit(limit).offset(offset)
+    ]);
+    return { products: productList as Product[], total: countResult[0]?.count || 0 };
   }
   
   async getProductsCount(categoryId?: string): Promise<number> {

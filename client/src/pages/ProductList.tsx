@@ -111,18 +111,19 @@ export default function ProductList() {
   const ITEMS_PER_PAGE = 16;
   const queryClient = useQueryClient();
 
-  const fetchProducts = async (page: number) => {
+  const fetchProducts = async (page: number, query?: string) => {
     const offset = (page - 1) * ITEMS_PER_PAGE;
     const categoryParam = categorySlug && categorySlug !== "all" ? `&categoryId=${categorySlug}` : "";
     const subcategoryParam = subcategoryId ? `&subcategoryId=${subcategoryId}` : "";
-    const res = await fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}${subcategoryParam}`);
+    const searchParam = query ? `&search=${encodeURIComponent(query)}` : "";
+    const res = await fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}${subcategoryParam}${searchParam}`);
     const data = await res.json();
     return data;
   };
 
   const { data: productsData, isLoading: loading, isFetching, isPlaceholderData } = useQuery({
-    queryKey: ['products', categorySlug, subcategoryId, currentPage],
-    queryFn: () => fetchProducts(currentPage),
+    queryKey: ['products', categorySlug, subcategoryId, currentPage, searchQuery],
+    queryFn: () => fetchProducts(currentPage, searchQuery || undefined),
     placeholderData: (previousData) => previousData,
     staleTime: 30000,
   });
@@ -153,17 +154,17 @@ export default function ProductList() {
   useEffect(() => {
     if (currentPage < totalPages) {
       queryClient.prefetchQuery({
-        queryKey: ['products', categorySlug, subcategoryId, currentPage + 1],
-        queryFn: () => fetchProducts(currentPage + 1),
+        queryKey: ['products', categorySlug, subcategoryId, currentPage + 1, searchQuery],
+        queryFn: () => fetchProducts(currentPage + 1, searchQuery || undefined),
         staleTime: 30000,
       });
     }
-  }, [currentPage, totalPages, categorySlug, subcategoryId, queryClient]);
+  }, [currentPage, totalPages, categorySlug, subcategoryId, searchQuery, queryClient]);
 
   useEffect(() => {
     setCurrentPage(1);
     setSelectedBrand(null);
-  }, [categorySlug, subcategoryId]);
+  }, [categorySlug, subcategoryId, searchQuery]);
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -203,13 +204,7 @@ export default function ProductList() {
   const filteredProducts = useMemo(() => {
     let result = [...products];
     
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(p => 
-        p.name.toLowerCase().includes(query) ||
-        p.description?.toLowerCase().includes(query)
-      );
-    }
+    // Search is now handled server-side, no need to filter here
     
     if (selectedBrand) {
       const selectedBrandData = brands.find(b => b.id === selectedBrand);
@@ -240,7 +235,7 @@ export default function ProductList() {
     }
     
     return result;
-  }, [products, searchQuery, selectedBrand, sortBy, brands]);
+  }, [products, selectedBrand, sortBy, brands]);
 
   const FilterSidebar = () => (
     <div className="space-y-6">

@@ -268,11 +268,12 @@ export async function registerRoutes(
   
   app.get("/api/products", async (req: Request, res: Response) => {
     try {
-      const { category, categoryId, subcategoryId, limit, offset, includeBrands } = req.query;
+      const { category, categoryId, subcategoryId, limit, offset, includeBrands, search } = req.query;
       
       // Default limit for production performance (keep 60 for backend compatibility)
       const limitNum = limit ? parseInt(limit as string, 10) : 60;
       const offsetNum = offset ? parseInt(offset as string, 10) : 0;
+      const searchQuery = search ? (search as string).trim() : undefined;
       
       // Determine category filter
       const catFilter = (categoryId && categoryId !== "all") 
@@ -284,7 +285,7 @@ export async function registerRoutes(
       const subCatFilter = subcategoryId ? subcategoryId as string : undefined;
       
       // Check product cache first (without brands for speed)
-      const productCacheKey = `products:${catFilter || 'all'}:${subCatFilter || 'all'}:${limitNum}:${offsetNum}`;
+      const productCacheKey = `products:${catFilter || 'all'}:${subCatFilter || 'all'}:${searchQuery || 'all'}:${limitNum}:${offsetNum}`;
       type CachedProducts = { products: unknown[]; total: number };
       const cached = getCached<CachedProducts>(productCacheKey);
       
@@ -301,8 +302,8 @@ export async function registerRoutes(
         });
       }
       
-      // Fetch only products (brands loaded separately via /api/brands)
-      const { products: productList, total } = await storage.getProductsPaginated(limitNum, offsetNum, catFilter, subCatFilter);
+      // Fetch products with optional search
+      const { products: productList, total } = await storage.getProductsPaginated(limitNum, offsetNum, catFilter, subCatFilter, searchQuery);
       
       // Store in cache
       setCache(productCacheKey, { products: productList, total });
