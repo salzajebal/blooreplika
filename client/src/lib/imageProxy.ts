@@ -20,7 +20,9 @@ export function getProxiedImageUrl(
 ): string {
   if (!imageUrl) return DEFAULT_IMAGE;
   
-  const config = SIZE_CONFIG[size];
+  // Auto-select mobile size for smaller screens if not explicitly set
+  const effectiveSize = size === "thumb" && isMobile() ? "mobile" : size;
+  const config = SIZE_CONFIG[effectiveSize];
   
   if (imageUrl.includes("cdamdong.co.kr")) {
     return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}&w=${config.width}&q=${config.quality}`;
