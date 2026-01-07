@@ -232,6 +232,8 @@ export default function Admin() {
   ];
   const [selectedDittoholicCategories, setSelectedDittoholicCategories] = useState<string[]>([]);
   const [deletingDomestic, setDeletingDomestic] = useState(false);
+  const [adjustingDomesticPrice, setAdjustingDomesticPrice] = useState(false);
+  const [priceAdjustDelta, setPriceAdjustDelta] = useState<number>(10000);
 
   const deleteDomesticProducts = async () => {
     if (!confirm("국내배송 카테고리의 모든 상품을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
@@ -252,6 +254,42 @@ export default function Admin() {
       toast({ title: "오류", description: "삭제 요청 중 오류가 발생했습니다.", variant: "destructive" });
     } finally {
       setDeletingDomestic(false);
+    }
+  };
+
+  const adjustDomesticPrices = async () => {
+    const countRes = await fetchWithAuth("/api/admin/products/domestic/count");
+    const countData = await countRes.json();
+    const count = countData.count || 0;
+    
+    const action = priceAdjustDelta >= 0 ? "인상" : "인하";
+    const amount = Math.abs(priceAdjustDelta).toLocaleString();
+    
+    if (!confirm(`국내배송 상품 ${count.toLocaleString()}개의 가격을 ${amount}원 ${action}하시겠습니까?`)) {
+      return;
+    }
+    
+    setAdjustingDomesticPrice(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/products/domestic/adjust-price", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ delta: priceAdjustDelta }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ 
+          title: "가격 조정 완료", 
+          description: `${data.affectedCount.toLocaleString()}개 상품의 가격이 ${amount}원 ${action}되었습니다.` 
+        });
+        fetchProducts();
+      } else {
+        toast({ title: "오류", description: data.message || "가격 조정 중 오류가 발생했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "가격 조정 요청 중 오류가 발생했습니다.", variant: "destructive" });
+    } finally {
+      setAdjustingDomesticPrice(false);
     }
   };
 
@@ -4906,6 +4944,38 @@ export default function Admin() {
                         )}
                       </div>
                     )}
+
+                    <div className="border border-orange-200 bg-orange-50 rounded-lg p-3 mb-3">
+                      <div className="text-sm font-medium text-orange-800 mb-2">국내배송 상품 가격 일괄 조정</div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          data-testid="input-price-adjust-delta"
+                          type="number"
+                          value={priceAdjustDelta}
+                          onChange={(e) => setPriceAdjustDelta(Number(e.target.value))}
+                          className="w-32"
+                          placeholder="조정금액"
+                        />
+                        <span className="text-sm text-gray-600">원</span>
+                        <Button
+                          data-testid="button-adjust-domestic-price"
+                          onClick={adjustDomesticPrices}
+                          disabled={adjustingDomesticPrice || dittoholicProgress.status === 'running'}
+                          variant="outline"
+                          className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                        >
+                          {adjustingDomesticPrice ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              조정 중...
+                            </>
+                          ) : (
+                            `가격 ${priceAdjustDelta >= 0 ? '인상' : '인하'}`
+                          )}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-orange-600 mt-1">양수 입력 시 인상, 음수 입력 시 인하 (예: -10000)</p>
+                    </div>
 
                     <div className="flex gap-2">
                       <Button

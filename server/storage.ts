@@ -225,6 +225,10 @@ export interface IStorage {
   batchUpdateCategoryPrices(categoryId: string, pattern: string, price: string): Promise<number>;
   fixHighCategoryPrices(categoryId: string): Promise<number>;
   setDefaultCategoryPrices(categoryId: string, defaultPrice: string): Promise<number>;
+  
+  // Domestic Price Adjustment
+  getDomesticProductCount(): Promise<number>;
+  adjustDomesticPrices(delta: number): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1206,6 +1210,25 @@ export class DatabaseStorage implements IStorage {
         OR CAST(NULLIF(price, '') AS INTEGER) < 50000
         OR CAST(NULLIF(price, '') AS INTEGER) > 700000
       )
+    `);
+    return Number(result.rowCount) || 0;
+  }
+
+  // Domestic Price Adjustment
+  async getDomesticProductCount(): Promise<number> {
+    const [result] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(products)
+      .where(eq(products.categoryId, 'domestic'));
+    return result?.count || 0;
+  }
+
+  async adjustDomesticPrices(delta: number): Promise<number> {
+    const result = await db.execute(sql`
+      UPDATE products 
+      SET price = (CAST(NULLIF(price, '') AS INTEGER) + ${delta})::TEXT
+      WHERE category_id = 'domestic'
+      AND price IS NOT NULL 
+      AND price != ''
     `);
     return Number(result.rowCount) || 0;
   }

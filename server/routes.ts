@@ -2423,6 +2423,33 @@ export async function registerRoutes(
     }
   });
 
+  // Get domestic product count for price adjustment preview
+  app.get("/api/admin/products/domestic/count", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const count = await storage.getDomesticProductCount();
+      res.json({ success: true, count });
+    } catch (error: any) {
+      console.error("Error getting domestic product count:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  // Adjust domestic product prices by a fixed amount
+  app.post("/api/admin/products/domestic/adjust-price", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { delta } = req.body;
+      if (typeof delta !== 'number') {
+        return res.status(400).json({ success: false, message: "delta는 숫자여야 합니다." });
+      }
+      const affectedCount = await storage.adjustDomesticPrices(delta);
+      invalidateProductCache();
+      res.json({ success: true, affectedCount });
+    } catch (error: any) {
+      console.error("Error adjusting domestic prices:", error);
+      res.status(500).json({ success: false, message: error.message || "가격 조정 중 오류가 발생했습니다." });
+    }
+  });
+
   // Crawl from dittoholic.com (Shopify store)
   app.post("/api/admin/crawl/dittoholic/start", requireAdminAuth, async (req: Request, res: Response) => {
     if (dittoholicProgress.status === 'running') {
