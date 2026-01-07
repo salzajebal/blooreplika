@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { type Server } from "http";
 import * as cheerio from "cheerio";
+import compression from "compression";
 import { storage } from "./storage";
 import { 
   insertProductSchema, 
@@ -26,6 +27,36 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+
+// In-memory cache for product listings (TTL: 30 seconds)
+interface CacheEntry<T> {
+  data: T;
+  expiresAt: number;
+}
+const productCache = new Map<string, CacheEntry<unknown>>();
+const CACHE_TTL = 30 * 1000; // 30 seconds
+
+function getCached<T>(key: string): T | null {
+  const entry = productCache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    productCache.delete(key);
+    return null;
+  }
+  return entry.data as T;
+}
+
+function setCache<T>(key: string, data: T): void {
+  productCache.set(key, { data, expiresAt: Date.now() + CACHE_TTL });
+}
+
+function invalidateProductCache(): void {
+  for (const key of productCache.keys()) {
+    if (key.startsWith("products:")) {
+      productCache.delete(key);
+    }
+  }
+}
 
 const reviewImageUpload = multer({
   storage: multer.memoryStorage(),
@@ -82,6 +113,10 @@ export async function registerRoutes(
 ): Promise<Server> {
   
   const express = await import("express");
+  
+  // Enable gzip/brotli compression for all responses
+  app.use(compression());
+  
   app.use("/uploads", express.default.static(path.join(process.cwd(), "uploads")));
   
   // ==================== IMAGE PROXY API ====================
@@ -188,13 +223,38 @@ export async function registerRoutes(
       
       const subCatFilter = subcategoryId ? subcategoryId as string : undefined;
       
+      // Check cache first
+      const cacheKey = `products:${catFilter || 'all'}:${subCatFilter || 'all'}:${limitNum}:${offsetNum}`;
+      type CachedResult = { products: unknown[]; total: number; brands: unknown[] };
+      const cached = getCached<CachedResult>(cacheKey);
+      
+      if (cached) {
+        res.setHeader("X-Cache", "HIT");
+        res.setHeader("Cache-Control", "public, max-age=30, stale-while-revalidate=60");
+        return res.json({ 
+          success: true, 
+          data: cached.products,
+          total: cached.total,
+          limit: limitNum,
+          offset: offsetNum,
+          hasMore: offsetNum + limitNum < cached.total,
+          categoryBrands: cached.brands
+        });
+      }
+      
       // Use database-level pagination for performance
       const [{ products: productList, total }, categoryBrands] = await Promise.all([
         storage.getProductsPaginated(limitNum, offsetNum, catFilter, subCatFilter),
         storage.getBrandsWithProductCount(catFilter)
       ]);
       
+      const brandsData = categoryBrands.map(cb => ({ ...cb.brand, productCount: cb.productCount }));
+      
+      // Store in cache
+      setCache(cacheKey, { products: productList, total, brands: brandsData });
+      
       // Add caching headers for better performance
+      res.setHeader("X-Cache", "MISS");
       res.setHeader("Cache-Control", "public, max-age=30, stale-while-revalidate=60");
       res.json({ 
         success: true, 
@@ -203,7 +263,7 @@ export async function registerRoutes(
         limit: limitNum,
         offset: offsetNum,
         hasMore: offsetNum + limitNum < total,
-        categoryBrands: categoryBrands.map(cb => ({ ...cb.brand, productCount: cb.productCount }))
+        categoryBrands: brandsData
       });
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -228,6 +288,7 @@ export async function registerRoutes(
     try {
       const validatedData = insertProductSchema.parse(req.body);
       const product = await storage.createProduct(validatedData);
+      invalidateProductCache();
       res.status(201).json({ success: true, data: product });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -246,6 +307,7 @@ export async function registerRoutes(
       if (!product) {
         return res.status(404).json({ success: false, error: "Product not found" });
       }
+      invalidateProductCache();
       res.json({ success: true, data: product });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -262,6 +324,7 @@ export async function registerRoutes(
       if (!success) {
         return res.status(404).json({ success: false, error: "Product not found" });
       }
+      invalidateProductCache();
       res.json({ success: true, message: "Product deleted" });
     } catch (error) {
       console.error("Error deleting product:", error);
@@ -2296,6 +2359,7 @@ export async function registerRoutes(
   app.delete("/api/admin/products/domestic", requireAdminAuth, async (_req: Request, res: Response) => {
     try {
       const deletedCount = await storage.deleteProductsByCategory("domestic");
+      invalidateProductCache();
       res.json({ success: true, deletedCount });
     } catch (error: any) {
       console.error("Error deleting domestic products:", error);

@@ -96,7 +96,7 @@ export default function ProductList() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const ITEMS_PER_PAGE = 24; // Reduced for faster initial loading
+  const ITEMS_PER_PAGE = 16; // Reduced for faster initial loading
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   useEffect(() => {
