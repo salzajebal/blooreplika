@@ -1265,7 +1265,8 @@ export async function registerRoutes(
         email,
         password,
         name,
-        phone
+        phone,
+        pointBalance: 10000  // 회원가입 시 1만 포인트 지급
       });
       
       res.status(201).json({ 
@@ -1301,7 +1302,8 @@ export async function registerRoutes(
         password,
         name,
         phone: phone || null,
-        address: address || null
+        address: address || null,
+        pointBalance: 10000  // 회원가입 시 1만 포인트 지급
       });
       
       res.status(201).json({ 
