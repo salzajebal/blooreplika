@@ -2477,6 +2477,35 @@ export async function registerRoutes(
     }
   });
 
+  // Get category product count
+  app.get("/api/admin/products/category/:categoryId/count", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { categoryId } = req.params;
+      const count = await storage.getCategoryProductCount(categoryId);
+      res.json({ success: true, count });
+    } catch (error: any) {
+      console.error("Error getting category product count:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  // Apply discount to category products
+  app.post("/api/admin/products/category/:categoryId/apply-discount", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { categoryId } = req.params;
+      const { discountPercent } = req.body;
+      if (typeof discountPercent !== 'number' || discountPercent < 0 || discountPercent > 100) {
+        return res.status(400).json({ success: false, message: "할인율은 0~100 사이의 숫자여야 합니다." });
+      }
+      const affectedCount = await storage.applyCategoryDiscount(categoryId, discountPercent);
+      invalidateProductCache();
+      res.json({ success: true, affectedCount });
+    } catch (error: any) {
+      console.error("Error applying category discount:", error);
+      res.status(500).json({ success: false, message: error.message || "할인 적용 중 오류가 발생했습니다." });
+    }
+  });
+
   // Crawl from dittoholic.com (Shopify store)
   app.post("/api/admin/crawl/dittoholic/start", requireAdminAuth, async (req: Request, res: Response) => {
     if (dittoholicProgress.status === 'running') {

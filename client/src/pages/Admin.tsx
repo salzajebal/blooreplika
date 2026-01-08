@@ -51,6 +51,7 @@ const CATEGORY_OPTIONS = [
   { id: "bags", name: "가방" },
   { id: "watches", name: "시계" },
   { id: "genuine", name: "정품" },
+  { id: "domestic", name: "국내배송" },
 ];
 
 interface AdminStats {
@@ -236,6 +237,8 @@ export default function Admin() {
   const [priceAdjustDelta, setPriceAdjustDelta] = useState<number>(10000);
   const [applyingGenuineDiscount, setApplyingGenuineDiscount] = useState(false);
   const [genuineDiscountPercent, setGenuineDiscountPercent] = useState<number>(20);
+  const [categoryDiscounts, setCategoryDiscounts] = useState<Record<string, number>>({});
+  const [applyingCategoryDiscount, setApplyingCategoryDiscount] = useState<string | null>(null);
 
   const deleteDomesticProducts = async () => {
     if (!confirm("국내배송 카테고리의 모든 상품을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
@@ -325,6 +328,51 @@ export default function Admin() {
       toast({ title: "오류", description: "할인 적용 요청 중 오류가 발생했습니다.", variant: "destructive" });
     } finally {
       setApplyingGenuineDiscount(false);
+    }
+  };
+
+  const applyCategoryDiscount = async (categoryId: string, categoryName: string) => {
+    const discountPercent = categoryDiscounts[categoryId] || 0;
+    if (discountPercent <= 0 || discountPercent > 100) {
+      toast({ title: "오류", description: "할인율은 1~100 사이의 숫자여야 합니다.", variant: "destructive" });
+      return;
+    }
+    
+    const countRes = await fetchWithAuth(`/api/admin/products/category/${categoryId}/count`);
+    const countData = await countRes.json();
+    const count = countData.count || 0;
+    
+    if (count === 0) {
+      toast({ title: "알림", description: `${categoryName} 카테고리에 상품이 없습니다.` });
+      return;
+    }
+    
+    if (!confirm(`${categoryName} 카테고리 상품 ${count.toLocaleString()}개에 ${discountPercent}% 할인을 적용하시겠습니까?\n\n※ 주의: 이 작업은 되돌릴 수 없습니다.`)) {
+      return;
+    }
+    
+    setApplyingCategoryDiscount(categoryId);
+    try {
+      const res = await fetchWithAuth(`/api/admin/products/category/${categoryId}/apply-discount`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ discountPercent }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ 
+          title: "할인 적용 완료", 
+          description: `${categoryName} 카테고리 ${data.affectedCount.toLocaleString()}개 상품에 ${discountPercent}% 할인이 적용되었습니다.` 
+        });
+        fetchProducts();
+        setCategoryDiscounts(prev => ({ ...prev, [categoryId]: 0 }));
+      } else {
+        toast({ title: "오류", description: data.message || "할인 적용 중 오류가 발생했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "할인 적용 요청 중 오류가 발생했습니다.", variant: "destructive" });
+    } finally {
+      setApplyingCategoryDiscount(null);
     }
   };
 
@@ -4883,47 +4931,64 @@ export default function Admin() {
               </div>
             </div>
 
-            {/* Genuine Product Discount Section */}
+            {/* Category Discount Section */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
               <div className="p-6 border-b border-gray-100">
                 <h3 className="text-lg font-bold flex items-center gap-2">
                   <Tag className="w-5 h-5 text-green-600" />
-                  정품 상품 가격 관리
+                  카테고리별 할인 관리
                 </h3>
-                <p className="text-sm text-gray-500 mt-1">정품 카테고리 상품에 할인율을 일괄 적용합니다.</p>
+                <p className="text-sm text-gray-500 mt-1">각 카테고리별로 할인율을 설정하여 일괄 적용할 수 있습니다.</p>
               </div>
               
               <div className="p-6">
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="text-sm font-medium text-green-800 mb-3">정품 상품 할인 적용</div>
-                  <div className="flex items-center gap-3">
-                    <Input
-                      data-testid="input-genuine-discount-main"
-                      type="number"
-                      value={genuineDiscountPercent}
-                      onChange={(e) => setGenuineDiscountPercent(Number(e.target.value))}
-                      className="w-24"
-                      min={0}
-                      max={100}
-                    />
-                    <span className="text-sm text-gray-600">% 할인</span>
-                    <Button
-                      data-testid="button-apply-genuine-discount-main"
-                      onClick={applyGenuineDiscount}
-                      disabled={applyingGenuineDiscount}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      {applyingGenuineDiscount ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          적용 중...
-                        </>
-                      ) : (
-                        '할인 적용'
-                      )}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-green-600 mt-2">현재 가격에서 입력한 할인율만큼 가격이 감소합니다. (예: 20% 입력 시 100,000원 → 80,000원)</p>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-yellow-800">
+                    <strong>주의:</strong> 할인 적용 시 현재 가격에서 입력한 할인율만큼 가격이 감소합니다. 이 작업은 되돌릴 수 없습니다.
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {CATEGORY_OPTIONS.map((cat) => (
+                    <div key={cat.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="font-medium text-gray-800">{cat.name}</span>
+                        <span className="text-xs text-gray-500">카테고리: {cat.id}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          data-testid={`input-discount-${cat.id}`}
+                          type="number"
+                          value={categoryDiscounts[cat.id] || ''}
+                          onChange={(e) => setCategoryDiscounts(prev => ({ ...prev, [cat.id]: Number(e.target.value) }))}
+                          className="w-20"
+                          min={0}
+                          max={100}
+                          placeholder="0"
+                        />
+                        <span className="text-sm text-gray-600">%</span>
+                        <Button
+                          data-testid={`button-apply-discount-${cat.id}`}
+                          onClick={() => applyCategoryDiscount(cat.id, cat.name)}
+                          disabled={applyingCategoryDiscount === cat.id || !categoryDiscounts[cat.id]}
+                          size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          {applyingCategoryDiscount === cat.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            '적용'
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <strong>사용 예시:</strong> 정품 카테고리에 20% 할인을 적용하려면, "정품" 항목에 20을 입력하고 "적용" 버튼을 클릭하세요.
+                  </p>
                 </div>
               </div>
             </div>

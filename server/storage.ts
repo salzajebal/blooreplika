@@ -233,6 +233,10 @@ export interface IStorage {
   // Genuine Product Discount
   getGenuineProductCount(): Promise<number>;
   applyGenuineDiscount(discountPercent: number): Promise<number>;
+  
+  // Category Discount
+  getCategoryProductCount(categoryId: string): Promise<number>;
+  applyCategoryDiscount(categoryId: string, discountPercent: number): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1251,6 +1255,26 @@ export class DatabaseStorage implements IStorage {
       UPDATE products 
       SET price = ROUND(CAST(NULLIF(price, '') AS NUMERIC) * ${multiplier})::TEXT
       WHERE category_id = 'genuine'
+      AND price IS NOT NULL 
+      AND price != ''
+    `);
+    return Number(result.rowCount) || 0;
+  }
+
+  // Category Discount
+  async getCategoryProductCount(categoryId: string): Promise<number> {
+    const [result] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(products)
+      .where(eq(products.categoryId, categoryId));
+    return result?.count || 0;
+  }
+
+  async applyCategoryDiscount(categoryId: string, discountPercent: number): Promise<number> {
+    const multiplier = (100 - discountPercent) / 100;
+    const result = await db.execute(sql`
+      UPDATE products 
+      SET price = ROUND(CAST(NULLIF(price, '') AS NUMERIC) * ${multiplier})::TEXT
+      WHERE category_id = ${categoryId}
       AND price IS NOT NULL 
       AND price != ''
     `);
