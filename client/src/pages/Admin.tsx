@@ -295,6 +295,39 @@ export default function Admin() {
     }
   };
 
+  const applyGenuineDiscount = async () => {
+    const countRes = await fetchWithAuth("/api/admin/products/genuine/count");
+    const countData = await countRes.json();
+    const count = countData.count || 0;
+    
+    if (!confirm(`정품 상품 ${count.toLocaleString()}개에 ${genuineDiscountPercent}% 할인을 적용하시겠습니까?\n\n※ 주의: 이 작업은 되돌릴 수 없습니다. 원래 가격을 복원하려면 별도 작업이 필요합니다.`)) {
+      return;
+    }
+    
+    setApplyingGenuineDiscount(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/products/genuine/apply-discount", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ discountPercent: genuineDiscountPercent }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ 
+          title: "할인 적용 완료", 
+          description: `${data.affectedCount.toLocaleString()}개 정품 상품에 ${genuineDiscountPercent}% 할인이 적용되었습니다.` 
+        });
+        fetchProducts();
+      } else {
+        toast({ title: "오류", description: data.message || "할인 적용 중 오류가 발생했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "할인 적용 요청 중 오류가 발생했습니다.", variant: "destructive" });
+    } finally {
+      setApplyingGenuineDiscount(false);
+    }
+  };
+
   const fetchProductCount = async () => {
     setProductCountLoading(true);
     try {
@@ -4977,6 +5010,39 @@ export default function Admin() {
                         </Button>
                       </div>
                       <p className="text-xs text-orange-600 mt-1">양수 입력 시 인상, 음수 입력 시 인하 (예: -10000)</p>
+                    </div>
+
+                    <div className="border border-green-200 bg-green-50 rounded-lg p-3 mb-3">
+                      <div className="text-sm font-medium text-green-800 mb-2">정품 상품 할인 적용</div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          data-testid="input-genuine-discount"
+                          type="number"
+                          value={genuineDiscountPercent}
+                          onChange={(e) => setGenuineDiscountPercent(Number(e.target.value))}
+                          className="w-24"
+                          min={0}
+                          max={100}
+                        />
+                        <span className="text-sm text-gray-600">% 할인</span>
+                        <Button
+                          data-testid="button-apply-genuine-discount"
+                          onClick={applyGenuineDiscount}
+                          disabled={applyingGenuineDiscount}
+                          variant="outline"
+                          className="border-green-300 text-green-700 hover:bg-green-100"
+                        >
+                          {applyingGenuineDiscount ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              적용 중...
+                            </>
+                          ) : (
+                            '할인 적용'
+                          )}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-green-600 mt-1">정품 카테고리 상품에 할인율을 적용합니다 (기본값: 20%)</p>
                     </div>
 
                     <div className="flex gap-2">
