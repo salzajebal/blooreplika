@@ -276,6 +276,7 @@ export class DatabaseStorage implements IStorage {
       isNew: products.isNew,
       isSoldOut: products.isSoldOut,
       isActive: products.isActive,
+      discountPercent: products.discountPercent,
       createdAt: products.createdAt,
     };
     
@@ -1270,13 +1271,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async applyCategoryDiscount(categoryId: string, discountPercent: number): Promise<number> {
-    const multiplier = (100 - discountPercent) / 100;
     const result = await db.execute(sql`
       UPDATE products 
-      SET price = ROUND(CAST(NULLIF(price, '') AS NUMERIC) * ${multiplier})::TEXT
+      SET discount_percent = ${discountPercent}
       WHERE category_id = ${categoryId}
-      AND price IS NOT NULL 
-      AND price != ''
     `);
     return Number(result.rowCount) || 0;
   }

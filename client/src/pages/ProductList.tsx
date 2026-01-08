@@ -558,7 +558,19 @@ export default function ProductList() {
                         {product.name}
                       </h3>
                       <div className="flex items-center gap-2 flex-wrap">
-                        {hasSale ? (
+                        {(product.discountPercent && product.discountPercent > 0) ? (
+                          <>
+                            <span className="text-xs text-gray-400 line-through">
+                              {Number(product.price).toLocaleString()}원
+                            </span>
+                            <span className="font-bold text-red-500" data-testid={`price-product-${product.id}`}>
+                              {Math.round(Number(product.price) * (100 - product.discountPercent) / 100).toLocaleString()}원
+                            </span>
+                            <span className="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded font-bold">
+                              {product.discountPercent}%
+                            </span>
+                          </>
+                        ) : hasSale ? (
                           <>
                             <span className="text-xs text-gray-400 line-through">
                               {Number(product.price).toLocaleString()}원
