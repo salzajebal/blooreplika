@@ -1712,6 +1712,19 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/reviews/:id", async (req: Request, res: Response) => {
+    try {
+      const review = await storage.getReview(req.params.id);
+      if (!review) {
+        return res.status(404).json({ success: false, error: "리뷰를 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: review });
+    } catch (error) {
+      console.error("Error fetching review:", error);
+      res.status(500).json({ success: false, error: "리뷰를 불러올 수 없습니다." });
+    }
+  });
+
   app.get("/api/admin/reviews", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const reviews = await storage.getAllReviews();

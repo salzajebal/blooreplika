@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "wouter";
+import { Link, useRoute } from "wouter";
 import { Star, ChevronRight, Home, ChevronLeft, Eye, Calendar, ImageOff, Loader2 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -231,7 +231,10 @@ function ReviewImageGallery({ images, title }: { images: string[]; title: string
 const REVIEWS_PER_PAGE = 12;
 
 export default function Reviews() {
+  const [match, params] = useRoute("/reviews/:id");
+  const reviewId = match ? params.id : null;
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   
   const { data: reviewsData, isLoading } = useQuery<{ reviews: Review[]; total: number }>({
     queryKey: ["reviews", currentPage],
@@ -245,6 +248,23 @@ export default function Reviews() {
       };
     },
   });
+
+  const { data: singleReview } = useQuery<Review | null>({
+    queryKey: ["review", reviewId],
+    queryFn: async () => {
+      if (!reviewId) return null;
+      const res = await fetch(`/api/reviews/${reviewId}`);
+      const data = await res.json();
+      return data.success ? data.data : null;
+    },
+    enabled: !!reviewId,
+  });
+
+  useEffect(() => {
+    if (singleReview) {
+      setSelectedReview(singleReview);
+    }
+  }, [singleReview]);
 
   const reviews = reviewsData?.reviews || [];
   const totalReviews = reviewsData?.total || 0;
@@ -434,6 +454,53 @@ export default function Reviews() {
         )}
 
         {renderPagination()}
+
+        {selectedReview && (
+          <Dialog open={!!selectedReview} onOpenChange={(open) => !open && setSelectedReview(null)}>
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+              <div className="p-2">
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={`w-5 h-5 ${
+                        i < (selectedReview.rating || 5)
+                          ? "text-yellow-400 fill-yellow-400"
+                          : "text-gray-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">{selectedReview.title}</h2>
+                {selectedReview.productName && (
+                  <p className="text-sm text-primary mb-4">구매상품: {selectedReview.productName}</p>
+                )}
+                <ReviewImageGallery 
+                  images={getDisplayImages(selectedReview)} 
+                  title={selectedReview.title || '후기'} 
+                />
+                <p className="text-gray-700 whitespace-pre-line leading-relaxed mt-4">{selectedReview.content}</p>
+                <div className="flex items-center justify-between text-sm text-gray-500 mt-6 pt-4 border-t">
+                  <span className="font-medium">{selectedReview.authorName}</span>
+                  <div className="flex items-center gap-3">
+                    {selectedReview.viewCount && (
+                      <span className="flex items-center gap-1">
+                        <Eye className="w-4 h-4" />
+                        {selectedReview.viewCount.toLocaleString()}
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      {selectedReview.displayDate
+                        ? new Date(selectedReview.displayDate).toLocaleDateString("ko-KR")
+                        : "-"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </main>
 
       <Footer />
