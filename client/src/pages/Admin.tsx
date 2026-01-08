@@ -4883,6 +4883,51 @@ export default function Admin() {
               </div>
             </div>
 
+            {/* Genuine Product Discount Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Tag className="w-5 h-5 text-green-600" />
+                  정품 상품 가격 관리
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">정품 카테고리 상품에 할인율을 일괄 적용합니다.</p>
+              </div>
+              
+              <div className="p-6">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="text-sm font-medium text-green-800 mb-3">정품 상품 할인 적용</div>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      data-testid="input-genuine-discount-main"
+                      type="number"
+                      value={genuineDiscountPercent}
+                      onChange={(e) => setGenuineDiscountPercent(Number(e.target.value))}
+                      className="w-24"
+                      min={0}
+                      max={100}
+                    />
+                    <span className="text-sm text-gray-600">% 할인</span>
+                    <Button
+                      data-testid="button-apply-genuine-discount-main"
+                      onClick={applyGenuineDiscount}
+                      disabled={applyingGenuineDiscount}
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                    >
+                      {applyingGenuineDiscount ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          적용 중...
+                        </>
+                      ) : (
+                        '할인 적용'
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-green-600 mt-2">현재 가격에서 입력한 할인율만큼 가격이 감소합니다. (예: 20% 입력 시 100,000원 → 80,000원)</p>
+                </div>
+              </div>
+            </div>
+
             {/* Dittoholic Crawl Section */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
               <div className="p-6 border-b border-gray-100">
