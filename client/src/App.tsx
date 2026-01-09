@@ -32,8 +32,8 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/about" component={About} />
-      <Route path="/comparison" component={Comparison} />
       <Route path="/comparison/:id" component={Comparison} />
+      <Route path="/comparison" component={Comparison} />
       <Route path="/product/:id" component={ProductDetail} />
       <Route path="/products/:category" component={ProductList} />
       <Route path="/products" component={ProductList} />
@@ -41,16 +41,16 @@ function Router() {
       <Route path="/signup" component={Signup} />
       <Route path="/login" component={Login} />
       <Route path="/support" component={Support} />
-      <Route path="/reviews" component={Reviews} />
       <Route path="/reviews/:id" component={Reviews} />
-      <Route path="/notices" component={Notices} />
+      <Route path="/reviews" component={Reviews} />
       <Route path="/notices/:id" component={Notices} />
+      <Route path="/notices" component={Notices} />
       <Route path="/faq" component={FAQ} />
       <Route path="/events" component={Events} />
-      <Route path="/blog" component={Blog} />
       <Route path="/blog/:id" component={Blog} />
-      <Route path="/choice" component={Choice} />
+      <Route path="/blog" component={Blog} />
       <Route path="/choice/:id" component={Choice} />
+      <Route path="/choice" component={Choice} />
       <Route path="/guide" component={Guide} />
       <Route path="/cart" component={Cart} />
       <Route path="/profile" component={Profile} />
