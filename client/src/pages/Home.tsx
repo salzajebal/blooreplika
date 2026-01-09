@@ -399,7 +399,7 @@ function MiddleBanners() {
   return (
     <section className="max-w-[1200px] mx-auto px-4 py-6">
       <div className="flex flex-col gap-2">
-        <Link href="/category/choice" className="block">
+        <Link href="/choice" className="block">
           <img 
             src={getProxiedImageUrl("https://cdamdong.co.kr/data/banner/28")}
             alt="청담동초이스 배너"
