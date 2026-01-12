@@ -1,14 +1,59 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart, ChevronRight, Truck, Shield, ShoppingBag, Star, Package } from "lucide-react";
+import { ShoppingCart, Heart, ChevronRight, Truck, Shield, ShoppingBag, Star, Package, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import type { Product, Brand, Review } from "@shared/schema";
+
+function getStockFromProductId(productId: string): number {
+  let hash = 0;
+  for (let i = 0; i < productId.length; i++) {
+    const char = productId.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return Math.abs(hash % 29) + 2;
+}
+
+function StockIndicator({ stock, isSoldOut }: { stock: number; isSoldOut?: boolean }) {
+  if (isSoldOut) {
+    return (
+      <div className="flex items-center gap-1.5 bg-gray-100 px-3 py-1.5 rounded-lg">
+        <span className="text-gray-500 font-bold text-sm">품절</span>
+      </div>
+    );
+  }
+  
+  if (stock <= 5) {
+    return (
+      <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg animate-pulse">
+        <AlertTriangle className="w-4 h-4 text-red-500" />
+        <span className="text-red-600 font-bold text-sm">품절임박! 재고 {stock}개</span>
+      </div>
+    );
+  }
+  
+  if (stock <= 15) {
+    return (
+      <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-lg">
+        <Package className="w-4 h-4 text-orange-500" />
+        <span className="text-orange-600 font-bold text-sm">재고 {stock}개 남음</span>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
+      <Package className="w-4 h-4 text-green-500" />
+      <span className="text-green-600 font-bold text-sm">재고 {stock}개</span>
+    </div>
+  );
+}
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -244,12 +289,15 @@ export default function ProductDetail() {
                 <h1 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 break-keep" data-testid="text-product-name">
                   {product.name}
                 </h1>
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2 mb-3">
                   <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded">해외배송</span>
                   <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded">하이엔드급</span>
                   {product.isSoldOut && (
                     <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">SOLD OUT</span>
                   )}
+                </div>
+                <div className="mb-4">
+                  <StockIndicator stock={getStockFromProductId(product.id)} isSoldOut={!!product.isSoldOut} />
                 </div>
               </div>
 
