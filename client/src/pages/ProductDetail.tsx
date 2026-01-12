@@ -410,7 +410,7 @@ export default function ProductDetail() {
               상품 상세 정보
             </h2>
             
-            {product.detailContent && (
+            {product.detailContent && product.categoryId !== 'domestic' && (
               <div className="text-gray-700 mb-6 text-center" data-testid="content-detail">
                 {product.detailContent}
               </div>
