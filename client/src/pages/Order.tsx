@@ -15,7 +15,7 @@ import type { Product } from "@shared/schema";
 
 type PaymentMethod = "coupon" | "bank" | null;
 
-const KAKAO_LINK = "https://pf.kakao.com/_xixcxgj";
+const KAKAO_LINK = "https://open.kakao.com/o/soKnRUai";
 
 function KakaoIcon({ className }: { className?: string }) {
   return (
