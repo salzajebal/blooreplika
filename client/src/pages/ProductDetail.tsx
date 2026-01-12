@@ -3,7 +3,7 @@ import { useParams, Link, useLocation } from "wouter";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart, ChevronRight, Truck, Shield, ShoppingBag, Star } from "lucide-react";
+import { ShoppingCart, Heart, ChevronRight, Truck, Shield, ShoppingBag, Star, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -354,6 +354,15 @@ export default function ProductDetail() {
                     <div>
                       <p className="font-medium text-gray-900">무료 검수 제공</p>
                       <p className="text-xs text-gray-500">프리미엄 검수 무료 제공! (의류 제외)</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
+                      <Package className="w-5 h-5 text-gray-600" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">모든제품 2~3일 배송완료</p>
+                      <p className="text-xs text-gray-500">빠른 배송으로 고객님께 신속하게 전달해 드립니다</p>
                     </div>
                   </div>
                 </div>
