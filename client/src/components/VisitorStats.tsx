@@ -11,36 +11,61 @@ function seededRandom(seed: number) {
   return x - Math.floor(x);
 }
 
-function getDailyRandomNumber(min: number, max: number, offset: number = 0) {
-  const seed = getDailyRandomSeed() + offset;
-  return Math.floor(seededRandom(seed) * (max - min + 1)) + min;
+function getTimeBasedProgress() {
+  const now = new Date();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const totalMinutes = hours * 60 + minutes;
+  return totalMinutes / (24 * 60);
+}
+
+function getTodayVisitors() {
+  const progress = getTimeBasedProgress();
+  const minVisitors = 1200;
+  const maxVisitors = 9000;
+  const baseValue = minVisitors + Math.floor((maxVisitors - minVisitors) * progress);
+  const randomVariation = Math.floor(Math.random() * 50) - 25;
+  return Math.max(minVisitors, Math.min(maxVisitors, baseValue + randomVariation));
+}
+
+function getTodayPurchases() {
+  const now = new Date();
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const totalMinutes = hours * 60 + minutes;
+  const progress = totalMinutes / (24 * 60);
+  const maxPurchases = 70;
+  const baseValue = Math.floor(maxPurchases * progress);
+  const randomVariation = Math.floor(Math.random() * 3);
+  return Math.max(0, Math.min(maxPurchases, baseValue + randomVariation));
+}
+
+function getRealTimeVisitors() {
+  const min = 78;
+  const max = 120;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 export function VisitorStats() {
-  const [realTimeVisitors, setRealTimeVisitors] = useState(0);
-  const [todayVisitors, setTodayVisitors] = useState(0);
-  const [todayPurchases, setTodayPurchases] = useState(0);
+  const [realTimeVisitors, setRealTimeVisitors] = useState(getRealTimeVisitors());
+  const [todayVisitors, setTodayVisitors] = useState(getTodayVisitors());
+  const [todayPurchases, setTodayPurchases] = useState(getTodayPurchases());
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
-    const baseTodayVisitors = getDailyRandomNumber(800, 1500, 1);
-    const baseTodayPurchases = getDailyRandomNumber(8, 25, 2);
-    
-    setTodayVisitors(baseTodayVisitors);
-    setTodayPurchases(baseTodayPurchases);
-    
-    const baseRealTime = getDailyRandomNumber(8, 20, 3);
-    setRealTimeVisitors(baseRealTime);
-    
-    const interval = setInterval(() => {
-      setRealTimeVisitors(prev => {
-        const change = Math.floor(Math.random() * 5) - 2;
-        const newValue = prev + change;
-        return Math.max(5, Math.min(30, newValue));
-      });
-    }, 5000);
+    const realTimeInterval = setInterval(() => {
+      setRealTimeVisitors(getRealTimeVisitors());
+    }, 3000);
 
-    return () => clearInterval(interval);
+    const statsInterval = setInterval(() => {
+      setTodayVisitors(getTodayVisitors());
+      setTodayPurchases(getTodayPurchases());
+    }, 30000);
+
+    return () => {
+      clearInterval(realTimeInterval);
+      clearInterval(statsInterval);
+    };
   }, []);
 
   if (!isVisible) return null;
