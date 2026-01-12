@@ -446,6 +446,19 @@ export default function ProductDetail() {
                   </div>
                 ))}
               </div>
+            ) : product.imageUrl ? (
+              <div className="space-y-4 mb-8 sm:mb-12">
+                <div className="flex justify-center">
+                  <img
+                    src={getProxiedImageUrl(product.imageUrl, "large")}
+                    alt={`${product.name} 상품 이미지`}
+                    className="max-w-full rounded-lg shadow-sm"
+                    style={{ maxHeight: 'none' }}
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    data-testid="img-detail-main"
+                  />
+                </div>
+              </div>
             ) : (
               <div className="text-gray-500 text-center py-8 mb-8 sm:mb-12">
                 상품 상세 이미지가 없습니다.
