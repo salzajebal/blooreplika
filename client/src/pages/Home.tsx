@@ -2,7 +2,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Star, MessageCircle, HelpCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star, HelpCircle } from "lucide-react";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { useState, useEffect, useRef } from "react";
 
@@ -21,22 +21,24 @@ function FloatingButtons() {
   };
   
   return (
-    <div className="fixed right-2 md:right-4 bottom-24 md:bottom-20 z-50 flex flex-col gap-2">
+    <div className="fixed right-2 md:right-4 bottom-24 md:bottom-20 z-50 flex flex-col gap-3">
       <button 
         onClick={openKakaoChat}
-        className="w-10 h-10 md:w-12 md:h-12 bg-white border border-gray-300 rounded shadow-lg flex flex-col items-center justify-center text-gray-600 hover:bg-gray-50"
+        className="w-14 h-14 md:w-16 md:h-16 bg-[#FEE500] border-0 rounded-xl shadow-lg flex flex-col items-center justify-center hover:bg-[#F5DC00] transition-colors"
         data-testid="floating-support"
       >
-        <MessageCircle className="w-4 h-4 md:w-5 md:h-5" />
-        <span className="text-[7px] md:text-[8px] mt-0.5">상담</span>
+        <svg className="w-7 h-7 md:w-8 md:h-8" viewBox="0 0 24 24" fill="#3C1E1E">
+          <path d="M12 3C6.48 3 2 6.58 2 11c0 2.84 1.86 5.33 4.65 6.76l-.95 3.54c-.08.3.24.55.52.41l4.17-2.27c.53.06 1.07.09 1.61.09 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
+        </svg>
+        <span className="text-[8px] md:text-[9px] font-bold text-[#3C1E1E] mt-0.5">카카오상담</span>
       </button>
       <Link 
         href="/notices"
-        className="w-10 h-10 md:w-12 md:h-12 bg-white border border-gray-300 rounded shadow-lg flex flex-col items-center justify-center text-gray-600 hover:bg-gray-50"
+        className="w-14 h-14 md:w-16 md:h-16 bg-white border border-gray-300 rounded-xl shadow-lg flex flex-col items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors"
         data-testid="floating-qa"
       >
-        <HelpCircle className="w-4 h-4 md:w-5 md:h-5" />
-        <span className="text-[7px] md:text-[8px] mt-0.5">공지</span>
+        <HelpCircle className="w-5 h-5 md:w-6 md:h-6" />
+        <span className="text-[8px] md:text-[9px] font-medium mt-0.5">공지</span>
       </Link>
     </div>
   );
