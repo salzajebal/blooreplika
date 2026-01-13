@@ -84,7 +84,7 @@ export default function ProductList() {
   const { salePercent, calculateSalePrice, hasSale } = useGlobalSale();
 
   const categoryInfo = CATEGORIES.find(c => c.slug === categorySlug);
-  const searchParams = new URLSearchParams(location.split("?")[1] || "");
+  const searchParams = new URLSearchParams(window.location.search);
   const searchQuery = searchParams.get("q");
   const subcategoryId = searchParams.get("sub");
 
