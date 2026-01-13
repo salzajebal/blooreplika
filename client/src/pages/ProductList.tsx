@@ -2,7 +2,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Heart, Package, Star, Grid, List, ChevronDown, Filter, X, ChevronLeft, ChevronRight } from "lucide-react";
-import { useRoute, Link, useSearch } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Product } from "@shared/schema";
@@ -73,6 +73,7 @@ type SortOption = "newest" | "price_asc" | "price_desc" | "popular";
 
 export default function ProductList() {
   const [match, params] = useRoute("/products/:category");
+  const [location] = useLocation();
   const categorySlug = match ? params.category : "all";
   const [brands, setBrands] = useState<any[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
@@ -83,10 +84,15 @@ export default function ProductList() {
   const { salePercent, calculateSalePrice, hasSale } = useGlobalSale();
 
   const categoryInfo = CATEGORIES.find(c => c.slug === categorySlug);
-  const searchString = useSearch();
-  const searchParams = new URLSearchParams(searchString);
-  const searchQuery = searchParams.get("q");
-  const subcategoryId = searchParams.get("sub");
+  
+  // Parse search params - compute synchronously using useMemo
+  const { searchQuery, subcategoryId } = useMemo(() => {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      searchQuery: params.get("q"),
+      subcategoryId: params.get("sub")
+    };
+  }, [location]);
 
   const handleWishlistToggle = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
