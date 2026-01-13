@@ -546,16 +546,7 @@ export async function registerRoutes(
   });
 
   // ==================== BRANDS API ====================
-
-  app.get("/api/brands", async (req: Request, res: Response) => {
-    try {
-      const brandList = await storage.getAllBrands();
-      res.json({ success: true, data: brandList });
-    } catch (error) {
-      console.error("Error fetching brands:", error);
-      res.status(500).json({ success: false, error: "Failed to fetch brands" });
-    }
-  });
+  // Note: Main GET /api/brands with category filtering is defined earlier in this file
 
   app.get("/api/brands/:id", async (req: Request, res: Response) => {
     try {
