@@ -403,23 +403,38 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBrandsWithProductCount(categoryId?: string): Promise<{ brand: Brand; productCount: number }[]> {
+    // Use single aggregated query instead of N+1 queries
+    let countQuery;
+    if (categoryId) {
+      countQuery = db.select({
+        brandId: products.brandId,
+        count: sql<number>`count(*)::int`
+      })
+        .from(products)
+        .where(eq(products.categoryId, categoryId))
+        .groupBy(products.brandId);
+    } else {
+      countQuery = db.select({
+        brandId: products.brandId,
+        count: sql<number>`count(*)::int`
+      })
+        .from(products)
+        .groupBy(products.brandId);
+    }
+    
+    const productCounts = await countQuery;
+    const countMap = new Map<string, number>();
+    for (const row of productCounts) {
+      if (row.brandId) {
+        countMap.set(row.brandId, row.count);
+      }
+    }
+    
     const allBrands = await db.select().from(brands).orderBy(brands.sortOrder);
     
     const results: { brand: Brand; productCount: number }[] = [];
-    
     for (const brand of allBrands) {
-      let countResult;
-      if (categoryId) {
-        countResult = await db.select({ count: sql<number>`count(*)::int` })
-          .from(products)
-          .where(sql`${products.brandId} = ${brand.id} AND ${products.categoryId} = ${categoryId}`);
-      } else {
-        countResult = await db.select({ count: sql<number>`count(*)::int` })
-          .from(products)
-          .where(eq(products.brandId, brand.id));
-      }
-      
-      const productCount = countResult[0]?.count || 0;
+      const productCount = countMap.get(brand.id) || 0;
       if (productCount > 0) {
         results.push({ brand, productCount });
       }
