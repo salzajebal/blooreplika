@@ -36,7 +36,7 @@ export interface IStorage {
   
   // Products
   getAllProducts(): Promise<Product[]>;
-  getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string): Promise<{ products: Product[], total: number }>;
+  getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string): Promise<{ products: Product[], total: number }>;
   getProductsCount(categoryId?: string): Promise<number>;
   getProductsByCategory(categoryId: string): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
@@ -261,7 +261,7 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(products).orderBy(desc(products.createdAt));
   }
   
-  async getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string): Promise<{ products: Product[], total: number }> {
+  async getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string): Promise<{ products: Product[], total: number }> {
     // Lean select for listings - only essential fields for performance
     const leanSelect = {
       id: products.id,
@@ -285,6 +285,7 @@ export class DatabaseStorage implements IStorage {
     if (categoryId) conditions.push(eq(products.categoryId, categoryId));
     if (subcategoryId) conditions.push(eq(products.subcategoryId, subcategoryId));
     if (search) conditions.push(sql`${products.name} ILIKE ${'%' + search + '%'}`);
+    if (brandId) conditions.push(eq(products.brandId, brandId));
     
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     
