@@ -138,16 +138,18 @@ function MiddleBanners() {
       <div className="flex flex-col gap-2">
         <Link href="/choice" className="block">
           <img 
-            src={getProxiedImageUrl("https://cdamdong.co.kr/data/banner/28")}
+            src={getProxiedImageUrl("https://cdamdong.co.kr/data/banner/28", "large")}
             alt="청담동초이스 배너"
             className="w-full h-auto"
+            loading="lazy"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
           />
         </Link>
         <img 
-          src={getProxiedImageUrl("https://cdamdong.co.kr/data/banner/14")}
+          src={getProxiedImageUrl("https://cdamdong.co.kr/data/banner/14", "large")}
           alt="중간 배너"
           className="w-full h-auto"
+          loading="lazy"
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
         />
       </div>
