@@ -72,19 +72,19 @@ export function VisitorStats() {
 
   return (
     <div className="fixed bottom-4 left-4 z-50 flex flex-col gap-1 text-xs">
-      <div className="bg-white border border-gray-200 rounded-lg shadow-lg px-3 py-2 flex items-center gap-2">
+      <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg px-3 py-2 flex items-center gap-2">
         <Eye className="w-3.5 h-3.5 text-green-500" />
         <span className="text-gray-600">실시간 방문자수</span>
         <span className="font-bold text-green-600 ml-auto">{realTimeVisitors}</span>
       </div>
       
-      <div className="bg-white border border-gray-200 rounded-lg shadow-lg px-3 py-2 flex items-center gap-2">
+      <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg px-3 py-2 flex items-center gap-2">
         <Users className="w-3.5 h-3.5 text-blue-500" />
         <span className="text-gray-600">오늘 방문자수</span>
         <span className="font-bold text-blue-600 ml-auto">{todayVisitors.toLocaleString()}</span>
       </div>
       
-      <div className="bg-white border border-gray-200 rounded-lg shadow-lg px-3 py-2 flex items-center gap-2">
+      <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-lg shadow-lg px-3 py-2 flex items-center gap-2">
         <ShoppingBag className="w-3.5 h-3.5 text-red-500" />
         <span className="text-gray-600">오늘 구매자수</span>
         <span className="font-bold text-red-600 ml-auto">{todayPurchases}</span>
@@ -92,7 +92,7 @@ export function VisitorStats() {
       
       <button 
         onClick={() => setIsVisible(false)}
-        className="text-[10px] text-gray-400 hover:text-gray-600 text-center mt-1"
+        className="bg-gray-800 text-white text-[10px] px-3 py-1.5 rounded-lg hover:bg-black transition-colors font-medium mt-1"
       >
         닫기
       </button>
