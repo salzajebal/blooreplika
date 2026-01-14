@@ -26,7 +26,7 @@ import {
   type SiteSetting, type InsertSiteSetting, siteSettings
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, and, sql, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -172,6 +172,7 @@ export interface IStorage {
   getOrderItem(id: string): Promise<OrderItem | undefined>;
   createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem>;
   deleteOrderItem(id: string): Promise<boolean>;
+  hasMemberOrderedProduct(memberId: string, productId: string): Promise<boolean>;
   
   // Coupon Payments
   getAllCouponPayments(): Promise<CouponPayment[]>;
@@ -924,6 +925,22 @@ export class DatabaseStorage implements IStorage {
   async deleteOrderItem(id: string): Promise<boolean> {
     const result = await db.delete(orderItems).where(eq(orderItems.id, id)).returning();
     return result.length > 0;
+  }
+
+  async hasMemberOrderedProduct(memberId: string, productId: string): Promise<boolean> {
+    const memberOrders = await db.select({ id: orders.id }).from(orders).where(eq(orders.memberId, memberId));
+    if (memberOrders.length === 0) return false;
+    
+    const orderIds = memberOrders.map(o => o.id);
+    const items = await db.select({ id: orderItems.id })
+      .from(orderItems)
+      .where(
+        and(
+          inArray(orderItems.orderId, orderIds),
+          eq(orderItems.productId, productId)
+        )
+      );
+    return items.length > 0;
   }
 
   // Coupon Payments

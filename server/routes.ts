@@ -1732,6 +1732,23 @@ export async function registerRoutes(
       const { authorName, productId, productName, rating, title, content, displayDate } = req.body;
       const files = req.files as Express.Multer.File[];
       
+      // Check if member has ordered this product (required for non-admin users)
+      const authHeader = req.headers.authorization;
+      const token = authHeader?.split(" ")[1];
+      const session = await getMemberFromToken(token);
+      
+      if (productId) {
+        // If submitting a review for a specific product, verify member has ordered it
+        if (!session) {
+          return res.status(401).json({ success: false, error: "리뷰를 작성하려면 로그인이 필요합니다." });
+        }
+        
+        const hasOrdered = await storage.hasMemberOrderedProduct(session.memberId, productId);
+        if (!hasOrdered) {
+          return res.status(403).json({ success: false, error: "해당 상품을 주문한 고객만 리뷰를 작성할 수 있습니다." });
+        }
+      }
+      
       const imageUrls: string[] = [];
       if (files && files.length > 0) {
         for (const file of files) {
@@ -1746,7 +1763,7 @@ export async function registerRoutes(
       }
       
       const review = await storage.createReview({
-        authorName,
+        authorName: session?.name || authorName,
         productId: productId || null,
         productName: productName || null,
         rating: parseInt(rating) || 5,
