@@ -466,7 +466,18 @@ export default function ProductDetail() {
             
             {product.detailImageUrls && product.detailImageUrls.length > 0 ? (
               <div className="space-y-4 mb-8 sm:mb-12">
-                {product.detailImageUrls.map((imgUrl, index) => (
+                {product.detailImageUrls
+                  .filter(imgUrl => {
+                    const lowerUrl = imgUrl.toLowerCase();
+                    const excludePatterns = [
+                      'shipping', 'delivery', 'info_banner', 'notice',
+                      'haewoe', 'gyohwan', 'geomsu', 'unsong',
+                      '해외배송', '교환', '환불', '검수', '운송장', '배송안내',
+                      'cdamdong.co.kr/data/file/sj_note'
+                    ];
+                    return !excludePatterns.some(pattern => lowerUrl.includes(pattern));
+                  })
+                  .map((imgUrl, index) => (
                   <div key={index} className="flex justify-center">
                     <img
                       src={getProxiedImageUrl(imgUrl, "large")}
