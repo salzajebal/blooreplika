@@ -339,10 +339,6 @@ export default function Signup() {
             <ul className="space-y-3 text-sm text-gray-600">
               <li className="flex items-start gap-2">
                 <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-                <span>실시간 금시세 알림 서비스</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <Check className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <span>회원 전용 특별 할인가 적용</span>
               </li>
               <li className="flex items-start gap-2">
