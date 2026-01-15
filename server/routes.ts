@@ -1951,6 +1951,66 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== VISITOR TRACKING API ====================
+  
+  app.post("/api/track/visit", async (req: Request, res: Response) => {
+    try {
+      const { sessionId, page, referrer } = req.body;
+      if (!sessionId) {
+        return res.status(400).json({ success: false, error: "sessionId is required" });
+      }
+      
+      const ipAddress = req.ip || req.headers['x-forwarded-for'] as string || 'unknown';
+      const userAgent = req.headers['user-agent'] || 'unknown';
+      
+      await storage.trackVisitor({
+        sessionId,
+        ipAddress,
+        userAgent,
+        page: page || '/',
+        referrer: referrer || null,
+        memberId: null,
+        lastActiveAt: new Date()
+      });
+      
+      if (page) {
+        await storage.trackPageView({ sessionId, page });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error tracking visit:", error);
+      res.status(500).json({ success: false, error: "Failed to track visit" });
+    }
+  });
+
+  app.post("/api/track/pageview", async (req: Request, res: Response) => {
+    try {
+      const { sessionId, page } = req.body;
+      if (!sessionId || !page) {
+        return res.status(400).json({ success: false, error: "sessionId and page are required" });
+      }
+      
+      await storage.updateVisitorActivity(sessionId, page);
+      await storage.trackPageView({ sessionId, page });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error tracking pageview:", error);
+      res.status(500).json({ success: false, error: "Failed to track pageview" });
+    }
+  });
+
+  app.get("/api/admin/visitor-stats", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const stats = await storage.getVisitorStats();
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      console.error("Error fetching visitor stats:", error);
+      res.status(500).json({ success: false, error: "방문자 통계를 불러올 수 없습니다." });
+    }
+  });
+
   // ==================== ORDERS API ====================
   
   app.post("/api/orders", async (req: Request, res: Response) => {

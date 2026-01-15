@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { VisitorStats } from "@/components/VisitorStats";
+import { VisitorTracker } from "@/components/VisitorTracker";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import ProductList from "@/pages/ProductList";
@@ -73,6 +74,7 @@ function App() {
           <TooltipProvider>
             <Toaster />
             <VisitorStats />
+            <VisitorTracker />
             <Router />
           </TooltipProvider>
         </WishlistProvider>

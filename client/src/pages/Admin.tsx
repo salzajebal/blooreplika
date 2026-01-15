@@ -73,6 +73,7 @@ export default function Admin() {
   
   const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
+  const [visitorStats, setVisitorStats] = useState<{ realtime: number; today: number; pageViews: number; recentPages: { page: string; count: number }[] } | null>(null);
   
   const [products, setProducts] = useState<Product[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -720,6 +721,18 @@ export default function Admin() {
     }
   };
 
+  const fetchVisitorStats = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/visitor-stats");
+      const data = await res.json();
+      if (data.success) {
+        setVisitorStats(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching visitor stats:", error);
+    }
+  };
+
   const fetchProducts = async (page = productPage, search = productSearch, category = productFilter) => {
     try {
       const params = new URLSearchParams();
@@ -1009,6 +1022,7 @@ export default function Admin() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchStats();
+      fetchVisitorStats();
       fetchProducts();
       fetchBrands();
       fetchMembers();
@@ -1018,6 +1032,13 @@ export default function Admin() {
       fetchProductCount();
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === "dashboard") {
+      const interval = setInterval(fetchVisitorStats, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated, activeTab]);
   
   useEffect(() => {
     if (isAuthenticated && activeTab === "settings") {
@@ -2190,6 +2211,75 @@ export default function Admin() {
 
         {activeTab === "dashboard" && (
           <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+              <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                <Eye className="w-5 h-5 text-green-500" />
+                실시간 접속 현황
+                <span className="text-xs text-gray-400 font-normal">(30초마다 자동 갱신)</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center animate-pulse">
+                      <Eye className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-green-600">실시간 방문자</p>
+                      <p className="text-2xl font-bold text-green-700">{visitorStats?.realtime || 0}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                      <Users className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-blue-600">오늘 방문자</p>
+                      <p className="text-2xl font-bold text-blue-700">{visitorStats?.today?.toLocaleString() || 0}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-purple-600">오늘 페이지뷰</p>
+                      <p className="text-2xl font-bold text-purple-700">{visitorStats?.pageViews?.toLocaleString() || 0}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
+                      <BarChart3 className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-orange-600">인기 페이지</p>
+                      <p className="text-sm font-medium text-orange-700 truncate max-w-[150px]">
+                        {visitorStats?.recentPages?.[0]?.page || "-"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {visitorStats?.recentPages && visitorStats.recentPages.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <p className="text-sm text-gray-500 mb-2">오늘 인기 페이지 TOP 5</p>
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+                    {visitorStats.recentPages.slice(0, 5).map((p, i) => (
+                      <div key={i} className="bg-gray-50 rounded-lg px-3 py-2 text-center">
+                        <p className="text-xs text-gray-500 truncate" title={p.page}>{p.page}</p>
+                        <p className="font-bold text-gray-700">{p.count}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                 <div className="flex items-center justify-between">

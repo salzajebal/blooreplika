@@ -23,7 +23,9 @@ import {
   type WishlistItem, type InsertWishlistItem, wishlistItems,
   type Coupon, type InsertCoupon, coupons,
   type PointTransaction, type InsertPointTransaction, pointTransactions,
-  type SiteSetting, type InsertSiteSetting, siteSettings
+  type SiteSetting, type InsertSiteSetting, siteSettings,
+  type VisitorSession, type InsertVisitorSession, visitorSessions,
+  type PageView, type InsertPageView, pageViews
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, inArray } from "drizzle-orm";
@@ -238,6 +240,15 @@ export interface IStorage {
   // Category Discount
   getCategoryProductCount(categoryId: string): Promise<number>;
   applyCategoryDiscount(categoryId: string, discountPercent: number): Promise<number>;
+  
+  // Visitor Tracking
+  trackVisitor(session: InsertVisitorSession): Promise<VisitorSession>;
+  updateVisitorActivity(sessionId: string, page?: string): Promise<void>;
+  trackPageView(pageView: InsertPageView): Promise<PageView>;
+  getActiveVisitors(minutesAgo?: number): Promise<number>;
+  getTodayVisitors(): Promise<number>;
+  getTodayPageViews(): Promise<number>;
+  getVisitorStats(): Promise<{ realtime: number; today: number; pageViews: number; recentPages: { page: string; count: number }[] }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1310,6 +1321,83 @@ export class DatabaseStorage implements IStorage {
       WHERE category_id = ${categoryId}
     `);
     return Number(result.rowCount) || 0;
+  }
+
+  // Visitor Tracking
+  async trackVisitor(session: InsertVisitorSession): Promise<VisitorSession> {
+    const existing = await db.select().from(visitorSessions).where(eq(visitorSessions.sessionId, session.sessionId));
+    if (existing.length > 0) {
+      await db.update(visitorSessions)
+        .set({ lastActiveAt: new Date(), page: session.page })
+        .where(eq(visitorSessions.sessionId, session.sessionId));
+      return existing[0];
+    }
+    const [visitor] = await db.insert(visitorSessions).values(session).returning();
+    return visitor;
+  }
+
+  async updateVisitorActivity(sessionId: string, page?: string): Promise<void> {
+    const updateData: any = { lastActiveAt: new Date() };
+    if (page) updateData.page = page;
+    await db.update(visitorSessions)
+      .set(updateData)
+      .where(eq(visitorSessions.sessionId, sessionId));
+  }
+
+  async trackPageView(pageView: InsertPageView): Promise<PageView> {
+    const [view] = await db.insert(pageViews).values(pageView).returning();
+    return view;
+  }
+
+  async getActiveVisitors(minutesAgo: number = 5): Promise<number> {
+    const cutoff = new Date(Date.now() - minutesAgo * 60 * 1000);
+    const [result] = await db.select({ count: sql<number>`count(DISTINCT session_id)::int` })
+      .from(visitorSessions)
+      .where(sql`last_active_at > ${cutoff}`);
+    return result?.count || 0;
+  }
+
+  async getTodayVisitors(): Promise<number> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [result] = await db.select({ count: sql<number>`count(DISTINCT session_id)::int` })
+      .from(visitorSessions)
+      .where(sql`created_at >= ${today}`);
+    return result?.count || 0;
+  }
+
+  async getTodayPageViews(): Promise<number> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const [result] = await db.select({ count: sql<number>`count(*)::int` })
+      .from(pageViews)
+      .where(sql`created_at >= ${today}`);
+    return result?.count || 0;
+  }
+
+  async getVisitorStats(): Promise<{ realtime: number; today: number; pageViews: number; recentPages: { page: string; count: number }[] }> {
+    const realtime = await this.getActiveVisitors(5);
+    const today = await this.getTodayVisitors();
+    const pageViewCount = await this.getTodayPageViews();
+    
+    const todayDate = new Date();
+    todayDate.setHours(0, 0, 0, 0);
+    const recentPagesResult = await db.select({
+      page: pageViews.page,
+      count: sql<number>`count(*)::int`
+    })
+      .from(pageViews)
+      .where(sql`created_at >= ${todayDate}`)
+      .groupBy(pageViews.page)
+      .orderBy(sql`count(*) DESC`)
+      .limit(10);
+    
+    return {
+      realtime,
+      today,
+      pageViews: pageViewCount,
+      recentPages: recentPagesResult
+    };
   }
 }
 
