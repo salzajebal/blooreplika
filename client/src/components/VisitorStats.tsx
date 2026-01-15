@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, ShoppingBag, Eye } from "lucide-react";
+import { Users, ShoppingBag, Eye, MessageCircle } from "lucide-react";
 
 function getDailyRandomSeed() {
   const today = new Date();
