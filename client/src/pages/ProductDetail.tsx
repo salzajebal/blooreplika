@@ -3,7 +3,7 @@ import { useParams, Link, useLocation } from "wouter";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart, ChevronRight, Truck, Shield, ShoppingBag, Star, Package, AlertTriangle } from "lucide-react";
+import { ShoppingCart, Heart, ChevronRight, Truck, Shield, ShoppingBag, Star, Package, AlertTriangle, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -68,6 +68,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string>("");
+  const [kakaoLink, setKakaoLink] = useState<string>("");
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -108,6 +109,21 @@ export default function ProductDetail() {
       fetchReviews();
     }
   }, [id]);
+
+  useEffect(() => {
+    const fetchKakaoLink = async () => {
+      try {
+        const res = await fetch("/api/settings/kakaoTalkLink");
+        const data = await res.json();
+        if (data.success && data.data?.value) {
+          setKakaoLink(data.data.value);
+        }
+      } catch (error) {
+        console.error("Error fetching kakao link:", error);
+      }
+    };
+    fetchKakaoLink();
+  }, []);
 
   const parseOptions = (optionsString?: string | null): string[] => {
     if (!optionsString) return [];
@@ -449,6 +465,24 @@ export default function ProductDetail() {
                     위시리스트
                   </Button>
                 </div>
+                {kakaoLink && (
+                  <a
+                    href={kakaoLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block"
+                    data-testid="link-kakao-chat"
+                  >
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="w-full h-12 bg-[#FEE500] hover:bg-[#FDD800] border-[#FEE500] text-[#3C1E1E] font-bold"
+                    >
+                      <MessageCircle className="w-5 h-5 mr-2" />
+                      카카오톡 상담하기
+                    </Button>
+                  </a>
+                )}
               </div>
             </div>
           </div>
@@ -598,32 +632,50 @@ export default function ProductDetail() {
           )}
 
           <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 lg:hidden z-40" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-            <div className="flex gap-2 sm:gap-3 max-w-lg mx-auto p-3 sm:p-4">
-              <Button
-                variant="outline"
-                size="icon"
-                className={`h-11 sm:h-12 w-11 sm:w-12 ${isWishlisted ? 'text-red-500 border-red-200' : ''}`}
-                onClick={handleWishlistToggle}
-              >
-                <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
-              </Button>
-              <Button
-                variant="outline"
-                className="h-11 sm:h-12 text-sm"
-                onClick={handleAddToCart}
-                disabled={!!product.isSoldOut}
-              >
-                <ShoppingCart className="w-4 h-4 mr-1" />
-                장바구니
-              </Button>
-              <Button
-                className="flex-1 h-11 sm:h-12 text-sm bg-primary hover:bg-primary/90"
-                onClick={handleBuyNow}
-                disabled={!!product.isSoldOut}
-              >
-                <ShoppingBag className="w-4 h-4 mr-1.5 sm:mr-2" />
-                바로 구매
-              </Button>
+            <div className="flex flex-col gap-2 max-w-lg mx-auto p-3 sm:p-4">
+              <div className="flex gap-2 sm:gap-3">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className={`h-11 sm:h-12 w-11 sm:w-12 ${isWishlisted ? 'text-red-500 border-red-200' : ''}`}
+                  onClick={handleWishlistToggle}
+                >
+                  <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-11 sm:h-12 text-sm"
+                  onClick={handleAddToCart}
+                  disabled={!!product.isSoldOut}
+                >
+                  <ShoppingCart className="w-4 h-4 mr-1" />
+                  장바구니
+                </Button>
+                <Button
+                  className="flex-1 h-11 sm:h-12 text-sm bg-primary hover:bg-primary/90"
+                  onClick={handleBuyNow}
+                  disabled={!!product.isSoldOut}
+                >
+                  <ShoppingBag className="w-4 h-4 mr-1.5 sm:mr-2" />
+                  바로 구매
+                </Button>
+              </div>
+              {kakaoLink && (
+                <a
+                  href={kakaoLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full"
+                >
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 bg-[#FEE500] hover:bg-[#FDD800] border-[#FEE500] text-[#3C1E1E] font-bold text-sm"
+                  >
+                    <MessageCircle className="w-4 h-4 mr-1.5" />
+                    카카오톡 상담하기
+                  </Button>
+                </a>
+              )}
             </div>
           </div>
         </div>
