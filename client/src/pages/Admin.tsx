@@ -10,7 +10,7 @@ import {
   Lock, User, Mail, Phone, CheckCircle, XCircle,
   Star, FileText, Bell, Calendar, Tag,
   Clock, Snowflake, Unlock, Settings, Link2, Upload,
-  MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2, Search
+  MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2, Search, Shield
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage, Order, CouponPayment } from "@shared/schema";
@@ -66,12 +66,14 @@ export default function Admin() {
   const { toast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authToken, setAuthToken] = useState<string | null>(null);
+  const [adminRole, setAdminRole] = useState<string>("super_admin");
+  const [adminName, setAdminName] = useState<string>("");
   const [loginForm, setLoginForm] = useState({ username: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [visitorStats, setVisitorStats] = useState<{ realtime: number; today: number; pageViews: number; recentPages: { page: string; count: number }[] } | null>(null);
   
@@ -181,6 +183,11 @@ export default function Admin() {
     accountHolder: "",
   });
   const [depositAccountLoading, setDepositAccountLoading] = useState(false);
+  
+  const [staffUsers, setStaffUsers] = useState<{id: string; username: string; name?: string | null; role?: string | null; createdAt?: Date | null}[]>([]);
+  const [staffFormData, setStaffFormData] = useState({ username: "", password: "", name: "", staffRole: "review_admin" });
+  const [showAddStaffForm, setShowAddStaffForm] = useState(false);
+  const [staffLoading, setStaffLoading] = useState(false);
   
   const [globalSalePercent, setGlobalSalePercent] = useState<number>(0);
   const [globalSaleLoading, setGlobalSaleLoading] = useState(false);
@@ -643,9 +650,15 @@ export default function Admin() {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
-      if (data.success && data.authenticated) {
+      if (data.success && (data.authenticated || data.valid)) {
         setAuthToken(token);
         setIsAuthenticated(true);
+        setAdminRole(data.role || "super_admin");
+        setAdminName(data.name || "관리자");
+        // review_admin can only access reviews tab
+        if (data.role === "review_admin") {
+          setActiveTab("reviews");
+        }
       } else {
         localStorage.removeItem("adminToken");
       }
@@ -672,6 +685,12 @@ export default function Admin() {
         localStorage.setItem("adminToken", data.token);
         setAuthToken(data.token);
         setIsAuthenticated(true);
+        setAdminRole(data.role || "super_admin");
+        setAdminName(data.name || "관리자");
+        // review_admin can only access reviews tab
+        if (data.role === "review_admin") {
+          setActiveTab("reviews");
+        }
         toast({ title: "로그인 성공", description: "관리자 페이지에 오신 것을 환영합니다." });
       } else {
         toast({ title: "로그인 실패", description: data.error, variant: "destructive" });
@@ -763,6 +782,60 @@ export default function Admin() {
       }
     } catch (error) {
       console.error("Error fetching members:", error);
+    }
+  };
+
+  const fetchStaffUsers = async () => {
+    if (adminRole !== "super_admin") return;
+    setStaffLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/staff");
+      const data = await res.json();
+      if (data.success) {
+        setStaffUsers(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching staff:", error);
+    } finally {
+      setStaffLoading(false);
+    }
+  };
+
+  const handleAddStaff = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetchWithAuth("/api/admin/staff", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(staffFormData),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "직원 추가 완료", description: `${staffFormData.name || staffFormData.username}님이 추가되었습니다.` });
+        setStaffFormData({ username: "", password: "", name: "", staffRole: "review_admin" });
+        setShowAddStaffForm(false);
+        fetchStaffUsers();
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "직원 추가에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteStaff = async (id: string) => {
+    if (!confirm("정말로 이 직원을 삭제하시겠습니까?")) return;
+    try {
+      const res = await fetchWithAuth(`/api/admin/staff/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "삭제 완료", description: "직원이 삭제되었습니다." });
+        fetchStaffUsers();
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "직원 삭제에 실패했습니다.", variant: "destructive" });
     }
   };
 
@@ -1045,6 +1118,12 @@ export default function Admin() {
       fetchProductCount();
     }
   }, [activeTab, isAuthenticated]);
+
+  useEffect(() => {
+    if (isAuthenticated && activeTab === "staff" && adminRole === "super_admin") {
+      fetchStaffUsers();
+    }
+  }, [activeTab, isAuthenticated, adminRole]);
   
   const fetchSiteSettings = async () => {
     try {
@@ -2102,70 +2181,74 @@ export default function Admin() {
       
       <div className="container mx-auto px-4 py-6">
         <div className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
-          <Button
-            data-testid="tab-dashboard"
-            variant={activeTab === "dashboard" ? "default" : "outline"}
-            onClick={() => setActiveTab("dashboard")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "dashboard" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <BarChart3 className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">대시보드</span>
-          </Button>
-          <Button
-            data-testid="tab-products"
-            variant={activeTab === "products" ? "default" : "outline"}
-            onClick={() => setActiveTab("products")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "products" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <Package className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">상품 관리</span>
-          </Button>
-          <Button
-            data-testid="tab-members"
-            variant={activeTab === "members" ? "default" : "outline"}
-            onClick={() => setActiveTab("members")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "members" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <Users className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">회원 관리</span>
-          </Button>
-          <Button
-            data-testid="tab-orders"
-            variant={activeTab === "orders" ? "default" : "outline"}
-            onClick={() => setActiveTab("orders")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "orders" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <ShoppingCart className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">주문 관리</span>
-            {adminOrders.filter(o => o.status === "pending").length > 0 && (
-              <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
-                {adminOrders.filter(o => o.status === "pending").length}
-              </span>
-            )}
-          </Button>
-          <Button
-            data-testid="tab-coupon-payments"
-            variant={activeTab === "couponPayments" ? "default" : "outline"}
-            onClick={() => setActiveTab("couponPayments")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "couponPayments" ? "bg-purple-500 hover:bg-purple-600" : ""}`}
-          >
-            <Wallet className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">카드결제</span>
-            {couponPayments.filter(p => p.status === "pending").length > 0 && (
-              <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
-                {couponPayments.filter(p => p.status === "pending").length}
-              </span>
-            )}
-          </Button>
-          <Button
-            data-testid="tab-brands"
-            variant={activeTab === "brands" ? "default" : "outline"}
-            onClick={() => setActiveTab("brands")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "brands" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <Tag className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">브랜드 관리</span>
-          </Button>
+          {adminRole === "super_admin" && (
+            <>
+              <Button
+                data-testid="tab-dashboard"
+                variant={activeTab === "dashboard" ? "default" : "outline"}
+                onClick={() => setActiveTab("dashboard")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "dashboard" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
+              >
+                <BarChart3 className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">대시보드</span>
+              </Button>
+              <Button
+                data-testid="tab-products"
+                variant={activeTab === "products" ? "default" : "outline"}
+                onClick={() => setActiveTab("products")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "products" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
+              >
+                <Package className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">상품 관리</span>
+              </Button>
+              <Button
+                data-testid="tab-members"
+                variant={activeTab === "members" ? "default" : "outline"}
+                onClick={() => setActiveTab("members")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "members" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
+              >
+                <Users className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">회원 관리</span>
+              </Button>
+              <Button
+                data-testid="tab-orders"
+                variant={activeTab === "orders" ? "default" : "outline"}
+                onClick={() => setActiveTab("orders")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "orders" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
+              >
+                <ShoppingCart className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">주문 관리</span>
+                {adminOrders.filter(o => o.status === "pending").length > 0 && (
+                  <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
+                    {adminOrders.filter(o => o.status === "pending").length}
+                  </span>
+                )}
+              </Button>
+              <Button
+                data-testid="tab-coupon-payments"
+                variant={activeTab === "couponPayments" ? "default" : "outline"}
+                onClick={() => setActiveTab("couponPayments")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "couponPayments" ? "bg-purple-500 hover:bg-purple-600" : ""}`}
+              >
+                <Wallet className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">카드결제</span>
+                {couponPayments.filter(p => p.status === "pending").length > 0 && (
+                  <span className="ml-1 md:ml-2 bg-red-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
+                    {couponPayments.filter(p => p.status === "pending").length}
+                  </span>
+                )}
+              </Button>
+              <Button
+                data-testid="tab-brands"
+                variant={activeTab === "brands" ? "default" : "outline"}
+                onClick={() => setActiveTab("brands")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "brands" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
+              >
+                <Tag className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">브랜드 관리</span>
+              </Button>
+            </>
+          )}
           <Button
             data-testid="tab-reviews"
             variant={activeTab === "reviews" ? "default" : "outline"}
@@ -2175,38 +2258,51 @@ export default function Admin() {
             <Star className="w-4 h-4 md:mr-2" />
             <span className="hidden md:inline">후기 관리</span>
           </Button>
-          <Button
-            data-testid="tab-notices"
-            variant={activeTab === "notices" ? "default" : "outline"}
-            onClick={() => setActiveTab("notices")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "notices" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <Bell className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">공지 관리</span>
-          </Button>
-          <Button
-            data-testid="tab-chat"
-            variant={activeTab === "chat" ? "default" : "outline"}
-            onClick={() => setActiveTab("chat")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "chat" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <MessageCircle className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">실시간 채팅</span>
-            {chatConversations.filter(c => c.status === "open").length > 0 && (
-              <span className="ml-1 md:ml-2 bg-green-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
-                {chatConversations.filter(c => c.status === "open").length}
-              </span>
-            )}
-          </Button>
-          <Button
-            data-testid="tab-settings"
-            variant={activeTab === "settings" ? "default" : "outline"}
-            onClick={() => setActiveTab("settings")}
-            className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "settings" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
-          >
-            <Settings className="w-4 h-4 md:mr-2" />
-            <span className="hidden md:inline">설정</span>
-          </Button>
+          {adminRole === "super_admin" && (
+            <>
+              <Button
+                data-testid="tab-notices"
+                variant={activeTab === "notices" ? "default" : "outline"}
+                onClick={() => setActiveTab("notices")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "notices" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
+              >
+                <Bell className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">공지 관리</span>
+              </Button>
+              <Button
+                data-testid="tab-chat"
+                variant={activeTab === "chat" ? "default" : "outline"}
+                onClick={() => setActiveTab("chat")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "chat" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
+              >
+                <MessageCircle className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">실시간 채팅</span>
+                {chatConversations.filter(c => c.status === "open").length > 0 && (
+                  <span className="ml-1 md:ml-2 bg-green-500 text-white text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 rounded-full">
+                    {chatConversations.filter(c => c.status === "open").length}
+                  </span>
+                )}
+              </Button>
+              <Button
+                data-testid="tab-settings"
+                variant={activeTab === "settings" ? "default" : "outline"}
+                onClick={() => setActiveTab("settings")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "settings" ? "bg-yellow-500 hover:bg-yellow-600" : ""}`}
+              >
+                <Settings className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">설정</span>
+              </Button>
+              <Button
+                data-testid="tab-staff"
+                variant={activeTab === "staff" ? "default" : "outline"}
+                onClick={() => setActiveTab("staff")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "staff" ? "bg-indigo-500 hover:bg-indigo-600" : ""}`}
+              >
+                <Shield className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">직원 관리</span>
+              </Button>
+            </>
+          )}
         </div>
 
         {activeTab === "dashboard" && (
@@ -5306,6 +5402,168 @@ export default function Admin() {
                   </ul>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "staff" && adminRole === "super_admin" && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-bold flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-indigo-600" />
+                    직원 관리
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">후기 관리 권한을 가진 직원을 추가하고 관리합니다.</p>
+                </div>
+                <Button
+                  data-testid="button-add-staff"
+                  onClick={() => setShowAddStaffForm(!showAddStaffForm)}
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  직원 추가
+                </Button>
+              </div>
+
+              {showAddStaffForm && (
+                <div className="p-6 bg-indigo-50 border-b border-indigo-100">
+                  <h4 className="font-semibold mb-4">새 직원 추가</h4>
+                  <form onSubmit={handleAddStaff} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">아이디 *</label>
+                        <Input
+                          data-testid="input-staff-username"
+                          placeholder="로그인 아이디"
+                          value={staffFormData.username}
+                          onChange={(e) => setStaffFormData({ ...staffFormData, username: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">비밀번호 *</label>
+                        <Input
+                          data-testid="input-staff-password"
+                          type="password"
+                          placeholder="로그인 비밀번호"
+                          value={staffFormData.password}
+                          onChange={(e) => setStaffFormData({ ...staffFormData, password: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                        <Input
+                          data-testid="input-staff-name"
+                          placeholder="직원 이름"
+                          value={staffFormData.name}
+                          onChange={(e) => setStaffFormData({ ...staffFormData, name: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">권한</label>
+                        <select
+                          data-testid="select-staff-role"
+                          className="w-full border rounded-md px-3 py-2"
+                          value={staffFormData.staffRole}
+                          onChange={(e) => setStaffFormData({ ...staffFormData, staffRole: e.target.value })}
+                        >
+                          <option value="review_admin">후기 관리자 (후기만 관리 가능)</option>
+                          <option value="super_admin">슈퍼 관리자 (전체 권한)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button data-testid="button-save-staff" type="submit" className="bg-indigo-600 hover:bg-indigo-700">
+                        <Check className="w-4 h-4 mr-2" />
+                        저장
+                      </Button>
+                      <Button 
+                        data-testid="button-cancel-staff"
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => {
+                          setShowAddStaffForm(false);
+                          setStaffFormData({ username: "", password: "", name: "", staffRole: "review_admin" });
+                        }}
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        취소
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              <div className="p-6">
+                {staffLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+                    <span className="ml-2">로딩 중...</span>
+                  </div>
+                ) : staffUsers.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Shield className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                    <p>등록된 직원이 없습니다.</p>
+                    <p className="text-sm">위의 '직원 추가' 버튼을 클릭하여 새 직원을 등록하세요.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">아이디</th>
+                          <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">이름</th>
+                          <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">권한</th>
+                          <th className="text-left px-4 py-3 text-sm font-semibold text-gray-700">등록일</th>
+                          <th className="text-center px-4 py-3 text-sm font-semibold text-gray-700">관리</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {staffUsers.map((staff) => (
+                          <tr key={staff.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm font-medium">{staff.username}</td>
+                            <td className="px-4 py-3 text-sm">{staff.name || "-"}</td>
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                staff.role === "super_admin" 
+                                  ? "bg-purple-100 text-purple-800" 
+                                  : "bg-blue-100 text-blue-800"
+                              }`}>
+                                {staff.role === "super_admin" ? "슈퍼 관리자" : "후기 관리자"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-500">
+                              {staff.createdAt ? new Date(staff.createdAt).toLocaleDateString("ko-KR") : "-"}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <Button
+                                data-testid={`button-delete-staff-${staff.id}`}
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeleteStaff(staff.id)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+              <h4 className="font-semibold text-blue-800 mb-2">권한 안내</h4>
+              <ul className="text-sm text-blue-700 space-y-1">
+                <li>• <strong>슈퍼 관리자</strong>: 모든 메뉴에 접근 가능 (상품, 회원, 주문, 설정 등)</li>
+                <li>• <strong>후기 관리자</strong>: 후기 관리 메뉴만 접근 가능</li>
+              </ul>
             </div>
           </div>
         )}

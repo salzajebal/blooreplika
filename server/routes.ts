@@ -76,7 +76,7 @@ const reviewImageUpload = multer({
 const ADMIN_USERNAME = "admin123";
 const ADMIN_PASSWORD = "admin123";
 
-const adminSessions = new Map<string, { expiresAt: Date }>();
+const adminSessions = new Map<string, { expiresAt: Date; role: string; userId?: string; name?: string }>();
 
 function generateSessionToken(): string {
   return Math.random().toString(36).substring(2) + Date.now().toString(36);
@@ -92,11 +92,18 @@ function isValidSession(token: string): boolean {
   return true;
 }
 
+function getSessionRole(token: string): string | null {
+  const session = adminSessions.get(token);
+  if (!session || new Date() > session.expiresAt) return null;
+  return session.role;
+}
+
 function requireAdminAuth(req: Request, res: Response, next: Function) {
   const token = req.headers.authorization?.replace("Bearer ", "");
   if (!token || !isValidSession(token)) {
     return res.status(401).json({ success: false, error: "인증이 필요합니다." });
   }
+  (req as any).adminRole = getSessionRole(token);
   next();
 }
 
@@ -1121,19 +1128,36 @@ export async function registerRoutes(
 
   // ==================== ADMIN AUTH API ====================
   
-  app.post("/api/admin/login", (req: Request, res: Response) => {
+  app.post("/api/admin/login", async (req: Request, res: Response) => {
     const { username, password } = req.body;
     
+    // First check database users
+    const dbUser = await storage.getUserByUsername(username);
+    if (dbUser && dbUser.password === password) {
+      const token = generateSessionToken();
+      adminSessions.set(token, {
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        role: dbUser.role || "super_admin",
+        userId: dbUser.id,
+        name: dbUser.name || username
+      });
+      
+      return res.json({ success: true, token, role: dbUser.role || "super_admin", name: dbUser.name || username });
+    }
+    
+    // Fall back to hardcoded super admin
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
       const token = generateSessionToken();
       adminSessions.set(token, {
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        role: "super_admin",
+        name: "관리자"
       });
       
-      res.json({ success: true, token });
-    } else {
-      res.status(401).json({ success: false, error: "인증 실패" });
+      return res.json({ success: true, token, role: "super_admin", name: "관리자" });
     }
+    
+    res.status(401).json({ success: false, error: "인증 실패" });
   });
 
   app.post("/api/admin/logout", (req: Request, res: Response) => {
@@ -1147,9 +1171,73 @@ export async function registerRoutes(
   app.get("/api/admin/verify", (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
     if (token && isValidSession(token)) {
-      res.json({ success: true, valid: true });
+      const session = adminSessions.get(token);
+      res.json({ success: true, valid: true, role: session?.role || "super_admin", name: session?.name });
     } else {
       res.status(401).json({ success: false, valid: false });
+    }
+  });
+
+  // ==================== STAFF USER MANAGEMENT API ====================
+  
+  app.get("/api/admin/staff", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const role = (req as any).adminRole;
+      if (role !== "super_admin") {
+        return res.status(403).json({ success: false, error: "권한이 없습니다." });
+      }
+      const users = await storage.getAllUsers();
+      res.json({ success: true, data: users.map(u => ({ ...u, password: undefined })) });
+    } catch (error) {
+      console.error("Error fetching staff:", error);
+      res.status(500).json({ success: false, error: "직원 목록을 불러올 수 없습니다." });
+    }
+  });
+
+  app.post("/api/admin/staff", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const role = (req as any).adminRole;
+      if (role !== "super_admin") {
+        return res.status(403).json({ success: false, error: "권한이 없습니다." });
+      }
+      const { username, password, name, staffRole } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ success: false, error: "아이디와 비밀번호를 입력해주세요." });
+      }
+      
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ success: false, error: "이미 존재하는 아이디입니다." });
+      }
+      
+      const user = await storage.createUser({
+        username,
+        password,
+        name: name || username,
+        role: staffRole || "review_admin"
+      });
+      
+      res.status(201).json({ success: true, data: { ...user, password: undefined } });
+    } catch (error) {
+      console.error("Error creating staff:", error);
+      res.status(500).json({ success: false, error: "직원 추가에 실패했습니다." });
+    }
+  });
+
+  app.delete("/api/admin/staff/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const role = (req as any).adminRole;
+      if (role !== "super_admin") {
+        return res.status(403).json({ success: false, error: "권한이 없습니다." });
+      }
+      const success = await storage.deleteUser(req.params.id);
+      if (!success) {
+        return res.status(404).json({ success: false, error: "직원을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, message: "직원이 삭제되었습니다." });
+    } catch (error) {
+      console.error("Error deleting staff:", error);
+      res.status(500).json({ success: false, error: "직원 삭제에 실패했습니다." });
     }
   });
 
