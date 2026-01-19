@@ -1369,20 +1369,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTodayVisitors(): Promise<number> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Use PostgreSQL timezone function for consistent Korean timezone (UTC+9)
     const [result] = await db.select({ count: sql<number>`count(DISTINCT session_id)::int` })
       .from(visitorSessions)
-      .where(sql`created_at >= ${today}`);
+      .where(sql`(created_at AT TIME ZONE 'Asia/Seoul')::date = (NOW() AT TIME ZONE 'Asia/Seoul')::date`);
     return result?.count || 0;
   }
 
   async getTodayPageViews(): Promise<number> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Use PostgreSQL timezone function for consistent Korean timezone (UTC+9)
     const [result] = await db.select({ count: sql<number>`count(*)::int` })
       .from(pageViews)
-      .where(sql`created_at >= ${today}`);
+      .where(sql`(created_at AT TIME ZONE 'Asia/Seoul')::date = (NOW() AT TIME ZONE 'Asia/Seoul')::date`);
     return result?.count || 0;
   }
 
@@ -1391,14 +1389,13 @@ export class DatabaseStorage implements IStorage {
     const today = await this.getTodayVisitors();
     const pageViewCount = await this.getTodayPageViews();
     
-    const todayDate = new Date();
-    todayDate.setHours(0, 0, 0, 0);
+    // Use PostgreSQL timezone function for consistent Korean timezone (UTC+9)
     const recentPagesResult = await db.select({
       page: pageViews.page,
       count: sql<number>`count(*)::int`
     })
       .from(pageViews)
-      .where(sql`created_at >= ${todayDate}`)
+      .where(sql`(created_at AT TIME ZONE 'Asia/Seoul')::date = (NOW() AT TIME ZONE 'Asia/Seoul')::date`)
       .groupBy(pageViews.page)
       .orderBy(sql`count(*) DESC`)
       .limit(10);
