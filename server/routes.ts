@@ -201,7 +201,26 @@ export async function registerRoutes(
       
       const buffer = Buffer.from(await response.arrayBuffer());
       
-      // Use sharp to resize and compress image to WebP
+      // Check if the image is a GIF - preserve animation by not converting
+      const isGif = imageUrl.toLowerCase().endsWith('.gif') || 
+                    response.headers.get('content-type')?.includes('image/gif');
+      
+      if (isGif) {
+        // Return GIF as-is to preserve animation
+        // Store in cache (with size limit management)
+        if (imageCache.size >= MAX_IMAGE_CACHE_SIZE) {
+          const oldestKey = imageCache.keys().next().value;
+          if (oldestKey) imageCache.delete(oldestKey);
+        }
+        imageCache.set(imageCacheKey, { buffer, timestamp: Date.now() });
+        
+        res.setHeader("Content-Type", "image/gif");
+        res.setHeader("Cache-Control", "public, max-age=604800, immutable");
+        res.setHeader("X-Image-Cache", "MISS");
+        return res.send(buffer);
+      }
+      
+      // Use sharp to resize and compress non-GIF images to WebP
       const sharp = (await import("sharp")).default;
       const optimizedImage = await sharp(buffer)
         .resize(width, null, { 
