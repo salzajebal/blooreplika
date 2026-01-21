@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Heart, LogOut, ChevronRight, Package, Wallet, Clock, CheckCircle, XCircle, AlertTriangle, Plus, Mail, Phone, MapPin, Building2, CreditCard, Info } from "lucide-react";
+import { User, Heart, LogOut, ChevronRight, Package, Wallet, Clock, CheckCircle, XCircle, AlertTriangle, Plus, Mail, Phone, MapPin, Building2, CreditCard, Info, Pencil, Save, X } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -55,13 +56,30 @@ interface Order {
   createdAt: string;
 }
 
+const BANKS = [
+  "국민은행", "신한은행", "우리은행", "하나은행", "농협은행", "기업은행",
+  "SC제일은행", "케이뱅크", "카카오뱅크", "토스뱅크", "새마을금고",
+  "우체국", "수협은행", "대구은행", "부산은행", "경남은행", "광주은행",
+  "전북은행", "제주은행",
+];
+
 export default function Profile() {
   const { count } = useWishlist();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [showDepositForm, setShowDepositForm] = useState(false);
   const [depositAmount, setDepositAmount] = useState("");
   const [bankName, setBankName] = useState("");
   const [depositorName, setDepositorName] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    bank: "",
+    accountNumber: "",
+  });
   
   const memberToken = localStorage.getItem("memberToken");
   const isLoggedIn = memberToken !== null;
@@ -157,6 +175,59 @@ export default function Profile() {
       alert(error.message);
     },
   });
+
+  const profileUpdateMutation = useMutation({
+    mutationFn: async (data: { name: string; email: string; phone: string; address: string; bank: string; accountNumber: string }) => {
+      const res = await fetch("/api/members/me", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${memberToken}`,
+        },
+        body: JSON.stringify(data),
+      });
+      const result = await res.json();
+      if (!result.success) throw new Error(result.error);
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["member-info"] });
+      setIsEditing(false);
+      toast({
+        title: "수정 완료",
+        description: "개인정보가 성공적으로 수정되었습니다.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "수정 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleStartEditing = () => {
+    if (memberInfo) {
+      setEditForm({
+        name: memberInfo.name || "",
+        email: memberInfo.email || "",
+        phone: memberInfo.phone || "",
+        address: memberInfo.address || "",
+        bank: memberInfo.bank || "",
+        accountNumber: memberInfo.accountNumber || "",
+      });
+      setIsEditing(true);
+    }
+  };
+
+  const handleSaveProfile = () => {
+    profileUpdateMutation.mutate(editForm);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("memberToken");
@@ -328,78 +399,169 @@ export default function Profile() {
 
                   <TabsContent value="info" className="mt-4">
                     <div className="space-y-4">
-                      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3">
-                        <Info className="w-5 h-5 text-blue-500 mt-0.5" />
-                        <div>
-                          <p className="text-sm text-blue-700">
-                            개인정보 수정은 관리자에게 문의해주세요.
-                          </p>
+                      {!isEditing && (
+                        <div className="flex justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleStartEditing}
+                            className="gap-2"
+                          >
+                            <Pencil className="w-4 h-4" />
+                            정보 수정
+                          </Button>
                         </div>
-                      </div>
+                      )}
 
-                      <div className="bg-gray-50 rounded-lg p-4 space-y-4">
-                        <h3 className="font-bold text-gray-900 mb-4">기본 정보</h3>
-                        
-                        <div className="flex items-center gap-3 py-2 border-b border-gray-200">
-                          <User className="w-5 h-5 text-gray-400" />
-                          <div className="flex-1">
-                            <p className="text-xs text-gray-500">이름</p>
-                            <p className="text-gray-900 font-medium">{memberInfo?.name || "-"}</p>
+                      {isEditing ? (
+                        <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                          <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-bold text-gray-900">정보 수정</h3>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleCancelEdit}
+                                className="gap-1"
+                              >
+                                <X className="w-4 h-4" />
+                                취소
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={handleSaveProfile}
+                                disabled={profileUpdateMutation.isPending}
+                                className="gap-1 bg-primary"
+                              >
+                                <Save className="w-4 h-4" />
+                                저장
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-4">
+                            <div>
+                              <Label className="text-xs text-gray-500">이름</Label>
+                              <Input
+                                value={editForm.name}
+                                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                placeholder="이름"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-gray-500">이메일</Label>
+                              <Input
+                                type="email"
+                                value={editForm.email}
+                                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                                placeholder="이메일"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-gray-500">휴대폰</Label>
+                              <Input
+                                value={editForm.phone}
+                                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                                placeholder="휴대폰 번호"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-gray-500">주소</Label>
+                              <Input
+                                value={editForm.address}
+                                onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                                placeholder="주소"
+                              />
+                            </div>
+                            <h4 className="font-bold text-gray-900 mt-4">환급 계좌 정보</h4>
+                            <div>
+                              <Label className="text-xs text-gray-500">은행</Label>
+                              <select
+                                className="w-full h-10 px-3 border border-gray-200 rounded-md bg-white"
+                                value={editForm.bank}
+                                onChange={(e) => setEditForm({ ...editForm, bank: e.target.value })}
+                              >
+                                <option value="">은행 선택</option>
+                                {BANKS.map((bank) => (
+                                  <option key={bank} value={bank}>{bank}</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <Label className="text-xs text-gray-500">계좌번호</Label>
+                              <Input
+                                value={editForm.accountNumber}
+                                onChange={(e) => setEditForm({ ...editForm, accountNumber: e.target.value })}
+                                placeholder="계좌번호"
+                              />
+                            </div>
                           </div>
                         </div>
+                      ) : (
+                        <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                          <h3 className="font-bold text-gray-900 mb-4">기본 정보</h3>
+                          
+                          <div className="flex items-center gap-3 py-2 border-b border-gray-200">
+                            <User className="w-5 h-5 text-gray-400" />
+                            <div className="flex-1">
+                              <p className="text-xs text-gray-500">이름</p>
+                              <p className="text-gray-900 font-medium">{memberInfo?.name || "-"}</p>
+                            </div>
+                          </div>
 
-                        <div className="flex items-center gap-3 py-2 border-b border-gray-200">
-                          <Mail className="w-5 h-5 text-gray-400" />
-                          <div className="flex-1">
-                            <p className="text-xs text-gray-500">이메일</p>
-                            <p className="text-gray-900 font-medium">{memberInfo?.email || "-"}</p>
+                          <div className="flex items-center gap-3 py-2 border-b border-gray-200">
+                            <Mail className="w-5 h-5 text-gray-400" />
+                            <div className="flex-1">
+                              <p className="text-xs text-gray-500">이메일</p>
+                              <p className="text-gray-900 font-medium">{memberInfo?.email || "-"}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 py-2 border-b border-gray-200">
+                            <Phone className="w-5 h-5 text-gray-400" />
+                            <div className="flex-1">
+                              <p className="text-xs text-gray-500">휴대폰</p>
+                              <p className="text-gray-900 font-medium">{memberInfo?.phone || "-"}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 py-2 border-b border-gray-200">
+                            <MapPin className="w-5 h-5 text-gray-400" />
+                            <div className="flex-1">
+                              <p className="text-xs text-gray-500">주소</p>
+                              <p className="text-gray-900 font-medium">{memberInfo?.address || "-"}</p>
+                            </div>
+                          </div>
+
+                          <h3 className="font-bold text-gray-900 mt-6 mb-4">환급 계좌 정보</h3>
+
+                          <div className="flex items-center gap-3 py-2 border-b border-gray-200">
+                            <Building2 className="w-5 h-5 text-gray-400" />
+                            <div className="flex-1">
+                              <p className="text-xs text-gray-500">은행</p>
+                              <p className="text-gray-900 font-medium">{memberInfo?.bank || "-"}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 py-2 border-b border-gray-200">
+                            <CreditCard className="w-5 h-5 text-gray-400" />
+                            <div className="flex-1">
+                              <p className="text-xs text-gray-500">계좌번호</p>
+                              <p className="text-gray-900 font-medium">{memberInfo?.accountNumber || "-"}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 py-2">
+                            <Clock className="w-5 h-5 text-gray-400" />
+                            <div className="flex-1">
+                              <p className="text-xs text-gray-500">가입일</p>
+                              <p className="text-gray-900 font-medium">
+                                {memberInfo?.createdAt ? formatSimpleDate(memberInfo.createdAt) : "-"}
+                              </p>
+                            </div>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-3 py-2 border-b border-gray-200">
-                          <Phone className="w-5 h-5 text-gray-400" />
-                          <div className="flex-1">
-                            <p className="text-xs text-gray-500">휴대폰</p>
-                            <p className="text-gray-900 font-medium">{memberInfo?.phone || "-"}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 py-2 border-b border-gray-200">
-                          <MapPin className="w-5 h-5 text-gray-400" />
-                          <div className="flex-1">
-                            <p className="text-xs text-gray-500">주소</p>
-                            <p className="text-gray-900 font-medium">{memberInfo?.address || "-"}</p>
-                          </div>
-                        </div>
-
-                        <h3 className="font-bold text-gray-900 mt-6 mb-4">환급 계좌 정보</h3>
-
-                        <div className="flex items-center gap-3 py-2 border-b border-gray-200">
-                          <Building2 className="w-5 h-5 text-gray-400" />
-                          <div className="flex-1">
-                            <p className="text-xs text-gray-500">은행</p>
-                            <p className="text-gray-900 font-medium">{memberInfo?.bank || "-"}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 py-2 border-b border-gray-200">
-                          <CreditCard className="w-5 h-5 text-gray-400" />
-                          <div className="flex-1">
-                            <p className="text-xs text-gray-500">계좌번호</p>
-                            <p className="text-gray-900 font-medium">{memberInfo?.accountNumber || "-"}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 py-2">
-                          <Clock className="w-5 h-5 text-gray-400" />
-                          <div className="flex-1">
-                            <p className="text-xs text-gray-500">가입일</p>
-                            <p className="text-gray-900 font-medium">
-                              {memberInfo?.createdAt ? formatSimpleDate(memberInfo.createdAt) : "-"}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </TabsContent>
 

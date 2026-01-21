@@ -1508,8 +1508,8 @@ export async function registerRoutes(
     }
     
     try {
-      const { name, phone, address, addressDetail, zipcode } = req.body;
-      const member = await storage.updateMember(session.memberId, { name, phone, address, addressDetail, zipcode });
+      const { name, email, phone, address, addressDetail, zipcode, bank, accountNumber } = req.body;
+      const member = await storage.updateMember(session.memberId, { name, email, phone, address, addressDetail, zipcode, bank, accountNumber });
       if (!member) {
         return res.status(404).json({ success: false, error: "회원을 찾을 수 없습니다." });
       }
