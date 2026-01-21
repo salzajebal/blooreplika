@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { ShoppingCart, Heart, Loader2, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
@@ -8,6 +8,20 @@ import type { Product } from "@shared/schema";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
+
+// Generate random deadline hours (1-24) based on product ID
+function getRandomDeadline(productId: string): { hours: number; minutes: number } {
+  let hash = 0;
+  const dateKey = new Date().toDateString();
+  const str = productId + dateKey;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash = hash & hash;
+  }
+  const hours = Math.abs(hash % 24) + 1;
+  const minutes = Math.abs((hash >> 4) % 60);
+  return { hours, minutes };
+}
 
 const DEFAULT_CATEGORIES = [
   { id: "outer", name: "아우터" },
@@ -234,6 +248,16 @@ export function ProductGrid() {
                   >
                     <ShoppingCart className="w-3 h-3 sm:w-4 sm:h-4" />
                   </Button>
+                </div>
+              </div>
+              
+              {/* Deadline Timer */}
+              <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-center py-1.5 px-2">
+                <div className="flex items-center justify-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  <span className="text-[10px] sm:text-xs font-bold">
+                    마감임박 {getRandomDeadline(product.id).hours}시간 {getRandomDeadline(product.id).minutes}분 남음
+                  </span>
                 </div>
               </div>
               
