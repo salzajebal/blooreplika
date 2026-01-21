@@ -70,7 +70,7 @@ export default function ProductDetail() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const { toggleItem, isInWishlist } = useWishlist();
+  const { addItem, toggleItem, isInWishlist } = useWishlist();
   const { salePercent, calculateSalePrice, hasSale } = useGlobalSale();
   const [product, setProduct] = useState<Product | null>(null);
   const [brand, setBrand] = useState<Brand | null>(null);
@@ -148,7 +148,8 @@ export default function ProductDetail() {
   };
 
   const handleAddToCart = () => {
-    if (product?.isSoldOut) {
+    if (!product) return;
+    if (product.isSoldOut) {
       toast({
         title: "품절 상품",
         description: "해당 상품은 현재 품절되었습니다.",
@@ -156,9 +157,21 @@ export default function ProductDetail() {
       });
       return;
     }
+    let finalPrice = Number(product.price);
+    if (product.discountPercent && product.discountPercent > 0) {
+      finalPrice = Math.round(finalPrice * (100 - product.discountPercent) / 100);
+    } else if (hasSale) {
+      finalPrice = calculateSalePrice(finalPrice);
+    }
+    addItem({
+      id: String(product.id),
+      name: product.name,
+      price: finalPrice,
+      imageUrl: product.imageUrl,
+    });
     toast({
       title: "장바구니에 담았습니다",
-      description: `${product?.name} ${quantity}개가 장바구니에 추가되었습니다.${selectedOption ? ` (옵션: ${selectedOption})` : ''}`,
+      description: `${product.name} > ${selectedOption || '기본'} ${quantity}개가 장바구니에 추가되었습니다.`,
     });
   };
 
