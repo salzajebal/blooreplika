@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
-import { CheckCircle, Package, User, MapPin, MessageCircle, CreditCard, Building2 } from "lucide-react";
+import { CheckCircle, Package, User, MapPin, MessageCircle, CreditCard, Building2, Wallet } from "lucide-react";
 import { CardPaymentForm, type CouponPaymentData } from "@/components/checkout/CardPaymentForm";
 import { cn } from "@/lib/utils";
 import type { Product } from "@shared/schema";
@@ -39,6 +39,9 @@ export default function Order() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [cardPaymentValid, setCardPaymentValid] = useState(false);
   const [couponPaymentData, setCouponPaymentData] = useState<CouponPaymentData | null>(null);
+  const [memberPointBalance, setMemberPointBalance] = useState(0);
+  const [pointsToUse, setPointsToUse] = useState(0);
+  const [pointInputValue, setPointInputValue] = useState("");
   
   const searchParams = new URLSearchParams(window.location.search);
   const quantityParam = parseInt(searchParams.get("quantity") || "1");
@@ -96,6 +99,26 @@ export default function Order() {
   }, []);
 
   useEffect(() => {
+    const fetchMemberPoints = async () => {
+      const memberToken = localStorage.getItem("memberToken");
+      if (!memberToken) return;
+      
+      try {
+        const res = await fetch("/api/members/me", {
+          headers: {
+            Authorization: `Bearer ${memberToken}`,
+          },
+        });
+        const data = await res.json();
+        if (data.success && data.data?.pointBalance) {
+          setMemberPointBalance(data.data.pointBalance);
+        }
+      } catch {}
+    };
+    fetchMemberPoints();
+  }, []);
+
+  useEffect(() => {
     const fetchProduct = async () => {
       try {
         const res = await fetch(`/api/products/${id}`);
@@ -144,10 +167,30 @@ export default function Order() {
     return hasSale ? calculateSalePrice(product.price) : product.price;
   };
 
+  const calculateSubtotal = () => {
+    if (!product) return 0;
+    const effectivePrice = getEffectivePrice();
+    return effectivePrice * quantity;
+  };
+
   const calculateTotal = () => {
     if (!product) return "0";
-    const effectivePrice = getEffectivePrice();
-    return (effectivePrice * quantity).toLocaleString();
+    const subtotal = calculateSubtotal();
+    return Math.max(0, subtotal - pointsToUse).toLocaleString();
+  };
+
+  const handlePointInput = (value: string) => {
+    setPointInputValue(value);
+    const numValue = parseInt(value.replace(/,/g, "")) || 0;
+    const maxPoints = Math.min(memberPointBalance, calculateSubtotal());
+    const validPoints = Math.max(0, Math.min(numValue, maxPoints));
+    setPointsToUse(validPoints);
+  };
+
+  const handleUseAllPoints = () => {
+    const maxPoints = Math.min(memberPointBalance, calculateSubtotal());
+    setPointsToUse(maxPoints);
+    setPointInputValue(maxPoints.toLocaleString());
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -202,7 +245,8 @@ export default function Order() {
           quantity,
           selectedSize: formData.selectedSize || null,
           selectedColor: formData.selectedColor || null,
-          totalAmount: getEffectivePrice() * quantity,
+          totalAmount: calculateSubtotal() - pointsToUse,
+          pointsUsed: pointsToUse,
           paymentMethod: paymentMethod || undefined,
           couponPayment: paymentMethod === "coupon" && couponPaymentData ? couponPaymentData : undefined,
         }),
@@ -574,6 +618,49 @@ export default function Order() {
               </div>
             </div>
 
+            {memberPointBalance > 0 && (
+              <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+                <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <Wallet className="w-5 h-5 text-amber-600" />
+                  포인트 사용
+                </h2>
+                
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-amber-800">보유 포인트</span>
+                    <span className="font-bold text-amber-900">{memberPointBalance.toLocaleString()}P</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Input
+                      type="text"
+                      placeholder="사용할 포인트"
+                      value={pointInputValue}
+                      onChange={(e) => handlePointInput(e.target.value)}
+                      className="h-11"
+                      data-testid="input-points"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleUseAllPoints}
+                    className="whitespace-nowrap"
+                  >
+                    전액 사용
+                  </Button>
+                </div>
+
+                {pointsToUse > 0 && (
+                  <div className="mt-3 text-sm text-green-600 font-medium">
+                    {pointsToUse.toLocaleString()}P 적용됨 (-{pointsToUse.toLocaleString()}원)
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
               <h2 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-primary" />
@@ -658,9 +745,21 @@ export default function Order() {
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-              <div className="flex justify-between items-center text-lg font-bold">
-                <span>총 결제금액</span>
-                <span className="text-primary text-2xl">{calculateTotal()}원</span>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-gray-600">
+                  <span>상품금액</span>
+                  <span>{calculateSubtotal().toLocaleString()}원</span>
+                </div>
+                {pointsToUse > 0 && (
+                  <div className="flex justify-between items-center text-green-600">
+                    <span>포인트 할인</span>
+                    <span>-{pointsToUse.toLocaleString()}원</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-lg font-bold pt-2 border-t">
+                  <span>총 결제금액</span>
+                  <span className="text-primary text-2xl">{calculateTotal()}원</span>
+                </div>
               </div>
             </div>
 

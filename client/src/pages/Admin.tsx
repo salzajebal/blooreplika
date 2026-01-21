@@ -1593,8 +1593,8 @@ export default function Admin() {
       sku: product.sku || "",
       categoryId: product.categoryId || "outer",
       brandId: product.brandId?.toString() || "",
-      price: product.price,
-      originalPrice: product.originalPrice || "",
+      price: String(product.price),
+      originalPrice: product.originalPrice ? String(product.originalPrice) : "",
       stock: product.stock?.toString() || "",
       isBest: product.isBest || false,
       isNew: product.isNew || false,
@@ -1669,7 +1669,7 @@ export default function Admin() {
   const startEditMember = (member: Member) => {
     setEditingMemberId(member.id);
     setMemberFormData({
-      email: member.email,
+      email: member.email || "",
       password: "",
       name: member.name,
       phone: member.phone || "",
@@ -1950,7 +1950,7 @@ export default function Admin() {
       authorName: review.authorName,
       productName: review.productName || "",
       rating: review.rating || 5,
-      title: review.title,
+      title: review.title || "",
       content: review.content,
       imageUrl: review.imageUrl || "",
       isVisible: review.isVisible ?? true,
