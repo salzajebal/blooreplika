@@ -64,9 +64,9 @@ const blogItems = [
   },
   {
     id: 12,
-    title: "해외배송 특성상 박스가 찌그러질수 밖에 없는 이유!",
+    title: "국내배송 특성상 안전하게 배송되는 이유!",
     imageUrl: "https://cdamdong.co.kr/data/file/sj_note/3034935948_SHpBwygs_856c955a32382233cb0e6aa98dcfbca968853fad.jpg",
-    content: "해외 배송 시 박스가 손상될 수 있는 이유와 제품 보호 방법에 대해 설명드립니다.",
+    content: "국내 배송 시 제품 보호 방법과 안전한 포장에 대해 설명드립니다.",
     images: ["https://cdamdong.co.kr/data/file/sj_note/3034935948_SHpBwygs_856c955a32382233cb0e6aa98dcfbca968853fad.jpg"],
     date: "2024-12-05"
   },

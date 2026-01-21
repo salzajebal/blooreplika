@@ -324,7 +324,7 @@ export default function ProductDetail() {
                   {product.name}
                 </h1>
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded">해외배송</span>
+                  <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded">국내배송</span>
                   <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded">하이엔드급</span>
                   {product.isSoldOut && (
                     <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">SOLD OUT</span>
@@ -557,7 +557,7 @@ export default function ProductDetail() {
                     const excludePatterns = [
                       'shipping', 'delivery', 'info_banner', 'notice',
                       'haewoe', 'gyohwan', 'geomsu', 'unsong',
-                      '해외배송', '교환', '환불', '검수', '운송장', '배송안내',
+                      '국내배송', '교환', '환불', '검수', '운송장', '배송안내',
                       'cdamdong.co.kr/data/file/sj_note'
                     ];
                     return !excludePatterns.some(pattern => lowerUrl.includes(pattern));

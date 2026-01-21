@@ -17,7 +17,7 @@ const FAQ_CATEGORIES = [
 const DEFAULT_FAQS = [
   { id: "1", category: "order", question: "온라인으로 주문이 가능한가요?", answer: "네, 온라인으로 24시간 주문 가능합니다. 회원가입 후 편리하게 쇼핑하실 수 있습니다." },
   { id: "2", category: "order", question: "배송은 얼마나 걸리나요?", answer: "결제 확인 후 1-3 영업일 내에 발송되며, 배송은 보통 2-3일 소요됩니다. 도서산간 지역은 추가 시간이 소요될 수 있습니다." },
-  { id: "3", category: "order", question: "해외배송도 가능한가요?", answer: "현재 국내 배송만 지원하고 있습니다. 해외배송 서비스는 준비 중입니다." },
+  { id: "3", category: "order", question: "배송 지역은 어디까지 가능한가요?", answer: "전국 어디든 국내배송이 가능합니다. 도서산간 지역도 배송 가능하며, 추가 배송비가 발생할 수 있습니다." },
   { id: "4", category: "exchange", question: "교환/반품이 가능한가요?", answer: "상품 수령 후 7일 이내에 교환/반품 신청이 가능합니다. 단, 착용 흔적이 있거나 택이 제거된 경우 교환/반품이 불가합니다." },
   { id: "5", category: "exchange", question: "교환 시 배송비는 누가 부담하나요?", answer: "단순 변심으로 인한 교환 시 왕복 배송비는 고객님 부담입니다. 상품 불량의 경우 무료로 교환해 드립니다." },
   { id: "6", category: "product", question: "상품의 품질이 보장되나요?", answer: "모든 상품은 엄격한 품질 검수 과정을 거쳐 발송됩니다. 불량 상품의 경우 무료 교환/환불이 가능합니다." },
