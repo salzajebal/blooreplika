@@ -3,12 +3,23 @@ import { useParams, Link, useLocation } from "wouter";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart, ChevronRight, Truck, Shield, ShoppingBag, Star, Package, AlertTriangle, MessageCircle, RefreshCw } from "lucide-react";
+import { ShoppingCart, Heart, ChevronRight, Truck, Shield, ShoppingBag, Star, Package, AlertTriangle, MessageCircle, RefreshCw, Smartphone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import type { Product, Brand, Review } from "@shared/schema";
+
+// Global variable to store the deferred install prompt
+let deferredPrompt: any = null;
+
+// Listen for the beforeinstallprompt event
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+  });
+}
 
 function getStockFromProductId(productId: string): number {
   let hash = 0;
@@ -492,6 +503,30 @@ export default function ProductDetail() {
                     </Button>
                   </a>
                 )}
+                
+                {/* Add to Home Screen Button */}
+                <Button
+                  variant="outline"
+                  className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 border-0 text-white font-bold"
+                  onClick={() => {
+                    if (deferredPrompt) {
+                      deferredPrompt.prompt();
+                      deferredPrompt.userChoice.then(() => {
+                        deferredPrompt = null;
+                      });
+                    } else {
+                      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                      if (isIOS) {
+                        alert('Safari 하단 메뉴에서 "홈 화면에 추가"를 선택해주세요.');
+                      } else {
+                        alert('브라우저 메뉴에서 "홈 화면에 추가" 또는 "앱 설치"를 선택해주세요.');
+                      }
+                    }
+                  }}
+                >
+                  <Smartphone className="w-5 h-5 mr-2" />
+                  바탕화면에 바로가기 추가
+                </Button>
               </div>
             </div>
           </div>
@@ -685,6 +720,30 @@ export default function ProductDetail() {
                   </Button>
                 </a>
               )}
+              
+              {/* Add to Home Screen Button - Mobile */}
+              <Button
+                variant="outline"
+                className="w-full h-10 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 border-0 text-white font-bold text-sm"
+                onClick={() => {
+                  if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then(() => {
+                      deferredPrompt = null;
+                    });
+                  } else {
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+                    if (isIOS) {
+                      alert('Safari 하단 메뉴에서 "홈 화면에 추가"를 선택해주세요.');
+                    } else {
+                      alert('브라우저 메뉴에서 "홈 화면에 추가" 또는 "앱 설치"를 선택해주세요.');
+                    }
+                  }
+                }}
+              >
+                <Smartphone className="w-4 h-4 mr-1.5" />
+                바탕화면에 바로가기 추가
+              </Button>
             </div>
           </div>
         </div>
