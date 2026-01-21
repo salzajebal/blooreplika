@@ -49,10 +49,12 @@ export function ProductGrid() {
     e.preventDefault();
     e.stopPropagation();
     const wasInWishlist = isInWishlist(product.id);
+    // Use discounted price if sale is active
+    const finalPrice = hasSale ? calculateSalePrice(product.price) : product.price;
     toggleItem({
       id: product.id,
       name: product.name,
-      price: product.price,
+      price: finalPrice,
       imageUrl: product.imageUrl,
     });
     toast({

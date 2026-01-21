@@ -113,10 +113,17 @@ export default function ProductList() {
     e.stopPropagation();
     const productId = String(product.id);
     const wasInWishlist = isInWishlist(productId);
+    // Use discounted price if product has discount or global sale is active
+    let finalPrice = Number(product.price);
+    if (product.discountPercent && product.discountPercent > 0) {
+      finalPrice = Math.round(finalPrice * (100 - product.discountPercent) / 100);
+    } else if (hasSale) {
+      finalPrice = calculateSalePrice(finalPrice);
+    }
     toggleItem({
       id: productId,
       name: product.name,
-      price: Number(product.price),
+      price: finalPrice,
       imageUrl: product.imageUrl || undefined,
     });
     toast({
