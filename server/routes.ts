@@ -1936,6 +1936,28 @@ export async function registerRoutes(
     }
   });
 
+  // Admin: Upload review image
+  app.post("/api/admin/upload/review-image", requireAdminAuth, reviewImageUpload.single("image"), async (req: Request, res: Response) => {
+    try {
+      const file = req.file as Express.Multer.File;
+      if (!file) {
+        return res.status(400).json({ success: false, error: "이미지 파일이 필요합니다." });
+      }
+      
+      const base64Data = file.buffer.toString("base64");
+      const reviewImage = await storage.createReviewImage({
+        data: base64Data,
+        mimeType: file.mimetype,
+        originalName: file.originalname
+      });
+      
+      res.json({ success: true, data: { imageUrl: `/api/review-images/${reviewImage.id}` } });
+    } catch (error) {
+      console.error("Error uploading review image:", error);
+      res.status(500).json({ success: false, error: "이미지 업로드에 실패했습니다." });
+    }
+  });
+
   // ==================== NOTICES API ====================
   
   app.get("/api/notices", async (req: Request, res: Response) => {
