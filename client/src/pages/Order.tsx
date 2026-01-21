@@ -11,6 +11,7 @@ import { useGlobalSale } from "@/hooks/use-global-sale";
 import { CheckCircle, Package, User, MapPin, MessageCircle, CreditCard, Building2, Wallet } from "lucide-react";
 import { CardPaymentForm, type CouponPaymentData } from "@/components/checkout/CardPaymentForm";
 import { cn } from "@/lib/utils";
+import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import type { Product } from "@shared/schema";
 
 type PaymentMethod = "coupon" | "bank" | null;
@@ -383,9 +384,13 @@ export default function Order() {
                 <div className="flex gap-4">
                   <div className="w-20 h-20 bg-white rounded border overflow-hidden shrink-0">
                     <img
-                      src={product.imageUrl || "/images/placeholder.png"}
+                      src={getProxiedImageUrl(product.imageUrl) || DEFAULT_IMAGE}
                       alt={product.name}
                       className="w-full h-full object-contain p-2"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = DEFAULT_IMAGE;
+                      }}
                     />
                   </div>
                   <div>
@@ -439,9 +444,13 @@ export default function Order() {
               <div className="flex gap-4 items-center">
                 <div className="w-24 h-24 bg-gray-50 rounded-lg border overflow-hidden shrink-0">
                   <img
-                    src={product.imageUrl || "/images/placeholder.png"}
+                    src={getProxiedImageUrl(product.imageUrl) || DEFAULT_IMAGE}
                     alt={product.name}
                     className="w-full h-full object-contain p-2"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = DEFAULT_IMAGE;
+                    }}
                   />
                 </div>
                 <div className="flex-1">
