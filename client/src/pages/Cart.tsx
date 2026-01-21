@@ -8,8 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { CardPaymentForm } from "@/components/checkout/CardPaymentForm";
 import { cn } from "@/lib/utils";
-
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&h=500&fit=crop";
+import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 
 type PaymentMethod = "card" | "bank" | null;
 type CheckoutStep = "cart" | "payment" | "complete";
@@ -84,9 +83,13 @@ export default function Cart() {
                     <Link href={`/product/${item.id}`}>
                       <div className="w-24 h-24 bg-gray-50 rounded-lg overflow-hidden flex-shrink-0">
                         <img 
-                          src={item.imageUrl || DEFAULT_IMAGE} 
+                          src={getProxiedImageUrl(item.imageUrl) || DEFAULT_IMAGE} 
                           alt={item.name}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = DEFAULT_IMAGE;
+                          }}
                         />
                       </div>
                     </Link>
