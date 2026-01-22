@@ -111,7 +111,7 @@ export default function Order() {
           },
         });
         const data = await res.json();
-        if (data.success && data.data?.pointBalance) {
+        if (data.success && data.data && typeof data.data.pointBalance === 'number') {
           setMemberPointBalance(data.data.pointBalance);
         }
       } catch {}
