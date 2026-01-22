@@ -3268,8 +3268,12 @@ export default function Admin() {
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 text-sm">
                           <div>
+                            <span className="text-gray-500">아이디:</span>
+                            <span className="ml-2 text-gray-900">{(member as any).username || "-"}</span>
+                          </div>
+                          <div>
                             <span className="text-gray-500">이메일:</span>
-                            <span className="ml-2 text-gray-900">{member.email}</span>
+                            <span className="ml-2 text-gray-900">{member.email || "-"}</span>
                           </div>
                           <div>
                             <span className="text-gray-500">전화번호:</span>
