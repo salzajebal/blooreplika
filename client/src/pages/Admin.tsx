@@ -3289,11 +3289,11 @@ export default function Admin() {
                           </div>
                           <div>
                             <span className="text-gray-500">은행:</span>
-                            <span className="ml-2 text-gray-900">{(member as any).bank || "-"}</span>
+                            <span className="ml-2 text-gray-900">{member.bank || "-"}</span>
                           </div>
                           <div>
                             <span className="text-gray-500">계좌번호:</span>
-                            <span className="ml-2 text-gray-900">{(member as any).accountNumber || "-"}</span>
+                            <span className="ml-2 text-gray-900">{member.accountNumber || "-"}</span>
                           </div>
                         </div>
                       </div>

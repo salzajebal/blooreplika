@@ -33,6 +33,8 @@ export const members = pgTable("members", {
   address: text("address"),
   addressDetail: text("address_detail"),
   zipcode: text("zipcode"),
+  bank: text("bank"),
+  accountNumber: text("account_number"),
   isActive: boolean("is_active").default(true),
   isAdmin: boolean("is_admin").default(false),
   isFrozen: boolean("is_frozen").default(false),
