@@ -119,6 +119,8 @@ export default function Admin() {
   const [showEditMemberModal, setShowEditMemberModal] = useState(false);
 
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewPage, setReviewPage] = useState(1);
+  const [reviewPagination, setReviewPagination] = useState({ total: 0, totalPages: 1 });
   const [reviewFormData, setReviewFormData] = useState({
     authorName: "",
     productName: "",
@@ -1068,12 +1070,15 @@ export default function Admin() {
     }
   };
 
-  const fetchReviews = async () => {
+  const fetchReviews = async (page: number = reviewPage) => {
     try {
-      const res = await fetchWithAuth("/api/admin/reviews");
+      const res = await fetchWithAuth(`/api/admin/reviews?page=${page}&limit=50`);
       const data = await res.json();
       if (data.success) {
         setReviews(data.data);
+        if (data.pagination) {
+          setReviewPagination({ total: data.pagination.total, totalPages: data.pagination.totalPages });
+        }
       }
     } catch (error) {
       console.error("Error fetching reviews:", error);
@@ -4149,6 +4154,38 @@ export default function Admin() {
                 </div>
               )}
             </div>
+            
+            {reviewPagination.totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-6">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={reviewPage <= 1}
+                  onClick={() => {
+                    const newPage = reviewPage - 1;
+                    setReviewPage(newPage);
+                    fetchReviews(newPage);
+                  }}
+                >
+                  이전
+                </Button>
+                <span className="text-sm text-gray-600 px-4">
+                  {reviewPage} / {reviewPagination.totalPages} 페이지 (총 {reviewPagination.total.toLocaleString()}개)
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={reviewPage >= reviewPagination.totalPages}
+                  onClick={() => {
+                    const newPage = reviewPage + 1;
+                    setReviewPage(newPage);
+                    fetchReviews(newPage);
+                  }}
+                >
+                  다음
+                </Button>
+              </div>
+            )}
           </div>
         )}
 

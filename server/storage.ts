@@ -113,6 +113,7 @@ export interface IStorage {
   
   // Reviews
   getAllReviews(): Promise<Review[]>;
+  getReviewsPaginated(limit: number, offset: number): Promise<{ reviews: Review[]; total: number }>;
   getVisibleReviews(): Promise<Review[]>;
   getReview(id: string): Promise<Review | undefined>;
   createReview(review: InsertReview): Promise<Review>;
@@ -684,6 +685,18 @@ export class DatabaseStorage implements IStorage {
   // Reviews
   async getAllReviews(): Promise<Review[]> {
     return db.select().from(reviews).orderBy(desc(reviews.displayDate));
+  }
+
+  async getReviewsPaginated(limit: number, offset: number): Promise<{ reviews: Review[]; total: number }> {
+    const [countResult] = await db.select({ count: sql<number>`count(*)` }).from(reviews);
+    const total = Number(countResult?.count) || 0;
+    
+    const reviewList = await db.select().from(reviews)
+      .orderBy(desc(reviews.displayDate))
+      .limit(limit)
+      .offset(offset);
+    
+    return { reviews: reviewList, total };
   }
 
   async getVisibleReviews(): Promise<Review[]> {

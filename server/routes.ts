@@ -1826,8 +1826,21 @@ export async function registerRoutes(
 
   app.get("/api/admin/reviews", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      const reviews = await storage.getAllReviews();
-      res.json({ success: true, data: reviews });
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = (page - 1) * limit;
+      
+      const { reviews, total } = await storage.getReviewsPaginated(limit, offset);
+      res.json({ 
+        success: true, 
+        data: reviews,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit)
+        }
+      });
     } catch (error) {
       console.error("Error fetching reviews:", error);
       res.status(500).json({ success: false, error: "리뷰를 불러올 수 없습니다." });
