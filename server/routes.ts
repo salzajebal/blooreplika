@@ -1836,7 +1836,7 @@ export async function registerRoutes(
 
   app.post("/api/reviews", reviewImageUpload.array("images", 5), async (req: Request, res: Response) => {
     try {
-      const { authorName, productId, productName, rating, title, content, displayDate } = req.body;
+      const { authorName, productId, productName, rating, title, content, displayDate, imageUrl: bodyImageUrl, isVisible } = req.body;
       const files = req.files as Express.Multer.File[];
       
       // Check if member has ordered this product (required for non-admin users)
@@ -1844,7 +1844,12 @@ export async function registerRoutes(
       const token = authHeader?.split(" ")[1];
       const session = await getMemberFromToken(token);
       
-      if (productId) {
+      // Check if this is an admin request
+      const adminToken = authHeader?.split(" ")[1];
+      const adminSession = adminSessions.get(adminToken || "");
+      const isAdmin = adminSession && adminSession.expiresAt > new Date();
+      
+      if (productId && !isAdmin) {
         // If submitting a review for a specific product, verify member has ordered it
         if (!session) {
           return res.status(401).json({ success: false, error: "리뷰를 작성하려면 로그인이 필요합니다." });
@@ -1869,6 +1874,10 @@ export async function registerRoutes(
         }
       }
       
+      // Use body imageUrl if no files uploaded (admin form submission)
+      const finalImageUrl = imageUrls[0] || bodyImageUrl || null;
+      const finalImageUrls = imageUrls.length > 0 ? imageUrls : (bodyImageUrl ? [bodyImageUrl] : []);
+      
       const review = await storage.createReview({
         authorName: session?.name || authorName,
         productId: productId || null,
@@ -1876,8 +1885,9 @@ export async function registerRoutes(
         rating: parseInt(rating) || 5,
         title: title || null,
         content,
-        imageUrl: imageUrls[0] || null,
-        imageUrls,
+        imageUrl: finalImageUrl,
+        imageUrls: finalImageUrls,
+        isVisible: isVisible !== undefined ? isVisible : true,
         displayDate: displayDate ? new Date(displayDate) : undefined
       });
       
@@ -1892,6 +1902,12 @@ export async function registerRoutes(
     try {
       const partialSchema = insertReviewSchema.partial();
       const validatedData = partialSchema.parse(req.body);
+      
+      // If imageUrl is provided but imageUrls is not, set imageUrls to contain the imageUrl
+      if (validatedData.imageUrl && (!validatedData.imageUrls || validatedData.imageUrls.length === 0)) {
+        validatedData.imageUrls = [validatedData.imageUrl];
+      }
+      
       const review = await storage.updateReview(req.params.id, validatedData);
       if (!review) {
         return res.status(404).json({ success: false, error: "리뷰를 찾을 수 없습니다." });
