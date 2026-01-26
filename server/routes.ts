@@ -1754,20 +1754,27 @@ export async function registerRoutes(
     try {
       const { facebookPixelId, facebookPixelEnabled, googleAnalyticsId, googleAnalyticsEnabled, kakaoPixelId, kakaoPixelEnabled } = req.body;
       
+      const sanitizePixelId = (id: string): string => {
+        return id.replace(/[^a-zA-Z0-9\-_]/g, '').substring(0, 50);
+      };
+      
       if (facebookPixelId !== undefined) {
-        await storage.setSiteSetting('facebook_pixel_id', facebookPixelId, '페이스북 픽셀 ID');
+        const sanitized = sanitizePixelId(facebookPixelId);
+        await storage.setSiteSetting('facebook_pixel_id', sanitized, '페이스북 픽셀 ID');
       }
       if (facebookPixelEnabled !== undefined) {
         await storage.setSiteSetting('facebook_pixel_enabled', String(facebookPixelEnabled), '페이스북 픽셀 활성화 여부');
       }
       if (googleAnalyticsId !== undefined) {
-        await storage.setSiteSetting('google_analytics_id', googleAnalyticsId, '구글 애널리틱스 ID');
+        const sanitized = sanitizePixelId(googleAnalyticsId);
+        await storage.setSiteSetting('google_analytics_id', sanitized, '구글 애널리틱스 ID');
       }
       if (googleAnalyticsEnabled !== undefined) {
         await storage.setSiteSetting('google_analytics_enabled', String(googleAnalyticsEnabled), '구글 애널리틱스 활성화 여부');
       }
       if (kakaoPixelId !== undefined) {
-        await storage.setSiteSetting('kakao_pixel_id', kakaoPixelId, '카카오 픽셀 ID');
+        const sanitized = sanitizePixelId(kakaoPixelId);
+        await storage.setSiteSetting('kakao_pixel_id', sanitized, '카카오 픽셀 ID');
       }
       if (kakaoPixelEnabled !== undefined) {
         await storage.setSiteSetting('kakao_pixel_enabled', String(kakaoPixelEnabled), '카카오 픽셀 활성화 여부');
