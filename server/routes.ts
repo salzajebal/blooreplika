@@ -1730,6 +1730,56 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== Site Settings API (Marketing Pixels) ====================
+  
+  app.get("/api/site-settings/pixels", async (req: Request, res: Response) => {
+    try {
+      const settings = await storage.getAllSiteSettings();
+      const pixelSettings = {
+        facebookPixelId: settings.find(s => s.key === 'facebook_pixel_id')?.value || '',
+        facebookPixelEnabled: settings.find(s => s.key === 'facebook_pixel_enabled')?.value === 'true',
+        googleAnalyticsId: settings.find(s => s.key === 'google_analytics_id')?.value || '',
+        googleAnalyticsEnabled: settings.find(s => s.key === 'google_analytics_enabled')?.value === 'true',
+        kakaoPixelId: settings.find(s => s.key === 'kakao_pixel_id')?.value || '',
+        kakaoPixelEnabled: settings.find(s => s.key === 'kakao_pixel_enabled')?.value === 'true',
+      };
+      res.json({ success: true, data: pixelSettings });
+    } catch (error) {
+      console.error("Error fetching pixel settings:", error);
+      res.status(500).json({ success: false, error: "픽셀 설정을 불러올 수 없습니다." });
+    }
+  });
+
+  app.put("/api/site-settings/pixels", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { facebookPixelId, facebookPixelEnabled, googleAnalyticsId, googleAnalyticsEnabled, kakaoPixelId, kakaoPixelEnabled } = req.body;
+      
+      if (facebookPixelId !== undefined) {
+        await storage.setSiteSetting('facebook_pixel_id', facebookPixelId, '페이스북 픽셀 ID');
+      }
+      if (facebookPixelEnabled !== undefined) {
+        await storage.setSiteSetting('facebook_pixel_enabled', String(facebookPixelEnabled), '페이스북 픽셀 활성화 여부');
+      }
+      if (googleAnalyticsId !== undefined) {
+        await storage.setSiteSetting('google_analytics_id', googleAnalyticsId, '구글 애널리틱스 ID');
+      }
+      if (googleAnalyticsEnabled !== undefined) {
+        await storage.setSiteSetting('google_analytics_enabled', String(googleAnalyticsEnabled), '구글 애널리틱스 활성화 여부');
+      }
+      if (kakaoPixelId !== undefined) {
+        await storage.setSiteSetting('kakao_pixel_id', kakaoPixelId, '카카오 픽셀 ID');
+      }
+      if (kakaoPixelEnabled !== undefined) {
+        await storage.setSiteSetting('kakao_pixel_enabled', String(kakaoPixelEnabled), '카카오 픽셀 활성화 여부');
+      }
+      
+      res.json({ success: true, message: "픽셀 설정이 저장되었습니다." });
+    } catch (error) {
+      console.error("Error updating pixel settings:", error);
+      res.status(500).json({ success: false, error: "픽셀 설정을 저장할 수 없습니다." });
+    }
+  });
+
   // ==================== FAQ API ====================
   
   app.get("/api/faqs", async (req: Request, res: Response) => {
