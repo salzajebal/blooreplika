@@ -186,6 +186,16 @@ export default function Admin() {
   });
   const [depositAccountLoading, setDepositAccountLoading] = useState(false);
   
+  const [pixelSettings, setPixelSettings] = useState({
+    facebookPixelId: "",
+    facebookPixelEnabled: false,
+    googleAnalyticsId: "",
+    googleAnalyticsEnabled: false,
+    kakaoPixelId: "",
+    kakaoPixelEnabled: false,
+  });
+  const [pixelLoading, setPixelLoading] = useState(false);
+  
   const [staffUsers, setStaffUsers] = useState<{id: string; username: string; name?: string | null; role?: string | null; createdAt?: Date | null}[]>([]);
   const [staffFormData, setStaffFormData] = useState({ username: "", password: "", name: "", staffRole: "review_admin" });
   const [showAddStaffForm, setShowAddStaffForm] = useState(false);
@@ -1121,6 +1131,7 @@ export default function Admin() {
   useEffect(() => {
     if (isAuthenticated && activeTab === "settings") {
       fetchProductCount();
+      fetchPixelSettings();
     }
   }, [activeTab, isAuthenticated]);
 
@@ -1238,6 +1249,39 @@ export default function Admin() {
       toast({ title: "오류", description: "설정 저장에 실패했습니다.", variant: "destructive" });
     } finally {
       setGlobalSaleLoading(false);
+    }
+  };
+
+  const fetchPixelSettings = async () => {
+    try {
+      const res = await fetch("/api/site-settings/pixels");
+      const data = await res.json();
+      if (data.success) {
+        setPixelSettings(data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching pixel settings:", error);
+    }
+  };
+
+  const savePixelSettings = async () => {
+    setPixelLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/site-settings/pixels", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(pixelSettings),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: "마케팅 픽셀 설정이 저장되었습니다." });
+      } else {
+        toast({ title: "오류", description: data.error || "설정 저장에 실패했습니다.", variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "설정 저장에 실패했습니다.", variant: "destructive" });
+    } finally {
+      setPixelLoading(false);
     }
   };
 
@@ -4795,6 +4839,139 @@ export default function Admin() {
                     <li className="flex items-start gap-2">
                       <span className="text-amber-500 mt-1">•</span>
                       <span>계좌정보 변경 시 즉시 반영됩니다.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-blue-600" />
+                  마케팅 픽셀 설정
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">페이스북 픽셀, 구글 애널리틱스, 카카오 픽셀을 켜고 끌 수 있습니다.</p>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="currentColor">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-bold text-gray-900">페이스북 픽셀</h4>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={pixelSettings.facebookPixelEnabled}
+                            onChange={(e) => setPixelSettings(prev => ({ ...prev, facebookPixelEnabled: e.target.checked }))}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                      </div>
+                      <Input
+                        value={pixelSettings.facebookPixelId}
+                        onChange={(e) => setPixelSettings(prev => ({ ...prev, facebookPixelId: e.target.value }))}
+                        placeholder="페이스북 픽셀 ID (예: 1234567890)"
+                        className="mb-2"
+                      />
+                      <p className="text-xs text-gray-500">페이스북 비즈니스 관리자에서 픽셀 ID를 확인할 수 있습니다.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-bold text-gray-900">구글 애널리틱스</h4>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={pixelSettings.googleAnalyticsEnabled}
+                            onChange={(e) => setPixelSettings(prev => ({ ...prev, googleAnalyticsEnabled: e.target.checked }))}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                        </label>
+                      </div>
+                      <Input
+                        value={pixelSettings.googleAnalyticsId}
+                        onChange={(e) => setPixelSettings(prev => ({ ...prev, googleAnalyticsId: e.target.value }))}
+                        placeholder="GA ID (예: G-XXXXXXXXXX)"
+                        className="mb-2"
+                      />
+                      <p className="text-xs text-gray-500">구글 애널리틱스 4의 측정 ID를 입력하세요.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-yellow-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg viewBox="0 0 24 24" className="w-6 h-6 text-black" fill="currentColor">
+                        <path d="M12 3C6.48 3 2 6.58 2 11c0 2.84 1.83 5.33 4.56 6.78-.12.47-.44 1.75-.51 2.02-.08.32.12.64.46.64.25 0 .5-.11.67-.27.11-.1 1.41-1.14 2.1-1.7.56.07 1.14.11 1.72.11 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-bold text-gray-900">카카오 픽셀</h4>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={pixelSettings.kakaoPixelEnabled}
+                            onChange={(e) => setPixelSettings(prev => ({ ...prev, kakaoPixelEnabled: e.target.checked }))}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
+                        </label>
+                      </div>
+                      <Input
+                        value={pixelSettings.kakaoPixelId}
+                        onChange={(e) => setPixelSettings(prev => ({ ...prev, kakaoPixelId: e.target.value }))}
+                        placeholder="카카오 픽셀 ID"
+                        className="mb-2"
+                      />
+                      <p className="text-xs text-gray-500">카카오모먼트에서 픽셀 ID를 확인할 수 있습니다.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    onClick={savePixelSettings}
+                    disabled={pixelLoading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    {pixelLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                    마케팅 설정 저장
+                  </Button>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-1">•</span>
+                      <span>픽셀을 활성화하면 사이트 전체에 해당 스크립트가 적용됩니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-1">•</span>
+                      <span>비활성화하면 즉시 스크립트가 제거됩니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-1">•</span>
+                      <span>각 서비스의 관리 페이지에서 픽셀 ID를 확인하세요.</span>
                     </li>
                   </ul>
                 </div>
