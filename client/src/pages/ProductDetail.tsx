@@ -547,9 +547,15 @@ export default function ProductDetail() {
                   <Smartphone className="w-5 h-5 mr-2" />
                   바탕화면에 바로가기 추가
                 </Button>
-                <p className="text-center text-sm text-gray-600 mt-2 font-medium">
-                  🌐 청담동샵.com
-                </p>
+                <a 
+                  href="https://청담동샵.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block mt-4 py-3 px-6 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg text-center hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-lg"
+                >
+                  <span className="text-amber-400 font-bold text-lg tracking-wide">청담동샵.COM</span>
+                  <span className="block text-gray-400 text-xs mt-0.5">재방문은 여기를 클릭하세요</span>
+                </a>
               </div>
             </div>
           </div>
@@ -767,9 +773,15 @@ export default function ProductDetail() {
                 <Smartphone className="w-4 h-4 mr-1.5" />
                 바탕화면에 바로가기 추가
               </Button>
-              <p className="text-center text-xs text-gray-600 mt-1.5 font-medium">
-                🌐 청담동샵.com
-              </p>
+              <a 
+                href="https://청담동샵.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block mt-3 py-2.5 px-4 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg text-center hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-lg"
+              >
+                <span className="text-amber-400 font-bold text-sm tracking-wide">청담동샵.COM</span>
+                <span className="block text-gray-400 text-[10px] mt-0.5">재방문은 여기를 클릭하세요</span>
+              </a>
             </div>
           </div>
         </div>
