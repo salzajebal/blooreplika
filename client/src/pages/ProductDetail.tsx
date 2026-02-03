@@ -547,6 +547,9 @@ export default function ProductDetail() {
                   <Smartphone className="w-5 h-5 mr-2" />
                   바탕화면에 바로가기 추가
                 </Button>
+                <p className="text-center text-sm text-gray-600 mt-2 font-medium">
+                  🌐 청담동샵.com
+                </p>
               </div>
             </div>
           </div>
@@ -764,6 +767,9 @@ export default function ProductDetail() {
                 <Smartphone className="w-4 h-4 mr-1.5" />
                 바탕화면에 바로가기 추가
               </Button>
+              <p className="text-center text-xs text-gray-600 mt-1.5 font-medium">
+                🌐 청담동샵.com
+              </p>
             </div>
           </div>
         </div>
