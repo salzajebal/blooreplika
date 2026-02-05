@@ -159,7 +159,7 @@ export default function ProductDetail() {
     }
     let finalPrice = Number(product.price);
     if (product.discountPercent && product.discountPercent > 0) {
-      finalPrice = Math.round(finalPrice * (100 - product.discountPercent) / 100);
+      finalPrice = Math.round(finalPrice * (100 - product.discountPercent) / 100 / 1000) * 1000;
     } else if (hasSale) {
       finalPrice = calculateSalePrice(finalPrice);
     }
@@ -192,7 +192,7 @@ export default function ProductDetail() {
     // Use discounted price if product has discount or global sale is active
     let finalPrice = Number(product.price);
     if (product.discountPercent && product.discountPercent > 0) {
-      finalPrice = Math.round(finalPrice * (100 - product.discountPercent) / 100);
+      finalPrice = Math.round(finalPrice * (100 - product.discountPercent) / 100 / 1000) * 1000;
     } else if (hasSale) {
       finalPrice = calculateSalePrice(finalPrice);
     }
@@ -244,7 +244,7 @@ export default function ProductDetail() {
       ? Math.round((1 - product.price / product.originalPrice) * 100)
       : 0);
   const finalPrice = discountPercent > 0 && product.discountPercent && product.discountPercent > 0
-    ? Math.round(product.price * (100 - discountPercent) / 100)
+    ? Math.round(product.price * (100 - discountPercent) / 100 / 1000) * 1000
     : product.price;
 
   const getOptionLabelAndDefaults = () => {

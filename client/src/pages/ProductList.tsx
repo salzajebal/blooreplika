@@ -116,7 +116,7 @@ export default function ProductList() {
     // Use discounted price if product has discount or global sale is active
     let finalPrice = Number(product.price);
     if (product.discountPercent && product.discountPercent > 0) {
-      finalPrice = Math.round(finalPrice * (100 - product.discountPercent) / 100);
+      finalPrice = Math.round(finalPrice * (100 - product.discountPercent) / 100 / 1000) * 1000;
     } else if (hasSale) {
       finalPrice = calculateSalePrice(finalPrice);
     }
@@ -595,7 +595,7 @@ export default function ProductList() {
                               {Number(product.price).toLocaleString()}원
                             </span>
                             <span className="font-bold text-red-500" data-testid={`price-product-${product.id}`}>
-                              {Math.round(Number(product.price) * (100 - product.discountPercent) / 100).toLocaleString()}원
+                              {(Math.round(Number(product.price) * (100 - product.discountPercent) / 100 / 1000) * 1000).toLocaleString()}원
                             </span>
                             <span className="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded font-bold">
                               {product.discountPercent}%
