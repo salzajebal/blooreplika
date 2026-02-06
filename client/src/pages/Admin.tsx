@@ -2763,10 +2763,35 @@ export default function Admin() {
                         <td className="px-4 py-3 text-yellow-600 font-bold">{product.price}원</td>
                         <td className="px-4 py-3 text-gray-600">{product.stock ?? "-"}</td>
                         <td className="px-4 py-3 text-center">
+                          {product.isSoldOut && <span className="bg-gray-500 text-white px-2 py-0.5 rounded text-[10px] mr-1">품절</span>}
                           {product.isBest && <span className="bg-gray-900 text-white px-2 py-0.5 rounded text-[10px] mr-1">Best</span>}
                           {product.isNew && <span className="bg-red-600 text-white px-2 py-0.5 rounded text-[10px]">New</span>}
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3 text-right whitespace-nowrap">
+                          <Button
+                            data-testid={`button-soldout-product-${product.id}`}
+                            size="sm"
+                            variant={product.isSoldOut ? "default" : "outline"}
+                            onClick={async () => {
+                              try {
+                                const res = await fetch(`/api/products/${product.id}`, {
+                                  method: "PATCH",
+                                  headers: { "Content-Type": "application/json" },
+                                  credentials: "include",
+                                  body: JSON.stringify({ isSoldOut: !product.isSoldOut }),
+                                });
+                                if (res.ok) {
+                                  fetchProducts();
+                                  toast({ title: product.isSoldOut ? "판매 재개" : "품절 처리 완료" });
+                                }
+                              } catch (e) {
+                                toast({ title: "오류 발생", variant: "destructive" });
+                              }
+                            }}
+                            className={`h-7 text-[11px] mr-1 ${product.isSoldOut ? "bg-gray-500 hover:bg-gray-600" : "border-gray-300 text-gray-500"}`}
+                          >
+                            {product.isSoldOut ? "판매재개" : "품절"}
+                          </Button>
                           <Button 
                             data-testid={`button-edit-product-${product.id}`}
                             size="icon" 

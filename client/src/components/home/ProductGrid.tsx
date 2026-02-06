@@ -210,6 +210,11 @@ export function ProductGrid() {
                   }}
                 />
                 
+                {product.isSoldOut && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                    <span className="bg-gray-800 text-white text-sm sm:text-base px-4 py-2 font-bold rounded">품절</span>
+                  </div>
+                )}
                 <div className="absolute top-1.5 left-1.5 sm:top-2 sm:left-2 flex flex-col gap-0.5 sm:gap-1">
                   {product.isBest && (
                     <span className="bg-gray-900 text-white text-[8px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 sm:py-1 font-bold uppercase tracking-wider inline-block text-center">

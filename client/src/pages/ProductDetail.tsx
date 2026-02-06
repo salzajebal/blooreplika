@@ -21,17 +21,18 @@ if (typeof window !== 'undefined') {
   });
 }
 
-function getStockFromProductId(productId: string): number {
+function getStockDisplay(productId: string): string {
   let hash = 0;
   for (let i = 0; i < productId.length; i++) {
     const char = productId.charCodeAt(i);
     hash = ((hash << 5) - hash) + char;
     hash = hash & hash;
   }
-  return Math.abs(hash % 29) + 2;
+  const val = Math.abs(hash % 3) + 1;
+  return `${val}`;
 }
 
-function StockIndicator({ stock, isSoldOut }: { stock: number; isSoldOut?: boolean }) {
+function StockIndicator({ productId, isSoldOut }: { productId: string; isSoldOut?: boolean }) {
   if (isSoldOut) {
     return (
       <div className="flex items-center gap-1.5 bg-gray-100 px-3 py-1.5 rounded-lg">
@@ -40,28 +41,11 @@ function StockIndicator({ stock, isSoldOut }: { stock: number; isSoldOut?: boole
     );
   }
   
-  if (stock <= 5) {
-    return (
-      <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 px-3 py-1.5 rounded-lg animate-pulse">
-        <AlertTriangle className="w-4 h-4 text-red-500" />
-        <span className="text-red-600 font-bold text-sm">품절임박! 재고 {stock}개</span>
-      </div>
-    );
-  }
-  
-  if (stock <= 15) {
-    return (
-      <div className="flex items-center gap-1.5 bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-lg">
-        <Package className="w-4 h-4 text-orange-500" />
-        <span className="text-orange-600 font-bold text-sm">재고 {stock}개 남음</span>
-      </div>
-    );
-  }
-  
+  const stockNum = getStockDisplay(productId);
   return (
     <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
       <Package className="w-4 h-4 text-green-500" />
-      <span className="text-green-600 font-bold text-sm">재고 {stock}개</span>
+      <span className="text-green-600 font-bold text-sm">재고 {stockNum}개 남음</span>
     </div>
   );
 }
@@ -344,7 +328,7 @@ export default function ProductDetail() {
                   )}
                 </div>
                 <div className="mb-4">
-                  <StockIndicator stock={getStockFromProductId(product.id)} isSoldOut={!!product.isSoldOut} />
+                  <StockIndicator productId={product.id} isSoldOut={!!product.isSoldOut} />
                 </div>
               </div>
 
