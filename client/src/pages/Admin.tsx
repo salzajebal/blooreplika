@@ -2776,8 +2776,7 @@ export default function Admin() {
                               try {
                                 const res = await fetch(`/api/products/${product.id}`, {
                                   method: "PATCH",
-                                  headers: { "Content-Type": "application/json" },
-                                  credentials: "include",
+                                  headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
                                   body: JSON.stringify({ isSoldOut: !product.isSoldOut }),
                                 });
                                 if (res.ok) {
