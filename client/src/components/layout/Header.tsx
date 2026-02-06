@@ -158,38 +158,6 @@ export function Header() {
         </div>
       </div>
 
-      <div className="hidden md:block bg-[#333] text-white text-xs">
-        <div className="max-w-[1200px] mx-auto px-4 h-8 flex items-center justify-between">
-          <div className="relative overflow-hidden h-4 w-[300px]">
-            <div 
-              className="absolute inset-0 transition-transform duration-500 ease-in-out flex items-center"
-              style={{ transform: `translateY(-${noticeIndex * 100}%)` }}
-            >
-              {noticeTexts.map((text, idx) => (
-                <span key={idx} className="text-gray-400 text-[11px] whitespace-nowrap absolute w-full" style={{ top: `${idx * 100}%` }}>
-                  {text}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center divide-x divide-gray-600">
-            {memberName ? (
-              <>
-                <span className="px-3 text-yellow-400">{memberName}님</span>
-                <button onClick={handleLogout} className="px-3 hover:text-yellow-300" data-testid="button-logout">로그아웃</button>
-              </>
-            ) : (
-              <>
-                <Link href="/login" className="px-3 hover:text-yellow-300" data-testid="link-login">로그인</Link>
-                <Link href="/signup" className="px-3 hover:text-yellow-300" data-testid="link-signup">회원가입</Link>
-              </>
-            )}
-            <Link href="/cart" className="px-3 hover:text-yellow-300">장바구니</Link>
-            <Link href="/orders" className="px-3 hover:text-yellow-300">주문조회</Link>
-            <Link href="/profile" className="px-3 hover:text-yellow-300">마이쇼핑</Link>
-          </div>
-        </div>
-      </div>
 
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-[1200px] mx-auto px-2 md:px-4 py-2 md:py-5">
@@ -255,7 +223,7 @@ export function Header() {
             <div className="hidden md:block"></div>
 
             <Link href="/" className="flex items-center justify-self-center" data-testid="link-home">
-              <img src="/images/logo.jpg" alt="청담동샵" className="h-14 md:h-20 w-auto" />
+              <img src="/images/logo.jpg" alt="청담동샵" className="h-16 md:h-28 w-auto" />
             </Link>
 
             <div className="hidden md:flex items-center justify-end gap-5">
