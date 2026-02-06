@@ -2441,39 +2441,25 @@ export async function registerRoutes(
   // Get all products for admin with pagination and search
   app.get("/api/admin/products", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      const { search, category, page = "1", limit = "50" } = req.query;
+      const { search, category, page = "1", limit = "20" } = req.query;
       const pageNum = parseInt(page as string, 10);
-      const limitNum = parseInt(limit as string, 10);
+      const limitNum = Math.min(parseInt(limit as string, 10), 50);
       const offset = (pageNum - 1) * limitNum;
       
-      let allProducts = await storage.getAllProducts();
+      const searchStr = (search && typeof search === "string" && search.trim()) ? search.trim() : undefined;
+      const categoryStr = (category && category !== "all") ? category as string : undefined;
       
-      // Apply search filter
-      if (search && typeof search === "string" && search.trim()) {
-        const searchLower = search.toLowerCase().trim();
-        allProducts = allProducts.filter(p => 
-          p.name?.toLowerCase().includes(searchLower) ||
-          p.sku?.toLowerCase().includes(searchLower) ||
-          p.description?.toLowerCase().includes(searchLower)
-        );
-      }
+      const result = await storage.getProductsPaginated(limitNum, offset, categoryStr, undefined, searchStr);
       
-      // Apply category filter
-      if (category && category !== "all") {
-        allProducts = allProducts.filter(p => p.categoryId === category);
-      }
-      
-      const total = allProducts.length;
-      const totalPages = Math.ceil(total / limitNum);
-      const paginatedProducts = allProducts.slice(offset, offset + limitNum);
+      const totalPages = Math.ceil(result.total / limitNum);
       
       res.json({ 
         success: true, 
-        data: paginatedProducts,
+        data: result.products,
         pagination: {
           page: pageNum,
           limit: limitNum,
-          total,
+          total: result.total,
           totalPages
         }
       });

@@ -768,7 +768,7 @@ export default function Admin() {
     try {
       const params = new URLSearchParams();
       params.append("page", page.toString());
-      params.append("limit", "50");
+      params.append("limit", "20");
       if (search) params.append("search", search);
       if (category && category !== "all") params.append("category", category);
       
