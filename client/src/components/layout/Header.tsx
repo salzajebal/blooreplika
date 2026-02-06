@@ -159,7 +159,7 @@ export function Header() {
       </div>
 
 
-      <div className="bg-white border-b border-gray-100">
+      <div className="bg-white border-b border-gray-100 border-t-0">
         <div className="max-w-[1200px] mx-auto px-2 md:px-4 py-2 md:py-5">
           <div className="grid grid-cols-3 items-center gap-2">
             <div className="md:hidden">
@@ -223,7 +223,7 @@ export function Header() {
             <div className="hidden md:block"></div>
 
             <Link href="/" className="flex items-center justify-self-center" data-testid="link-home">
-              <img src="/images/logo.jpg" alt="청담동샵" className="h-16 md:h-28 w-auto" />
+              <img src="/images/logo.jpg" alt="청담동샵" className="h-16 md:h-28 w-auto" style={{ clipPath: 'inset(4px 0 0 0)' }} />
             </Link>
 
             <div className="hidden md:flex items-center justify-end gap-5">
