@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Heart, Loader2, ChevronLeft, ChevronRight, Clock } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { Link } from "wouter";
@@ -34,11 +34,14 @@ const DEFAULT_CATEGORIES = [
 const PRODUCTS_PER_PAGE = 40;
 
 export function ProductGrid() {
-  const [activeCategory, setActiveCategory] = useState("all");
+  const savedPage = parseInt(sessionStorage.getItem("productGridPage") || "1");
+  const savedCategory = sessionStorage.getItem("productGridCategory") || "all";
+  const [activeCategory, setActiveCategory] = useState(savedCategory);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(savedPage);
+  const isInitialMount = useRef(true);
   const { toggleItem, isInWishlist } = useWishlist();
   const { toast } = useToast();
   const { salePercent, calculateSalePrice, hasSale } = useGlobalSale();
@@ -86,11 +89,21 @@ export function ProductGrid() {
   };
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      sessionStorage.setItem("productGridCategory", activeCategory);
+      fetchProducts(currentPage);
+      return;
+    }
     setCurrentPage(1);
+    sessionStorage.setItem("productGridPage", "1");
+    sessionStorage.setItem("productGridCategory", activeCategory);
     fetchProducts(1);
   }, [activeCategory]);
 
   useEffect(() => {
+    if (isInitialMount.current) return;
+    sessionStorage.setItem("productGridPage", String(currentPage));
     fetchProducts(currentPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentPage]);

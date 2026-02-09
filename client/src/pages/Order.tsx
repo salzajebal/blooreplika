@@ -189,7 +189,13 @@ export default function Order() {
 
   const getEffectivePrice = () => {
     if (!product) return 0;
-    return hasSale ? calculateSalePrice(product.price) : product.price;
+    let price = Number(product.price);
+    if (product.discountPercent && product.discountPercent > 0) {
+      price = Math.round(price * (100 - product.discountPercent) / 100 / 1000) * 1000;
+    } else if (hasSale) {
+      price = calculateSalePrice(price);
+    }
+    return price;
   };
 
   const calculateSubtotal = () => {
