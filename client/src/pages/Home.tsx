@@ -134,16 +134,16 @@ function MainBannerSlider() {
 
 function QuickMenu() {
   const menuItems = [
-    { name: "VIP 명품관", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/143e0872d4c3bb27c271d5820546f547.jpg", path: "/products/genuine" },
-    { name: "실시간 검수", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/4b40c9298090d7393617f6cd95ce256b.jpg", path: "/comparison" },
-    { name: "셀럽 스타일", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/86bfecb00fe728c98c294ceb9e4655ba.jpg", path: "/choice" },
-    { name: "요청 상품", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/9dab2bc8e6766a07210506d0cf260469.jpg", path: "/support" },
-    { name: "기획전", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/2823ba65c7d03f9b3775d0241ea93c83.jpg", path: "/events" },
-    { name: "베스트", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/830f154102ecad7da70c2bdc10f14845.jpg", path: "/reviews" },
-    { name: "라이브", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/cd519ab44205f7ce21296eb43a666167.jpg", path: "/blog" },
-    { name: "이벤트", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/315bd9be4589e0f68fdabc9500ed048c.png", path: "/events" },
-    { name: "구매 후기", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/300d0fa4a52beed60284ac459c05fcb7.jpg", path: "/reviews" },
-    { name: "라이크잇 랩스", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/1c2d5216a8fdf4b4d782f30ac16cdce2.jpg", path: "/blog" },
+    { name: "VIP 명품관", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/a6692c83da347f0d21bc8a69e8454926.jpg", path: "/products/genuine" },
+    { name: "실시간 검수", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/3e9e18a74415a93d2d754b39fa016482.jpg", path: "/comparison" },
+    { name: "셀럽 스타일", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/d793e88d91fbb9d2084399161d0b7bee.jpg", path: "/choice" },
+    { name: "요청 상품", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/3c6041db246c4bbacf7d845b020c5f0a.jpg", path: "/support" },
+    { name: "기획전", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/4a50b842d7ca0484c98270d3ac8306d7.jpg", path: "/events" },
+    { name: "베스트", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/db8043b0c1b097a55628db5c992d42be.jpg", path: "/reviews" },
+    { name: "라이브", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/9ae31c3dcae26a14f6d33e8f261915b7.jpg", path: "/blog" },
+    { name: "이벤트", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/cb42e567c3a7d720530b7d4b5c8b1864.png", path: "/events" },
+    { name: "구매 후기", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/3e60fc4da68ecc883a6de2887e24871a.jpg", path: "/reviews" },
+    { name: "라이크잇 랩스", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/e18260c9937b029fd70a2365ed71c48b.jpg", path: "/blog" },
   ];
 
   return (
@@ -158,7 +158,7 @@ function QuickMenu() {
               data-testid={`quick-menu-${item.name}`}
             >
               <div className="w-full aspect-[16/10] rounded-lg overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity">
-                <img src={getProxiedImageUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />
+                <img src={item.image} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
               </div>
               <span className="text-[10px] md:text-xs text-gray-600 text-center whitespace-nowrap group-hover:text-black transition-colors">{item.name}</span>
             </Link>
@@ -173,7 +173,7 @@ function QuickMenu() {
               data-testid={`quick-menu-${item.name}`}
             >
               <div className="w-full aspect-[16/10] rounded-lg overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity">
-                <img src={getProxiedImageUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />
+                <img src={item.image} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
               </div>
               <span className="text-[10px] md:text-xs text-gray-600 text-center whitespace-nowrap group-hover:text-black transition-colors">{item.name}</span>
             </Link>
