@@ -31,6 +31,14 @@ export function getProxiedImageUrl(
   if (imageUrl.includes("cdn.shopify.com")) {
     return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}&w=${config.width}&q=${config.quality}`;
   }
+
+  if (imageUrl.includes("pliki.wisacdn.com")) {
+    return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}&w=1600&q=95`;
+  }
+
+  if (imageUrl.includes("bagstyle.site")) {
+    return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}&w=${config.width}&q=${config.quality}`;
+  }
   
   return imageUrl;
 }

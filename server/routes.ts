@@ -155,8 +155,8 @@ export async function registerRoutes(
         // If decode fails, use as-is
       }
       
-      // Allow proxying from cdamdong.co.kr and cdn.shopify.com
-      const allowedDomains = ["cdamdong.co.kr", "cdn.shopify.com"];
+      // Allow proxying from approved domains
+      const allowedDomains = ["cdamdong.co.kr", "cdn.shopify.com", "pliki.wisacdn.com", "bagstyle.site"];
       const isAllowed = allowedDomains.some(domain => imageUrl.includes(domain));
       if (!isAllowed) {
         return res.status(403).json({ success: false, error: "Domain not allowed" });
@@ -181,7 +181,7 @@ export async function registerRoutes(
       const response = await fetch(imageUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Referer": imageUrl.includes("cdamdong.co.kr") ? "https://cdamdong.co.kr/" : "https://dittoholic.com/",
+          "Referer": imageUrl.includes("cdamdong.co.kr") ? "https://cdamdong.co.kr/" : imageUrl.includes("pliki.wisacdn.com") ? "https://pliki6.com/" : imageUrl.includes("bagstyle.site") ? "https://bagstyle.site/" : "https://dittoholic.com/",
           "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
           "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
         },
