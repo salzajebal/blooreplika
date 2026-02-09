@@ -25,7 +25,7 @@ const menuItems = [
   { name: '1:1 비교', path: '/comparison' },
   { name: '베스트리뷰', path: '/reviews' },
   { name: '블로그', path: '/blog' },
-  { name: 'PLIKI초이스', path: '/choice' },
+  { name: '라이크잇초이스', path: '/choice' },
   ...categoryNavItems,
   { name: '국내배송', path: '/products/domestic' },
   { name: '커뮤니티', path: '/comparison' },
@@ -154,7 +154,7 @@ export function Header() {
                   </SheetTrigger>
                   <SheetContent side="left" className="w-[300px] overflow-y-auto p-0" hideCloseButton>
                     <div className="bg-black text-white p-4 flex items-center justify-between">
-                      <Link href="/" className="text-lg font-bold tracking-wider" onClick={() => setMobileMenuOpen(false)}>PLIKI</Link>
+                      <Link href="/" className="text-lg font-bold tracking-wider" onClick={() => setMobileMenuOpen(false)}>LIKE IT</Link>
                       <SheetClose asChild>
                         <Button variant="ghost" size="icon" className="text-white hover:text-gray-300 p-0">
                           <X className="w-5 h-5" />
@@ -212,7 +212,7 @@ export function Header() {
               </div>
 
               <Link href="/" className="flex items-center" data-testid="link-home">
-                <span className="text-2xl md:text-3xl font-black tracking-[0.2em] text-black">PLIKI</span>
+                <span className="text-2xl md:text-3xl font-black tracking-[0.2em] text-black" style={{ fontFamily: "'Playfair Display', serif" }}>LIKE IT</span>
               </Link>
 
               <div className="flex items-center gap-2 md:gap-4">

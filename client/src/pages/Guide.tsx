@@ -32,7 +32,7 @@ export default function Guide() {
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">이용안내</h1>
-          <p className="text-gray-600">PLIKI 이용 방법을 안내해 드립니다</p>
+          <p className="text-gray-600">LIKE IT 이용 방법을 안내해 드립니다</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

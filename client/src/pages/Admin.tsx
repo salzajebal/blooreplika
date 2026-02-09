@@ -2325,7 +2325,7 @@ export default function Admin() {
               <span className="font-bold text-black text-sm">CD</span>
             </div>
             <div>
-              <h1 className="font-bold">PLIKI</h1>
+              <h1 className="font-bold">LIKE IT</h1>
               <p className="text-xs text-gray-400">관리자 패널</p>
             </div>
           </div>
@@ -4926,7 +4926,7 @@ export default function Admin() {
                         type="text"
                         value={depositAccountSettings.accountHolder}
                         onChange={(e) => setDepositAccountSettings(prev => ({ ...prev, accountHolder: e.target.value }))}
-                        placeholder="예: PLIKI"
+                        placeholder="예: LIKE IT"
                         className="w-full max-w-md"
                       />
                     </div>

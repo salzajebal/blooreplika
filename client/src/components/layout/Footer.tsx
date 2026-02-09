@@ -6,14 +6,14 @@ export function Footer() {
       <div className="max-w-[1200px] mx-auto px-4 py-10 md:py-14">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
           <div className="md:col-span-2">
-            <h3 className="text-white text-xl font-black tracking-[0.15em] mb-4">PLIKI</h3>
+            <h3 className="text-white text-xl font-black tracking-[0.15em] mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>LIKE IT</h3>
             <div className="text-xs leading-relaxed space-y-1">
-              <p>상호명: 플리키 | 대표: 홍길동</p>
+              <p>상호명: 라이크잇 | 대표: 홍길동</p>
               <p>사업자등록번호: 123-45-67890</p>
               <p>통신판매업신고: 제2024-서울강남-0001호</p>
               <p>주소: 서울특별시 강남구 청담동 123-45</p>
               <p>고객센터: 010-0000-0000 (평일 10:00 ~ 18:00)</p>
-              <p>이메일: support@pliki.com</p>
+              <p>이메일: support@likeit.com</p>
             </div>
           </div>
 
@@ -50,7 +50,7 @@ export function Footer() {
             <span className="text-white font-medium">개인정보처리방침</span>
           </div>
           <p className="text-[10px] md:text-xs text-gray-500">
-            &copy; 2024 PLIKI. All rights reserved.
+            &copy; 2024 LIKE IT. All rights reserved.
           </p>
         </div>
       </div>

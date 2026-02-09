@@ -364,7 +364,7 @@ export default function Reviews() {
 
         <div className="mb-8">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">고객 후기</h1>
-          <p className="text-gray-600 text-sm md:text-base">PLIKI을 이용해주신 고객님들의 생생한 후기입니다</p>
+          <p className="text-gray-600 text-sm md:text-base">라이크잇을 이용해주신 고객님들의 생생한 후기입니다</p>
           <p className="text-gray-400 text-sm mt-1">
             총 {totalReviews.toLocaleString()}개의 후기 
             {totalPages > 1 && <span className="ml-2">({currentPage} / {totalPages} 페이지)</span>}

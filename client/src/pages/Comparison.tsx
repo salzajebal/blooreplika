@@ -41,7 +41,7 @@ const comparisonItems = [
     brand: "프라다",
     title: "[프라다] 프라다 리에디션 나일론 테수토 호보백",
     imageUrl: "https://cdamdong.co.kr/data/file/kalreom/3034935948_RKLHxPJj_c5103cddd206b6bad4adb0f5dbfc64a30992f5ca.jpg",
-    content: "안녕하세요, PLIKI입니다!\n\n오늘은 매년 꾸준한 인기를 자랑하는 프라다 리에디션 나일론 테수토 호보백을 리뷰해보겠습니다.\n\n심플하면서도 실용적인 디자인, 그리고 트렌드를 타지 않는 클래식함으로 많은 고객님들께 사랑받고 있는 제품인데요, 지금부터 정품과 하이엔드급 제품의 비교를 통해 디테일과 퀄리티 차이를 꼼꼼하게 보여드리겠습니다.",
+    content: "안녕하세요, 라이크잇입니다!\n\n오늘은 매년 꾸준한 인기를 자랑하는 프라다 리에디션 나일론 테수토 호보백을 리뷰해보겠습니다.\n\n심플하면서도 실용적인 디자인, 그리고 트렌드를 타지 않는 클래식함으로 많은 고객님들께 사랑받고 있는 제품인데요, 지금부터 정품과 하이엔드급 제품의 비교를 통해 디테일과 퀄리티 차이를 꼼꼼하게 보여드리겠습니다.",
     images: [
       "https://cdamdong.co.kr/data/file/kalreom/3034935948_RKLHxPJj_c5103cddd206b6bad4adb0f5dbfc64a30992f5ca.jpg",
       "https://cdamdong.co.kr/data/editor/2410/5753c156c874a99ed9f1a4bd45dae214_1729476529_6543.jpg",
@@ -58,7 +58,7 @@ const comparisonItems = [
     brand: "샤넬",
     title: "[CHANEL - 샤넬] 샤넬 트렌디 cc woc 18SS 정품 VS 하이엔드 VS 고퀄 비교!",
     imageUrl: "https://cdamdong.co.kr/data/file/kalreom/3034935948_eNY4MzGD_af27bb6195a470f2e1d8d17620a380f5cd64621e.jpg",
-    content: "안녕하세요, PLIKI입니다!\n\n오늘은 많은 분들이 찾고 계시지만 여전히 구하기 어려운 희소템, 샤넬 트렌디 CC WOC – 18SS 시즌 제품 리뷰를 준비했습니다.\n\n2018년 출시된 제품임에도 불구하고, 지금까지도 꾸준한 인기를 자랑하며 레어템으로 손꼽히는 아이템입니다.\n\n하이엔드급 퀄리티로 준비한 이번 제품, 지금부터 꼼꼼하게 리뷰해드리겠습니다.",
+    content: "안녕하세요, 라이크잇입니다!\n\n오늘은 많은 분들이 찾고 계시지만 여전히 구하기 어려운 희소템, 샤넬 트렌디 CC WOC – 18SS 시즌 제품 리뷰를 준비했습니다.\n\n2018년 출시된 제품임에도 불구하고, 지금까지도 꾸준한 인기를 자랑하며 레어템으로 손꼽히는 아이템입니다.\n\n하이엔드급 퀄리티로 준비한 이번 제품, 지금부터 꼼꼼하게 리뷰해드리겠습니다.",
     images: [
       "https://cdamdong.co.kr/data/file/kalreom/3034935948_eNY4MzGD_af27bb6195a470f2e1d8d17620a380f5cd64621e.jpg",
       "https://cdamdong.co.kr/data/editor/2410/5753c156c874a99ed9f1a4bd45dae214_1729474193_8966.jpg",
@@ -79,7 +79,7 @@ const comparisonItems = [
     brand: "샤넬",
     title: "[CHANEL - 샤넬] 샤넬 22백 스몰 고퀄 공장 VS 하이엔드급 비교!",
     imageUrl: "https://cdamdong.co.kr/data/file/kalreom/987963447_IwztU218_25bd35f8ba527333a5d1aa6efa2ac280cfcd4167.jpg",
-    content: "PLIKI은 제가 직접 들고 다니지 못할 제품은 절대 판매하지 않습니다. 단순한 판매가 아닌, 진짜 만족할 수 있는 퀄리티만을 선별해 소개드리는 것이 저희의 기준입니다.\n\n오늘은 꾸준히 사랑받고 있는 인기 제품, 샤넬 22백을 주제로 다뤄보려 합니다. 이번 비교에서는 시중 레플리카 업체에서 흔히 판매되는 고퀄라인 공장 제품과, 저희 PLIKI이 취급하는 하이엔드급 제품을 1:1로 직접 비교해보았습니다.",
+    content: "라이크잇은 제가 직접 들고 다니지 못할 제품은 절대 판매하지 않습니다. 단순한 판매가 아닌, 진짜 만족할 수 있는 퀄리티만을 선별해 소개드리는 것이 저희의 기준입니다.\n\n오늘은 꾸준히 사랑받고 있는 인기 제품, 샤넬 22백을 주제로 다뤄보려 합니다. 이번 비교에서는 시중 레플리카 업체에서 흔히 판매되는 고퀄라인 공장 제품과, 저희 라이크잇이 취급하는 하이엔드급 제품을 1:1로 직접 비교해보았습니다.",
     images: [
       "https://cdamdong.co.kr/data/file/kalreom/987963447_IwztU218_25bd35f8ba527333a5d1aa6efa2ac280cfcd4167.jpg",
       "https://cdamdong.co.kr/data/editor/2410/f247ef244b1176659c099245c24a93b8_1728194096_2928.jpg",
@@ -100,7 +100,7 @@ const comparisonItems = [
     brand: "샤넬",
     title: "[CHANEL - 샤넬] 샤넬 WOC 숄더 체인 월렛백 고퀄 공장 VS 하이엔드급 비교!",
     imageUrl: "https://cdamdong.co.kr/data/file/kalreom/3034935948_HzpnK7wX_6a1f7edf2721f7853ef2bb248a91b2cc698d3511.jpg",
-    content: "안녕하세요, PLIKI입니다.\n\n오늘은 많은 고객님들이 궁금해하시는 \"고퀄라인 제품과 하이엔드급 제품의 차이점\"을 직접 비교해보는 칼럼을 준비했습니다.\n\n시중에서 흔히 판매되는 고퀄라인 공장 제품과 저희 PLIKI이 취급하는 하이엔드급 공장 제품을 실물로 나란히 비교하여 보여드립니다.",
+    content: "안녕하세요, 라이크잇입니다.\n\n오늘은 많은 고객님들이 궁금해하시는 \"고퀄라인 제품과 하이엔드급 제품의 차이점\"을 직접 비교해보는 칼럼을 준비했습니다.\n\n시중에서 흔히 판매되는 고퀄라인 공장 제품과 저희 라이크잇이 취급하는 하이엔드급 공장 제품을 실물로 나란히 비교하여 보여드립니다.",
     images: [
       "https://cdamdong.co.kr/data/file/kalreom/3034935948_HzpnK7wX_6a1f7edf2721f7853ef2bb248a91b2cc698d3511.jpg",
       "https://cdamdong.co.kr/data/editor/2409/b133e2589ff8f1dcf61ed45b8c44e634_1727690403_8405.jpg",
@@ -121,7 +121,7 @@ const comparisonItems = [
     brand: "루이비통",
     title: "[LV - 루이비통] 알마 BB 타업체 비교!",
     imageUrl: "https://cdamdong.co.kr/data/file/kalreom/3034935948_L2nGkJ1m_9ec69a5c3f121e6e5363acbad7a3eac50fa4c441.jpg",
-    content: "안녕하세요, PLIKI입니다.\n\n오늘은 가볍지만 유익한 콘텐츠로 저희 PLIKI 제품과 타 업체 제품의 실제 비교 리뷰를 준비해보았습니다.\n\n대표적인 몇 가지 품목을 선정하여 직접 타 업체 제품을 구매한 뒤, 객관적인 기준으로 비교 리뷰를 진행해보았습니다.",
+    content: "안녕하세요, 라이크잇입니다.\n\n오늘은 가볍지만 유익한 콘텐츠로 저희 라이크잇 제품과 타 업체 제품의 실제 비교 리뷰를 준비해보았습니다.\n\n대표적인 몇 가지 품목을 선정하여 직접 타 업체 제품을 구매한 뒤, 객관적인 기준으로 비교 리뷰를 진행해보았습니다.",
     images: [
       "https://cdamdong.co.kr/data/file/kalreom/3034935948_L2nGkJ1m_9ec69a5c3f121e6e5363acbad7a3eac50fa4c441.jpg",
       "https://cdamdong.co.kr/data/editor/2409/b133e2589ff8f1dcf61ed45b8c44e634_1727687952_1867.jpg",
@@ -138,7 +138,7 @@ const comparisonItems = [
     brand: "디올",
     title: "[DIOR] 디올 북토트 백 타업체 비교!",
     imageUrl: "https://cdamdong.co.kr/data/file/kalreom/3034935948_skqPKJZ0_61842b961dd008c94e27db168a27879f5de9807a.jpg",
-    content: "안녕하세요, PLIKI입니다.\n\n오늘은 가볍지만 유익한 콘텐츠로 저희 PLIKI 제품과 타 업체 제품의 실제 비교 리뷰를 준비해보았습니다.\n\n대표적인 몇 가지 품목을 선정하여 직접 타 업체 제품을 구매한 뒤, 객관적인 기준으로 비교 리뷰를 진행해보았습니다.",
+    content: "안녕하세요, 라이크잇입니다.\n\n오늘은 가볍지만 유익한 콘텐츠로 저희 라이크잇 제품과 타 업체 제품의 실제 비교 리뷰를 준비해보았습니다.\n\n대표적인 몇 가지 품목을 선정하여 직접 타 업체 제품을 구매한 뒤, 객관적인 기준으로 비교 리뷰를 진행해보았습니다.",
     images: [
       "https://cdamdong.co.kr/data/file/kalreom/3034935948_skqPKJZ0_61842b961dd008c94e27db168a27879f5de9807a.jpg",
       "https://cdamdong.co.kr/data/editor/2409/b133e2589ff8f1dcf61ed45b8c44e634_1727687866_1153.jpg",

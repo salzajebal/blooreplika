@@ -24,9 +24,9 @@ const blogItems = [
   },
   {
     id: 19,
-    title: "PLIKI의 몽클제품은 NFC 접속이 가능합니다.",
+    title: "라이크잇의 몽클제품은 NFC 접속이 가능합니다.",
     imageUrl: "https://cdamdong.co.kr/data/file/sj_note/3034935948_bI0zaHUn_1ac74358b7e627f9209f8cef76a5ac0b5c57e7c2.jpg",
-    content: "PLIKI의 몽클레르 제품은 정품과 동일한 NFC 칩이 내장되어 있어 스마트폰으로 정품 인증이 가능합니다.",
+    content: "라이크잇의 몽클레르 제품은 정품과 동일한 NFC 칩이 내장되어 있어 스마트폰으로 정품 인증이 가능합니다.",
     images: ["https://cdamdong.co.kr/data/file/sj_note/3034935948_bI0zaHUn_1ac74358b7e627f9209f8cef76a5ac0b5c57e7c2.jpg"],
     date: "2024-12-25"
   },
@@ -96,25 +96,25 @@ const blogItems = [
   },
   {
     id: 8,
-    title: "PLIKI 제품 VS 타 업체 제품 비교",
+    title: "라이크잇 제품 VS 타 업체 제품 비교",
     imageUrl: "https://cdamdong.co.kr/data/file/sj_note/3034935948_ZwPhnTa7_d966b33597402ced36c7642969b0fc9f8b5f33e5.jpg",
-    content: "PLIKI 제품과 타 업체 제품의 품질 차이를 비교해 보았습니다.",
+    content: "라이크잇 제품과 타 업체 제품의 품질 차이를 비교해 보았습니다.",
     images: ["https://cdamdong.co.kr/data/file/sj_note/3034935948_ZwPhnTa7_d966b33597402ced36c7642969b0fc9f8b5f33e5.jpg"],
     date: "2024-11-20"
   },
   {
     id: 7,
-    title: "왜 PLIKI 악세사리는 타 업체보다 비싸요? (중금속 관련 이슈)",
+    title: "왜 라이크잇 악세사리는 타 업체보다 비싸요? (중금속 관련 이슈)",
     imageUrl: "https://cdamdong.co.kr/data/file/sj_note/37289044_Vk3bXtEy_a28c6d4f03c78df05f5e174a499d58a6fc9fbc44.jpg",
-    content: "PLIKI 악세사리가 다른 업체보다 비싼 이유를 설명드립니다. 중금속 이슈와 품질 차이에 대해 알아봅니다.",
+    content: "라이크잇 악세사리가 다른 업체보다 비싼 이유를 설명드립니다. 중금속 이슈와 품질 차이에 대해 알아봅니다.",
     images: ["https://cdamdong.co.kr/data/file/sj_note/37289044_Vk3bXtEy_a28c6d4f03c78df05f5e174a499d58a6fc9fbc44.jpg"],
     date: "2024-11-15"
   },
   {
     id: 6,
-    title: "왜? PLIKI이 명품 레플리카 사이트 1등인가요?",
+    title: "왜? 라이크잇이 명품 레플리카 사이트 1등인가요?",
     imageUrl: "https://cdamdong.co.kr/data/file/sj_note/3034935948_dtncAE9w_df3490c95c91627c0234e9d8e9880a6d86bcf01d.jpg",
-    content: "PLIKI이 명품 레플리카 업계에서 1등인 이유를 설명드립니다.",
+    content: "라이크잇이 명품 레플리카 업계에서 1등인 이유를 설명드립니다.",
     images: ["https://cdamdong.co.kr/data/file/sj_note/3034935948_dtncAE9w_df3490c95c91627c0234e9d8e9880a6d86bcf01d.jpg"],
     date: "2024-11-10"
   },
@@ -128,17 +128,17 @@ const blogItems = [
   },
   {
     id: 4,
-    title: "PLIKI 패딩의 품질 보증에 대해서",
+    title: "라이크잇 패딩의 품질 보증에 대해서",
     imageUrl: "https://cdamdong.co.kr/data/file/sj_note/3034935948_bI0zaHUn_1ac74358b7e627f9209f8cef76a5ac0b5c57e7c2.jpg",
-    content: "PLIKI 패딩 제품의 품질 보증 정책에 대해 안내드립니다.",
+    content: "라이크잇 패딩 제품의 품질 보증 정책에 대해 안내드립니다.",
     images: ["https://cdamdong.co.kr/data/file/sj_note/3034935948_bI0zaHUn_1ac74358b7e627f9209f8cef76a5ac0b5c57e7c2.jpg"],
     date: "2024-11-01"
   },
   {
     id: 3,
-    title: "PLIKI만의 특별한 포장 서비스",
+    title: "라이크잇만의 특별한 포장 서비스",
     imageUrl: "https://cdamdong.co.kr/data/file/sj_note/3034935948_x97E0jVW_a24814d62687f497657edabbcdfa830faa1c888b.jpg",
-    content: "PLIKI만의 특별한 포장 서비스를 소개합니다.",
+    content: "라이크잇만의 특별한 포장 서비스를 소개합니다.",
     images: ["https://cdamdong.co.kr/data/file/sj_note/3034935948_x97E0jVW_a24814d62687f497657edabbcdfa830faa1c888b.jpg"],
     date: "2024-10-28"
   },
@@ -152,9 +152,9 @@ const blogItems = [
   },
   {
     id: 1,
-    title: "PLIKI 신규 회원 가입 혜택 안내",
+    title: "라이크잇 신규 회원 가입 혜택 안내",
     imageUrl: "https://cdamdong.co.kr/data/file/sj_note/3034935948_SHpBwygs_856c955a32382233cb0e6aa98dcfbca968853fad.jpg",
-    content: "PLIKI 신규 회원 가입 시 받을 수 있는 혜택을 안내드립니다.",
+    content: "라이크잇 신규 회원 가입 시 받을 수 있는 혜택을 안내드립니다.",
     images: ["https://cdamdong.co.kr/data/file/sj_note/3034935948_SHpBwygs_856c955a32382233cb0e6aa98dcfbca968853fad.jpg"],
     date: "2024-10-20"
   },

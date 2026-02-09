@@ -68,7 +68,7 @@ export default function Notices() {
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">공지사항</h1>
-          <p className="text-gray-600">PLIKI의 새로운 소식과 공지사항입니다</p>
+          <p className="text-gray-600">라이크잇의 새로운 소식과 공지사항입니다</p>
         </div>
 
         {isLoading ? (

@@ -183,13 +183,13 @@ function ChoiceDetail({ id }: { id: string }) {
       <main>
         <div className="bg-gray-100 py-4">
           <div className="max-w-[1200px] mx-auto px-4">
-            <h1 className="text-lg font-bold text-gray-800">PLIKI 초이스</h1>
+            <h1 className="text-lg font-bold text-gray-800">라이크잇 초이스</h1>
             <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
               <Link href="/" className="hover:text-black">홈</Link>
               <span>&gt;</span>
               <span>쇼핑몰</span>
               <span>&gt;</span>
-              <Link href="/choice" className="hover:text-black">PLIKI 초이스</Link>
+              <Link href="/choice" className="hover:text-black">라이크잇 초이스</Link>
               <span>&gt;</span>
               <span className="truncate max-w-[200px]">{item.title}</span>
             </div>
@@ -305,13 +305,13 @@ function ChoiceList() {
       <main>
         <div className="bg-gray-100 py-4">
           <div className="max-w-[1200px] mx-auto px-4">
-            <h1 className="text-lg font-bold text-gray-800">PLIKI 초이스</h1>
+            <h1 className="text-lg font-bold text-gray-800">라이크잇 초이스</h1>
             <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
               <Link href="/" className="hover:text-black">홈</Link>
               <span>&gt;</span>
               <span>쇼핑몰</span>
               <span>&gt;</span>
-              <span>PLIKI 초이스</span>
+              <span>라이크잇 초이스</span>
             </div>
           </div>
         </div>
