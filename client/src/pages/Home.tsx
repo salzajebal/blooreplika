@@ -90,7 +90,7 @@ function MainBannerSlider() {
               <img 
                 src={banner.imageUrl?.startsWith('http') ? getProxiedImageUrl(banner.imageUrl, "large") : banner.imageUrl}
                 alt={banner.title || `배너 ${index + 1}`}
-                className="w-full h-auto max-h-[200px] md:max-h-[450px] object-cover"
+                className="w-full h-auto object-contain"
               />
             </Link>
           </div>
