@@ -152,6 +152,7 @@ export function Header() {
                       <Menu className="w-6 h-6 text-gray-800" />
                     </Button>
                   </SheetTrigger>
+
                   <SheetContent side="left" className="w-[300px] overflow-y-auto p-0" hideCloseButton>
                     <div className="bg-black text-white p-4 flex items-center justify-between">
                       <Link href="/" className="text-lg font-bold tracking-wider" onClick={() => setMobileMenuOpen(false)}>LIKE IT</Link>
@@ -209,11 +210,10 @@ export function Header() {
                     </div>
                   </SheetContent>
                 </Sheet>
+                <Link href="/" className="flex items-center" data-testid="link-home">
+                  <span className="text-2xl md:text-3xl font-black tracking-[0.2em] text-black" style={{ fontFamily: "'Playfair Display', serif" }}>LIKE IT</span>
+                </Link>
               </div>
-
-              <Link href="/" className="flex items-center" data-testid="link-home">
-                <span className="text-2xl md:text-3xl font-black tracking-[0.2em] text-black" style={{ fontFamily: "'Playfair Display', serif" }}>LIKE IT</span>
-              </Link>
 
               <div className="flex items-center gap-2 md:gap-4">
                 <button 
