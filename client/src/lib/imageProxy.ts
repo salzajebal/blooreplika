@@ -33,7 +33,7 @@ export function getProxiedImageUrl(
   }
 
   if (imageUrl.includes("pliki.wisacdn.com")) {
-    return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}&w=1600&q=95`;
+    return imageUrl;
   }
 
   if (imageUrl.includes("bagstyle.site")) {
