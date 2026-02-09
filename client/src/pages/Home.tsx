@@ -2,7 +2,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Heart, ShoppingBag, HelpCircle, Eye } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, ShoppingBag, HelpCircle, Eye, Search } from "lucide-react";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { useState, useEffect, useRef } from "react";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -133,36 +133,62 @@ function MainBannerSlider() {
 }
 
 function QuickMenu() {
-  const quickMenuItems = [
-    { name: "VIP 명품관", icon: "👑", path: "/products/genuine" },
-    { name: "실시간 검수", icon: "🔍", path: "/comparison" },
-    { name: "셀럽 스타일", icon: "✨", path: "/choice" },
-    { name: "요청 상품", icon: "📋", path: "/support" },
-    { name: "기획전", icon: "🎯", path: "/events" },
-    { name: "베스트", icon: "🏆", path: "/reviews" },
-    { name: "이벤트", icon: "🎁", path: "/events" },
-    { name: "구매 후기", icon: "💬", path: "/reviews" },
-    { name: "공지사항", icon: "📢", path: "/notices" },
-    { name: "블로그", icon: "📝", path: "/blog" },
+  const topRow = [
+    { name: "VIP 명품관", label: "LUXURY", style: "bg-gradient-to-br from-gray-800 to-gray-900 text-white", textClass: "text-white font-bold italic tracking-wider text-sm", path: "/products/genuine" },
+    { name: "실시간 검수", label: "", style: "bg-gray-100", path: "/comparison" },
+    { name: "셀럽 스타일", label: "CELEB STYLE", style: "bg-gray-100", textClass: "text-black font-bold italic tracking-wide text-xs", path: "/choice" },
+    { name: "요청 상품", label: "", style: "bg-gray-100", path: "/support" },
+    { name: "기획전", label: "", style: "bg-gray-50", path: "/events" },
+  ];
+  const bottomRow = [
+    { name: "베스트", label: "", style: "bg-gray-100", path: "/reviews" },
+    { name: "라이브", label: "LIVE", style: "bg-black text-white", textClass: "text-white font-black text-lg tracking-wider", path: "/blog", dot: true },
+    { name: "이벤트", label: "", style: "bg-black text-white", path: "/events" },
+    { name: "구매 후기", label: "베스트 리뷰", style: "bg-gray-900 text-white", textClass: "text-white font-black text-base tracking-wide", path: "/reviews" },
+    { name: "라이크잇 랩스", label: "LIKE IT LABS", style: "bg-black text-white", textClass: "text-white font-bold text-xs tracking-widest", path: "/blog" },
   ];
 
   return (
-    <section className="bg-white py-4 md:py-6 border-b border-gray-100">
+    <section className="bg-white py-5 md:py-7 border-b border-gray-100">
       <div className="max-w-[1200px] mx-auto px-4">
-        <div className="flex overflow-x-auto scrollbar-hide gap-3 md:gap-6 md:justify-center">
-          {quickMenuItems.map((item) => (
-            <Link 
-              key={item.name} 
+        <div className="grid grid-cols-5 gap-2 md:gap-3">
+          {topRow.map((item) => (
+            <Link
+              key={item.name}
               href={item.path}
-              className="flex flex-col items-center gap-1.5 min-w-[60px] md:min-w-[70px] group"
+              className="flex flex-col items-center gap-1.5 group"
               data-testid={`quick-menu-${item.name}`}
             >
-              <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-xl md:text-2xl group-hover:bg-gray-100 group-hover:border-gray-200 transition-all">
-                {item.icon}
+              <div className={`w-full aspect-[16/10] rounded-lg ${item.style} flex items-center justify-center overflow-hidden group-hover:opacity-90 transition-opacity`}>
+                {item.textClass ? (
+                  <span className={item.textClass}>{item.label}</span>
+                ) : (
+                  <span className="text-gray-400 text-xs"></span>
+                )}
               </div>
-              <span className="text-[10px] md:text-xs text-gray-600 text-center whitespace-nowrap group-hover:text-black transition-colors">
-                {item.name}
-              </span>
+              <span className="text-[10px] md:text-xs text-gray-600 text-center whitespace-nowrap group-hover:text-black transition-colors">{item.name}</span>
+            </Link>
+          ))}
+        </div>
+        <div className="grid grid-cols-5 gap-2 md:gap-3 mt-2 md:mt-3">
+          {bottomRow.map((item) => (
+            <Link
+              key={item.name}
+              href={item.path}
+              className="flex flex-col items-center gap-1.5 group"
+              data-testid={`quick-menu-${item.name}`}
+            >
+              <div className={`w-full aspect-[16/10] rounded-lg ${item.style} flex items-center justify-center overflow-hidden group-hover:opacity-90 transition-opacity relative`}>
+                {item.dot && (
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
+                {item.textClass ? (
+                  <span className={item.textClass}>{item.label}</span>
+                ) : (
+                  <span className="text-gray-400 text-xs"></span>
+                )}
+              </div>
+              <span className="text-[10px] md:text-xs text-gray-600 text-center whitespace-nowrap group-hover:text-black transition-colors">{item.name}</span>
             </Link>
           ))}
         </div>
@@ -172,146 +198,132 @@ function QuickMenu() {
 }
 
 function ForYouSection({ products }: { products: any[] }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const { toggleItem, isInWishlist } = useWishlist();
-  const { toast } = useToast();
-
-  const handleWishlistToggle = (e: React.MouseEvent, product: any) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const wasInWishlist = isInWishlist(product.id);
-    toggleItem({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      imageUrl: product.imageUrl,
-    });
-    toast({
-      title: wasInWishlist ? "관심상품 삭제" : "관심상품 등록",
-      description: wasInWishlist 
-        ? `${product.name} 삭제되었습니다.` 
-        : `${product.name} 등록되었습니다.`,
-    });
-  };
-
-  const scroll = (dir: 'left' | 'right') => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollBy({ left: dir === 'left' ? -300 : 300, behavior: 'smooth' });
-    }
-  };
+  const [page, setPage] = useState(0);
 
   if (products.length === 0) return null;
+
+  const brandGroups: Record<string, any[]> = {};
+  products.forEach((p: any) => {
+    const brand = p.brandId || "BRAND";
+    if (!brandGroups[brand]) brandGroups[brand] = [];
+    brandGroups[brand].push(p);
+  });
+
+  const brandEntries = Object.entries(brandGroups).filter(([, items]) => items.length >= 2);
+  const pairsPerPage = 2;
+  const totalPages = Math.max(1, Math.ceil(brandEntries.length / pairsPerPage));
+  const currentPairs = brandEntries.slice(page * pairsPerPage, page * pairsPerPage + pairsPerPage);
 
   return (
     <section className="bg-white py-8 md:py-12">
       <div className="max-w-[1200px] mx-auto px-4">
-        <div className="text-center mb-6 md:mb-8">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900 mb-1">
-            For You
-          </h2>
-          <p className="text-sm text-gray-500">고객님을 위해 준비해 봤어요.</p>
-        </div>
-
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm md:text-base font-bold text-gray-900">지금 뜨는 인기상품</span>
+        <div className="flex items-center justify-between mb-6 md:mb-8">
+          <div>
+            <h2 className="text-lg md:text-xl font-bold text-gray-900 italic" style={{ fontFamily: "'Playfair Display', serif" }}>For You</h2>
+            <p className="text-xs md:text-sm text-gray-500 mt-0.5">고객님을 위해 준비해 봤어요.</p>
           </div>
-          <Link href="/products" className="text-xs text-gray-500 hover:text-black transition-colors" data-testid="link-more-products">
-            더보기
-          </Link>
-        </div>
-
-        <div className="relative">
-          <button 
-            onClick={() => scroll('left')}
-            className="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-200 rounded-full items-center justify-center shadow-sm hover:shadow-md transition-shadow"
-          >
-            <ChevronLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          
-          <div 
-            ref={scrollRef}
-            className="flex gap-3 md:gap-4 overflow-x-auto scrollbar-hide pb-4"
-          >
-            {products.map((product: any, index: number) => (
-              <Link 
-                key={product.id} 
-                href={`/product/${product.id}`}
-                className="flex-shrink-0 w-[160px] md:w-[220px] group"
-                data-testid={`foryou-product-${product.id}`}
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-400">{page + 1} / {totalPages}</span>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="w-8 h-8 border border-gray-200 rounded-full flex items-center justify-center disabled:opacity-30 hover:border-gray-400 transition-colors"
+                data-testid="foryou-prev"
               >
-                <div className="relative aspect-square bg-gray-50 rounded-lg overflow-hidden mb-2.5">
-                  <div className="absolute top-2 left-2 z-10">
-                    <span className="bg-black/70 text-white text-[10px] px-2 py-0.5 rounded-sm font-bold">{index + 1}</span>
-                  </div>
-                  <img 
-                    src={getProxiedImageUrl(product.imageUrl)}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-                  />
-                  {product.viewCount > 0 && (
-                    <div className="absolute top-2 right-2 z-10 flex items-center gap-1 bg-white/80 backdrop-blur-sm rounded-full px-2 py-0.5">
-                      <Eye className="w-3 h-3 text-gray-500" />
-                      <span className="text-[10px] text-gray-600">{Number(product.viewCount).toLocaleString()}</span>
-                    </div>
-                  )}
-                  <div className="absolute bottom-0 left-0 right-0 p-2 flex gap-1.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-black/30 to-transparent">
-                    <button 
-                      onClick={(e) => handleWishlistToggle(e, product)}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                        isInWishlist(product.id) ? 'bg-red-500 text-white' : 'bg-white/90 text-gray-600 hover:bg-white'
-                      }`}
-                      data-testid={`button-wishlist-${product.id}`}
-                    >
-                      <Heart className={`w-4 h-4 ${isInWishlist(product.id) ? 'fill-current' : ''}`} />
-                    </button>
-                    <button 
-                      className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center text-gray-600 hover:bg-white transition-colors"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleWishlistToggle(e, product); }}
-                      data-testid={`button-cart-foryou-${product.id}`}
-                    >
-                      <ShoppingBag className="w-4 h-4" />
-                    </button>
-                  </div>
-                  {product.isSoldOut && (
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                      <span className="text-white text-xs font-bold px-3 py-1 bg-black/60 rounded">SOLD OUT</span>
-                    </div>
-                  )}
-                </div>
-                <div className="px-0.5">
-                  <p className="text-[11px] md:text-xs text-gray-500 mb-0.5 uppercase tracking-wide font-medium">
-                    {product.brandId || "BRAND"}
-                  </p>
-                  <h3 className="text-xs md:text-sm text-gray-800 line-clamp-2 mb-2 leading-snug">
-                    {product.name}
-                  </h3>
-                  {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-                    <p className="text-[10px] text-gray-400 mb-0.5">
-                      매장가 <span className="line-through">{Number(product.originalPrice).toLocaleString()}원</span>
-                    </p>
-                  )}
-                  <div className="flex items-center gap-1.5">
-                    {product.discountPercent > 0 && (
-                      <span className="text-red-500 text-sm font-bold">{product.discountPercent}%</span>
-                    )}
-                    <span className="text-sm md:text-base font-bold text-gray-900">
-                      {Number(product.price).toLocaleString()}원
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-gray-400 mt-0.5">즉시구매가</p>
-                </div>
-              </Link>
-            ))}
+                <ChevronLeft className="w-4 h-4 text-gray-600" />
+              </button>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                className="w-8 h-8 border border-gray-200 rounded-full flex items-center justify-center disabled:opacity-30 hover:border-gray-400 transition-colors"
+                data-testid="foryou-next"
+              >
+                <ChevronRight className="w-4 h-4 text-gray-600" />
+              </button>
+            </div>
           </div>
+        </div>
 
-          <button 
-            onClick={() => scroll('right')}
-            className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-200 rounded-full items-center justify-center shadow-sm hover:shadow-md transition-shadow"
-          >
-            <ChevronRight className="w-5 h-5 text-gray-600" />
-          </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+          {currentPairs.map(([brand, items]) => (
+            <div key={brand} className="border border-gray-100 rounded-lg p-4 md:p-5">
+              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
+                <Search className="w-4 h-4 text-gray-400" />
+                <span className="text-sm text-gray-600">지금 뜨는 <span className="text-black font-bold underline underline-offset-2">{brand}</span>의 인기상품</span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 md:gap-3 mb-3">
+                {items.slice(0, 3).map((product: any) => (
+                  <Link
+                    key={product.id}
+                    href={`/product/${product.id}`}
+                    className="group"
+                    data-testid={`foryou-product-${product.id}`}
+                  >
+                    <div className="relative aspect-square bg-gray-50 rounded overflow-hidden mb-1.5">
+                      <img
+                        src={getProxiedImageUrl(product.imageUrl)}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                      />
+                      {product.viewCount > 0 && (
+                        <div className="absolute top-1.5 right-1.5 text-[10px] text-gray-500 bg-white/80 rounded px-1.5 py-0.5">
+                          조회 {Number(product.viewCount).toLocaleString()}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-[10px] md:text-[11px] text-gray-500 uppercase font-medium tracking-wide">{brand}</p>
+                    <p className="text-[10px] md:text-xs text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
+                    <p className="text-xs md:text-sm font-bold text-gray-900 mt-1">{Number(product.price).toLocaleString()}원</p>
+                  </Link>
+                ))}
+              </div>
+
+              {items.length > 3 && (
+                <>
+                  <div className="grid grid-cols-3 gap-2 md:gap-3 mb-3">
+                    {items.slice(3, 5).map((product: any) => (
+                      <Link
+                        key={product.id}
+                        href={`/product/${product.id}`}
+                        className="group"
+                        data-testid={`foryou-product-${product.id}`}
+                      >
+                        <div className="relative aspect-square bg-gray-50 rounded overflow-hidden mb-1.5">
+                          <img
+                            src={getProxiedImageUrl(product.imageUrl)}
+                            alt={product.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                          />
+                          {product.viewCount > 0 && (
+                            <div className="absolute top-1.5 right-1.5 text-[10px] text-gray-500 bg-white/80 rounded px-1.5 py-0.5">
+                              조회 {Number(product.viewCount).toLocaleString()}
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-[10px] md:text-[11px] text-gray-500 uppercase font-medium tracking-wide">{brand}</p>
+                        <p className="text-[10px] md:text-xs text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
+                        <p className="text-xs md:text-sm font-bold text-gray-900 mt-1">{Number(product.price).toLocaleString()}원</p>
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              <div className="flex justify-center mt-3">
+                <Link
+                  href={`/products?brand=${encodeURIComponent(brand)}`}
+                  className="text-xs text-gray-500 border border-gray-200 rounded px-6 py-2 hover:border-gray-400 hover:text-black transition-colors"
+                  data-testid={`foryou-more-${brand}`}
+                >
+                  더보기
+                </Link>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -517,7 +529,7 @@ export default function Home() {
   const { data: productsData } = useQuery({
     queryKey: ['/api/products/home'],
     queryFn: async () => {
-      const res = await fetch('/api/products?limit=16');
+      const res = await fetch('/api/products?limit=50');
       const data = await res.json();
       return data.success ? data.data : [];
     }
@@ -552,7 +564,7 @@ export default function Home() {
       <main>
         <MainBannerSlider />
         <QuickMenu />
-        <ForYouSection products={products.slice(0, 10)} />
+        <ForYouSection products={products} />
         <NewArrivalsSection products={products.slice(0, 8)} />
         <ReviewSection reviews={reviews} />
         <NoticeSection notices={notices} />
