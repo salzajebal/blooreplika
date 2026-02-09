@@ -157,8 +157,8 @@ function QuickMenu() {
               className="flex flex-col items-center gap-1.5 group"
               data-testid={`quick-menu-${item.name}`}
             >
-              <div className="w-full aspect-[16/10] rounded-lg overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity">
-                <img src={item.image} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
+              <div className="w-full rounded-lg overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity">
+                <img src={item.image} alt={item.name} className="w-full h-auto block" loading="lazy" />
               </div>
               <span className="text-[10px] md:text-xs text-gray-600 text-center whitespace-nowrap group-hover:text-black transition-colors">{item.name}</span>
             </Link>
@@ -172,8 +172,8 @@ function QuickMenu() {
               className="flex flex-col items-center gap-1.5 group"
               data-testid={`quick-menu-${item.name}`}
             >
-              <div className="w-full aspect-[16/10] rounded-lg overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity">
-                <img src={item.image} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
+              <div className="w-full rounded-lg overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity">
+                <img src={item.image} alt={item.name} className="w-full h-auto block" loading="lazy" />
               </div>
               <span className="text-[10px] md:text-xs text-gray-600 text-center whitespace-nowrap group-hover:text-black transition-colors">{item.name}</span>
             </Link>
