@@ -73,7 +73,7 @@ const reviewImageUpload = multer({
   },
 });
 
-const ADMIN_USERNAME = "admin123";
+const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "admin123";
 
 const adminSessions = new Map<string, { expiresAt: Date; role: string; userId?: string; name?: string }>();
