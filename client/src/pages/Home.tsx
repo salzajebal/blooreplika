@@ -78,23 +78,45 @@ function MainBannerSlider() {
     );
   }
 
+  const currentBannerUrl = bannerList[currentSlide]?.imageUrl?.startsWith('http') 
+    ? getProxiedImageUrl(bannerList[currentSlide].imageUrl, "large") 
+    : bannerList[currentSlide]?.imageUrl;
+
   return (
-    <section className="relative w-full overflow-hidden bg-gray-100">
-      <div 
-        className="flex transition-transform duration-500 ease-in-out"
-        style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-      >
-        {bannerList.map((banner: any, index: number) => (
-          <div key={index} className="w-full flex-shrink-0">
-            <Link href={banner.linkUrl || "/products"}>
-              <img 
-                src={banner.imageUrl?.startsWith('http') ? getProxiedImageUrl(banner.imageUrl, "large") : banner.imageUrl}
-                alt={banner.title || `배너 ${index + 1}`}
-                className="w-full h-auto object-contain"
-              />
-            </Link>
+    <section className="relative w-full overflow-hidden bg-gray-900" style={{ maxHeight: '420px' }}>
+      {currentBannerUrl && (
+        <div 
+          className="absolute inset-0 z-0"
+          style={{
+            backgroundImage: `url(${currentBannerUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(40px) brightness(0.6)',
+            transform: 'scale(1.2)',
+          }}
+        />
+      )}
+      
+      <div className="relative z-[1] max-w-[900px] mx-auto">
+        <div className="overflow-hidden">
+          <div 
+            className="flex transition-transform duration-500 ease-in-out"
+            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+          >
+            {bannerList.map((banner: any, index: number) => (
+              <div key={index} className="w-full flex-shrink-0">
+                <Link href={banner.linkUrl || "/products"}>
+                  <img 
+                    src={banner.imageUrl?.startsWith('http') ? getProxiedImageUrl(banner.imageUrl, "large") : banner.imageUrl}
+                    alt={banner.title || `배너 ${index + 1}`}
+                    className="w-full h-auto object-contain"
+                    style={{ maxHeight: '420px' }}
+                  />
+                </Link>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
       
       {bannerList.length > 1 && (
