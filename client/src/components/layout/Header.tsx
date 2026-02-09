@@ -117,7 +117,6 @@ export function Header() {
         <div className="hidden md:block bg-[#f8f8f8] border-b border-gray-100">
           <div className="max-w-[1200px] mx-auto px-4 h-8 flex items-center justify-between text-xs text-gray-500">
             <div className="flex items-center gap-1">
-              <span>회원가입하고 첫 구매 전상품 15% 할인 !</span>
             </div>
             <div className="flex items-center gap-3">
               {memberName ? (
