@@ -32,7 +32,7 @@ export default function Order() {
   const { calculateSalePrice, hasSale } = useGlobalSale();
   
   const isCartOrder = id === "cart";
-  const [cartItems, setCartItems] = useState<Array<{id: string; name: string; price: number; imageUrl: string}>>([]);
+  const [cartItems, setCartItems] = useState<Array<{id: string; name: string; price: number; imageUrl: string; selectedSize?: string; selectedColor?: string}>>([]);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -278,6 +278,8 @@ export default function Order() {
           productName: item.name,
           productPrice: item.price,
           quantity: 1,
+          selectedSize: item.selectedSize || null,
+          selectedColor: item.selectedColor || null,
         })),
         totalAmount: calculateSubtotal() - pointsToUse,
         pointsUsed: pointsToUse,
@@ -540,6 +542,13 @@ export default function Order() {
                       </div>
                       <div className="flex-1">
                         <h3 className="font-bold text-gray-900">{item.name}</h3>
+                        {(item.selectedSize || item.selectedColor) && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            {item.selectedSize && `사이즈: ${item.selectedSize}`}
+                            {item.selectedSize && item.selectedColor && " / "}
+                            {item.selectedColor && `색상: ${item.selectedColor}`}
+                          </p>
+                        )}
                         <div className="flex items-center justify-between mt-2">
                           <span className="text-sm text-gray-500">수량: 1개</span>
                           <span className="font-bold text-primary">{item.price.toLocaleString()}원</span>

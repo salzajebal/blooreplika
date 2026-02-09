@@ -20,6 +20,15 @@ export default function Cart() {
   const [, setLocation] = useLocation();
   const [step, setStep] = useState<CheckoutStep>("cart");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
+  const [itemOptions, setItemOptions] = useState<Record<string, { size: string; color: string }>>({});
+
+  const updateItemOption = (itemId: string, field: "size" | "color", value: string) => {
+    setItemOptions(prev => ({
+      ...prev,
+      [itemId]: { ...prev[itemId] || { size: "", color: "" }, [field]: value },
+    }));
+  };
+
   const [depositAccount, setDepositAccount] = useState<{
     bankName: string;
     accountNumber: string;
@@ -120,27 +129,44 @@ export default function Cart() {
                     </Link>
                     
                     <div className="flex-1 min-w-0">
-                      <Link href={`/product/${item.id}`}>
-                        <h3 className="font-bold text-gray-900 hover:text-primary transition-colors line-clamp-2">
-                          {item.name}
-                        </h3>
-                      </Link>
-                      <div className="mt-2">
+                      <div className="flex items-start justify-between">
+                        <Link href={`/product/${item.id}`}>
+                          <h3 className="font-bold text-gray-900 hover:text-primary transition-colors line-clamp-2">
+                            {item.name}
+                          </h3>
+                        </Link>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemove(item.id, item.name)}
+                          className="text-gray-400 hover:text-red-500 shrink-0 -mt-1 -mr-2"
+                          data-testid={`button-remove-${item.id}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="mt-1">
                         <span className="text-lg font-bold text-primary">{item.price.toLocaleString()}</span>
                         <span className="text-sm text-gray-500">원</span>
                       </div>
-                    </div>
-
-                    <div className="flex items-center">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemove(item.id, item.name)}
-                        className="text-gray-400 hover:text-red-500"
-                        data-testid={`button-remove-${item.id}`}
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </Button>
+                      <div className="mt-2 grid grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          placeholder="사이즈"
+                          value={itemOptions[item.id]?.size || ""}
+                          onChange={(e) => updateItemOption(item.id, "size", e.target.value)}
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-primary"
+                          data-testid={`input-size-${item.id}`}
+                        />
+                        <input
+                          type="text"
+                          placeholder="색상"
+                          value={itemOptions[item.id]?.color || ""}
+                          onChange={(e) => updateItemOption(item.id, "color", e.target.value)}
+                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-primary"
+                          data-testid={`input-color-${item.id}`}
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -275,7 +301,12 @@ export default function Cart() {
                         <Button
                           className="w-full h-12 text-lg"
                           onClick={() => {
-                            sessionStorage.setItem("cartOrderItems", JSON.stringify(items));
+                            const itemsWithOptions = items.map(item => ({
+                              ...item,
+                              selectedSize: itemOptions[item.id]?.size || "",
+                              selectedColor: itemOptions[item.id]?.color || "",
+                            }));
+                            sessionStorage.setItem("cartOrderItems", JSON.stringify(itemsWithOptions));
                             sessionStorage.setItem("cartPaymentMethod", "bank");
                             setLocation("/order/cart");
                           }}
