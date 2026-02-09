@@ -3,7 +3,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Heart, Package, Star, Grid, List, ChevronDown, Filter, X, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { useRoute, Link, useLocation } from "wouter";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Product } from "@shared/schema";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -96,6 +96,7 @@ export default function ProductList() {
   const { toggleItem, isInWishlist } = useWishlist();
   const { toast } = useToast();
   const { salePercent, calculateSalePrice, hasSale } = useGlobalSale();
+  const isInitialMount = useRef(true);
 
   const categoryInfo = CATEGORIES.find(c => c.slug === categorySlug);
   
@@ -134,7 +135,11 @@ export default function ProductList() {
     });
   };
 
-  const [currentPage, setCurrentPage] = useState(1);
+  const savedListPage = parseInt(sessionStorage.getItem("productListPage") || "1");
+  const savedListCategory = sessionStorage.getItem("productListCategory") || "";
+  const [currentPage, setCurrentPage] = useState(
+    savedListCategory === categorySlug ? savedListPage : 1
+  );
   const ITEMS_PER_PAGE = 16;
   const queryClient = useQueryClient();
 
@@ -190,13 +195,26 @@ export default function ProductList() {
   }, [currentPage, totalPages, categorySlug, subcategoryId, searchQuery, selectedBrand, queryClient]);
 
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      sessionStorage.setItem("productListCategory", categorySlug || "");
+      return;
+    }
     setCurrentPage(1);
     setSelectedBrand(null);
+    sessionStorage.setItem("productListPage", "1");
+    sessionStorage.setItem("productListCategory", categorySlug || "");
   }, [categorySlug, subcategoryId, searchQuery]);
 
   useEffect(() => {
+    if (isInitialMount.current) return;
     setCurrentPage(1);
+    sessionStorage.setItem("productListPage", "1");
   }, [selectedBrand]);
+
+  useEffect(() => {
+    sessionStorage.setItem("productListPage", String(currentPage));
+  }, [currentPage]);
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {

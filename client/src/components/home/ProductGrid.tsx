@@ -42,6 +42,7 @@ export function ProductGrid() {
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(savedPage);
   const isInitialMount = useRef(true);
+  const isPageChangeByUser = useRef(false);
   const { toggleItem, isInWishlist } = useWishlist();
   const { toast } = useToast();
   const { salePercent, calculateSalePrice, hasSale } = useGlobalSale();
@@ -95,6 +96,7 @@ export function ProductGrid() {
       fetchProducts(currentPage);
       return;
     }
+    isPageChangeByUser.current = true;
     setCurrentPage(1);
     sessionStorage.setItem("productGridPage", "1");
     sessionStorage.setItem("productGridCategory", activeCategory);
@@ -105,11 +107,15 @@ export function ProductGrid() {
     if (isInitialMount.current) return;
     sessionStorage.setItem("productGridPage", String(currentPage));
     fetchProducts(currentPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (isPageChangeByUser.current) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      isPageChangeByUser.current = false;
+    }
   }, [currentPage]);
 
   const goToPage = (page: number) => {
     if (page >= 1 && page <= totalPages) {
+      isPageChangeByUser.current = true;
       setCurrentPage(page);
     }
   };
