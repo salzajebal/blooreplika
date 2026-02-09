@@ -5,7 +5,7 @@ import { Trash2, ShoppingBag, Heart, ArrowRight, CreditCard, Building2 } from "l
 import { Link } from "wouter";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CardPaymentForm } from "@/components/checkout/CardPaymentForm";
 import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
@@ -18,6 +18,29 @@ export default function Cart() {
   const { toast } = useToast();
   const [step, setStep] = useState<CheckoutStep>("cart");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
+  const [depositAccount, setDepositAccount] = useState<{
+    bankName: string;
+    accountNumber: string;
+    accountHolder: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const fetchDepositAccount = async () => {
+      try {
+        const res = await fetch("/api/settings/deposit_account");
+        const data = await res.json();
+        if (data.success && data.data?.value) {
+          try {
+            const parsed = JSON.parse(data.data.value);
+            if (parsed.bankName && parsed.accountNumber) {
+              setDepositAccount(parsed);
+            }
+          } catch {}
+        }
+      } catch {}
+    };
+    fetchDepositAccount();
+  }, []);
 
   const handleRemove = (id: string, name: string) => {
     removeItem(id);
@@ -226,8 +249,14 @@ export default function Cart() {
                       <div className="space-y-3 text-sm">
                         <div className="p-4 bg-gray-50 rounded-lg">
                           <p className="font-medium">입금 계좌</p>
-                          <p className="text-lg font-bold mt-1">국민은행 123-456-789012</p>
-                          <p className="text-gray-500">예금주: 청담동에디션</p>
+                          {depositAccount ? (
+                            <>
+                              <p className="text-lg font-bold mt-1">{depositAccount.bankName} {depositAccount.accountNumber}</p>
+                              <p className="text-gray-500">예금주: {depositAccount.accountHolder}</p>
+                            </>
+                          ) : (
+                            <p className="text-gray-400 mt-1">계좌 정보를 불러오는 중...</p>
+                          )}
                         </div>
                         <div className="p-4 bg-yellow-50 rounded-lg text-yellow-800">
                           <p>• 입금 확인 후 상품이 발송됩니다</p>
