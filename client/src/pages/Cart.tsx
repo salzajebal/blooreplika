@@ -6,6 +6,7 @@ import { Link } from "wouter";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { CardPaymentForm } from "@/components/checkout/CardPaymentForm";
 import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
@@ -16,6 +17,7 @@ type CheckoutStep = "cart" | "payment" | "complete";
 export default function Cart() {
   const { items, removeItem, clearWishlist } = useWishlist();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [step, setStep] = useState<CheckoutStep>("cart");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [depositAccount, setDepositAccount] = useState<{
@@ -273,11 +275,9 @@ export default function Cart() {
                         <Button
                           className="w-full h-12 text-lg"
                           onClick={() => {
-                            setStep("complete");
-                            toast({
-                              title: "주문 완료",
-                              description: "입금 확인 후 처리됩니다.",
-                            });
+                            sessionStorage.setItem("cartOrderItems", JSON.stringify(items));
+                            sessionStorage.setItem("cartPaymentMethod", "bank");
+                            setLocation("/order/cart");
                           }}
                           data-testid="button-bank-submit"
                         >

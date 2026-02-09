@@ -2230,7 +2230,39 @@ export async function registerRoutes(
   
   app.post("/api/orders", async (req: Request, res: Response) => {
     try {
-      const { couponPayment, ...orderData } = req.body;
+      const { couponPayment, isCartOrder, cartItems, ...orderData } = req.body;
+      
+      if (isCartOrder && Array.isArray(cartItems) && cartItems.length > 0) {
+        const orderNumber = `ORD${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+        const firstItem = cartItems[0];
+        const productNames = cartItems.map((item: any) => item.productName).join(", ");
+        
+        const order = await storage.createOrder({
+          memberId: orderData.memberId || null,
+          memberName: orderData.memberName,
+          memberEmail: orderData.memberEmail,
+          memberPhone: orderData.memberPhone,
+          shippingName: orderData.shippingName,
+          shippingPhone: orderData.shippingPhone,
+          shippingZipcode: orderData.shippingZipcode || "",
+          shippingAddress: orderData.shippingAddress,
+          shippingAddressDetail: orderData.shippingAddressDetail || "",
+          shippingMemo: orderData.shippingMemo || "",
+          productId: firstItem.productId,
+          productName: productNames.length > 50 ? `${cartItems[0].productName} 외 ${cartItems.length - 1}건` : productNames,
+          productPrice: firstItem.productPrice,
+          quantity: cartItems.length,
+          totalAmount: orderData.totalAmount,
+          pointsUsed: orderData.pointsUsed || 0,
+          paymentMethod: orderData.paymentMethod || null,
+          orderNumber,
+          status: "pending",
+          paymentStatus: "pending"
+        });
+        
+        return res.status(201).json({ success: true, data: order });
+      }
+      
       const validatedData = insertOrderSchema.parse(orderData);
       const orderNumber = `ORD${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
       

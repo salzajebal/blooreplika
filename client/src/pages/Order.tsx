@@ -32,6 +32,8 @@ export default function Order() {
   const { toast } = useToast();
   const { calculateSalePrice, hasSale } = useGlobalSale();
   
+  const isCartOrder = id === "cart";
+  const [cartItems, setCartItems] = useState<Array<{id: string; name: string; price: number; imageUrl: string}>>([]);
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -120,6 +122,22 @@ export default function Order() {
   }, []);
 
   useEffect(() => {
+    if (isCartOrder) {
+      const stored = sessionStorage.getItem("cartOrderItems");
+      const storedMethod = sessionStorage.getItem("cartPaymentMethod");
+      if (stored) {
+        try {
+          const items = JSON.parse(stored);
+          setCartItems(items);
+          if (storedMethod === "bank") {
+            setPaymentMethod("bank");
+          }
+        } catch {}
+      }
+      setLoading(false);
+      return;
+    }
+
     const fetchProduct = async () => {
       try {
         const res = await fetch(`/api/products/${id}`);
@@ -169,12 +187,19 @@ export default function Order() {
   };
 
   const calculateSubtotal = () => {
+    if (isCartOrder) {
+      return cartItems.reduce((sum, item) => sum + item.price, 0);
+    }
     if (!product) return 0;
     const effectivePrice = getEffectivePrice();
     return effectivePrice * quantity;
   };
 
   const calculateTotal = () => {
+    if (isCartOrder && cartItems.length > 0) {
+      const subtotal = calculateSubtotal();
+      return Math.max(0, subtotal - pointsToUse).toLocaleString();
+    }
     if (!product) return "0";
     const subtotal = calculateSubtotal();
     return Math.max(0, subtotal - pointsToUse).toLocaleString();
@@ -197,7 +222,8 @@ export default function Order() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!product) return;
+    if (!isCartOrder && !product) return;
+    if (isCartOrder && cartItems.length === 0) return;
     
     if (!formData.memberName || !formData.memberEmail || !formData.memberPhone) {
       toast({
@@ -223,34 +249,57 @@ export default function Order() {
       const memberId = localStorage.getItem("memberId");
       const memberToken = localStorage.getItem("memberToken");
       
+      const orderBody = isCartOrder ? {
+        memberId: memberId || null,
+        memberName: formData.memberName,
+        memberEmail: formData.memberEmail,
+        memberPhone: formData.memberPhone,
+        shippingName: formData.shippingName,
+        shippingPhone: formData.shippingPhone,
+        shippingZipcode: formData.shippingZipcode,
+        shippingAddress: formData.shippingAddress,
+        shippingAddressDetail: formData.shippingAddressDetail,
+        shippingMemo: formData.shippingMemo,
+        isCartOrder: true,
+        cartItems: cartItems.map(item => ({
+          productId: item.id,
+          productName: item.name,
+          productPrice: item.price,
+          quantity: 1,
+        })),
+        totalAmount: calculateSubtotal() - pointsToUse,
+        pointsUsed: pointsToUse,
+        paymentMethod: paymentMethod || undefined,
+      } : {
+        memberId: memberId || null,
+        memberName: formData.memberName,
+        memberEmail: formData.memberEmail,
+        memberPhone: formData.memberPhone,
+        shippingName: formData.shippingName,
+        shippingPhone: formData.shippingPhone,
+        shippingZipcode: formData.shippingZipcode,
+        shippingAddress: formData.shippingAddress,
+        shippingAddressDetail: formData.shippingAddressDetail,
+        shippingMemo: formData.shippingMemo,
+        productId: product!.id,
+        productName: product!.name,
+        productPrice: getEffectivePrice(),
+        quantity,
+        selectedSize: formData.selectedSize || null,
+        selectedColor: formData.selectedColor || null,
+        totalAmount: calculateSubtotal() - pointsToUse,
+        pointsUsed: pointsToUse,
+        paymentMethod: paymentMethod || undefined,
+        couponPayment: paymentMethod === "coupon" && couponPaymentData ? couponPaymentData : undefined,
+      };
+
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(memberToken ? { "Authorization": `Bearer ${memberToken}` } : {}),
         },
-        body: JSON.stringify({
-          memberId: memberId || null,
-          memberName: formData.memberName,
-          memberEmail: formData.memberEmail,
-          memberPhone: formData.memberPhone,
-          shippingName: formData.shippingName,
-          shippingPhone: formData.shippingPhone,
-          shippingZipcode: formData.shippingZipcode,
-          shippingAddress: formData.shippingAddress,
-          shippingAddressDetail: formData.shippingAddressDetail,
-          shippingMemo: formData.shippingMemo,
-          productId: product.id,
-          productName: product.name,
-          productPrice: getEffectivePrice(),
-          quantity,
-          selectedSize: formData.selectedSize || null,
-          selectedColor: formData.selectedColor || null,
-          totalAmount: calculateSubtotal() - pointsToUse,
-          pointsUsed: pointsToUse,
-          paymentMethod: paymentMethod || undefined,
-          couponPayment: paymentMethod === "coupon" && couponPaymentData ? couponPaymentData : undefined,
-        }),
+        body: JSON.stringify(orderBody),
       });
 
       const data = await res.json();
@@ -284,7 +333,7 @@ export default function Order() {
     );
   }
 
-  if (!product) {
+  if (!isCartOrder && !product) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -381,24 +430,48 @@ export default function Order() {
 
               <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
                 <h3 className="font-bold text-gray-900 mb-3">주문 상품 정보</h3>
-                <div className="flex gap-4">
-                  <div className="w-20 h-20 bg-white rounded border overflow-hidden shrink-0">
-                    <img
-                      src={getProxiedImageUrl(product.imageUrl) || DEFAULT_IMAGE}
-                      alt={product.name}
-                      className="w-full h-full object-contain p-2"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = DEFAULT_IMAGE;
-                      }}
-                    />
+                {isCartOrder ? (
+                  <div className="space-y-3">
+                    {cartItems.map((item, idx) => (
+                      <div key={idx} className="flex gap-3 items-center">
+                        <div className="w-16 h-16 bg-white rounded border overflow-hidden shrink-0">
+                          <img
+                            src={getProxiedImageUrl(item.imageUrl) || DEFAULT_IMAGE}
+                            alt={item.name}
+                            className="w-full h-full object-contain p-1"
+                            onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                          />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm">{item.name}</p>
+                          <p className="text-primary font-bold text-sm">{item.price.toLocaleString()}원</p>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="border-t pt-2 mt-2">
+                      <p className="text-primary font-bold">{calculateTotal()}원</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{product.name}</p>
-                    <p className="text-sm text-gray-500">수량: {quantity}개</p>
-                    <p className="text-primary font-bold mt-1">{calculateTotal()}원</p>
+                ) : product && (
+                  <div className="flex gap-4">
+                    <div className="w-20 h-20 bg-white rounded border overflow-hidden shrink-0">
+                      <img
+                        src={getProxiedImageUrl(product.imageUrl) || DEFAULT_IMAGE}
+                        alt={product.name}
+                        className="w-full h-full object-contain p-2"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = DEFAULT_IMAGE;
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{product.name}</p>
+                      <p className="text-sm text-gray-500">수량: {quantity}개</p>
+                      <p className="text-primary font-bold mt-1">{calculateTotal()}원</p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -441,52 +514,82 @@ export default function Order() {
                 주문 상품
               </h2>
               
-              <div className="flex gap-4 items-center">
-                <div className="w-24 h-24 bg-gray-50 rounded-lg border overflow-hidden shrink-0">
-                  <img
-                    src={getProxiedImageUrl(product.imageUrl) || DEFAULT_IMAGE}
-                    alt={product.name}
-                    className="w-full h-full object-contain p-2"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.src = DEFAULT_IMAGE;
-                    }}
-                  />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-gray-900">{product.name}</h3>
-                  {product.sku && <p className="text-sm text-gray-500">SKU: {product.sku}</p>}
-                  <div className="flex items-center justify-between mt-2">
-                    <span className="text-sm text-gray-500">수량: {quantity}개</span>
+              {isCartOrder ? (
+                <div className="space-y-3">
+                  {cartItems.map((item, idx) => (
+                    <div key={idx} className="flex gap-4 items-center border-b last:border-b-0 pb-3 last:pb-0">
+                      <div className="w-20 h-20 bg-gray-50 rounded-lg border overflow-hidden shrink-0">
+                        <img
+                          src={getProxiedImageUrl(item.imageUrl) || DEFAULT_IMAGE}
+                          alt={item.name}
+                          className="w-full h-full object-contain p-2"
+                          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-bold text-gray-900">{item.name}</h3>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="text-sm text-gray-500">수량: 1개</span>
+                          <span className="font-bold text-primary">{item.price.toLocaleString()}원</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="border-t pt-3 flex justify-between items-center">
+                    <span className="font-bold text-gray-900">합계</span>
                     <span className="font-bold text-primary text-lg">{calculateTotal()}원</span>
                   </div>
                 </div>
-              </div>
+              ) : product && (
+                <div className="flex gap-4 items-center">
+                  <div className="w-24 h-24 bg-gray-50 rounded-lg border overflow-hidden shrink-0">
+                    <img
+                      src={getProxiedImageUrl(product.imageUrl) || DEFAULT_IMAGE}
+                      alt={product.name}
+                      className="w-full h-full object-contain p-2"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = DEFAULT_IMAGE;
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-gray-900">{product.name}</h3>
+                    {product.sku && <p className="text-sm text-gray-500">SKU: {product.sku}</p>}
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-sm text-gray-500">수량: {quantity}개</span>
+                      <span className="font-bold text-primary text-lg">{calculateTotal()}원</span>
+                    </div>
+                  </div>
+                </div>
+              )}
               
-              <div className="grid gap-4 sm:grid-cols-2 mt-4 pt-4 border-t">
-                <div>
-                  <Label htmlFor="selectedSize">사이즈 (선택)</Label>
-                  <Input
-                    id="selectedSize"
-                    name="selectedSize"
-                    value={formData.selectedSize}
-                    onChange={handleInputChange}
-                    placeholder="예: M, L, XL, 260, 270 등"
-                    data-testid="input-selected-size"
-                  />
+              {!isCartOrder && (
+                <div className="grid gap-4 sm:grid-cols-2 mt-4 pt-4 border-t">
+                  <div>
+                    <Label htmlFor="selectedSize">사이즈 (선택)</Label>
+                    <Input
+                      id="selectedSize"
+                      name="selectedSize"
+                      value={formData.selectedSize}
+                      onChange={handleInputChange}
+                      placeholder="예: M, L, XL, 260, 270 등"
+                      data-testid="input-selected-size"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="selectedColor">색상 (선택)</Label>
+                    <Input
+                      id="selectedColor"
+                      name="selectedColor"
+                      value={formData.selectedColor}
+                      onChange={handleInputChange}
+                      placeholder="예: 블랙, 화이트, 네이비 등"
+                      data-testid="input-selected-color"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="selectedColor">색상 (선택)</Label>
-                  <Input
-                    id="selectedColor"
-                    name="selectedColor"
-                    value={formData.selectedColor}
-                    onChange={handleInputChange}
-                    placeholder="예: 블랙, 화이트, 네이비 등"
-                    data-testid="input-selected-color"
-                  />
-                </div>
-              </div>
+              )}
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
