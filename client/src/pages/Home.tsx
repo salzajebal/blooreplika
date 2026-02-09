@@ -148,32 +148,32 @@ function QuickMenu() {
 
   return (
     <section className="bg-white py-5 md:py-7 border-b border-gray-100">
-      <div className="max-w-[1200px] mx-auto px-4">
-        <div className="grid grid-cols-5 gap-2 md:gap-3">
+      <div className="max-w-[900px] mx-auto px-4">
+        <div className="grid grid-cols-5 gap-4 md:gap-6">
           {menuItems.slice(0, 5).map((item) => (
             <Link
               key={item.name}
               href={item.path}
-              className="flex flex-col items-center gap-1.5 group"
+              className="flex flex-col items-center gap-2 group"
               data-testid={`quick-menu-${item.name}`}
             >
-              <div className="w-full rounded-lg overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity">
-                <img src={item.image} alt={item.name} className="w-full h-auto block" loading="lazy" />
+              <div className="w-[120px] h-[120px] md:w-[148px] md:h-[148px] rounded-full overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity flex items-center justify-center mx-auto">
+                <img src={item.image} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
               </div>
               <span className="text-[10px] md:text-xs text-gray-600 text-center whitespace-nowrap group-hover:text-black transition-colors">{item.name}</span>
             </Link>
           ))}
         </div>
-        <div className="grid grid-cols-5 gap-2 md:gap-3 mt-2 md:mt-3">
+        <div className="grid grid-cols-5 gap-4 md:gap-6 mt-3 md:mt-4">
           {menuItems.slice(5, 10).map((item) => (
             <Link
               key={item.name}
               href={item.path}
-              className="flex flex-col items-center gap-1.5 group"
+              className="flex flex-col items-center gap-2 group"
               data-testid={`quick-menu-${item.name}`}
             >
-              <div className="w-full rounded-lg overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity">
-                <img src={item.image} alt={item.name} className="w-full h-auto block" loading="lazy" />
+              <div className="w-[120px] h-[120px] md:w-[148px] md:h-[148px] rounded-full overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity flex items-center justify-center mx-auto">
+                <img src={item.image} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
               </div>
               <span className="text-[10px] md:text-xs text-gray-600 text-center whitespace-nowrap group-hover:text-black transition-colors">{item.name}</span>
             </Link>
