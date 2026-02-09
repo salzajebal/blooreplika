@@ -10,7 +10,7 @@ import {
   Lock, User, Mail, Phone, CheckCircle, XCircle,
   Star, FileText, Bell, Calendar, Tag,
   Clock, Snowflake, Unlock, Settings, Link2, Upload,
-  MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2, Search, Shield
+  MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2, Search, Shield, Image
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage, Order, CouponPayment } from "@shared/schema";
@@ -230,6 +230,32 @@ export default function Admin() {
     { localId: "genuine", name: "정품" },
   ];
   const [selectedCrawlCategories, setSelectedCrawlCategories] = useState<string[]>([]);
+
+  const [bagstyleProgress, setBagstyleProgress] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    message: string;
+    category: string;
+  }>({ status: 'idle', total: 0, current: 0, message: '', category: '' });
+  const [clearBeforeBagstyle, setClearBeforeBagstyle] = useState(false);
+  const bagstyleIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [bagstyleBannerLoading, setBagstyleBannerLoading] = useState(false);
+  const [bagstyleMaxPages, setBagstyleMaxPages] = useState(50);
+
+  const BAGSTYLE_CATEGORIES = [
+    { localId: "new-arrivals", name: "신상품" },
+    { localId: "clothing", name: "의류" },
+    { localId: "bags", name: "가방/백" },
+    { localId: "shoes", name: "신발" },
+    { localId: "wallets", name: "지갑" },
+    { localId: "golf", name: "골프" },
+    { localId: "jewelry", name: "쥬얼리/잡화" },
+    { localId: "highend", name: "하이앤드BEST" },
+    { localId: "sale", name: "특가상품" },
+    { localId: "sameday", name: "당일배송" },
+  ];
+  const [selectedBagstyleCategories, setSelectedBagstyleCategories] = useState<string[]>([]);
 
   // Dittoholic crawl state
   const [dittoholicProgress, setDittoholicProgress] = useState<{
@@ -555,6 +581,93 @@ export default function Admin() {
   
   const deselectAllDittoholicCategories = () => {
     setSelectedDittoholicCategories([]);
+  };
+
+  const fetchBagstyleProgress = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bagstyle/progress", { method: "GET" });
+      const data = await res.json();
+      if (data.success) {
+        setBagstyleProgress({
+          status: data.status,
+          total: data.total,
+          current: data.current,
+          message: data.message,
+          category: data.category || '',
+        });
+        if (data.status === 'completed' || data.status === 'error') {
+          if (bagstyleIntervalRef.current) {
+            clearInterval(bagstyleIntervalRef.current);
+            bagstyleIntervalRef.current = null;
+          }
+          fetchProductCount();
+          fetchProducts();
+        }
+      }
+    } catch {}
+  };
+
+  const startBagstyleCrawl = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bagstyle/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clearExisting: clearBeforeBagstyle,
+          selectedCategories: selectedBagstyleCategories.length > 0 ? selectedBagstyleCategories : undefined,
+          maxPages: bagstyleMaxPages,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const categoryText = selectedBagstyleCategories.length > 0
+          ? `${selectedBagstyleCategories.length}개 카테고리`
+          : "전체 카테고리";
+        toast({ title: "bagstyle 크롤링 시작", description: `${categoryText} 크롤링이 시작되었습니다.` });
+        setBagstyleProgress({ status: 'running', total: 0, current: 0, message: '시작 중...', category: '' });
+        bagstyleIntervalRef.current = setInterval(fetchBagstyleProgress, 500);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+
+  const crawlBagstyleBanners = async () => {
+    setBagstyleBannerLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bagstyle/banners", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "배너/카테고리 크롤링 완료", description: data.message });
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "배너 크롤링에 실패했습니다.", variant: "destructive" });
+    } finally {
+      setBagstyleBannerLoading(false);
+    }
+  };
+
+  const toggleBagstyleCategory = (localId: string) => {
+    setSelectedBagstyleCategories(prev =>
+      prev.includes(localId)
+        ? prev.filter(id => id !== localId)
+        : [...prev, localId]
+    );
+  };
+
+  const selectAllBagstyleCategories = () => {
+    setSelectedBagstyleCategories(BAGSTYLE_CATEGORIES.map(c => c.localId));
+  };
+
+  const deselectAllBagstyleCategories = () => {
+    setSelectedBagstyleCategories([]);
   };
 
   const [reviewCrawlLoading, setReviewCrawlLoading] = useState(false);
@@ -5640,6 +5753,186 @@ export default function Admin() {
                     <li className="flex items-start gap-2">
                       <span className="text-purple-500 mt-1">•</span>
                       <span>Shopify 기반 사이트로 빠른 크롤링이 가능합니다.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Bagstyle.site Crawl Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Download className="w-5 h-5 text-teal-600" />
+                  bagstyle.site 크롤링
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">bagstyle.site에서 상품, 배너, 카테고리를 크롤링합니다. (시계 카테고리 제외)</p>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div className="border border-teal-200 bg-teal-50 rounded-lg p-4 space-y-3">
+                  <h4 className="font-semibold text-teal-800 flex items-center gap-2">
+                    <Image className="w-4 h-4" />
+                    배너 & 카테고리 이미지 크롤링
+                  </h4>
+                  <p className="text-sm text-gray-600">bagstyle.site 메인 페이지의 배너 이미지와 카테고리 이미지를 가져옵니다.</p>
+                  <Button
+                    data-testid="button-crawl-bagstyle-banners"
+                    onClick={crawlBagstyleBanners}
+                    disabled={bagstyleBannerLoading}
+                    className="bg-teal-600 hover:bg-teal-700 text-white"
+                  >
+                    {bagstyleBannerLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        크롤링 중...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-2" />
+                        배너/카테고리 가져오기
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="clearBeforeBagstyle"
+                        checked={clearBeforeBagstyle}
+                        onChange={(e) => setClearBeforeBagstyle(e.target.checked)}
+                        className="w-4 h-4 text-teal-600 rounded"
+                      />
+                      <label htmlFor="clearBeforeBagstyle" className="text-sm text-gray-700">
+                        크롤링 전 기존 상품 모두 삭제
+                      </label>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <label className="text-sm text-gray-700">카테고리당 최대 페이지:</label>
+                      <Input
+                        data-testid="input-bagstyle-max-pages"
+                        type="number"
+                        value={bagstyleMaxPages}
+                        onChange={(e) => setBagstyleMaxPages(Number(e.target.value))}
+                        className="w-24"
+                        min={1}
+                        max={500}
+                      />
+                    </div>
+
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-medium text-gray-800">카테고리 선택 (선택안하면 전체)</h5>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={selectAllBagstyleCategories}>전체 선택</Button>
+                          <Button size="sm" variant="outline" onClick={deselectAllBagstyleCategories}>선택 해제</Button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+                        {BAGSTYLE_CATEGORIES.map((cat) => (
+                          <label
+                            key={cat.localId}
+                            className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
+                              selectedBagstyleCategories.includes(cat.localId)
+                                ? 'bg-teal-50 border-teal-300'
+                                : 'bg-white border-gray-200 hover:border-teal-200'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedBagstyleCategories.includes(cat.localId)}
+                              onChange={() => toggleBagstyleCategory(cat.localId)}
+                              className="w-4 h-4 text-teal-600 rounded"
+                            />
+                            <span className="text-sm">{cat.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {selectedBagstyleCategories.length > 0 && (
+                        <p className="text-xs text-teal-600 mt-2">
+                          선택된 카테고리: {selectedBagstyleCategories.map(id => BAGSTYLE_CATEGORIES.find(c => c.localId === id)?.name).join(', ')}
+                        </p>
+                      )}
+                    </div>
+
+                    {bagstyleProgress.status !== 'idle' && (
+                      <div className={`p-4 rounded-lg ${
+                        bagstyleProgress.status === 'running' ? 'bg-teal-50 border border-teal-200' :
+                        bagstyleProgress.status === 'completed' ? 'bg-green-50 border border-green-200' :
+                        'bg-red-50 border border-red-200'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          {bagstyleProgress.status === 'running' && <Loader2 className="w-4 h-4 text-teal-600 animate-spin" />}
+                          {bagstyleProgress.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                          {bagstyleProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                          <span className={`text-sm font-medium ${
+                            bagstyleProgress.status === 'running' ? 'text-teal-700' :
+                            bagstyleProgress.status === 'completed' ? 'text-green-700' :
+                            'text-red-700'
+                          }`}>
+                            {bagstyleProgress.message}
+                          </span>
+                        </div>
+
+                        {bagstyleProgress.status === 'running' && bagstyleProgress.total > 0 && (
+                          <div className="space-y-2">
+                            <div className="w-full bg-teal-100 rounded-full h-3">
+                              <div
+                                className="bg-teal-500 h-3 rounded-full transition-all duration-300"
+                                style={{ width: `${Math.round((bagstyleProgress.current / bagstyleProgress.total) * 100)}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-xs text-teal-600">
+                              <span>{bagstyleProgress.current.toLocaleString()} / {bagstyleProgress.total.toLocaleString()}</span>
+                              <span>{Math.round((bagstyleProgress.current / bagstyleProgress.total) * 100)}%</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex gap-3">
+                      <Button
+                        data-testid="button-start-bagstyle-crawl"
+                        onClick={startBagstyleCrawl}
+                        disabled={bagstyleProgress.status === 'running'}
+                        className="bg-teal-600 hover:bg-teal-700 text-white flex-1"
+                      >
+                        {bagstyleProgress.status === 'running' ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            크롤링 중...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4 mr-2" />
+                            {selectedBagstyleCategories.length > 0
+                              ? `선택 카테고리 크롤링 (${selectedBagstyleCategories.length}개)`
+                              : 'bagstyle 전체 크롤링 시작'}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-teal-500 mt-1">•</span>
+                      <span>bagstyle.site에서 10개 카테고리(시계 제외)의 상품을 크롤링합니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-teal-500 mt-1">•</span>
+                      <span>배너 이미지와 카테고리 이미지도 별도로 가져올 수 있습니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-teal-500 mt-1">•</span>
+                      <span>브랜드 정보도 자동으로 생성됩니다.</span>
                     </li>
                   </ul>
                 </div>

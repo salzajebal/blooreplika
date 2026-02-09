@@ -3056,6 +3056,400 @@ export async function registerRoutes(
     })();
   });
 
+  // ============ bagstyle.site Crawling ============
+  const bagstyleProgress: {
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    message: string;
+    category: string;
+    startedAt?: Date;
+    completedAt?: Date;
+  } = { status: 'idle', total: 0, current: 0, message: '', category: '' };
+
+  app.get("/api/admin/crawl/bagstyle/progress", requireAdminAuth, async (_req: Request, res: Response) => {
+    res.json({ success: true, ...bagstyleProgress });
+  });
+
+  app.post("/api/admin/crawl/bagstyle/banners", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": "https://bagstyle.site/",
+      };
+      const response = await fetch("https://bagstyle.site/", { headers });
+      if (!response.ok) return res.status(500).json({ success: false, error: "사이트 접속 실패" });
+      const html = await response.text();
+      const $ = cheerio.load(html);
+
+      const existingBanners = await storage.getAllBanners();
+      for (const b of existingBanners) {
+        await storage.deleteBanner(b.id);
+      }
+
+      let bannerOrder = 0;
+      $('div.eb-slide-item img, .eb-slider img').each((_i, el) => {
+        const src = $(el).attr('src') || $(el).attr('data-src');
+        if (src && src.includes('/data/ebslider/') && !src.includes('kakao')) {
+          const fullUrl = src.startsWith('http') ? src : `https://bagstyle.site${src}`;
+          const link = $(el).closest('a').attr('href') || '/';
+          storage.createBanner({
+            title: `배너 ${bannerOrder + 1}`,
+            imageUrl: fullUrl,
+            linkUrl: link.startsWith('http') ? link : (link.startsWith('/') ? link : `/${link}`),
+            position: "main",
+            sortOrder: bannerOrder,
+            isActive: true,
+          });
+          bannerOrder++;
+        }
+      });
+
+      if (bannerOrder === 0) {
+        const sliderMatches = html.match(/https:\/\/bagstyle\.site\/data\/ebslider\/[^"'\s]+\.(jpg|jpeg|png|webp)/gi) || [];
+        const seen = new Set<string>();
+        for (const url of sliderMatches) {
+          if (!seen.has(url)) {
+            seen.add(url);
+            await storage.createBanner({
+              title: `배너 ${bannerOrder + 1}`,
+              imageUrl: url,
+              linkUrl: "/",
+              position: "main",
+              sortOrder: bannerOrder,
+              isActive: true,
+            });
+            bannerOrder++;
+          }
+        }
+      }
+
+      const existingCategories = await storage.getAllCategories();
+      const categoryImages: { name: string; imageUrl: string; slug: string }[] = [];
+      $('a').each((_i, el) => {
+        const img = $(el).find('img');
+        const src = img.attr('src') || img.attr('data-src');
+        const text = $(el).text().trim();
+        if (src && src.includes('/data/ebcontents/') && text) {
+          const cleanText = text.replace(/\s+/g, ' ').trim();
+          if (cleanText.length > 0 && cleanText.length < 30) {
+            const fullUrl = src.startsWith('http') ? src : `https://bagstyle.site${src}`;
+            categoryImages.push({
+              name: cleanText,
+              imageUrl: fullUrl,
+              slug: cleanText.toLowerCase().replace(/[^a-z0-9가-힣]/g, ''),
+            });
+          }
+        }
+      });
+
+      for (const cat of existingCategories) {
+        const match = categoryImages.find(ci =>
+          ci.name === cat.name ||
+          ci.slug === cat.slug
+        );
+        if (match) {
+          await storage.updateCategory(cat.id, { imageUrl: match.imageUrl });
+        }
+      }
+
+      res.json({
+        success: true,
+        message: `${bannerOrder}개 배너, ${categoryImages.length}개 카테고리 이미지가 업데이트되었습니다.`,
+        bannerCount: bannerOrder,
+        categoryImageCount: categoryImages.length,
+      });
+    } catch (error: any) {
+      console.error("Banner crawl error:", error);
+      res.status(500).json({ success: false, error: error.message || "배너 크롤링 오류" });
+    }
+  });
+
+  app.post("/api/admin/crawl/bagstyle/start", requireAdminAuth, async (req: Request, res: Response) => {
+    if (bagstyleProgress.status === 'running') {
+      return res.status(400).json({ success: false, error: "이미 크롤링이 진행 중입니다." });
+    }
+
+    const { clearExisting, selectedCategories, maxPages = 50 } = req.body;
+
+    bagstyleProgress.status = 'running';
+    bagstyleProgress.total = 0;
+    bagstyleProgress.current = 0;
+    bagstyleProgress.message = '크롤링 준비 중...';
+    bagstyleProgress.category = '';
+    bagstyleProgress.startedAt = new Date();
+
+    res.json({ success: true, message: "bagstyle.site 크롤링이 시작되었습니다." });
+
+    (async () => {
+      const ALL_CATEGORIES = [
+        { caId: "j0", name: "신상품", localId: "new-arrivals" },
+        { caId: "i0", name: "의류", localId: "clothing" },
+        { caId: "e0", name: "가방/백", localId: "bags" },
+        { caId: "g0", name: "신발", localId: "shoes" },
+        { caId: "h0", name: "지갑", localId: "wallets" },
+        { caId: "70", name: "골프", localId: "golf" },
+        { caId: "f0", name: "쥬얼리/잡화", localId: "jewelry" },
+        { caId: "d0", name: "하이앤드BEST", localId: "highend" },
+        { caId: "80", name: "특가상품", localId: "sale" },
+        { caId: "a0", name: "당일배송", localId: "sameday" },
+      ];
+
+      const CATEGORIES = selectedCategories && selectedCategories.length > 0
+        ? ALL_CATEGORIES.filter(c => selectedCategories.includes(c.localId))
+        : ALL_CATEGORIES;
+
+      const headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Referer": "https://bagstyle.site/",
+      };
+
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+      const brandCache = new Map<string, string>();
+
+      const getOrCreateBrand = async (brandName: string): Promise<string | undefined> => {
+        if (!brandName) return undefined;
+        const key = brandName.toLowerCase().trim();
+        if (brandCache.has(key)) return brandCache.get(key);
+
+        const existingBrands = await storage.getAllBrands();
+        let found = existingBrands.find(b =>
+          b.name.toLowerCase() === key ||
+          b.slug === key.replace(/\s+/g, '')
+        );
+
+        if (!found) {
+          try {
+            found = await storage.createBrand({
+              name: brandName.trim(),
+              slug: key.replace(/\s+/g, '').replace(/[^a-z0-9가-힣]/g, ''),
+              sortOrder: 100,
+              isActive: true,
+            });
+          } catch {
+            const retry = (await storage.getAllBrands()).find(b => b.slug === key.replace(/\s+/g, '').replace(/[^a-z0-9가-힣]/g, ''));
+            if (retry) found = retry;
+          }
+        }
+
+        if (found) {
+          brandCache.set(key, found.id);
+          return found.id;
+        }
+        return undefined;
+      };
+
+      const fetchProductList = async (caId: string, page: number): Promise<string[]> => {
+        try {
+          const url = `https://bagstyle.site/shop/list.php?ca_id=${caId}&page=${page}`;
+          const response = await fetch(url, { headers });
+          if (!response.ok) return [];
+          const html = await response.text();
+          const matches = (html.match(/it_id=(\d+)/g) || []).map(m => m.replace('it_id=', ''));
+          return Array.from(new Set(matches));
+        } catch { return []; }
+      };
+
+      const fetchProductDetail = async (sourceId: string, categoryLocalId: string) => {
+        const url = `https://bagstyle.site/shop/item.php?it_id=${sourceId}`;
+        try {
+          const response = await fetch(url, { headers });
+          if (!response.ok) return null;
+          const html = await response.text();
+          const $ = cheerio.load(html);
+
+          let name = '';
+          const h1 = $('h1.sit_tit');
+          if (h1.length) {
+            name = h1.text().trim();
+          }
+          if (!name) {
+            const titleMatch = html.match(/<title>([^|<]+)/i);
+            if (titleMatch) name = titleMatch[1].trim();
+          }
+          if (!name) name = `상품 ${sourceId}`;
+
+          let brandName = '';
+          const brandEl = $('td:contains("브랜드")').next('td');
+          if (brandEl.length) {
+            brandName = brandEl.text().trim();
+          }
+          if (!brandName) {
+            const brandMatch = html.match(/브랜드[^<]*<\/td>\s*<td[^>]*>([^<]+)/i);
+            if (brandMatch) brandName = brandMatch[1].trim();
+          }
+
+          let price = 0;
+          let originalPrice = 0;
+          const salePriceMatch = html.match(/판매가[^0-9]*(\d{1,3}(?:,\d{3})+)/);
+          if (salePriceMatch) price = parseInt(salePriceMatch[1].replace(/,/g, ''), 10);
+          const normalPriceMatch = html.match(/정상가[^0-9]*(\d{1,3}(?:,\d{3})+)/);
+          if (normalPriceMatch) originalPrice = parseInt(normalPriceMatch[1].replace(/,/g, ''), 10);
+
+          if (!price) {
+            const anyPrice = html.match(/(\d{1,3}(?:,\d{3})+)원/);
+            if (anyPrice) price = parseInt(anyPrice[1].replace(/,/g, ''), 10);
+          }
+
+          const mainImages: string[] = [];
+          const imgRegex = new RegExp(`https://bagstyle\\.site/data/item/${sourceId}/[^"'\\s]+\\.(jpg|jpeg|png|webp)`, 'gi');
+          const mainImgMatches = html.match(imgRegex) || [];
+          mainImgMatches.forEach(img => {
+            const clean = img.replace(/thumb-/, '').replace(/_\d+x\d+/g, '').split('?')[0];
+            if (!clean.includes('_77x82') && !mainImages.includes(clean)) mainImages.push(clean);
+          });
+
+          const detailImages: string[] = [];
+          const detailRegex = /https?:\/\/bagstyle\.site\/data\/editor\/[^"'\s]+\.(jpg|jpeg|png|webp|gif)/gi;
+          const detailMatches = html.match(detailRegex) || [];
+          detailMatches.forEach(img => {
+            const clean = img.replace(/^http:/, 'https:');
+            if (!detailImages.includes(clean)) detailImages.push(clean);
+          });
+
+          let discountPercent = 0;
+          if (originalPrice > 0 && price > 0 && originalPrice > price) {
+            discountPercent = Math.round(((originalPrice - price) / originalPrice) * 100);
+          }
+
+          const isBest = html.includes('BEST') || html.includes('best_icon') || html.includes('베스트');
+
+          let options = '';
+          const optionTexts: string[] = [];
+          $('select[name^="it_opt"] option').each((_i, el) => {
+            const val = $(el).attr('value');
+            if (val && val !== '선택' && !val.startsWith('선택')) {
+              optionTexts.push(val);
+            }
+          });
+          if (optionTexts.length > 0) {
+            options = JSON.stringify(optionTexts);
+          }
+
+          return {
+            sourceId,
+            name,
+            brandName,
+            price,
+            originalPrice: originalPrice > 0 ? originalPrice : undefined,
+            imageUrl: mainImages[0] || `https://bagstyle.site/data/item/${sourceId}/`,
+            imageUrls: mainImages,
+            detailImageUrls: detailImages,
+            categoryId: categoryLocalId,
+            discountPercent,
+            isBest,
+            options,
+          };
+        } catch { return null; }
+      };
+
+      try {
+        if (clearExisting) {
+          bagstyleProgress.message = '기존 상품 삭제 중...';
+          const existing = await storage.getAllProducts();
+          for (const p of existing) {
+            await storage.deleteProduct(p.id);
+          }
+        }
+
+        for (const cat of ALL_CATEGORIES) {
+          try {
+            const existingCats = await storage.getAllCategories();
+            if (!existingCats.find(c => c.id === cat.localId || c.slug === cat.localId)) {
+              await storage.createCategory({
+                id: cat.localId,
+                name: cat.name,
+                slug: cat.localId,
+                sortOrder: ALL_CATEGORIES.indexOf(cat) * 10,
+                isActive: true,
+              });
+            }
+          } catch {}
+        }
+
+        let totalInserted = 0;
+
+        for (const category of CATEGORIES) {
+          bagstyleProgress.category = category.name;
+          bagstyleProgress.message = `[${category.name}] 상품 목록 수집 중...`;
+
+          const allIds = new Set<string>();
+          let page = 1;
+          let emptyCount = 0;
+
+          while (emptyCount < 3 && page <= maxPages) {
+            const ids = await fetchProductList(category.caId, page);
+            let newCount = 0;
+            ids.forEach(id => { if (!allIds.has(id)) { allIds.add(id); newCount++; } });
+            if (newCount === 0) emptyCount++; else emptyCount = 0;
+            page++;
+            await delay(50);
+
+            if (page % 10 === 0) {
+              bagstyleProgress.message = `[${category.name}] 페이지 ${page} 스캔 중... (${allIds.size}개 발견)`;
+            }
+          }
+
+          if (allIds.size === 0) continue;
+
+          bagstyleProgress.message = `[${category.name}] ${allIds.size}개 상품 상세 정보 수집 중...`;
+          bagstyleProgress.total = allIds.size;
+          bagstyleProgress.current = 0;
+
+          const idsArray = Array.from(allIds);
+
+          for (let i = 0; i < idsArray.length; i += 10) {
+            const batch = idsArray.slice(i, i + 10);
+            const results = await Promise.all(batch.map(id => fetchProductDetail(id, category.localId)));
+
+            for (const p of results) {
+              if (p && p.price > 0) {
+                try {
+                  const brandId = await getOrCreateBrand(p.brandName);
+                  await storage.createProduct({
+                    name: p.name,
+                    categoryId: p.categoryId,
+                    brandId: brandId,
+                    price: p.price,
+                    originalPrice: p.originalPrice,
+                    description: p.name,
+                    detailContent: "프리미엄 명품 제품입니다.",
+                    imageUrl: p.imageUrl,
+                    imageUrls: p.imageUrls.length > 0 ? p.imageUrls : [p.imageUrl],
+                    detailImageUrls: p.detailImageUrls,
+                    options: p.options || undefined,
+                    discountPercent: p.discountPercent,
+                    isBest: p.isBest,
+                    isNew: totalInserted % 10 === 0,
+                    isActive: true,
+                  });
+                  totalInserted++;
+                } catch {}
+              }
+            }
+
+            bagstyleProgress.current = Math.min(i + 10, idsArray.length);
+            bagstyleProgress.message = `[${category.name}] 상품 저장 중... (${bagstyleProgress.current}/${allIds.size})`;
+            await delay(80);
+          }
+
+          console.log(`[bagstyle][${category.name}] ${allIds.size} products processed, total: ${totalInserted}`);
+        }
+
+        bagstyleProgress.status = 'completed';
+        bagstyleProgress.message = `완료! 총 ${totalInserted}개 상품이 크롤링되었습니다.`;
+        bagstyleProgress.completedAt = new Date();
+        console.log(`Bagstyle crawl complete: ${totalInserted} products`);
+
+      } catch (error: any) {
+        bagstyleProgress.status = 'error';
+        bagstyleProgress.message = `오류: ${error.message || '알 수 없는 오류'}`;
+        console.error('Bagstyle crawl error:', error);
+      }
+    })();
+  });
+
   // Crawl reviews from cdamdong.co.kr (bestreview and kalreom boards)
   app.post("/api/admin/crawl/reviews", requireAdminAuth, async (req: Request, res: Response) => {
     const headers = {
