@@ -97,6 +97,8 @@ export default function ProductList() {
   const { toast } = useToast();
   const { salePercent, calculateSalePrice, hasSale } = useGlobalSale();
   const isInitialMount = useRef(true);
+  const isBrandInitial = useRef(true);
+  const isRestoringScroll = useRef(false);
 
   const categoryInfo = CATEGORIES.find(c => c.slug === categorySlug);
   
@@ -195,6 +197,35 @@ export default function ProductList() {
   }, [currentPage, totalPages, categorySlug, subcategoryId, searchQuery, selectedBrand, queryClient]);
 
   useEffect(() => {
+    const savedScroll = sessionStorage.getItem("productListScroll");
+    if (savedScroll && savedListCategory === categorySlug) {
+      isRestoringScroll.current = true;
+    }
+    
+    const handleScroll = () => {
+      if (!isRestoringScroll.current) {
+        sessionStorage.setItem("productListScroll", String(window.scrollY));
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!loading && isRestoringScroll.current) {
+      const savedScroll = parseInt(sessionStorage.getItem("productListScroll") || "0");
+      if (savedScroll > 0) {
+        requestAnimationFrame(() => {
+          window.scrollTo(0, savedScroll);
+          isRestoringScroll.current = false;
+        });
+      } else {
+        isRestoringScroll.current = false;
+      }
+    }
+  }, [loading]);
+
+  useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       sessionStorage.setItem("productListCategory", categorySlug || "");
@@ -203,11 +234,15 @@ export default function ProductList() {
     setCurrentPage(1);
     setSelectedBrand(null);
     sessionStorage.setItem("productListPage", "1");
+    sessionStorage.setItem("productListScroll", "0");
     sessionStorage.setItem("productListCategory", categorySlug || "");
   }, [categorySlug, subcategoryId, searchQuery]);
 
   useEffect(() => {
-    if (isInitialMount.current) return;
+    if (isBrandInitial.current) {
+      isBrandInitial.current = false;
+      return;
+    }
     setCurrentPage(1);
     sessionStorage.setItem("productListPage", "1");
   }, [selectedBrand]);
