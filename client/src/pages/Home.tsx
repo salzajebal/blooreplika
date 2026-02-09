@@ -16,8 +16,19 @@ function filterValidImageUrls(urls: string[]): string[] {
 }
 
 function FloatingButtons() {
+  const [kakaoLink, setKakaoLink] = useState("");
+  
+  useEffect(() => {
+    fetch("/api/settings/kakaoTalkLink")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data?.value) setKakaoLink(data.data.value);
+      })
+      .catch(() => {});
+  }, []);
+
   const openKakaoChat = () => {
-    window.open("https://open.kakao.com/o/soKnRUai", "_blank");
+    if (kakaoLink) window.open(kakaoLink, "_blank");
   };
   
   return (

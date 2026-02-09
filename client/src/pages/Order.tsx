@@ -16,7 +16,6 @@ import type { Product } from "@shared/schema";
 
 type PaymentMethod = "coupon" | "bank" | null;
 
-const KAKAO_LINK = "https://open.kakao.com/o/soKnRUai";
 
 function KakaoIcon({ className }: { className?: string }) {
   return (
@@ -45,6 +44,7 @@ export default function Order() {
   const [memberPointBalance, setMemberPointBalance] = useState(0);
   const [pointsToUse, setPointsToUse] = useState(0);
   const [pointInputValue, setPointInputValue] = useState("");
+  const [kakaoLink, setKakaoLink] = useState("");
   
   const searchParams = new URLSearchParams(window.location.search);
   const quantityParam = parseInt(searchParams.get("quantity") || "1");
@@ -119,6 +119,12 @@ export default function Order() {
       } catch {}
     };
     fetchMemberPoints();
+    fetch("/api/settings/kakaoTalkLink")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data?.value) setKakaoLink(data.data.value);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -397,7 +403,7 @@ export default function Order() {
                       입금 확인 후 상품이 발송됩니다.
                     </p>
                     <a
-                      href={KAKAO_LINK}
+                      href={kakaoLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-bold py-3 px-6 rounded-lg transition-colors"
@@ -415,7 +421,7 @@ export default function Order() {
                       아래 버튼을 눌러 카카오톡으로 이동해주세요.
                     </p>
                     <a
-                      href={KAKAO_LINK}
+                      href={kakaoLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-bold py-4 px-8 rounded-lg text-lg transition-colors"

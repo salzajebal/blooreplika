@@ -2,8 +2,20 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Link } from "wouter";
 import { ChevronRight, Home, Truck, RefreshCw, CreditCard, ShieldCheck, Package, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export default function Guide() {
+  const [kakaoLink, setKakaoLink] = useState("");
+
+  useEffect(() => {
+    fetch("/api/settings/kakaoTalkLink")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data?.value) setKakaoLink(data.data.value);
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
@@ -141,7 +153,7 @@ export default function Guide() {
               <h3 className="font-bold text-gray-900 mb-2">카카오톡 상담</h3>
               <p className="text-gray-600">24시간 문의 가능 (순차 답변)</p>
               <button 
-                onClick={() => window.open("https://pf.kakao.com/_xixcxgj", "_blank")}
+                onClick={() => kakaoLink && window.open(kakaoLink, "_blank")}
                 className="mt-3 bg-yellow-400 hover:bg-yellow-500 text-black font-medium px-4 py-2 rounded-lg transition-colors"
               >
                 카카오톡 상담하기

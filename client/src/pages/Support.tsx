@@ -33,6 +33,7 @@ export default function Support() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const [faqs, setFaqs] = useState<typeof DEFAULT_FAQS>(DEFAULT_FAQS);
+  const [kakaoLink, setKakaoLink] = useState("");
   const faqSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -47,7 +48,17 @@ export default function Support() {
         console.error("Error fetching FAQs:", error);
       }
     };
+    const fetchKakaoLink = async () => {
+      try {
+        const res = await fetch("/api/settings/kakaoTalkLink");
+        const data = await res.json();
+        if (data.success && data.data?.value) {
+          setKakaoLink(data.data.value);
+        }
+      } catch {}
+    };
     fetchFaqs();
+    fetchKakaoLink();
   }, []);
 
   const filteredFaqs = activeCategory === "all" 
@@ -55,7 +66,9 @@ export default function Support() {
     : faqs.filter(faq => faq.category === activeCategory);
 
   const handleKakaoClick = () => {
-    window.open("https://pf.kakao.com/_xixcxgj", "_blank");
+    if (kakaoLink) {
+      window.open(kakaoLink, "_blank");
+    }
   };
 
   const scrollToFaq = () => {
