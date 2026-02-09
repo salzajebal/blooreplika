@@ -8,18 +8,6 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  
-  /* Refined Luxury Gold Palette */
-  --color-gold-50: hsl(45 60% 98%);
-  --color-gold-100: hsl(45 55% 90%);
-  --color-gold-200: hsl(45 50% 80%);
-  --color-gold-300: hsl(44 48% 70%);
-  --color-gold-400: hsl(43 55% 60%); 
-  --color-gold-500: hsl(42 65% 50%); /* Base Gold - Metallic */
-  --color-gold-600: hsl(40 70% 40%);
-  --color-gold-700: hsl(38 75% 30%);
-  --color-gold-800: hsl(35 80% 20%);
-  --color-gold-900: hsl(30 85% 15%);
 
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));
@@ -57,28 +45,26 @@
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 10%;
 
-  /* Primary is Elegant Gold */
-  --primary: 42 65% 50%;
+  --primary: 0 0% 10%;
   --primary-foreground: 0 0% 100%;
 
-  /* Secondary is Dark Slate for contrast */
-  --secondary: 210 20% 96%;
-  --secondary-foreground: 210 20% 20%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 20%;
 
   --muted: 0 0% 96%;
   --muted-foreground: 0 0% 45%;
 
-  --accent: 45 60% 96%;
-  --accent-foreground: 42 65% 40%;
+  --accent: 0 0% 96%;
+  --accent-foreground: 0 0% 10%;
 
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 0 0% 90%;
-  --input: 0 0% 90%;
-  --ring: 42 65% 50%;
+  --border: 0 0% 92%;
+  --input: 0 0% 92%;
+  --ring: 0 0% 10%;
 
-  --radius: 0rem; 
+  --radius: 0.5rem;
 }
 
 .dark {
@@ -88,7 +74,7 @@
   --card-foreground: 0 0% 98%;
   --popover: 0 0% 12%;
   --popover-foreground: 0 0% 98%;
-  --primary: 42 65% 50%;
+  --primary: 0 0% 98%;
   --primary-foreground: 0 0% 10%;
   --secondary: 0 0% 15%;
   --secondary-foreground: 0 0% 98%;
@@ -100,7 +86,7 @@
   --destructive-foreground: 0 0% 98%;
   --border: 0 0% 20%;
   --input: 0 0% 20%;
-  --ring: 42 65% 50%;
+  --ring: 0 0% 98%;
 }
 
 @layer base {
@@ -117,7 +103,7 @@
   
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    font-family: 'Noto Sans KR', 'Inter', sans-serif;
+    font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     overflow-x: hidden;
     min-height: 100vh;
     min-height: 100dvh;
@@ -132,14 +118,6 @@
   .container-custom {
     @apply max-w-[1200px] mx-auto px-3 sm:px-4;
     width: 100%;
-  }
-  
-  .text-gold {
-    color: hsl(42 65% 50%);
-  }
-  
-  .bg-gold {
-    background-color: hsl(42 65% 50%);
   }
   
   .scrollbar-hide {
@@ -178,16 +156,5 @@
   .container-custom {
     padding-left: 12px;
     padding-right: 12px;
-  }
-}
-
-@keyframes sparkle {
-  0%, 100% {
-    filter: drop-shadow(0 0 4px rgba(255, 215, 0, 0.4));
-    transform: scale(1);
-  }
-  50% {
-    filter: drop-shadow(0 0 12px rgba(255, 215, 0, 1)) drop-shadow(0 0 20px rgba(255, 215, 0, 0.6));
-    transform: scale(1.1);
   }
 }

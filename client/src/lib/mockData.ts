@@ -1,5 +1,5 @@
 export const CATEGORIES = [
-  { id: "outer", name: "아우터", count: 42, description: "청담동에디션이 엄선한 프리미엄 아우터 컬렉션" },
+  { id: "outer", name: "아우터", count: 42, description: "PLIKI이 엄선한 프리미엄 아우터 컬렉션" },
   { id: "padding", name: "패딩", count: 35, description: "따뜻함과 스타일을 동시에, 고급 패딩 컬렉션" },
   { id: "tops", name: "상의", count: 58, description: "데일리부터 포멀까지, 다양한 상의 컬렉션" },
   { id: "bottoms", name: "하의", count: 45, description: "완벽한 핏의 팬츠 & 스커트 컬렉션" },

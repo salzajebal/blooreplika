@@ -1,26 +1,12 @@
-import { Search, User, ShoppingBag, Menu, X } from "lucide-react";
+import { Search, User, ShoppingBag, Menu, X, Heart, ChevronDown } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet";
 import { useWishlist } from "@/contexts/WishlistContext";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
-const noticeTexts = [
-  "청담동에디션의 정품 제품은 NFC 연속...",
-  "10월 배송 일정 안내! 자세한 내용은 공지사항 확인",
-  "카카오톡 사칭 주의! 공식 채널 확인 필수",
-  "월간 베스트 리뷰 이벤트 오픈!",
-  "청담동에디션 25년 5월 카톡 후기 모음!",
-];
-
-const mainNavItems = [
-  { name: '소개글', path: '/about' },
-  { name: '공지사항', path: '/notices' },
-  { name: '1:1 비교', path: '/comparison' },
-  { name: '베스트리뷰', path: '/reviews' },
-  { name: '블로그', path: '/blog' },
-  { name: '청담동초이스', path: '/choice' },
+const categoryNavItems = [
   { name: '아우터', path: '/products/outer' },
   { name: '패딩', path: '/products/padding' },
   { name: '상의', path: '/products/tops' },
@@ -31,20 +17,22 @@ const mainNavItems = [
   { name: '가방', path: '/products/bags' },
   { name: '시계', path: '/products/watches' },
   { name: '정품', path: '/products/genuine' },
+];
+
+const menuItems = [
+  { name: '소개글', path: '/about' },
+  { name: '공지사항', path: '/notices' },
+  { name: '1:1 비교', path: '/comparison' },
+  { name: '베스트리뷰', path: '/reviews' },
+  { name: '블로그', path: '/blog' },
+  { name: 'PLIKI초이스', path: '/choice' },
+  ...categoryNavItems,
   { name: '국내배송', path: '/products/domestic' },
   { name: '커뮤니티', path: '/comparison' },
   { name: '상품후기', path: '/reviews' },
 ];
 
-const domesticSubItems = [
-  { name: '시계', path: '/products/domestic?sub=domestic-watches' },
-  { name: '상의', path: '/products/domestic?sub=domestic-tops' },
-  { name: '아우터', path: '/products/domestic?sub=domestic-outer' },
-  { name: '악세사리', path: '/products/domestic?sub=domestic-accessories' },
-  { name: '하의', path: '/products/domestic?sub=domestic-bottoms' },
-  { name: '가방', path: '/products/domestic?sub=domestic-bags' },
-  { name: '지갑', path: '/products/domestic?sub=domestic-wallets' },
-];
+const popularSearches = ["샤넬", "루이비통", "디올", "에르메스", "셀린느", "롤렉스", "자켓", "숄더백", "까르띠에", "후드"];
 
 export function Header() {
   const [location, setLocation] = useLocation();
@@ -52,18 +40,15 @@ export function Header() {
   const { toast } = useToast();
   const [memberName, setMemberName] = useState<string | null>(null);
   const [pointBalance, setPointBalance] = useState<number>(0);
-  const [totalPoints] = useState<number>(7584087);
-  const [todayPoints] = useState<number>(6521);
   const [searchQuery, setSearchQuery] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [noticeIndex, setNoticeIndex] = useState(0);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  // Auto-scroll notice ticker
   useEffect(() => {
-    const interval = setInterval(() => {
-      setNoticeIndex((prev) => (prev + 1) % noticeTexts.length);
-    }, 3000);
-    return () => clearInterval(interval);
+    const handleScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
@@ -117,197 +102,226 @@ export function Header() {
     e.preventDefault();
     if (searchQuery.trim()) {
       setLocation(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchOpen(false);
     }
   };
 
+  const handleQuickSearch = (term: string) => {
+    setLocation(`/search?q=${encodeURIComponent(term)}`);
+    setSearchOpen(false);
+  };
+
   return (
-    <header className="w-full sticky top-0 z-50 bg-white">
-      <div className="md:hidden bg-gray-100 text-gray-600 text-[10px]">
-        <div className="px-2 h-7 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {memberName ? (
-              <>
-                <span className="text-gray-800 font-medium">{memberName}님</span>
-                <span className="text-gray-300">|</span>
-                <button onClick={handleLogout} className="hover:text-black">로그아웃</button>
-              </>
-            ) : (
-              <>
-                <Link href="/login" className="hover:text-black">로그인</Link>
-                <span className="text-gray-300">|</span>
-                <Link href="/signup" className="hover:text-black">회원가입</Link>
-              </>
-            )}
-            <span className="text-gray-300">|</span>
-            <Link href="/orders" className="hover:text-black">주문조회</Link>
-            <span className="text-gray-300">|</span>
-            <Link href="/profile" className="hover:text-black">마이쇼핑</Link>
-          </div>
-          <form onSubmit={handleSearch} className="flex items-center">
-            <input 
-              type="text" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="검색" 
-              className="w-16 border border-gray-300 px-1.5 py-0.5 text-[10px] focus:outline-none bg-white"
-            />
-            <button type="submit" className="bg-gray-200 border border-gray-300 border-l-0 px-1 py-0.5">
-              <Search className="w-3 h-3 text-gray-500" />
-            </button>
-          </form>
-        </div>
-      </div>
-
-
-      <div className="bg-white border-b border-gray-100 border-t-0">
-        <div className="max-w-[1200px] mx-auto px-2 md:px-4 py-2 md:py-5">
-          <div className="grid grid-cols-3 items-center gap-2">
-            <div className="md:hidden">
-              <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="w-10 h-10" data-testid="button-mobile-menu">
-                    <Menu className="w-6 h-6" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[280px] overflow-y-auto p-0" hideCloseButton>
-                  <div className="bg-[#333] text-white p-4 flex items-center justify-between">
-                    <span className="font-bold">메뉴</span>
-                    <SheetClose asChild>
-                      <Button variant="ghost" size="icon" className="text-white hover:text-yellow-300">
-                        <X className="w-5 h-5" />
-                      </Button>
-                    </SheetClose>
-                  </div>
-                  <nav className="p-4">
-                    {memberName ? (
-                      <div className="pb-4 border-b mb-4">
-                        <div className="font-semibold">{memberName}님</div>
-                        <span className="text-sm text-gray-500">{pointBalance.toLocaleString()}P</span>
-                      </div>
-                    ) : (
-                      <div className="flex gap-4 pb-4 border-b mb-4">
-                        <Link href="/login" className="text-sm" onClick={() => setMobileMenuOpen(false)}>로그인</Link>
-                        <Link href="/signup" className="text-sm" onClick={() => setMobileMenuOpen(false)}>회원가입</Link>
-                      </div>
-                    )}
-                    <form onSubmit={handleSearch} className="mb-4">
-                      <div className="relative">
-                        <input 
-                          type="text" 
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="검색" 
-                          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                        />
-                      </div>
-                    </form>
-                    {mainNavItems.map((item) => (
-                      <Link 
-                        key={item.name}
-                        href={item.path} 
-                        className="py-2.5 block text-sm text-gray-700 border-b border-gray-100"
-                        onClick={() => setMobileMenuOpen(false)}
-                      >
-                        {item.name}
-                      </Link>
-                    ))}
-                    {memberName && (
-                      <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }} className="mt-4 text-sm text-gray-500">
-                        로그아웃
-                      </button>
-                    )}
-                  </nav>
-                </SheetContent>
-              </Sheet>
+    <>
+      <header className={`w-full sticky top-0 z-50 bg-white transition-shadow ${scrolled ? 'shadow-sm' : ''}`}>
+        <div className="hidden md:block bg-[#f8f8f8] border-b border-gray-100">
+          <div className="max-w-[1200px] mx-auto px-4 h-8 flex items-center justify-between text-xs text-gray-500">
+            <div className="flex items-center gap-1">
+              <span>회원가입하고 첫 구매 전상품 15% 할인 !</span>
             </div>
-            <div className="hidden md:block"></div>
+            <div className="flex items-center gap-3">
+              {memberName ? (
+                <>
+                  <span className="text-gray-800 font-medium">{memberName}님</span>
+                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-500">{pointBalance.toLocaleString()}P</span>
+                  <span className="text-gray-300">|</span>
+                  <button onClick={handleLogout} className="hover:text-black" data-testid="button-logout">로그아웃</button>
+                </>
+              ) : (
+                <>
+                  <Link href="/login" className="hover:text-black" data-testid="link-login">로그인</Link>
+                  <span className="text-gray-300">|</span>
+                  <Link href="/signup" className="hover:text-black" data-testid="link-signup">회원가입</Link>
+                </>
+              )}
+              <span className="text-gray-300">|</span>
+              <Link href="/orders" className="hover:text-black">주문조회</Link>
+              <span className="text-gray-300">|</span>
+              <Link href="/profile" className="hover:text-black">마이페이지</Link>
+            </div>
+          </div>
+        </div>
 
-            <Link href="/" className="flex items-center justify-self-center" data-testid="link-home">
-              <img src="/images/logo.jpg" alt="청담동샵" className="h-16 md:h-28 w-auto" style={{ clipPath: 'inset(4px 0 0 0)' }} />
-            </Link>
+        <div className="bg-white border-b border-gray-100">
+          <div className="max-w-[1200px] mx-auto px-4 py-3 md:py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="md:hidden w-10 h-10 p-0" data-testid="button-mobile-menu">
+                      <Menu className="w-6 h-6 text-gray-800" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-[300px] overflow-y-auto p-0" hideCloseButton>
+                    <div className="bg-black text-white p-4 flex items-center justify-between">
+                      <Link href="/" className="text-lg font-bold tracking-wider" onClick={() => setMobileMenuOpen(false)}>PLIKI</Link>
+                      <SheetClose asChild>
+                        <Button variant="ghost" size="icon" className="text-white hover:text-gray-300 p-0">
+                          <X className="w-5 h-5" />
+                        </Button>
+                      </SheetClose>
+                    </div>
+                    <div className="p-4 border-b">
+                      {memberName ? (
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="font-semibold text-sm">{memberName}님</div>
+                            <span className="text-xs text-gray-500">{pointBalance.toLocaleString()}P</span>
+                          </div>
+                          <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }} className="text-xs text-gray-400">
+                            로그아웃
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-4">
+                          <Link href="/login" className="text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>로그인</Link>
+                          <Link href="/signup" className="text-sm text-gray-500" onClick={() => setMobileMenuOpen(false)}>회원가입</Link>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <form onSubmit={handleSearch} className="mb-4">
+                        <div className="flex border border-gray-200 rounded-lg overflow-hidden">
+                          <input 
+                            type="text" 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="검색어를 입력해주세요" 
+                            className="flex-1 px-3 py-2 text-sm focus:outline-none"
+                          />
+                          <button type="submit" className="px-3 bg-black text-white">
+                            <Search className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </form>
+                      <nav>
+                        {menuItems.map((item) => (
+                          <Link 
+                            key={`${item.name}-${item.path}`}
+                            href={item.path} 
+                            className="py-3 block text-sm text-gray-700 border-b border-gray-50 hover:text-black hover:font-medium transition-colors"
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            {item.name}
+                          </Link>
+                        ))}
+                      </nav>
+                    </div>
+                  </SheetContent>
+                </Sheet>
+              </div>
 
-            <div className="hidden md:flex items-center justify-end gap-5">
-              <Link href="/profile" className="text-gray-500 hover:text-black">
-                <User className="w-6 h-6" />
+              <Link href="/" className="flex items-center" data-testid="link-home">
+                <span className="text-2xl md:text-3xl font-black tracking-[0.2em] text-black">PLIKI</span>
               </Link>
-              <Link href="/cart" className="relative text-gray-500 hover:text-black" data-testid="button-cart">
-                <ShoppingBag className="w-6 h-6" />
-                {count > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full">
-                    {count > 9 ? "9+" : count}
-                  </span>
-                )}
-              </Link>
-              
-              <form onSubmit={handleSearch} className="flex items-center">
-                <input 
-                  type="text" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="검색" 
-                  className="w-[160px] border border-gray-300 px-3 py-2 text-sm focus:outline-none"
-                  data-testid="input-search"
-                />
-                <button type="submit" className="bg-gray-100 border border-gray-300 border-l-0 px-3 py-2 hover:bg-gray-200">
-                  <Search className="w-5 h-5 text-gray-500" />
+
+              <div className="flex items-center gap-2 md:gap-4">
+                <button 
+                  onClick={() => setSearchOpen(!searchOpen)} 
+                  className="p-2 text-gray-700 hover:text-black transition-colors"
+                  data-testid="button-search-toggle"
+                >
+                  <Search className="w-5 h-5" />
                 </button>
-              </form>
-
-              <div className="text-xs text-gray-500 whitespace-nowrap">
-                오늘 <span className="text-red-500 font-semibold">{todayPoints.toLocaleString()}</span> · 전체 <span className="font-semibold">{totalPoints.toLocaleString()}</span>
+                <Link href="/profile" className="hidden md:block p-2 text-gray-700 hover:text-black transition-colors" data-testid="link-profile">
+                  <User className="w-5 h-5" />
+                </Link>
+                <Link href="/cart" className="relative p-2 text-gray-700 hover:text-black transition-colors" data-testid="button-cart">
+                  <ShoppingBag className="w-5 h-5" />
+                  {count > 0 && (
+                    <span className="absolute top-0 right-0 bg-red-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
+                      {count > 9 ? "9+" : count}
+                    </span>
+                  )}
+                </Link>
               </div>
             </div>
-
-            <div className="md:hidden flex items-center justify-end gap-3">
-              <Link href="/cart" className="relative text-gray-600" data-testid="button-cart-mobile">
-                <ShoppingBag className="w-5 h-5" />
-                {count > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full">
-                    {count > 9 ? "9+" : count}
-                  </span>
-                )}
-              </Link>
-            </div>
           </div>
         </div>
-      </div>
 
-      <nav className="hidden md:block bg-white border-b border-gray-200">
-        <div className="max-w-[1200px] mx-auto px-4">
-          <ul className="flex items-center justify-center">
-            {mainNavItems.map((item, index) => (
-              <li key={item.name} className="flex items-center">
-                <Link 
-                  href={item.path} 
-                  className={`px-3 py-3 text-sm text-gray-600 hover:text-black transition-colors whitespace-nowrap ${location === item.path ? 'text-black font-medium' : ''}`}
-                  data-testid={`nav-${item.name}`}
-                >
-                  {item.name}
-                </Link>
-                {index < mainNavItems.length - 1 && (
-                  <span className="text-gray-300 text-xs">|</span>
-                )}
-              </li>
+        <nav className="hidden md:block bg-white border-b border-gray-200">
+          <div className="max-w-[1200px] mx-auto px-4">
+            <ul className="flex items-center justify-center gap-0">
+              {menuItems.map((item, index) => (
+                <li key={`${item.name}-${index}`}>
+                  <Link 
+                    href={item.path} 
+                    className={`block px-3 lg:px-4 py-3 text-[13px] text-gray-600 hover:text-black hover:font-medium transition-colors whitespace-nowrap ${location === item.path ? 'text-black font-semibold' : ''}`}
+                    data-testid={`nav-${item.name}`}
+                  >
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </nav>
+
+        <div className="md:hidden bg-white border-b border-gray-100 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center px-2 py-2 gap-0 min-w-max">
+            {menuItems.slice(0, 16).map((item, index) => (
+              <Link 
+                key={`${item.name}-m-${index}`}
+                href={item.path} 
+                className={`px-2.5 py-1 text-[11px] text-gray-600 hover:text-black whitespace-nowrap ${location === item.path ? 'text-black font-semibold' : ''}`}
+                data-testid={`nav-mobile-${item.name}`}
+              >
+                {item.name}
+              </Link>
             ))}
-          </ul>
+          </div>
         </div>
-      </nav>
 
-      <nav className="md:hidden bg-white border-b border-gray-200">
-        <div className="flex flex-wrap items-center justify-center px-2 py-2 gap-x-1 gap-y-1">
-          {mainNavItems.map((item, index) => (
-            <Link 
-              key={item.name}
-              href={item.path} 
-              className={`px-1.5 py-1 text-[10px] text-gray-600 hover:text-black transition-colors whitespace-nowrap ${location === item.path ? 'text-black font-medium' : ''}`}
-              data-testid={`nav-mobile-${item.name}`}
-            >
-              {item.name}
-              {index < mainNavItems.length - 1 && <span className="ml-1 text-gray-300">|</span>}
-            </Link>
-          ))}
-        </div>
-      </nav>
-    </header>
+        {searchOpen && (
+          <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-lg z-50">
+            <div className="max-w-[600px] mx-auto px-4 py-6">
+              <form onSubmit={handleSearch} className="mb-4">
+                <div className="flex border-b-2 border-black">
+                  <input 
+                    type="text" 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="검색어를 입력해주세요"
+                    className="flex-1 py-3 text-base focus:outline-none bg-transparent"
+                    autoFocus
+                    data-testid="input-search"
+                  />
+                  <button type="submit" className="px-3">
+                    <Search className="w-5 h-5 text-gray-800" />
+                  </button>
+                </div>
+              </form>
+              <div>
+                <p className="text-xs text-gray-400 mb-3 font-medium">인기 검색어</p>
+                <div className="flex flex-wrap gap-2">
+                  {popularSearches.map((term, i) => (
+                    <button
+                      key={term}
+                      onClick={() => handleQuickSearch(term)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-full text-sm text-gray-700 transition-colors"
+                      data-testid={`search-popular-${i}`}
+                    >
+                      <span className="text-xs text-gray-400 font-medium">{i + 1}</span>
+                      {term}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button 
+                onClick={() => setSearchOpen(false)} 
+                className="absolute top-4 right-4 text-gray-400 hover:text-black"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+      </header>
+
+      {searchOpen && (
+        <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setSearchOpen(false)} />
+      )}
+    </>
   );
 }

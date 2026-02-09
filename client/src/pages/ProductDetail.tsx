@@ -334,7 +334,7 @@ export default function ProductDetail() {
 
               <div className="bg-gray-50 p-4 rounded">
                 <p className="text-sm text-gray-700 mb-3">
-                  청담동 에디션만의 특별한 고객 등급혜택<br/>
+                  PLIKI만의 특별한 고객 등급혜택<br/>
                   <span className="text-xs text-gray-500">구매실적에 따라 다양한 혜택을 드립니다.</span>
                 </p>
                 <table className="w-full text-sm border-collapse">
@@ -509,12 +509,10 @@ export default function ProductDetail() {
                 )}
                 
                 <a 
-                  href="https://청담동샵.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
+                  href="/" 
                   className="block py-3 px-6 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg text-center hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-lg"
                 >
-                  <span className="text-amber-400 font-bold text-lg tracking-wide">청담동샵.COM</span>
+                  <span className="text-white font-bold text-lg tracking-wide">PLIKI.COM</span>
                   <span className="block text-gray-400 text-xs mt-0.5">재방문은 여기를 클릭하세요</span>
                 </a>
               </div>
@@ -712,12 +710,10 @@ export default function ProductDetail() {
               )}
               
               <a 
-                href="https://청담동샵.com" 
-                target="_blank" 
-                rel="noopener noreferrer"
+                href="/" 
                 className="block py-2.5 px-4 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg text-center hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-lg"
               >
-                <span className="text-amber-400 font-bold text-sm tracking-wide">청담동샵.COM</span>
+                <span className="text-white font-bold text-sm tracking-wide">PLIKI.COM</span>
                 <span className="block text-gray-400 text-[10px] mt-0.5">재방문은 여기를 클릭하세요</span>
               </a>
             </div>
