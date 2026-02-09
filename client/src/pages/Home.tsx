@@ -133,60 +133,47 @@ function MainBannerSlider() {
 }
 
 function QuickMenu() {
-  const topRow = [
-    { name: "VIP 명품관", label: "LUXURY", style: "bg-gradient-to-br from-gray-800 to-gray-900 text-white", textClass: "text-white font-bold italic tracking-wider text-sm", path: "/products/genuine" },
-    { name: "실시간 검수", label: "", style: "bg-gray-100", path: "/comparison" },
-    { name: "셀럽 스타일", label: "CELEB STYLE", style: "bg-gray-100", textClass: "text-black font-bold italic tracking-wide text-xs", path: "/choice" },
-    { name: "요청 상품", label: "", style: "bg-gray-100", path: "/support" },
-    { name: "기획전", label: "", style: "bg-gray-50", path: "/events" },
-  ];
-  const bottomRow = [
-    { name: "베스트", label: "", style: "bg-gray-100", path: "/reviews" },
-    { name: "라이브", label: "LIVE", style: "bg-black text-white", textClass: "text-white font-black text-lg tracking-wider", path: "/blog", dot: true },
-    { name: "이벤트", label: "", style: "bg-black text-white", path: "/events" },
-    { name: "구매 후기", label: "베스트 리뷰", style: "bg-gray-900 text-white", textClass: "text-white font-black text-base tracking-wide", path: "/reviews" },
-    { name: "라이크잇 랩스", label: "LIKE IT LABS", style: "bg-black text-white", textClass: "text-white font-bold text-xs tracking-widest", path: "/blog" },
+  const menuItems = [
+    { name: "VIP 명품관", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/143e0872d4c3bb27c271d5820546f547.jpg", path: "/products/genuine" },
+    { name: "실시간 검수", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/4b40c9298090d7393617f6cd95ce256b.jpg", path: "/comparison" },
+    { name: "셀럽 스타일", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/86bfecb00fe728c98c294ceb9e4655ba.jpg", path: "/choice" },
+    { name: "요청 상품", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/9dab2bc8e6766a07210506d0cf260469.jpg", path: "/support" },
+    { name: "기획전", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/2823ba65c7d03f9b3775d0241ea93c83.jpg", path: "/events" },
+    { name: "베스트", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/830f154102ecad7da70c2bdc10f14845.jpg", path: "/reviews" },
+    { name: "라이브", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/cd519ab44205f7ce21296eb43a666167.jpg", path: "/blog" },
+    { name: "이벤트", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/315bd9be4589e0f68fdabc9500ed048c.png", path: "/events" },
+    { name: "구매 후기", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/300d0fa4a52beed60284ac459c05fcb7.jpg", path: "/reviews" },
+    { name: "라이크잇 랩스", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/83/1c2d5216a8fdf4b4d782f30ac16cdce2.jpg", path: "/blog" },
   ];
 
   return (
     <section className="bg-white py-5 md:py-7 border-b border-gray-100">
       <div className="max-w-[1200px] mx-auto px-4">
         <div className="grid grid-cols-5 gap-2 md:gap-3">
-          {topRow.map((item) => (
+          {menuItems.slice(0, 5).map((item) => (
             <Link
               key={item.name}
               href={item.path}
               className="flex flex-col items-center gap-1.5 group"
               data-testid={`quick-menu-${item.name}`}
             >
-              <div className={`w-full aspect-[16/10] rounded-lg ${item.style} flex items-center justify-center overflow-hidden group-hover:opacity-90 transition-opacity`}>
-                {item.textClass ? (
-                  <span className={item.textClass}>{item.label}</span>
-                ) : (
-                  <span className="text-gray-400 text-xs"></span>
-                )}
+              <div className="w-full aspect-[16/10] rounded-lg overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity">
+                <img src={getProxiedImageUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />
               </div>
               <span className="text-[10px] md:text-xs text-gray-600 text-center whitespace-nowrap group-hover:text-black transition-colors">{item.name}</span>
             </Link>
           ))}
         </div>
         <div className="grid grid-cols-5 gap-2 md:gap-3 mt-2 md:mt-3">
-          {bottomRow.map((item) => (
+          {menuItems.slice(5, 10).map((item) => (
             <Link
               key={item.name}
               href={item.path}
               className="flex flex-col items-center gap-1.5 group"
               data-testid={`quick-menu-${item.name}`}
             >
-              <div className={`w-full aspect-[16/10] rounded-lg ${item.style} flex items-center justify-center overflow-hidden group-hover:opacity-90 transition-opacity relative`}>
-                {item.dot && (
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
-                )}
-                {item.textClass ? (
-                  <span className={item.textClass}>{item.label}</span>
-                ) : (
-                  <span className="text-gray-400 text-xs"></span>
-                )}
+              <div className="w-full aspect-[16/10] rounded-lg overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity">
+                <img src={getProxiedImageUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />
               </div>
               <span className="text-[10px] md:text-xs text-gray-600 text-center whitespace-nowrap group-hover:text-black transition-colors">{item.name}</span>
             </Link>
