@@ -156,7 +156,7 @@ export async function registerRoutes(
       }
       
       // Allow proxying from approved domains
-      const allowedDomains = ["cdamdong.co.kr", "cdn.shopify.com", "pliki.wisacdn.com", "bagstyle.site"];
+      const allowedDomains = ["pliki.wisacdn.com", "bagstyle.site"];
       const isAllowed = allowedDomains.some(domain => imageUrl.includes(domain));
       if (!isAllowed) {
         return res.status(403).json({ success: false, error: "Domain not allowed" });
@@ -164,7 +164,7 @@ export async function registerRoutes(
       
       // Ensure URL is absolute
       if (!imageUrl.startsWith("http")) {
-        imageUrl = `https://cdamdong.co.kr${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
+        imageUrl = `https://bagstyle.site${imageUrl.startsWith("/") ? "" : "/"}${imageUrl}`;
       }
       
       // Check image cache first
@@ -181,7 +181,7 @@ export async function registerRoutes(
       const response = await fetch(imageUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Referer": imageUrl.includes("cdamdong.co.kr") ? "https://cdamdong.co.kr/" : imageUrl.includes("pliki.wisacdn.com") ? "https://pliki6.com/" : imageUrl.includes("bagstyle.site") ? "https://bagstyle.site/" : "https://dittoholic.com/",
+          "Referer": imageUrl.includes("pliki.wisacdn.com") ? "https://pliki6.com/" : "https://bagstyle.site/",
           "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
           "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
         },
@@ -2449,17 +2449,6 @@ export async function registerRoutes(
     }
   });
 
-  // Progress tracking for crawling
-  const crawlProgress: {
-    status: 'idle' | 'running' | 'completed' | 'error';
-    total: number;
-    current: number;
-    message: string;
-    category: string;
-    startedAt?: Date;
-    completedAt?: Date;
-  } = { status: 'idle', total: 0, current: 0, message: '', category: '' };
-  
   // Get product count
   app.get("/api/admin/products/count", requireAdminAuth, async (_req: Request, res: Response) => {
     try {
@@ -2514,217 +2503,6 @@ export async function registerRoutes(
     }
   });
 
-  // Get crawl progress
-  app.get("/api/admin/crawl/progress", requireAdminAuth, async (_req: Request, res: Response) => {
-    res.json({ success: true, ...crawlProgress });
-  });
-
-  // Full crawl from cdamdong.co.kr (like the successful script)
-  app.post("/api/admin/crawl/start", requireAdminAuth, async (req: Request, res: Response) => {
-    if (crawlProgress.status === 'running') {
-      return res.status(400).json({ success: false, error: "이미 크롤링이 진행 중입니다." });
-    }
-    
-    const { clearExisting, selectedCategories } = req.body;
-    
-    crawlProgress.status = 'running';
-    crawlProgress.total = 0;
-    crawlProgress.current = 0;
-    crawlProgress.message = '크롤링 준비 중...';
-    crawlProgress.category = '';
-    crawlProgress.startedAt = new Date();
-    
-    res.json({ success: true, message: "크롤링이 시작되었습니다." });
-    
-    // Run crawl in background
-    (async () => {
-      const ALL_CATEGORIES = [
-        { id: "10", name: "아우터", localId: "outer" },
-        { id: "g0", name: "패딩", localId: "padding" },
-        { id: "20", name: "상의", localId: "tops" },
-        { id: "30", name: "하의", localId: "bottoms" },
-        { id: "40", name: "신발", localId: "shoes" },
-        { id: "70", name: "악세사리", localId: "accessories" },
-        { id: "80", name: "지갑", localId: "wallets" },
-        { id: "a0", name: "가방", localId: "bags" },
-        { id: "c0", name: "시계", localId: "watches" },
-        { id: "f0", name: "정품", localId: "genuine" },
-      ];
-      
-      // Filter categories if selectedCategories is provided
-      const CATEGORIES = selectedCategories && selectedCategories.length > 0
-        ? ALL_CATEGORIES.filter(c => selectedCategories.includes(c.localId))
-        : ALL_CATEGORIES;
-      
-      const headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Referer": "https://cdamdong.co.kr/",
-      };
-      
-      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-      
-      const fetchProductList = async (categoryId: string, page: number): Promise<string[]> => {
-        try {
-          const response = await fetch(`https://cdamdong.co.kr/shop/list.php?ca_id=${categoryId}&page=${page}`, { headers });
-          if (!response.ok) return [];
-          const html = await response.text();
-          return [...new Set((html.match(/it_id=(\d+)/g) || []).map(m => m.replace('it_id=', '')))];
-        } catch { return []; }
-      };
-      
-      const fetchProductDetail = async (sourceId: string, categoryLocalId: string) => {
-        const url = `https://cdamdong.co.kr/shop/item.php?it_id=${sourceId}`;
-        try {
-          const response = await fetch(url, { headers });
-          if (!response.ok) return null;
-          const html = await response.text();
-          
-          // Name extraction
-          let name = '';
-          const nameMatch = html.match(/<h1[^>]*class="sit_tit"[^>]*>([^<]+)<\/h1>/i);
-          if (nameMatch) name = nameMatch[1].trim();
-          if (!name) {
-            const titleMatch = html.match(/<title>([^|<]+)/i);
-            if (titleMatch) name = titleMatch[1].trim();
-          }
-          if (!name) name = `상품 ${sourceId}`;
-          
-          // Price extraction
-          let price = 0;
-          const priceText = html.match(/(\d{1,3}(?:,\d{3})+)원/);
-          if (priceText) price = parseInt(priceText[1].replace(/,/g, ''), 10);
-          
-          // Main images from #sit_pvi
-          const mainImages: string[] = [];
-          const mainImgMatches = html.match(new RegExp(`https://cdamdong\\.co\\.kr/data/item/${sourceId}/[^"'\\s]+\\.(jpg|jpeg|png|webp)`, 'gi')) || [];
-          mainImgMatches.forEach(img => {
-            const clean = img.replace(/thumb-/, '').replace(/_300x300|_500x500/g, '').split('?')[0];
-            if (!clean.includes('_77x82') && !mainImages.includes(clean)) mainImages.push(clean);
-          });
-          
-          // Detail images from /data/editor/
-          const detailImages: string[] = [];
-          const detailMatches = html.match(/https?:\/\/cdamdong\.co\.kr\/data\/editor\/[^"'\s]+\.(jpg|jpeg|png|webp|gif)/gi) || [];
-          detailMatches.forEach(img => {
-            const clean = img.replace(/^http:/, 'https:');
-            if (!detailImages.includes(clean)) detailImages.push(clean);
-          });
-          
-          const isBest = html.includes('BEST') || html.includes('best_icon');
-          
-          return {
-            sourceId,
-            name,
-            price,
-            imageUrl: mainImages[0] || `https://cdamdong.co.kr/data/item/${sourceId}/`,
-            imageUrls: mainImages,
-            detailImageUrls: detailImages,
-            categoryId: categoryLocalId,
-            isBest,
-          };
-        } catch { return null; }
-      };
-      
-      try {
-        // Clear existing products if requested
-        if (clearExisting) {
-          crawlProgress.message = '기존 상품 삭제 중...';
-          const existing = await storage.getAllProducts();
-          for (const p of existing) {
-            await storage.deleteProduct(p.id);
-          }
-        }
-        
-        let totalInserted = 0;
-        
-        for (const category of CATEGORIES) {
-          crawlProgress.category = category.name;
-          crawlProgress.message = `[${category.name}] 상품 목록 수집 중...`;
-          
-          // Collect all product IDs from category
-          const allIds = new Set<string>();
-          let page = 1;
-          let emptyCount = 0;
-          
-          while (emptyCount < 3 && page <= 200) {
-            const ids = await fetchProductList(category.id, page);
-            let newCount = 0;
-            ids.forEach(id => { if (!allIds.has(id)) { allIds.add(id); newCount++; } });
-            if (newCount === 0) emptyCount++; else emptyCount = 0;
-            page++;
-            await delay(30);
-            
-            if (page % 20 === 0) {
-              crawlProgress.message = `[${category.name}] 페이지 ${page} 스캔 중... (${allIds.size}개 발견)`;
-            }
-          }
-          
-          crawlProgress.message = `[${category.name}] ${allIds.size}개 상품 상세 정보 수집 중...`;
-          crawlProgress.total = allIds.size;
-          crawlProgress.current = 0;
-          
-          const idsArray = Array.from(allIds);
-          
-          // Process in batches of 15 (parallel)
-          for (let i = 0; i < idsArray.length; i += 15) {
-            const batch = idsArray.slice(i, i + 15);
-            const results = await Promise.all(batch.map(id => fetchProductDetail(id, category.localId)));
-            
-            for (const p of results) {
-              if (p) {
-                try {
-                  await storage.createProduct({
-                    name: p.name,
-                    categoryId: p.categoryId,
-                    price: p.price,
-                    description: p.name,
-                    detailContent: "프리미엄 명품 레플리카 제품입니다.",
-                    imageUrl: p.imageUrl,
-                    imageUrls: p.imageUrls.length > 0 ? p.imageUrls : [p.imageUrl],
-                    detailImageUrls: p.detailImageUrls,
-                    isBest: p.isBest,
-                    isNew: totalInserted % 8 === 0,
-                    isActive: true,
-                  });
-                  totalInserted++;
-                } catch {}
-              }
-            }
-            
-            crawlProgress.current = Math.min(i + 15, idsArray.length);
-            crawlProgress.message = `[${category.name}] 상품 저장 중... (${crawlProgress.current}/${allIds.size})`;
-            await delay(50);
-          }
-          
-          console.log(`[${category.name}] ${allIds.size} products processed, total: ${totalInserted}`);
-        }
-        
-        crawlProgress.status = 'completed';
-        crawlProgress.message = `완료! 총 ${totalInserted}개 상품이 크롤링되었습니다.`;
-        crawlProgress.completedAt = new Date();
-        console.log(`Full crawl complete: ${totalInserted} products`);
-        
-      } catch (error: any) {
-        crawlProgress.status = 'error';
-        crawlProgress.message = `오류: ${error.message || '알 수 없는 오류'}`;
-        console.error('Crawl error:', error);
-      }
-    })();
-  });
-
-  // Progress tracking for dittoholic crawling
-  const dittoholicProgress: {
-    status: 'idle' | 'running' | 'completed' | 'error';
-    total: number;
-    current: number;
-    message: string;
-    category: string;
-  } = { status: 'idle', total: 0, current: 0, message: '', category: '' };
-
-  // Get dittoholic crawl progress
-  app.get("/api/admin/crawl/dittoholic/progress", requireAdminAuth, async (_req: Request, res: Response) => {
-    res.json({ success: true, ...dittoholicProgress });
-  });
 
   // Delete all domestic category products
   app.delete("/api/admin/products/domestic", requireAdminAuth, async (_req: Request, res: Response) => {
@@ -2819,241 +2597,6 @@ export async function registerRoutes(
       console.error("Error applying category discount:", error);
       res.status(500).json({ success: false, message: error.message || "할인 적용 중 오류가 발생했습니다." });
     }
-  });
-
-  // Crawl from dittoholic.com (Shopify store)
-  app.post("/api/admin/crawl/dittoholic/start", requireAdminAuth, async (req: Request, res: Response) => {
-    if (dittoholicProgress.status === 'running') {
-      return res.status(400).json({ success: false, error: "이미 크롤링이 진행 중입니다." });
-    }
-    
-    const { clearExisting, selectedCategories } = req.body;
-    
-    dittoholicProgress.status = 'running';
-    dittoholicProgress.total = 0;
-    dittoholicProgress.current = 0;
-    dittoholicProgress.message = '크롤링 준비 중...';
-    dittoholicProgress.category = '';
-    
-    res.json({ success: true, message: "dittoholic.com 크롤링이 시작되었습니다." });
-    
-    // Run crawl in background
-    (async () => {
-      const DITTOHOLIC_CATEGORIES = [
-        { handle: "국내배송-watch", name: "시계", subcategoryId: "domestic-watches" },
-        { handle: "국내배송-top", name: "상의", subcategoryId: "domestic-tops" },
-        { handle: "국내배송-outer", name: "아우터", subcategoryId: "domestic-outer" },
-        { handle: "국내배송-acc", name: "악세사리", subcategoryId: "domestic-accessories" },
-        { handle: "국내배송-pants", name: "하의", subcategoryId: "domestic-bottoms" },
-        { handle: "국내배송-bag", name: "가방", subcategoryId: "domestic-bags" },
-        { handle: "국내배송-wallet", name: "지갑", subcategoryId: "domestic-wallets" },
-      ];
-      
-      const CATEGORIES = selectedCategories && selectedCategories.length > 0
-        ? DITTOHOLIC_CATEGORIES.filter(c => selectedCategories.includes(c.subcategoryId))
-        : DITTOHOLIC_CATEGORIES;
-      
-      const headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Accept": "application/json",
-      };
-      
-      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-      
-      // Brand cache for performance
-      const brandCache = new Map<string, string>();
-      
-      try {
-        if (clearExisting) {
-          dittoholicProgress.message = '기존 상품 삭제 중...';
-          const existingProducts = await storage.getAllProducts();
-          for (const p of existingProducts) {
-            await storage.deleteProduct(p.id);
-          }
-        }
-        
-        let totalInserted = 0;
-        
-        for (const category of CATEGORIES) {
-          dittoholicProgress.category = category.name;
-          dittoholicProgress.message = `[${category.name}] 상품 수집 중...`;
-          
-          let page = 1;
-          let hasMore = true;
-          const allProducts: any[] = [];
-          
-          // Fetch all pages from Shopify JSON API
-          while (hasMore) {
-            try {
-              const url = `https://dittoholic.com/collections/${encodeURIComponent(category.handle)}/products.json?page=${page}&limit=250`;
-              const response = await fetch(url, { headers });
-              
-              if (!response.ok) {
-                console.log(`[${category.name}] Page ${page} returned ${response.status}`);
-                break;
-              }
-              
-              const data = await response.json();
-              
-              if (!data.products || data.products.length === 0) {
-                hasMore = false;
-              } else {
-                allProducts.push(...data.products);
-                dittoholicProgress.message = `[${category.name}] 페이지 ${page} 수집... (${allProducts.length}개)`;
-                page++;
-                await delay(500); // Rate limiting
-              }
-            } catch (error) {
-              console.error(`Error fetching page ${page}:`, error);
-              break;
-            }
-          }
-          
-          console.log(`[${category.name}] Found ${allProducts.length} products`);
-          dittoholicProgress.total = allProducts.length;
-          dittoholicProgress.current = 0;
-          
-          // Insert products with full image fetch
-          let insertErrors = 0;
-          for (let i = 0; i < allProducts.length; i++) {
-            const product = allProducts[i];
-            try {
-              const price = product.variants?.[0]?.price 
-                ? Math.round(parseFloat(product.variants[0].price))
-                : 0;
-              
-              const comparePrice = product.variants?.[0]?.compare_at_price
-                ? Math.round(parseFloat(product.variants[0].compare_at_price))
-                : undefined;
-              
-              // Main product image from images array
-              const imageUrl = product.images?.[0]?.src || "";
-              const imageUrls = product.images?.map((img: any) => img.src) || [];
-              
-              // Extract detail images from body_html (they are embedded as <img> tags)
-              const bodyHtml = product.body_html || "";
-              const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
-              const detailImagesFromHtml: string[] = [];
-              let match;
-              while ((match = imgRegex.exec(bodyHtml)) !== null) {
-                const imgSrc = match[1];
-                // Filter out small icons and only keep cdn.shopify.com images
-                if (imgSrc && imgSrc.includes('cdn.shopify.com') && !imgSrc.includes('icon')) {
-                  detailImagesFromHtml.push(imgSrc);
-                }
-              }
-              
-              // Extract size options
-              const sizeOptions = product.variants
-                ?.map((v: any) => v.title)
-                .filter((t: string) => t && t !== "Default Title") || [];
-              
-              // Extract brand from product vendor or title (using cached brands)
-              let brandId: string | undefined = undefined;
-              const vendorName = product.vendor?.trim();
-              if (vendorName && vendorName.length > 0) {
-                // Check cache first
-                if (brandCache.has(vendorName.toLowerCase())) {
-                  brandId = brandCache.get(vendorName.toLowerCase());
-                } else {
-                  // Try to find existing brand or create new one
-                  const existingBrands = await storage.getAllBrands();
-                  let foundBrand = existingBrands.find(b => 
-                    b.name.toLowerCase() === vendorName.toLowerCase() ||
-                    b.slug === vendorName.toLowerCase().replace(/\s+/g, '')
-                  );
-                  
-                  if (!foundBrand) {
-                    // Create new brand
-                    try {
-                      foundBrand = await storage.createBrand({
-                        name: vendorName,
-                        slug: vendorName.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9가-힣]/g, ''),
-                        sortOrder: 200,
-                        isActive: true,
-                      });
-                    } catch {}
-                  }
-                  
-                  if (foundBrand) {
-                    brandId = foundBrand.id;
-                    brandCache.set(vendorName.toLowerCase(), foundBrand.id);
-                  }
-                }
-              }
-              
-              const domesticDetailContent = `명품 레플리카 사이트 1위 디토홀릭 이용해야 하는 이유!!
-
-아직도 미러급 , SA급, 하이엔드급 제품이 있냐고 여쭤보시는 고객님들이 아직도 많으신데, 그건 전부 레플리카 판매자들이 만들어낸 이야기일 뿐입니다.
-더 이상 속지 마시길 부탁 드리겠습니다. 
-
-그리고 자체 제작 사이트 1:1비교제작 사이트라고 완벽한 퀄리티의 제품입니다. 라고 하면서 정품과 레플 비교 사진 찍어서 단가 조금 올려서 판매하면
-
-사람들 인식은 자동으로 "아 여기 정말 좋은 곳이구나" 하면서 구입 하시고 저희에게 한탄 하시는 고객님들 정말 한 두 분이 아닙니다. 1:1제작? 자체 제작? 절대 불가능 하다고 말씀 드리고 싶습니다.
-
-저희 사이트에 판매 중인 제품이 수 천 종류가 넘는데 아무리 큰 레플리카 판매 사이트라고 하더라도 직접 제작하는 품목이 100개 이상 넘길 수가 없습니다.
-
-절,대,로,요 저희도 직접 제작하는 제품이 몇 가지 있기는 하지만 퀄리티 때문이 아닌 단가 절감을 위해서 인기 있는 종목의 제품만 직접 생산을 할 뿐 퀄리티와는 거리가 멀다고 보시면 됩니다.
-저희 같은 영세업자가 명품 레플리카 사이트에 판매하는 제품 수가 수 백에서 수 천가지가 되는데 그걸 하나하나 직접 생산 한다구요? 정품과 1:1비교 제작을 해 가면서요?
-
-절대~~ 말이 안되는 말들에 현혹되지 마시길 부탁 드리겠습니다.
-
-퀄리티 좋은 사이트를 찾는 팁을 드리자면 좋은 사이트를 확인하실 때 레플리카사이트후기 보시면 바로 답이 나옵니다.
-
-그리고 레플리카 사이트의 기본인 레플리카신발, 레플리카가방, 후기를 보시면 그 사이트의 기본 퀄리티를 느끼실 수 있으십니다.
-
-저희 디토홀릭은 레플리카 구매대행을 시작으로 레플리카도매업, 레플리카쇼핑몰 병행하며 14년 동안의 경험을 바탕으로 거래처 공장들 300여 곳 그리고 대표님께서 직접 눈으로 본 후 다른 공장 제품들과 비교하고 최대한 저렴한 금액으로 고퀄리티의 제품을 받아보실 수 있도록 14년 째 발로 뛰고 계십니다.
-
-저희가 롱런 할수있던 이유는 양심적이고 아직도 발로 뛰시는 운영진들이 있어서가 아닐까 싶습니다. 
-정말 REAL 진심을 담은 디토홀릭의 운영진의 푸념 이었습니다 긴 글 읽어주셔서 감사합니다`;
-
-              await storage.createProduct({
-                name: `(국내배송) ${product.title}`,
-                categoryId: "domestic",
-                subcategoryId: category.subcategoryId,
-                brandId: brandId,
-                price: price,
-                originalPrice: comparePrice,
-                description: product.body_html?.replace(/<[^>]*>/g, '').slice(0, 500) || product.title,
-                detailContent: domesticDetailContent,
-                imageUrl: imageUrl,
-                imageUrls: imageUrls.length > 0 ? imageUrls : [imageUrl],
-                detailImageUrls: detailImagesFromHtml.length > 0 ? detailImagesFromHtml : undefined,
-                options: sizeOptions.length > 0 ? JSON.stringify(sizeOptions) : undefined,
-                isBest: false,
-                isNew: i < 10,
-                isActive: true,
-                isSoldOut: false,
-              });
-              
-              totalInserted++;
-              
-            } catch (error: any) {
-              insertErrors++;
-              console.error(`Error inserting product ${product.title}:`, error?.message || error);
-            }
-            
-            dittoholicProgress.current = i + 1;
-            dittoholicProgress.message = `[${category.name}] 저장 중... (${i + 1}/${allProducts.length})${insertErrors > 0 ? ` (오류: ${insertErrors})` : ''}`;
-          }
-          
-          if (insertErrors > 0) {
-            console.log(`[${category.name}] ${insertErrors} errors during insert`);
-          }
-          
-          console.log(`[${category.name}] Inserted products, total: ${totalInserted}`);
-        }
-        
-        dittoholicProgress.status = 'completed';
-        dittoholicProgress.message = `완료! 총 ${totalInserted}개 상품이 크롤링되었습니다.`;
-        console.log(`Dittoholic crawl complete: ${totalInserted} products`);
-        
-      } catch (error: any) {
-        dittoholicProgress.status = 'error';
-        dittoholicProgress.message = `오류: ${error.message || '알 수 없는 오류'}`;
-        console.error('Dittoholic crawl error:', error);
-      }
-    })();
   });
 
   // ============ bagstyle.site Crawling ============
@@ -3170,7 +2713,7 @@ export async function registerRoutes(
       return res.status(400).json({ success: false, error: "이미 크롤링이 진행 중입니다." });
     }
 
-    const { clearExisting, selectedCategories, maxPages = 50 } = req.body;
+    const { clearExisting, selectedCategories } = req.body;
 
     bagstyleProgress.status = 'running';
     bagstyleProgress.total = 0;
@@ -3191,9 +2734,58 @@ export async function registerRoutes(
         { caId: "70", name: "골프", localId: "golf" },
         { caId: "f0", name: "쥬얼리/잡화", localId: "jewelry" },
         { caId: "d0", name: "하이앤드BEST", localId: "highend" },
-        { caId: "80", name: "특가상품", localId: "sale" },
+        { caId: "80", name: "할인상품", localId: "sale" },
         { caId: "a0", name: "당일배송", localId: "sameday" },
       ];
+
+      const SUBCATEGORY_MAP: Record<string, { id: string; name: string }[]> = {
+        "j0": [
+          { id: "j0d0", name: "이번달의신상" }, { id: "j0c0", name: "26년1월" }, { id: "j0b0", name: "25년12월" },
+        ],
+        "i0": [
+          { id: "i010", name: "자켓/점퍼" }, { id: "i020", name: "패딩/털" }, { id: "i030", name: "가죽옷" },
+          { id: "i040", name: "코트/정장" }, { id: "i050", name: "후드티/집업" }, { id: "i060", name: "셔츠/남방" },
+          { id: "i070", name: "베스트/조끼" }, { id: "i080", name: "니트/스웨터" }, { id: "i090", name: "가디건" },
+          { id: "i0a0", name: "반팔티/폴로티" }, { id: "i0b0", name: "긴팔티/맨투맨" }, { id: "i0c0", name: "운동복/추리닝" },
+          { id: "i0d0", name: "팬츠/청바지" }, { id: "i0e0", name: "반바지" }, { id: "i0f0", name: "세트" },
+          { id: "i0g0", name: "원피스" }, { id: "i0h0", name: "수영복" },
+        ],
+        "e0": [
+          { id: "e010", name: "토트백" }, { id: "e020", name: "크로스백" }, { id: "e030", name: "숄더백" },
+          { id: "e050", name: "백팩" }, { id: "e060", name: "파우치/클러치" }, { id: "e070", name: "여행가방" },
+          { id: "e080", name: "캐리어" }, { id: "e090", name: "벨트백/새들/슬링" }, { id: "e0a0", name: "미니백" },
+          { id: "e0b0", name: "기타" }, { id: "e0d0", name: "캐리어" }, { id: "e0e0", name: "서류가방/메신저" },
+        ],
+        "g0": [
+          { id: "g010", name: "스니커즈" }, { id: "g020", name: "운동화" }, { id: "g030", name: "구두" },
+          { id: "g040", name: "샌들/슬리퍼" }, { id: "g050", name: "부츠/워커" }, { id: "g060", name: "로퍼/슬립온" },
+          { id: "g080", name: "단화/플랫" }, { id: "g090", name: "펌프스/힐" },
+        ],
+        "h0": [
+          { id: "h010", name: "장지갑/소지갑" }, { id: "h020", name: "카드지갑" }, { id: "h030", name: "동전지갑" },
+        ],
+        "70": [
+          { id: "7010", name: "골프의류" }, { id: "7020", name: "골프가방" }, { id: "7030", name: "골프신발" },
+          { id: "7040", name: "골프잡화" }, { id: "7050", name: "골프용품" },
+        ],
+        "f0": [
+          { id: "f010", name: "벨트" }, { id: "f020", name: "선글라스" }, { id: "f030", name: "스카프/머플러" },
+          { id: "f040", name: "넥타이" }, { id: "f050", name: "만년필/볼팬" }, { id: "f060", name: "라이터/듀풍" },
+          { id: "f070", name: "모자" }, { id: "f080", name: "장갑" }, { id: "f090", name: "백참/브로치" },
+          { id: "f0a0", name: "목걸이" }, { id: "f0b0", name: "팔찌" }, { id: "f0c0", name: "반지" },
+          { id: "f0d0", name: "귀걸이" }, { id: "f0e0", name: "키홀더" }, { id: "f0f0", name: "우산" },
+          { id: "f0h0", name: "기타" },
+        ],
+        "d0": [],
+        "80": [
+          { id: "80b0", name: "가방/백" }, { id: "80c0", name: "의류" }, { id: "80f0", name: "지갑" },
+          { id: "80g0", name: "신발" }, { id: "80i0", name: "벨트" }, { id: "80j0", name: "잡화/소품/ACC" },
+        ],
+        "a0": [
+          { id: "a010", name: "의류" }, { id: "a020", name: "가방/백" }, { id: "a030", name: "클러치/지갑" },
+          { id: "a040", name: "잡화/소품/ACC" }, { id: "a050", name: "바지/팬츠" }, { id: "a060", name: "신발" },
+        ],
+      };
 
       const CATEGORIES = selectedCategories && selectedCategories.length > 0
         ? ALL_CATEGORIES.filter(c => selectedCategories.includes(c.localId))
@@ -3251,7 +2843,7 @@ export async function registerRoutes(
         } catch { return []; }
       };
 
-      const fetchProductDetail = async (sourceId: string, categoryLocalId: string) => {
+      const fetchProductDetail = async (sourceId: string, categoryLocalId: string, categoryCaId: string) => {
         const url = `https://bagstyle.site/shop/item.php?it_id=${sourceId}`;
         try {
           const response = await fetch(url, { headers });
@@ -3271,13 +2863,48 @@ export async function registerRoutes(
           if (!name) name = `상품 ${sourceId}`;
 
           let brandName = '';
-          const brandEl = $('td:contains("브랜드")').next('td');
-          if (brandEl.length) {
-            brandName = brandEl.text().trim();
+          const breadcrumbLinks = $('nav a, .breadcrumb a, ol.breadcrumb a');
+          breadcrumbLinks.each((_i, el) => {
+            const text = $(el).text().trim();
+            if (text && text.length > 1 && text.length < 30 && !text.includes('홈') && !text.includes('HOME')) {
+              const href = $(el).attr('href') || '';
+              if (!href.includes('ca_id=')) {
+                brandName = text;
+              }
+            }
+          });
+          if (!brandName) {
+            const brandEl = $('td:contains("브랜드")').next('td');
+            if (brandEl.length) {
+              brandName = brandEl.text().trim();
+            }
           }
           if (!brandName) {
             const brandMatch = html.match(/브랜드[^<]*<\/td>\s*<td[^>]*>([^<]+)/i);
             if (brandMatch) brandName = brandMatch[1].trim();
+          }
+
+          let subcategoryId: string | undefined = undefined;
+          const subcats = SUBCATEGORY_MAP[categoryCaId] || [];
+          if (subcats.length > 0) {
+            const breadcrumbText = $('nav, .breadcrumb, ol.breadcrumb').text();
+            const caIdMatches = html.match(/ca_id=([a-z0-9]+)/gi) || [];
+            for (const m of caIdMatches) {
+              const caVal = m.replace('ca_id=', '');
+              const matchedSub = subcats.find(s => s.id === caVal);
+              if (matchedSub) {
+                subcategoryId = matchedSub.id;
+                break;
+              }
+            }
+            if (!subcategoryId) {
+              for (const sub of subcats) {
+                if (breadcrumbText.includes(sub.name)) {
+                  subcategoryId = sub.id;
+                  break;
+                }
+              }
+            }
           }
 
           let price = 0;
@@ -3292,12 +2919,57 @@ export async function registerRoutes(
             if (anyPrice) price = parseInt(anyPrice[1].replace(/,/g, ''), 10);
           }
 
+          const colors: string[] = [];
+          const sizes: string[] = [];
+          const option1Label = $('label[for="it_option_1"]').text().trim();
+          const option2Label = $('label[for="it_option_2"]').text().trim();
+
+          if (option1Label.includes('컬러') || option1Label.includes('색상') || option1Label.includes('Color')) {
+            $('select#it_option_1 option, select[name="it_opt[]"]:first option').each((_i, el) => {
+              const val = $(el).attr('value');
+              if (val && val !== '선택' && !val.startsWith('선택') && val.trim()) {
+                colors.push(val.trim());
+              }
+            });
+          }
+          if (option2Label.includes('사이즈') || option2Label.includes('크기') || option2Label.includes('Size')) {
+            $('select#it_option_2 option, select[name="it_opt[]"]:eq(1) option').each((_i, el) => {
+              const val = $(el).attr('value');
+              if (val && val !== '선택' && !val.startsWith('선택') && val.trim()) {
+                sizes.push(val.trim());
+              }
+            });
+          }
+
+          if (colors.length === 0 && sizes.length === 0) {
+            $('select[name^="it_opt"] option').each((_i, el) => {
+              const val = $(el).attr('value');
+              if (val && val !== '선택' && !val.startsWith('선택') && val.trim()) {
+                sizes.push(val.trim());
+              }
+            });
+          }
+
+          let options = '';
+          if (colors.length > 0 || sizes.length > 0) {
+            options = JSON.stringify({ colors, sizes });
+          }
+
+          let description = '';
+          const explanDiv = $('#sit_inf_explan');
+          if (explanDiv.length) {
+            description = explanDiv.text().trim().slice(0, 2000);
+          }
+          if (!description) {
+            description = name;
+          }
+
           const mainImages: string[] = [];
           const imgRegex = new RegExp(`https://bagstyle\\.site/data/item/${sourceId}/[^"'\\s]+\\.(jpg|jpeg|png|webp)`, 'gi');
           const mainImgMatches = html.match(imgRegex) || [];
           mainImgMatches.forEach(img => {
             const clean = img.replace(/thumb-/, '').replace(/_\d+x\d+/g, '').split('?')[0];
-            if (!clean.includes('_77x82') && !mainImages.includes(clean)) mainImages.push(clean);
+            if (!clean.includes('_77x82') && !clean.includes('_100x100') && !mainImages.includes(clean)) mainImages.push(clean);
           });
 
           const detailImages: string[] = [];
@@ -3308,6 +2980,15 @@ export async function registerRoutes(
             if (!detailImages.includes(clean)) detailImages.push(clean);
           });
 
+          let detailContent = '';
+          const detailContentDiv = $('#sit_inf_explan');
+          if (detailContentDiv.length) {
+            detailContent = detailContentDiv.html()?.trim() || '';
+          }
+          if (!detailContent) {
+            detailContent = "프리미엄 명품 제품입니다.";
+          }
+
           let discountPercent = 0;
           if (originalPrice > 0 && price > 0 && originalPrice > price) {
             discountPercent = Math.round(((originalPrice - price) / originalPrice) * 100);
@@ -3315,28 +2996,19 @@ export async function registerRoutes(
 
           const isBest = html.includes('BEST') || html.includes('best_icon') || html.includes('베스트');
 
-          let options = '';
-          const optionTexts: string[] = [];
-          $('select[name^="it_opt"] option').each((_i, el) => {
-            const val = $(el).attr('value');
-            if (val && val !== '선택' && !val.startsWith('선택')) {
-              optionTexts.push(val);
-            }
-          });
-          if (optionTexts.length > 0) {
-            options = JSON.stringify(optionTexts);
-          }
-
           return {
             sourceId,
             name,
             brandName,
             price,
             originalPrice: originalPrice > 0 ? originalPrice : undefined,
+            description,
+            detailContent,
             imageUrl: mainImages[0] || `https://bagstyle.site/data/item/${sourceId}/`,
             imageUrls: mainImages,
             detailImageUrls: detailImages,
             categoryId: categoryLocalId,
+            subcategoryId,
             discountPercent,
             isBest,
             options,
@@ -3366,6 +3038,22 @@ export async function registerRoutes(
               });
             }
           } catch {}
+
+          const subcats = SUBCATEGORY_MAP[cat.caId] || [];
+          for (const sub of subcats) {
+            try {
+              const existingSubs = await storage.getAllSubcategories();
+              if (!existingSubs.find(s => s.id === sub.id || (s.categoryId === cat.localId && s.slug === sub.id))) {
+                await storage.createSubcategory({
+                  categoryId: cat.localId,
+                  name: sub.name,
+                  slug: sub.id,
+                  sortOrder: subcats.indexOf(sub) * 10,
+                  isActive: true,
+                });
+              }
+            } catch {}
+          }
         }
 
         let totalInserted = 0;
@@ -3378,7 +3066,7 @@ export async function registerRoutes(
           let page = 1;
           let emptyCount = 0;
 
-          while (emptyCount < 3 && page <= maxPages) {
+          while (emptyCount < 3) {
             const ids = await fetchProductList(category.caId, page);
             let newCount = 0;
             ids.forEach(id => { if (!allIds.has(id)) { allIds.add(id); newCount++; } });
@@ -3401,7 +3089,7 @@ export async function registerRoutes(
 
           for (let i = 0; i < idsArray.length; i += 10) {
             const batch = idsArray.slice(i, i + 10);
-            const results = await Promise.all(batch.map(id => fetchProductDetail(id, category.localId)));
+            const results = await Promise.all(batch.map(id => fetchProductDetail(id, category.localId, category.caId)));
 
             for (const p of results) {
               if (p && p.price > 0) {
@@ -3410,11 +3098,12 @@ export async function registerRoutes(
                   await storage.createProduct({
                     name: p.name,
                     categoryId: p.categoryId,
+                    subcategoryId: p.subcategoryId,
                     brandId: brandId,
                     price: p.price,
                     originalPrice: p.originalPrice,
-                    description: p.name,
-                    detailContent: "프리미엄 명품 제품입니다.",
+                    description: p.description,
+                    detailContent: p.detailContent,
                     imageUrl: p.imageUrl,
                     imageUrls: p.imageUrls.length > 0 ? p.imageUrls : [p.imageUrl],
                     detailImageUrls: p.detailImageUrls,
@@ -3448,416 +3137,6 @@ export async function registerRoutes(
         console.error('Bagstyle crawl error:', error);
       }
     })();
-  });
-
-  // Crawl reviews from cdamdong.co.kr (bestreview and kalreom boards)
-  app.post("/api/admin/crawl/reviews", requireAdminAuth, async (req: Request, res: Response) => {
-    const headers = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      "Referer": "https://cdamdong.co.kr/",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-      "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
-      "Accept-Encoding": "gzip, deflate, br",
-      "Connection": "keep-alive",
-    };
-    
-    try {
-      const maxPages = req.body.maxPages || 20;
-      const boards = req.body.boards || ["bestreview", "kalreom"];
-      const reviews: any[] = [];
-      const seenIds = new Set<string>();
-      
-      console.log(`Starting review crawl from boards: ${boards.join(", ")}, maxPages: ${maxPages}`);
-      
-      // Crawl from multiple boards
-      for (const board of boards) {
-        console.log(`\n=== Crawling board: ${board} ===`);
-        let consecutiveEmptyPages = 0;
-        
-        for (let page = 1; page <= maxPages; page++) {
-          try {
-            const listUrl = `https://cdamdong.co.kr/bbs/board.php?bo_table=${board}&page=${page}`;
-            console.log(`Fetching ${board} page ${page}: ${listUrl}`);
-            
-            const response = await fetch(listUrl, { headers });
-            
-            if (!response.ok) {
-              console.log(`Page ${page} returned ${response.status}`);
-              consecutiveEmptyPages++;
-              if (consecutiveEmptyPages >= 3) break;
-              continue;
-            }
-            
-            const html = await response.text();
-            const $ = cheerio.load(html);
-            
-            let pageItemsFound = 0;
-            
-            // Method 1: Parse review list items using sct_li class
-            $(".sct_li").each((_: number, el: any) => {
-              const $el = $(el);
-              
-              let href = $el.find(`a[href*='${board}']`).first().attr("href") || "";
-              href = href.replace(/&amp;/g, "&");
-              
-              const idMatch = href.match(/wr_id=(\d+)/);
-              
-              const title = $el.find(".sct_txt .title div").last().text().trim() || 
-                           $el.find(".sct_txt a").text().trim() ||
-                           $el.find("a").first().text().trim();
-              
-              const thumbnail = $el.find(".prdImg img").attr("src") || $el.find("img").first().attr("src") || "";
-              
-              const uniqueKey = `${board}_${idMatch?.[1]}`;
-              if (idMatch && !seenIds.has(uniqueKey)) {
-                seenIds.add(uniqueKey);
-                reviews.push({
-                  sourceId: idMatch[1],
-                  board,
-                  title,
-                  thumbnail,
-                });
-                pageItemsFound++;
-              }
-            });
-            
-            // Method 2: Fallback - regex extraction
-            if (pageItemsFound === 0) {
-              const idRegex = new RegExp(`${board}[^"]*wr_id=(\\d+)`, 'g');
-              let match;
-              while ((match = idRegex.exec(html)) !== null) {
-                const id = match[1];
-                const uniqueKey = `${board}_${id}`;
-                if (!seenIds.has(uniqueKey)) {
-                  seenIds.add(uniqueKey);
-                  reviews.push({
-                    sourceId: id,
-                    board,
-                    title: `후기 #${id}`,
-                    thumbnail: "",
-                  });
-                  pageItemsFound++;
-                }
-              }
-            }
-            
-            console.log(`${board} page ${page}: Found ${pageItemsFound} new items, total: ${reviews.length}`);
-            
-            if (pageItemsFound === 0) {
-              consecutiveEmptyPages++;
-              if (consecutiveEmptyPages >= 2) {
-                console.log(`No new items on ${board} page ${page}, stopping board crawl`);
-                break;
-              }
-            } else {
-              consecutiveEmptyPages = 0;
-            }
-            
-            await new Promise(resolve => setTimeout(resolve, 300));
-          } catch (e) {
-            console.error(`Error fetching ${board} page ${page}:`, e);
-          }
-        }
-      }
-      
-      console.log(`\nTotal reviews found across all boards: ${reviews.length}`);
-      
-      // Fetch review details and save
-      let savedCount = 0;
-      const maxReviews = req.body.maxReviews || 200;
-      for (const review of reviews.slice(0, maxReviews)) {
-        try {
-          const board = review.board || "bestreview";
-          const detailUrl = `https://cdamdong.co.kr/bbs/board.php?bo_table=${board}&wr_id=${review.sourceId}`;
-          console.log(`Fetching ${board} review detail: ${detailUrl}`);
-          
-          const detailRes = await fetch(detailUrl, { 
-            headers: {
-              ...headers,
-              "Referer": `https://cdamdong.co.kr/bbs/board.php?bo_table=${board}`
-            }
-          });
-          if (!detailRes.ok) {
-            console.log(`Review ${review.sourceId} returned ${detailRes.status}`);
-            continue;
-          }
-          
-          const detailHtml = await detailRes.text();
-          const $detail = cheerio.load(detailHtml);
-          
-          // Check if page redirected (no content)
-          if (detailHtml.includes('document.location.replace') && !detailHtml.includes('bo_v_title')) {
-            console.log(`Review ${review.sourceId} redirected, skipping`);
-            continue;
-          }
-          
-          // Get full title from detail page
-          const fullTitle = $detail("#bo_v_title .bo_v_tit").text().trim() || review.title;
-          
-          // Get category/brand
-          const category = $detail("#bo_v_title .bo_v_cate").text().trim();
-          
-          // Get author name - try multiple selectors
-          let authorName = $detail("#bo_v_info .sv_member").text().trim();
-          if (!authorName) {
-            // Extract from title (format: "... 최**")
-            const authorMatch = fullTitle.match(/\s+([가-힣]+\*+)$/);
-            authorName = authorMatch ? authorMatch[1] : "베스트리뷰";
-          }
-          
-          // Get view count from #bo_v_info (format: "조회 3,483회")
-          const infoText = $detail("#bo_v_info").text();
-          const viewCountMatch = infoText.match(/([\d,]+)회/);
-          const viewCount = viewCountMatch ? parseInt(viewCountMatch[1].replace(/,/g, "")) : 0;
-          
-          // Get date from .if_date (format: "25-12-29 22:00")
-          const dateText = $detail(".if_date").text().trim();
-          console.log(`Review ${review.sourceId} dateText: "${dateText}"`);
-          const dateMatch = dateText.match(/(\d{2})-(\d{2})-(\d{2})\s*(\d{2}):(\d{2})/);
-          let displayDate: Date | undefined;
-          if (dateMatch) {
-            const year = 2000 + parseInt(dateMatch[1]);
-            const month = parseInt(dateMatch[2]) - 1;
-            const day = parseInt(dateMatch[3]);
-            const hour = parseInt(dateMatch[4]);
-            const minute = parseInt(dateMatch[5]);
-            displayDate = new Date(year, month, day, hour, minute);
-            console.log(`Review ${review.sourceId} parsed date: ${displayDate}`);
-          }
-          
-          // Get content text from article section
-          let content = $detail("#bo_v_atc").text().trim();
-          // Remove "본문" title if present
-          content = content.replace(/^본문\s*/, "").trim();
-          if (!content) content = fullTitle;
-          
-          // Extract all images from review - only from this review's content
-          const images: string[] = [];
-          const seenImageNames = new Set<string>();
-          
-          // Helper to normalize URL and extract unique image name
-          const getImageName = (url: string): string => {
-            const match = url.match(/([^\/]+)\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i);
-            return match ? match[1].replace(/^thumb-/, "").replace(/_\d+x\d+$/, "") : url;
-          };
-          
-          // Helper to add image if not duplicate
-          const addImage = (src: string) => {
-            if (!src || !src.includes("cdamdong.co.kr")) return;
-            
-            // Skip icons and small assets
-            if (src.includes("/img/") || src.includes("/skin/") || src.includes("icon")) return;
-            
-            // Normalize relative URLs
-            if (src.startsWith("/")) {
-              src = `https://cdamdong.co.kr${src}`;
-            }
-            
-            const imageName = getImageName(src);
-            if (!seenImageNames.has(imageName)) {
-              seenImageNames.add(imageName);
-              images.push(src);
-            }
-          };
-          
-          // Get images from #bo_v_img section (main attached images - highest priority)
-          $detail("#bo_v_img a").each((_: number, el: any) => {
-            const href = $detail(el).attr("href") || "";
-            if (href.includes("view_image.php")) {
-              // Extract actual image filename from view_image URL
-              const fnMatch = href.match(/fn=([^&]+)/);
-              if (fnMatch) {
-                const imagePath = decodeURIComponent(fnMatch[1]);
-                addImage(`https://cdamdong.co.kr/data/file/bestreview/${imagePath}`);
-              }
-            }
-          });
-          
-          // Fallback: get images directly from #bo_v_img if no links found
-          if (images.length === 0) {
-            $detail("#bo_v_img img").each((_: number, img: any) => {
-              addImage($detail(img).attr("src") || "");
-            });
-          }
-          
-          // Get images from article content (editor images)
-          $detail("#bo_v_atc img").each((_: number, img: any) => {
-            const src = $detail(img).attr("src") || "";
-            // Only include editor-uploaded images (in /data/editor/ or /data/file/)
-            if (src.includes("/data/editor/") || src.includes("/data/file/")) {
-              addImage(src);
-            }
-          });
-          
-          console.log(`Review ${review.sourceId}: title="${fullTitle.slice(0,30)}...", author=${authorName}, views=${viewCount}, date=${displayDate?.toISOString()}, images=${images.length}`);
-          
-          // Check for duplicate (same title and date)
-          const existingReviews = await storage.getVisibleReviews();
-          const titleToCheck = category ? `[${category}] ${fullTitle}` : fullTitle;
-          const isDuplicate = existingReviews.some(r => 
-            r.title === titleToCheck && 
-            r.displayDate?.toISOString() === displayDate?.toISOString()
-          );
-          
-          if (isDuplicate) {
-            console.log(`Skipping duplicate review: ${titleToCheck.slice(0, 30)}...`);
-            continue;
-          }
-          
-          // Create review in database
-          await storage.createReview({
-            title: titleToCheck,
-            authorName,
-            rating: 5,
-            content: content.slice(0, 2000),
-            imageUrls: images.slice(0, 20),
-            isVisible: true,
-            displayDate,
-          });
-          
-          savedCount++;
-          await new Promise(resolve => setTimeout(resolve, 300));
-        } catch (e) {
-          console.error("Error fetching review detail:", e);
-        }
-      }
-      
-      console.log(`Review crawl complete: ${savedCount} saved`);
-      
-      res.json({ 
-        success: true, 
-        message: `${savedCount}개의 후기가 크롤링되었습니다.`,
-        total: reviews.length,
-        saved: savedCount,
-      });
-    } catch (error: any) {
-      console.error("Review crawl error:", error);
-      res.status(500).json({ success: false, error: error.message || "후기 크롤링 중 오류가 발생했습니다." });
-    }
-  });
-
-  // Crawl notices from cdamdong.co.kr
-  app.post("/api/admin/crawl/notices", requireAdminAuth, async (req: Request, res: Response) => {
-    const headers = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      "Referer": "https://cdamdong.co.kr/",
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
-    };
-    
-    try {
-      const maxPages = req.body.maxPages || 3;
-      const notices: any[] = [];
-      const seenIds = new Set<string>();
-      
-      console.log("Starting notice crawl...");
-      
-      for (let page = 1; page <= maxPages; page++) {
-        try {
-          const listUrl = `https://cdamdong.co.kr/bbs/board.php?bo_table=notice&page=${page}`;
-          console.log(`Fetching notice list page ${page}: ${listUrl}`);
-          
-          const response = await fetch(listUrl, { headers });
-          if (!response.ok) {
-            console.log(`Page ${page} returned ${response.status}`);
-            continue;
-          }
-          
-          const html = await response.text();
-          const $ = cheerio.load(html);
-          
-          // Parse notice list items - look for links with wr_id in href
-          $(".bo_tit a").each((_: number, el: any) => {
-            const $el = $(el);
-            const title = $el.text().trim();
-            const href = $el.attr("href") || "";
-            const idMatch = href.match(/wr_id=(\d+)/);
-            
-            if (title && idMatch && !seenIds.has(idMatch[1])) {
-              seenIds.add(idMatch[1]);
-              notices.push({
-                sourceId: idMatch[1],
-                title,
-              });
-            }
-          });
-          
-          console.log(`Page ${page}: Found ${notices.length} total notices so far`);
-          await new Promise(resolve => setTimeout(resolve, 500));
-        } catch (e) {
-          console.error(`Error fetching page ${page}:`, e);
-        }
-      }
-      
-      console.log(`Total notices found: ${notices.length}`);
-      
-      // Fetch notice details and save
-      let savedCount = 0;
-      for (const notice of notices.slice(0, 30)) {
-        try {
-          const detailUrl = `https://cdamdong.co.kr/bbs/board.php?bo_table=notice&wr_id=${notice.sourceId}`;
-          console.log(`Fetching notice detail: ${detailUrl}`);
-          
-          const detailRes = await fetch(detailUrl, { headers });
-          if (!detailRes.ok) continue;
-          
-          const detailHtml = await detailRes.text();
-          const $detail = cheerio.load(detailHtml);
-          
-          // Get view count (format: "57,356회")
-          const viewCountText = $detail("#bo_v_info").text();
-          const viewCountMatch = viewCountText.match(/조회.*?([\d,]+)회/);
-          const viewCount = viewCountMatch ? parseInt(viewCountMatch[1].replace(/,/g, "")) : 0;
-          
-          // Get date (format: "25-12-01 07:52")
-          const dateText = $detail(".if_date").text().trim();
-          const dateMatch = dateText.match(/(\d{2})-(\d{2})-(\d{2})\s*(\d{2}):(\d{2})/);
-          let displayDate: Date | undefined;
-          if (dateMatch) {
-            const year = 2000 + parseInt(dateMatch[1]);
-            const month = parseInt(dateMatch[2]) - 1;
-            const day = parseInt(dateMatch[3]);
-            const hour = parseInt(dateMatch[4]);
-            const minute = parseInt(dateMatch[5]);
-            displayDate = new Date(year, month, day, hour, minute);
-          }
-          
-          // Get content HTML
-          let content = $detail("#bo_v_con").html() || notice.title;
-          
-          // Clean up HTML
-          content = content.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "");
-          
-          console.log(`Notice ${notice.sourceId}: title="${notice.title.substring(0, 30)}...", views=${viewCount}, date=${displayDate}`);
-          
-          // Create notice in database using raw insert to include viewCount
-          await storage.createNoticeWithViewCount({
-            title: notice.title,
-            content: content,
-            isVisible: true,
-            displayDate,
-            viewCount,
-          });
-          
-          savedCount++;
-          await new Promise(resolve => setTimeout(resolve, 200));
-        } catch (e) {
-          console.error("Error fetching notice detail:", e);
-        }
-      }
-      
-      console.log(`Notice crawl complete: ${savedCount} saved`);
-      
-      res.json({ 
-        success: true, 
-        message: `${savedCount}개의 공지사항이 크롤링되었습니다.`,
-        total: notices.length,
-        saved: savedCount,
-      });
-    } catch (error: any) {
-      console.error("Notice crawl error:", error);
-      res.status(500).json({ success: false, error: error.message || "공지사항 크롤링 중 오류가 발생했습니다." });
-    }
   });
 
   // Sync ALL accessory prices using comprehensive pattern matching
@@ -4216,172 +3495,6 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("Error syncing bag prices:", error);
       res.status(500).json({ success: false, error: error.message || "가격 동기화 중 오류가 발생했습니다." });
-    }
-  });
-
-  // Crawl reviews from source site
-  app.post("/api/admin/crawl-reviews", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const { startPage = 1, endPage = 10, batchSize = 10 } = req.body;
-      console.log(`Starting review crawl from page ${startPage} to ${endPage}...`);
-      
-      let totalCrawled = 0;
-      let totalInserted = 0;
-      const errors: string[] = [];
-      
-      for (let page = startPage; page <= endPage; page += batchSize) {
-        const endBatch = Math.min(page + batchSize - 1, endPage);
-        console.log(`Crawling pages ${page} to ${endBatch}...`);
-        
-        for (let p = page; p <= endBatch; p++) {
-          try {
-            const url = `https://cdamdong.co.kr/shop/itemuselist.php?page=${p}`;
-            const response = await fetch(url);
-            if (!response.ok) {
-              errors.push(`Page ${p}: HTTP ${response.status}`);
-              continue;
-            }
-            
-            const html = await response.text();
-            const $ = cheerio.load(html);
-            
-            // Parse each review item - structure: ol > li
-            $('ol > li').each((_, el) => {
-              try {
-                const $el = $(el);
-                
-                // Check if this is actually a review item (has .sps_img or .sps_section)
-                if (!$el.find('.sps_img').length && !$el.find('.sps_section').length) {
-                  return; // Skip non-review list items
-                }
-                
-                // Extract product info from .sps_img a
-                const productLink = $el.find('.sps_img a');
-                const productName = productLink.find('span').text().trim() || '';
-                
-                // Extract title from h2
-                const title = $el.find('.sps_section h2').text().trim() || '';
-                
-                // Extract author from .sps_dl dd (second dd after 작성자 dt)
-                const authorDd = $el.find('.sps_dl dd').eq(1);
-                const authorName = authorDd.text().trim().replace(/^\s*/, '') || '익명';
-                
-                // Extract date from .sps_dl dd (third dd after 작성일 dt)
-                const dateDd = $el.find('.sps_dl dd').eq(2);
-                const dateText = dateDd.text().trim();
-                
-                // Extract rating from star image
-                const starImg = $el.find('.sps_dl img[src*="star"]').attr('src') || '';
-                let rating = 5;
-                const starMatch = starImg.match(/star(\d)/);
-                if (starMatch) {
-                  rating = parseInt(starMatch[1]);
-                }
-                
-                // Extract content from hidden div (sps_con_X)
-                const contentDiv = $el.find('[id^="sps_con_"]');
-                const content = contentDiv.text().trim() || title;
-                
-                // Extract images from content div - get full-size images
-                const imageUrls: string[] = [];
-                contentDiv.find('img').each((_, img) => {
-                  let src = $(img).attr('src');
-                  if (src && !src.includes('star') && !src.includes('icon')) {
-                    // Convert thumbnail URLs to full-size URLs
-                    // Remove thumb- prefix and size suffix like _100x100 or _500x374
-                    src = src.replace(/thumb-/, '').replace(/_\d+x\d+(\.\w+)$/, '$1');
-                    
-                    // Convert relative URLs to absolute
-                    const fullUrl = src.startsWith('http') ? src : `https://cdamdong.co.kr${src.startsWith('/') ? '' : '/'}${src}`;
-                    if (!imageUrls.includes(fullUrl)) {
-                      imageUrls.push(fullUrl);
-                    }
-                  }
-                });
-                
-                // Also check for images in view_image.php links (these are full size)
-                contentDiv.find('a[href*="view_image.php"]').each((_, link) => {
-                  const href = $(link).attr('href');
-                  if (href) {
-                    // Extract the actual image URL from view_image.php?fn=...
-                    const fnMatch = href.match(/fn=([^&]+)/);
-                    if (fnMatch) {
-                      let imgPath = decodeURIComponent(fnMatch[1]);
-                      // Convert to full URL
-                      if (!imgPath.startsWith('http')) {
-                        imgPath = `https://cdamdong.co.kr${imgPath.startsWith('/') ? '' : '/'}${imgPath}`;
-                      }
-                      if (!imageUrls.includes(imgPath)) {
-                        imageUrls.push(imgPath);
-                      }
-                    }
-                  }
-                });
-                
-                // If no content images found, try to get from thumbnail (convert to full size)
-                if (imageUrls.length === 0) {
-                  let thumbImg = productLink.find('img').attr('src');
-                  if (thumbImg && !thumbImg.includes('star')) {
-                    // Convert thumbnail to full-size
-                    thumbImg = thumbImg.replace(/thumb-/, '').replace(/_\d+x\d+(\.\w+)$/, '$1');
-                    const fullThumbUrl = thumbImg.startsWith('http') ? thumbImg : `https://cdamdong.co.kr${thumbImg.startsWith('/') ? '' : '/'}${thumbImg}`;
-                    imageUrls.push(fullThumbUrl);
-                  }
-                }
-                
-                // Parse date
-                let displayDate = new Date();
-                if (dateText) {
-                  const dateParts = dateText.match(/(\d{4})-(\d{2})-(\d{2})/);
-                  if (dateParts) {
-                    displayDate = new Date(`${dateParts[1]}-${dateParts[2]}-${dateParts[3]}`);
-                  }
-                }
-                
-                if (title || content) {
-                  // Insert into database
-                  storage.createReview({
-                    authorName,
-                    productName,
-                    rating,
-                    title,
-                    content,
-                    imageUrls,
-                    isVisible: true,
-                    isBest: false,
-                    displayDate,
-                  });
-                  totalInserted++;
-                }
-                
-                totalCrawled++;
-              } catch (itemError) {
-                console.error('Error parsing review item:', itemError);
-              }
-            });
-            
-          } catch (pageError: any) {
-            console.error(`Error crawling page ${p}:`, pageError);
-            errors.push(`Page ${p}: ${pageError.message}`);
-          }
-        }
-        
-        // Small delay between batches to avoid overwhelming the server
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-      
-      console.log(`Review crawl complete: ${totalCrawled} reviews processed, ${totalInserted} inserted`);
-      
-      res.json({ 
-        success: true, 
-        message: `${totalInserted}개 리뷰가 크롤링되었습니다.`,
-        totalCrawled,
-        totalInserted,
-        errors: errors.length > 0 ? errors.slice(0, 10) : undefined
-      });
-    } catch (error: any) {
-      console.error("Error crawling reviews:", error);
-      res.status(500).json({ success: false, error: error.message || "리뷰 크롤링 중 오류가 발생했습니다." });
     }
   });
 
