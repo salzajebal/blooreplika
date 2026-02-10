@@ -225,20 +225,9 @@ export interface IStorage {
   setSiteSetting(key: string, value: string, description?: string): Promise<SiteSetting>;
   
   // Batch Price Updates
-  batchUpdateAccessoryPrices(pattern: string, price: string): Promise<number>;
-  fixHighAccessoryPrices(): Promise<number>;
-  setDefaultAccessoryPrices(defaultPrice: string): Promise<number>;
   batchUpdateCategoryPrices(categoryId: string, pattern: string, price: string): Promise<number>;
   fixHighCategoryPrices(categoryId: string): Promise<number>;
   setDefaultCategoryPrices(categoryId: string, defaultPrice: string): Promise<number>;
-  
-  // Domestic Price Adjustment
-  getDomesticProductCount(): Promise<number>;
-  adjustDomesticPrices(delta: number): Promise<number>;
-  
-  // Genuine Product Discount
-  getGenuineProductCount(): Promise<number>;
-  applyGenuineDiscount(discountPercent: number): Promise<number>;
   
   // Category Discount
   getCategoryProductCount(categoryId: string): Promise<number>;
@@ -1197,54 +1186,6 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Batch Price Updates - using direct SQL for speed
-  async batchUpdateAccessoryPrices(pattern: string, price: string): Promise<number> {
-    const result = await db.execute(sql`
-      UPDATE products 
-      SET price = ${price}
-      WHERE category_id = 'accessories' 
-      AND name LIKE ${pattern}
-    `);
-    return Number(result.rowCount) || 0;
-  }
-
-  async fixHighAccessoryPrices(): Promise<number> {
-    // Fix prices over 5 million by dividing by 100
-    const result1 = await db.execute(sql`
-      UPDATE products 
-      SET price = (CAST(price AS INTEGER) / 100)::TEXT
-      WHERE category_id = 'accessories' 
-      AND CAST(price AS INTEGER) > 5000000
-    `);
-    
-    // Fix prices over 1.5 million by dividing by 10
-    const result2 = await db.execute(sql`
-      UPDATE products 
-      SET price = (CAST(price AS INTEGER) / 10)::TEXT
-      WHERE category_id = 'accessories' 
-      AND CAST(price AS INTEGER) > 1500000
-    `);
-    
-    return (Number(result1.rowCount) || 0) + (Number(result2.rowCount) || 0);
-  }
-
-  async setDefaultAccessoryPrices(defaultPrice: string): Promise<number> {
-    // Set default price for any accessories that still have unreasonable prices
-    // (either 0, empty, or prices outside a reasonable range like 50K-500K)
-    const result = await db.execute(sql`
-      UPDATE products 
-      SET price = ${defaultPrice}
-      WHERE category_id = 'accessories' 
-      AND (
-        price IS NULL 
-        OR price = '' 
-        OR price = '0'
-        OR CAST(NULLIF(price, '') AS INTEGER) < 50000
-        OR CAST(NULLIF(price, '') AS INTEGER) > 500000
-      )
-    `);
-    return Number(result.rowCount) || 0;
-  }
-
   async batchUpdateCategoryPrices(categoryId: string, pattern: string, price: string): Promise<number> {
     const result = await db.execute(sql`
       UPDATE products 
@@ -1287,45 +1228,6 @@ export class DatabaseStorage implements IStorage {
         OR CAST(NULLIF(price, '') AS INTEGER) < 50000
         OR CAST(NULLIF(price, '') AS INTEGER) > 700000
       )
-    `);
-    return Number(result.rowCount) || 0;
-  }
-
-  // Domestic Price Adjustment
-  async getDomesticProductCount(): Promise<number> {
-    const [result] = await db.select({ count: sql<number>`count(*)::int` })
-      .from(products)
-      .where(eq(products.categoryId, 'domestic'));
-    return result?.count || 0;
-  }
-
-  async adjustDomesticPrices(delta: number): Promise<number> {
-    const result = await db.execute(sql`
-      UPDATE products 
-      SET price = (CAST(NULLIF(price, '') AS INTEGER) + ${delta})::TEXT
-      WHERE category_id = 'domestic'
-      AND price IS NOT NULL 
-      AND price != ''
-    `);
-    return Number(result.rowCount) || 0;
-  }
-
-  // Genuine Product Discount
-  async getGenuineProductCount(): Promise<number> {
-    const [result] = await db.select({ count: sql<number>`count(*)::int` })
-      .from(products)
-      .where(eq(products.categoryId, 'genuine'));
-    return result?.count || 0;
-  }
-
-  async applyGenuineDiscount(discountPercent: number): Promise<number> {
-    const multiplier = (100 - discountPercent) / 100;
-    const result = await db.execute(sql`
-      UPDATE products 
-      SET price = ROUND(CAST(NULLIF(price, '') AS NUMERIC) * ${multiplier})::TEXT
-      WHERE category_id = 'genuine'
-      AND price IS NOT NULL 
-      AND price != ''
     `);
     return Number(result.rowCount) || 0;
   }

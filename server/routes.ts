@@ -3283,11 +3283,10 @@ export async function registerRoutes(
       
       // Execute all price updates using batch SQL
       for (const rule of priceRules) {
-        const count = await storage.batchUpdateAccessoryPrices(rule.pattern, rule.price);
+        const count = await storage.batchUpdateCategoryPrices('jewelry', rule.pattern, rule.price);
         updatedCount += count;
       }
       
-      // Apply default prices to ANY remaining accessories by type keyword
       const fallbackRules = [
         { pattern: '%머플러%', price: '230000' },
         { pattern: '%스카프%', price: '230000' },
@@ -3307,16 +3306,14 @@ export async function registerRoutes(
       ];
       
       for (const rule of fallbackRules) {
-        const count = await storage.batchUpdateAccessoryPrices(rule.pattern, rule.price);
+        const count = await storage.batchUpdateCategoryPrices('jewelry', rule.pattern, rule.price);
         updatedCount += count;
       }
       
-      // Fix remaining products with unrealistic high prices
-      const highPriceCount = await storage.fixHighAccessoryPrices();
+      const highPriceCount = await storage.fixHighCategoryPrices('jewelry');
       updatedCount += highPriceCount;
       
-      // Set default price for any remaining accessories without valid prices
-      const defaultCount = await storage.setDefaultAccessoryPrices('180000');
+      const defaultCount = await storage.setDefaultCategoryPrices('jewelry', '180000');
       updatedCount += defaultCount;
       
       console.log(`Accessory price sync complete: ${updatedCount} products updated`);
