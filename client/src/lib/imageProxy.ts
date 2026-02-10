@@ -40,6 +40,11 @@ export function getProxiedImageUrl(
     return `/api/image-proxy?url=${encodeURIComponent(imageUrl)}&w=${config.width}&q=${config.quality}`;
   }
   
+  if (imageUrl.startsWith("/data/")) {
+    const fullUrl = `https://bagstyle.site${imageUrl}`;
+    return `/api/image-proxy?url=${encodeURIComponent(fullUrl)}&w=${config.width}&q=${config.quality}`;
+  }
+  
   return imageUrl;
 }
 

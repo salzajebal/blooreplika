@@ -2905,25 +2905,37 @@ export async function registerRoutes(
           }
 
           const mainImages: string[] = [];
-          const imgRegex = new RegExp(`https://bagstyle\\.site/data/item/${sourceId}/[^"'\\s]+\\.(jpg|jpeg|png|webp)`, 'gi');
+          const imgRegex = new RegExp(`https?://bagstyle\\.site/data/item/${sourceId}/[^"'\\s]+\\.(jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP)`, 'gi');
           const mainImgMatches = html.match(imgRegex) || [];
           mainImgMatches.forEach(img => {
-            const clean = img.replace(/thumb-/, '').replace(/_\d+x\d+/g, '').split('?')[0];
-            if (!clean.includes('_77x82') && !clean.includes('_100x100') && !mainImages.includes(clean)) mainImages.push(clean);
+            const clean = img.replace(/^http:/, 'https:').split('?')[0];
+            if (!clean.includes('_100x100') && !clean.includes('_77x82') && !mainImages.includes(clean)) mainImages.push(clean);
           });
+          if (mainImages.length === 0) {
+            const relImgRegex = new RegExp(`/data/item/${sourceId}/[^"'\\s]+\\.(jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP)`, 'gi');
+            const relMatches = html.match(relImgRegex) || [];
+            relMatches.forEach(img => {
+              const full = `https://bagstyle.site${img.split('?')[0]}`;
+              if (!full.includes('_100x100') && !full.includes('_77x82') && !mainImages.includes(full)) mainImages.push(full);
+            });
+          }
 
           const detailImages: string[] = [];
-          const detailRegex = /https?:\/\/bagstyle\.site\/data\/editor\/[^"'\s]+\.(jpg|jpeg|png|webp|gif)/gi;
+          const detailRegex = /(?:https?:\/\/bagstyle\.site)?\/data\/(?:editor|ebcontents)\/[^"'\s]+\.(jpg|jpeg|png|webp|gif|JPG|JPEG|PNG|WEBP|GIF)/gi;
           const detailMatches = html.match(detailRegex) || [];
           detailMatches.forEach(img => {
-            const clean = img.replace(/^http:/, 'https:');
+            let clean = img.replace(/^http:/, 'https:');
+            if (clean.startsWith('/')) clean = `https://bagstyle.site${clean}`;
             if (!detailImages.includes(clean)) detailImages.push(clean);
           });
 
           let detailContent = '';
           const detailContentDiv = $('#sit_inf_explan');
           if (detailContentDiv.length) {
-            detailContent = detailContentDiv.html()?.trim() || '';
+            let rawHtml = detailContentDiv.html()?.trim() || '';
+            rawHtml = rawHtml.replace(/src="\/data\//g, 'src="https://bagstyle.site/data/');
+            rawHtml = rawHtml.replace(/src='\/data\//g, "src='https://bagstyle.site/data/");
+            detailContent = rawHtml;
           }
           if (!detailContent) {
             detailContent = "프리미엄 명품 제품입니다.";

@@ -524,10 +524,20 @@ export default function ProductDetail() {
               상품 상세 정보
             </h2>
             
-            {product.detailContent && (
-              <div className="text-gray-700 mb-6 text-center" data-testid="content-detail">
-                {product.detailContent}
-              </div>
+            {product.detailContent && product.detailContent !== "프리미엄 명품 제품입니다." && (
+              <div 
+                className="text-gray-700 mb-6 text-center detail-html-content" 
+                data-testid="content-detail"
+                dangerouslySetInnerHTML={{ 
+                  __html: product.detailContent
+                    .replace(/src="(https?:\/\/bagstyle\.site\/data\/[^"]+)"/g, (_match: string, url: string) => 
+                      `src="${getProxiedImageUrl(url, 'large')}" style="max-width:100%;height:auto;"`
+                    )
+                    .replace(/src='(https?:\/\/bagstyle\.site\/data\/[^']+)'/g, (_match: string, url: string) => 
+                      `src='${getProxiedImageUrl(url, 'large')}' style='max-width:100%;height:auto;'`
+                    )
+                }}
+              />
             )}
             
             {product.detailImageUrls && product.detailImageUrls.length > 0 ? (
