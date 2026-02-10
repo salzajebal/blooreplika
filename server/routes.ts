@@ -749,6 +749,8 @@ export async function registerRoutes(
         }
       }
 
+      brandsCache.clear();
+
       res.json({
         success: true,
         data: {

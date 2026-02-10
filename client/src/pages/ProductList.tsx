@@ -1,7 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Heart, Package, Star, Grid, List, ChevronDown, Filter, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, Package, Star, Grid, List, ChevronDown, Filter, X, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -43,35 +43,6 @@ const CATEGORIES = [
   { id: "best", name: "베스트상품", slug: "best" },
 ];
 
-const extractBrandFromName = (name: string): string => {
-  const brandKeywords = [
-    "몽클레어", "발렌시아가", "버버리", "셀린느", "미우미우", "샤넬", "프라다",
-    "루이비통", "펜디", "디올", "톰브라운", "구찌", "에르메스", "보테가",
-    "페레가모", "마르니", "마놀로블라닉", "마놀로 블라닉", "어그", "마린세르",
-    "지미추", "지미 추", "티파니", "반클리프", "불가리", "크롬하츠", "베르사체",
-    "발렌티노", "톰포드", "막스마라", "아크네", "스튜디오", "아미", "메종키츠네",
-    "골든구스", "꼼데가르송", "이자벨마랑", "알렉산더맥퀸", "알렉산더 맥퀸",
-    "자크뮈스", "끌로에", "클로에", "지방시", "오프화이트", "릭오웬스",
-    "베트멍", "마르지엘라", "메종마르지엘라", "아미리", "팜엔젤스", "스톤아일랜드",
-    "무스너클", "캐나다구스", "파라점퍼스", "듀베티카", "타티아스", "헤르노",
-    "아크네스튜디오", "살로몬", "뉴발란스", "아디다스", "나이키", "로에베",
-    "까르띠에", "고야드"
-  ];
-  
-  for (const brand of brandKeywords) {
-    if (name.toLowerCase().includes(brand.toLowerCase())) {
-      return brand.toUpperCase();
-    }
-  }
-  
-  const firstWord = name.split(' ')[0];
-  if (firstWord && firstWord.length >= 2 && firstWord.length <= 10) {
-    return firstWord.toUpperCase();
-  }
-  
-  return "";
-};
-
 type SortOption = "newest" | "price_asc" | "price_desc" | "popular";
 
 export default function ProductList() {
@@ -81,6 +52,7 @@ export default function ProductList() {
   const [brands, setBrands] = useState<any[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [brandSearch, setBrandSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const { toggleItem, isInWishlist } = useWishlist();
   const { toast } = useToast();
@@ -272,8 +244,10 @@ export default function ProductList() {
   };
 
   const brandsWithProducts = useMemo(() => {
-    return brands;
-  }, [brands]);
+    if (!brandSearch.trim()) return brands;
+    const q = brandSearch.toLowerCase().trim();
+    return brands.filter((b: any) => b.name.toLowerCase().includes(q));
+  }, [brands, brandSearch]);
 
   const filteredProducts = useMemo(() => {
     let result = [...products];
@@ -324,26 +298,41 @@ export default function ProductList() {
         </ul>
       </div>
       
-      {brandsWithProducts.length > 0 && (
+      {brands.length > 0 && (
         <div>
           <h3 className="font-bold text-sm mb-3">브랜드</h3>
-          <ul className="space-y-2">
-            <li>
-              <button 
-                onClick={() => setSelectedBrand(null)}
-                className={cn("text-sm hover:text-black transition-colors text-left", !selectedBrand ? "font-bold text-black" : "text-gray-500")}
-              >
-                전체
-              </button>
-            </li>
+          <div className="relative mb-2">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
+            <input
+              type="text"
+              placeholder="브랜드 검색..."
+              value={brandSearch}
+              onChange={(e) => setBrandSearch(e.target.value)}
+              className="w-full pl-7 pr-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-black"
+              data-testid="input-brand-search"
+            />
+          </div>
+          <ul className="space-y-2 max-h-[400px] overflow-y-auto">
+            {!brandSearch && (
+              <li>
+                <button 
+                  onClick={() => setSelectedBrand(null)}
+                  className={cn("text-sm hover:text-black transition-colors text-left", !selectedBrand ? "font-bold text-black" : "text-gray-500")}
+                  data-testid="button-brand-all"
+                >
+                  전체
+                </button>
+              </li>
+            )}
             {brandsWithProducts.map(brand => (
               <li key={brand.id}>
                 <button 
-                  onClick={() => setSelectedBrand(brand.id)}
+                  onClick={() => { setSelectedBrand(brand.id); setBrandSearch(""); }}
                   className={cn("text-sm hover:text-black transition-colors text-left flex items-center gap-1", selectedBrand === brand.id ? "font-bold text-black" : "text-gray-500")}
+                  data-testid={`button-brand-${brand.id}`}
                 >
                   {brand.name}
-                  {brand.productCount && (
+                  {brand.productCount > 0 && (
                     <span className="text-xs text-gray-400">({brand.productCount})</span>
                   )}
                 </button>
@@ -403,31 +392,48 @@ export default function ProductList() {
             ))}
           </div>
           
-          {brandsWithProducts.length > 0 && (
+          {brands.length > 0 && (
             <div className="mt-3">
               <p className="text-[10px] text-gray-500 mb-2 font-medium">브랜드</p>
+              {brands.length > 10 && (
+                <div className="relative mb-2">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="브랜드 검색..."
+                    value={brandSearch}
+                    onChange={(e) => setBrandSearch(e.target.value)}
+                    className="w-full pl-7 pr-2 py-1.5 text-[10px] border rounded focus:outline-none focus:ring-1 focus:ring-black"
+                    data-testid="input-brand-search-mobile"
+                  />
+                </div>
+              )}
               <div className="flex flex-wrap gap-1.5">
-                <button 
-                  onClick={() => setSelectedBrand(null)}
-                  className={cn(
-                    "px-2.5 py-1 text-[10px] rounded-full border transition-colors",
-                    !selectedBrand 
-                      ? "bg-gray-800 text-white border-gray-800" 
-                      : "bg-white text-gray-600 border-gray-300 hover:border-gray-800"
-                  )}
-                >
-                  전체
-                </button>
-                {brandsWithProducts.slice(0, 20).map(brand => (
+                {!brandSearch && (
+                  <button 
+                    onClick={() => setSelectedBrand(null)}
+                    className={cn(
+                      "px-2.5 py-1 text-[10px] rounded-full border transition-colors",
+                      !selectedBrand 
+                        ? "bg-gray-800 text-white border-gray-800" 
+                        : "bg-white text-gray-600 border-gray-300 hover:border-gray-800"
+                    )}
+                    data-testid="button-brand-all-mobile"
+                  >
+                    전체
+                  </button>
+                )}
+                {brandsWithProducts.slice(0, brandSearch ? 50 : 20).map(brand => (
                   <button 
                     key={brand.id}
-                    onClick={() => setSelectedBrand(brand.id)}
+                    onClick={() => { setSelectedBrand(brand.id); setBrandSearch(""); }}
                     className={cn(
                       "px-2.5 py-1 text-[10px] rounded-full border transition-colors",
                       selectedBrand === brand.id 
                         ? "bg-gray-800 text-white border-gray-800" 
                         : "bg-white text-gray-600 border-gray-300 hover:border-gray-800"
                     )}
+                    data-testid={`button-brand-mobile-${brand.id}`}
                   >
                     {brand.name}
                   </button>
@@ -611,7 +617,7 @@ export default function ProductList() {
                       viewMode === "grid" ? "p-3" : "flex-1 flex flex-col justify-center"
                     )}>
                       <p className="text-[11px] md:text-xs text-gray-500 mb-1 font-medium tracking-wide">
-                        {brands.find(b => b.id === product.brandId)?.name?.toUpperCase() || extractBrandFromName(product.name)}
+                        {brands.find(b => b.id === product.brandId)?.name?.toUpperCase() || ""}
                       </p>
                       <h3 className={cn(
                         "font-medium text-sm mb-2 group-hover:text-gray-600 transition-colors",
