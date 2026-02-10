@@ -42,16 +42,19 @@ function ProductSkeleton() {
 }
 
 const CATEGORIES = [
-  { id: "outer", name: "아우터", slug: "outer" },
-  { id: "padding", name: "패딩", slug: "padding" },
-  { id: "tops", name: "상의", slug: "tops" },
-  { id: "bottoms", name: "하의", slug: "bottoms" },
-  { id: "shoes", name: "신발", slug: "shoes" },
-  { id: "accessories", name: "악세사리", slug: "accessories" },
-  { id: "wallets", name: "지갑", slug: "wallets" },
+  { id: "new-arrivals", name: "신상품", slug: "new-arrivals" },
+  { id: "brand", name: "브랜드", slug: "brand" },
+  { id: "gender", name: "성별", slug: "gender" },
+  { id: "clothing", name: "의류", slug: "clothing" },
   { id: "bags", name: "가방", slug: "bags" },
+  { id: "wallets", name: "지갑", slug: "wallets" },
+  { id: "shoes", name: "신발", slug: "shoes" },
   { id: "watches", name: "시계", slug: "watches" },
-  { id: "genuine", name: "정품", slug: "genuine" },
+  { id: "golf", name: "골프", slug: "golf" },
+  { id: "jewelry", name: "쥬얼리/잡화", slug: "jewelry" },
+  { id: "sameday", name: "당일배송", slug: "sameday" },
+  { id: "sale", name: "할인상품", slug: "sale" },
+  { id: "best", name: "베스트상품", slug: "best" },
 ];
 
 const extractBrandFromName = (name: string): string => {

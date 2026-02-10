@@ -41,17 +41,19 @@ const playNotificationSound = () => {
 };
 
 const CATEGORY_OPTIONS = [
-  { id: "outer", name: "아우터" },
-  { id: "padding", name: "패딩" },
-  { id: "tops", name: "상의" },
-  { id: "bottoms", name: "하의" },
-  { id: "shoes", name: "신발" },
-  { id: "accessories", name: "악세사리" },
-  { id: "wallets", name: "지갑" },
+  { id: "new-arrivals", name: "신상품" },
+  { id: "brand", name: "브랜드" },
+  { id: "gender", name: "성별" },
+  { id: "clothing", name: "의류" },
   { id: "bags", name: "가방" },
+  { id: "wallets", name: "지갑" },
+  { id: "shoes", name: "신발" },
   { id: "watches", name: "시계" },
-  { id: "genuine", name: "정품" },
-  { id: "domestic", name: "국내배송" },
+  { id: "golf", name: "골프" },
+  { id: "jewelry", name: "쥬얼리/잡화" },
+  { id: "sameday", name: "당일배송" },
+  { id: "sale", name: "할인상품" },
+  { id: "best", name: "베스트상품" },
 ];
 
 interface AdminStats {
@@ -91,7 +93,7 @@ export default function Admin() {
   const [formData, setFormData] = useState({
     name: "",
     sku: "",
-    categoryId: "outer",
+    categoryId: "new-arrivals",
     brandId: "",
     price: "",
     originalPrice: "",
@@ -220,15 +222,18 @@ export default function Admin() {
 
   const BAGSTYLE_CATEGORIES = [
     { localId: "new-arrivals", name: "신상품" },
+    { localId: "brand", name: "브랜드" },
+    { localId: "gender", name: "성별" },
     { localId: "clothing", name: "의류" },
-    { localId: "bags", name: "가방/백" },
-    { localId: "shoes", name: "신발" },
+    { localId: "bags", name: "가방" },
     { localId: "wallets", name: "지갑" },
+    { localId: "shoes", name: "신발" },
+    { localId: "watches", name: "시계" },
     { localId: "golf", name: "골프" },
     { localId: "jewelry", name: "쥬얼리/잡화" },
-    { localId: "highend", name: "하이앤드BEST" },
-    { localId: "sale", name: "특가상품" },
     { localId: "sameday", name: "당일배송" },
+    { localId: "sale", name: "할인상품" },
+    { localId: "best", name: "베스트상품" },
   ];
   const [selectedBagstyleCategories, setSelectedBagstyleCategories] = useState<string[]>([]);
 
@@ -1320,7 +1325,7 @@ export default function Admin() {
       if (data.success) {
         toast({ title: "성공", description: "상품이 추가되었습니다." });
         setShowAddForm(false);
-        setFormData({ name: "", sku: "", categoryId: "outer", brandId: "", price: "", originalPrice: "", stock: "", isBest: false, isNew: false, description: "", imageUrl: "", imageUrls: [] });
+        setFormData({ name: "", sku: "", categoryId: "new-arrivals", brandId: "", price: "", originalPrice: "", stock: "", isBest: false, isNew: false, description: "", imageUrl: "", imageUrls: [] });
         fetchProducts();
         fetchStats();
       } else {
@@ -1387,7 +1392,7 @@ export default function Admin() {
     setFormData({
       name: product.name,
       sku: product.sku || "",
-      categoryId: product.categoryId || "outer",
+      categoryId: product.categoryId || "new-arrivals",
       brandId: product.brandId?.toString() || "",
       price: String(product.price),
       originalPrice: product.originalPrice ? String(product.originalPrice) : "",

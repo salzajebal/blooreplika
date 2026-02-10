@@ -7,16 +7,19 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 const categoryNavItems = [
-  { name: '아우터', path: '/products/outer' },
-  { name: '패딩', path: '/products/padding' },
-  { name: '상의', path: '/products/tops' },
-  { name: '하의', path: '/products/bottoms' },
-  { name: '신발', path: '/products/shoes' },
-  { name: '악세사리', path: '/products/accessories' },
-  { name: '지갑', path: '/products/wallets' },
+  { name: '신상품', path: '/products/new-arrivals' },
+  { name: '브랜드', path: '/products/brand' },
+  { name: '성별', path: '/products/gender' },
+  { name: '의류', path: '/products/clothing' },
   { name: '가방', path: '/products/bags' },
+  { name: '지갑', path: '/products/wallets' },
+  { name: '신발', path: '/products/shoes' },
   { name: '시계', path: '/products/watches' },
-  { name: '정품', path: '/products/genuine' },
+  { name: '골프', path: '/products/golf' },
+  { name: '쥬얼리/잡화', path: '/products/jewelry' },
+  { name: '당일배송', path: '/products/sameday' },
+  { name: '할인상품', path: '/products/sale' },
+  { name: '베스트상품', path: '/products/best' },
 ];
 
 const menuItems = [
@@ -27,7 +30,6 @@ const menuItems = [
   { name: '블로그', path: '/blog' },
   { name: '라이크잇초이스', path: '/choice' },
   ...categoryNavItems,
-  { name: '국내배송', path: '/products/domestic' },
   { name: '커뮤니티', path: '/comparison' },
   { name: '상품후기', path: '/reviews' },
 ];

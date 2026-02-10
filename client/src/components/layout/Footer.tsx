@@ -31,12 +31,12 @@ export function Footer() {
           <div>
             <h4 className="text-white text-sm font-semibold mb-4">쇼핑 카테고리</h4>
             <ul className="space-y-2 text-xs">
-              <li><Link href="/products/outer" className="hover:text-white transition-colors">아우터</Link></li>
-              <li><Link href="/products/tops" className="hover:text-white transition-colors">상의</Link></li>
-              <li><Link href="/products/bottoms" className="hover:text-white transition-colors">하의</Link></li>
+              <li><Link href="/products/new-arrivals" className="hover:text-white transition-colors">신상품</Link></li>
+              <li><Link href="/products/clothing" className="hover:text-white transition-colors">의류</Link></li>
               <li><Link href="/products/bags" className="hover:text-white transition-colors">가방</Link></li>
               <li><Link href="/products/shoes" className="hover:text-white transition-colors">신발</Link></li>
               <li><Link href="/products/watches" className="hover:text-white transition-colors">시계</Link></li>
+              <li><Link href="/products/best" className="hover:text-white transition-colors">베스트상품</Link></li>
             </ul>
           </div>
         </div>

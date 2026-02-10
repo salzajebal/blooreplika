@@ -2504,72 +2504,6 @@ export async function registerRoutes(
   });
 
 
-  // Delete all domestic category products
-  app.delete("/api/admin/products/domestic", requireAdminAuth, async (_req: Request, res: Response) => {
-    try {
-      const deletedCount = await storage.deleteProductsByCategory("domestic");
-      invalidateProductCache();
-      res.json({ success: true, deletedCount });
-    } catch (error: any) {
-      console.error("Error deleting domestic products:", error);
-      res.status(500).json({ success: false, message: error.message || "삭제 중 오류가 발생했습니다." });
-    }
-  });
-
-  // Get domestic product count for price adjustment preview
-  app.get("/api/admin/products/domestic/count", requireAdminAuth, async (_req: Request, res: Response) => {
-    try {
-      const count = await storage.getDomesticProductCount();
-      res.json({ success: true, count });
-    } catch (error: any) {
-      console.error("Error getting domestic product count:", error);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  });
-
-  // Adjust domestic product prices by a fixed amount
-  app.post("/api/admin/products/domestic/adjust-price", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const { delta } = req.body;
-      if (typeof delta !== 'number') {
-        return res.status(400).json({ success: false, message: "delta는 숫자여야 합니다." });
-      }
-      const affectedCount = await storage.adjustDomesticPrices(delta);
-      invalidateProductCache();
-      res.json({ success: true, affectedCount });
-    } catch (error: any) {
-      console.error("Error adjusting domestic prices:", error);
-      res.status(500).json({ success: false, message: error.message || "가격 조정 중 오류가 발생했습니다." });
-    }
-  });
-
-  // Get genuine product count
-  app.get("/api/admin/products/genuine/count", requireAdminAuth, async (_req: Request, res: Response) => {
-    try {
-      const count = await storage.getGenuineProductCount();
-      res.json({ success: true, count });
-    } catch (error: any) {
-      console.error("Error getting genuine product count:", error);
-      res.status(500).json({ success: false, message: error.message });
-    }
-  });
-
-  // Apply discount to genuine products
-  app.post("/api/admin/products/genuine/apply-discount", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const { discountPercent } = req.body;
-      if (typeof discountPercent !== 'number' || discountPercent < 0 || discountPercent > 100) {
-        return res.status(400).json({ success: false, message: "할인율은 0~100 사이의 숫자여야 합니다." });
-      }
-      const affectedCount = await storage.applyGenuineDiscount(discountPercent);
-      invalidateProductCache();
-      res.json({ success: true, affectedCount });
-    } catch (error: any) {
-      console.error("Error applying genuine discount:", error);
-      res.status(500).json({ success: false, message: error.message || "할인 적용 중 오류가 발생했습니다." });
-    }
-  });
-
   // Get category product count
   app.get("/api/admin/products/category/:categoryId/count", requireAdminAuth, async (req: Request, res: Response) => {
     try {
@@ -2727,21 +2661,27 @@ export async function registerRoutes(
     (async () => {
       const ALL_CATEGORIES = [
         { caId: "j0", name: "신상품", localId: "new-arrivals" },
+        { caId: "brand", name: "브랜드", localId: "brand" },
+        { caId: "gender", name: "성별", localId: "gender" },
         { caId: "i0", name: "의류", localId: "clothing" },
-        { caId: "e0", name: "가방/백", localId: "bags" },
-        { caId: "g0", name: "신발", localId: "shoes" },
+        { caId: "e0", name: "가방", localId: "bags" },
         { caId: "h0", name: "지갑", localId: "wallets" },
+        { caId: "g0", name: "신발", localId: "shoes" },
+        { caId: "watch", name: "시계", localId: "watches" },
         { caId: "70", name: "골프", localId: "golf" },
         { caId: "f0", name: "쥬얼리/잡화", localId: "jewelry" },
-        { caId: "d0", name: "하이앤드BEST", localId: "highend" },
-        { caId: "80", name: "할인상품", localId: "sale" },
         { caId: "a0", name: "당일배송", localId: "sameday" },
+        { caId: "80", name: "할인상품", localId: "sale" },
+        { caId: "d0", name: "베스트상품", localId: "best" },
       ];
 
       const SUBCATEGORY_MAP: Record<string, { id: string; name: string }[]> = {
         "j0": [
           { id: "j0d0", name: "이번달의신상" }, { id: "j0c0", name: "26년1월" }, { id: "j0b0", name: "25년12월" },
         ],
+        "brand": [],
+        "gender": [],
+        "watch": [],
         "i0": [
           { id: "i010", name: "자켓/점퍼" }, { id: "i020", name: "패딩/털" }, { id: "i030", name: "가죽옷" },
           { id: "i040", name: "코트/정장" }, { id: "i050", name: "후드티/집업" }, { id: "i060", name: "셔츠/남방" },

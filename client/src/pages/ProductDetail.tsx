@@ -250,7 +250,7 @@ export default function ProductDetail() {
     if (category.includes("accessory") || category.includes("악세") || name.includes("귀걸이") || name.includes("목걸이") || name.includes("반지") || name.includes("팔찌") || name.includes("브로치")) {
       return { label: "옵션", defaults: [] };
     }
-    if (category.includes("outer") || category.includes("아우터") || category.includes("패딩") || category.includes("top") || category.includes("상의") || category.includes("bottom") || category.includes("하의") || name.includes("자켓") || name.includes("코트") || name.includes("패딩") || name.includes("니트") || name.includes("셔츠") || name.includes("티셔츠") || name.includes("바지") || name.includes("스커트")) {
+    if (category.includes("clothing") || category.includes("의류") || name.includes("자켓") || name.includes("코트") || name.includes("패딩") || name.includes("니트") || name.includes("셔츠") || name.includes("티셔츠") || name.includes("바지") || name.includes("스커트")) {
       return { label: "사이즈", defaults: ["XS", "S", "M", "L", "XL", "XXL"] };
     }
     return { label: "옵션", defaults: [] };

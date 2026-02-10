@@ -10,14 +10,15 @@ import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
 
 const DEFAULT_CATEGORIES = [
-  { id: "outer", name: "아우터" },
-  { id: "padding", name: "패딩" },
-  { id: "tops", name: "상의" },
-  { id: "bottoms", name: "하의" },
+  { id: "new-arrivals", name: "신상품" },
+  { id: "clothing", name: "의류" },
   { id: "bags", name: "가방" },
+  { id: "wallets", name: "지갑" },
   { id: "shoes", name: "신발" },
   { id: "watches", name: "시계" },
-  { id: "accessories", name: "악세사리" },
+  { id: "golf", name: "골프" },
+  { id: "jewelry", name: "쥬얼리/잡화" },
+  { id: "best", name: "베스트상품" },
 ];
 
 const PRODUCTS_PER_PAGE = 40;
