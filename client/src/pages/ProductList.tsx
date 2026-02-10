@@ -1,7 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Heart, Package, Star, Grid, List, ChevronDown, Filter, X, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { Heart, Package, Star, Grid, List, ChevronDown, Filter, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useRoute, Link, useLocation } from "wouter";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -13,19 +13,6 @@ import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-// Generate random deadline hours (1-24) based on product ID
-function getRandomDeadline(productId: string): { hours: number; minutes: number } {
-  let hash = 0;
-  const dateKey = new Date().toDateString();
-  const str = productId + dateKey;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash = hash & hash;
-  }
-  const hours = Math.abs(hash % 24) + 1;
-  const minutes = Math.abs((hash >> 4) % 60);
-  return { hours, minutes };
-}
 
 function ProductSkeleton() {
   return (
@@ -620,17 +607,6 @@ export default function ProductList() {
                       </button>
                     </div>
                     
-                    {/* Deadline Timer */}
-                    {viewMode === "grid" && (
-                      <div className="bg-gradient-to-r from-red-500 to-orange-500 text-white text-center py-1.5 px-2">
-                        <div className="flex items-center justify-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          <span className="text-[10px] sm:text-xs font-bold">
-                            마감임박 {getRandomDeadline(String(product.id)).hours}시간 {getRandomDeadline(String(product.id)).minutes}분 남음
-                          </span>
-                        </div>
-                      </div>
-                    )}
                     
                     <div className={cn(
                       viewMode === "grid" ? "p-3" : "flex-1 flex flex-col justify-center"
