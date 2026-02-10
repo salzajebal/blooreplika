@@ -9,6 +9,7 @@ import { useGlobalSale } from "@/hooks/use-global-sale";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import type { Product, Brand, Review } from "@shared/schema";
+import { decodeHtml } from "@/lib/utils";
 
 // Global variable to store the deferred install prompt
 let deferredPrompt: any = null;
@@ -270,7 +271,7 @@ export default function ProductDetail() {
             <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
             <Link href="/products" className="hover:text-primary shrink-0">상품</Link>
             <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-            <span className="text-gray-900 truncate">{product.name}</span>
+            <span className="text-gray-900 truncate">{decodeHtml(product.name)}</span>
           </nav>
 
           <div className="grid lg:grid-cols-2 gap-6 lg:gap-12">
@@ -318,7 +319,7 @@ export default function ProductDetail() {
             <div className="space-y-4 px-1">
               <div>
                 <h1 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 break-keep" data-testid="text-product-name">
-                  {product.name}
+                  {decodeHtml(product.name)}
                 </h1>
                 <div className="flex items-center gap-2 mb-3">
                   <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded">국내배송</span>

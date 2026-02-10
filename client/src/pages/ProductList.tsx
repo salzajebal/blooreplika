@@ -9,7 +9,7 @@ import type { Product } from "@shared/schema";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
-import { cn } from "@/lib/utils";
+import { cn, decodeHtml } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -623,7 +623,7 @@ export default function ProductList() {
                         "font-medium text-sm mb-2 group-hover:text-gray-600 transition-colors",
                         viewMode === "grid" && "line-clamp-2"
                       )}>
-                        {product.name}
+                        {decodeHtml(product.name)}
                       </h3>
                       <div className="flex items-center gap-2 flex-wrap">
                         {(product.discountPercent && product.discountPercent > 0) ? (

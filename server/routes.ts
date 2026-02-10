@@ -2939,6 +2939,19 @@ export async function registerRoutes(
         } catch { return []; }
       };
 
+      const decodeHtmlEntities = (text: string): string => {
+        return text
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'")
+          .replace(/&#x27;/g, "'")
+          .replace(/&#x2F;/g, '/')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&#(\d+);/g, (_m, code) => String.fromCharCode(parseInt(code, 10)));
+      };
+
       const fetchProductDetail = async (sourceId: string, categoryLocalId: string, categoryCaId: string) => {
         const url = `https://bagstyle.site/shop/item.php?it_id=${sourceId}`;
         try {
@@ -2950,11 +2963,11 @@ export async function registerRoutes(
           let name = '';
           const h1 = $('h1.sit_tit');
           if (h1.length) {
-            name = h1.text().trim();
+            name = decodeHtmlEntities(h1.text().trim());
           }
           if (!name) {
             const titleMatch = html.match(/<title>([^|<]+)/i);
-            if (titleMatch) name = titleMatch[1].trim();
+            if (titleMatch) name = decodeHtmlEntities(titleMatch[1].trim());
           }
           if (!name) name = `상품 ${sourceId}`;
 
