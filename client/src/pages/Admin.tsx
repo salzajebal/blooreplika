@@ -42,13 +42,12 @@ const playNotificationSound = () => {
 
 const CATEGORY_OPTIONS = [
   { id: "new-arrivals", name: "신상품" },
-  { id: "brand", name: "브랜드" },
-  { id: "gender", name: "성별" },
+  { id: "men", name: "남성" },
+  { id: "women", name: "여성" },
   { id: "clothing", name: "의류" },
   { id: "bags", name: "가방" },
   { id: "wallets", name: "지갑" },
   { id: "shoes", name: "신발" },
-  { id: "watches", name: "시계" },
   { id: "golf", name: "골프" },
   { id: "jewelry", name: "쥬얼리/잡화" },
   { id: "sameday", name: "당일배송" },
@@ -222,13 +221,12 @@ export default function Admin() {
 
   const BAGSTYLE_CATEGORIES = [
     { localId: "new-arrivals", name: "신상품" },
-    { localId: "brand", name: "브랜드" },
-    { localId: "gender", name: "성별" },
+    { localId: "men", name: "남성" },
+    { localId: "women", name: "여성" },
     { localId: "clothing", name: "의류" },
     { localId: "bags", name: "가방" },
     { localId: "wallets", name: "지갑" },
     { localId: "shoes", name: "신발" },
-    { localId: "watches", name: "시계" },
     { localId: "golf", name: "골프" },
     { localId: "jewelry", name: "쥬얼리/잡화" },
     { localId: "sameday", name: "당일배송" },

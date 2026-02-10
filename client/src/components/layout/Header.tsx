@@ -8,13 +8,12 @@ import { useToast } from "@/hooks/use-toast";
 
 const categoryNavItems = [
   { name: '신상품', path: '/products/new-arrivals' },
-  { name: '브랜드', path: '/products/brand' },
-  { name: '성별', path: '/products/gender' },
+  { name: '남성', path: '/products/men' },
+  { name: '여성', path: '/products/women' },
   { name: '의류', path: '/products/clothing' },
   { name: '가방', path: '/products/bags' },
   { name: '지갑', path: '/products/wallets' },
   { name: '신발', path: '/products/shoes' },
-  { name: '시계', path: '/products/watches' },
   { name: '골프', path: '/products/golf' },
   { name: '쥬얼리/잡화', path: '/products/jewelry' },
   { name: '당일배송', path: '/products/sameday' },

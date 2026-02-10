@@ -30,13 +30,12 @@ function ProductSkeleton() {
 
 const CATEGORIES = [
   { id: "new-arrivals", name: "신상품", slug: "new-arrivals" },
-  { id: "brand", name: "브랜드", slug: "brand" },
-  { id: "gender", name: "성별", slug: "gender" },
+  { id: "men", name: "남성", slug: "men" },
+  { id: "women", name: "여성", slug: "women" },
   { id: "clothing", name: "의류", slug: "clothing" },
   { id: "bags", name: "가방", slug: "bags" },
   { id: "wallets", name: "지갑", slug: "wallets" },
   { id: "shoes", name: "신발", slug: "shoes" },
-  { id: "watches", name: "시계", slug: "watches" },
   { id: "golf", name: "골프", slug: "golf" },
   { id: "jewelry", name: "쥬얼리/잡화", slug: "jewelry" },
   { id: "sameday", name: "당일배송", slug: "sameday" },

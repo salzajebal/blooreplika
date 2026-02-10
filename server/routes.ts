@@ -2661,13 +2661,12 @@ export async function registerRoutes(
     (async () => {
       const ALL_CATEGORIES = [
         { caId: "j0", name: "신상품", localId: "new-arrivals" },
-        { caId: "brand", name: "브랜드", localId: "brand" },
-        { caId: "gender", name: "성별", localId: "gender" },
+        { caId: "b0", name: "남성", localId: "men" },
+        { caId: "c0", name: "여성", localId: "women" },
         { caId: "i0", name: "의류", localId: "clothing" },
         { caId: "e0", name: "가방", localId: "bags" },
         { caId: "h0", name: "지갑", localId: "wallets" },
         { caId: "g0", name: "신발", localId: "shoes" },
-        { caId: "watch", name: "시계", localId: "watches" },
         { caId: "70", name: "골프", localId: "golf" },
         { caId: "f0", name: "쥬얼리/잡화", localId: "jewelry" },
         { caId: "a0", name: "당일배송", localId: "sameday" },
@@ -2675,56 +2674,51 @@ export async function registerRoutes(
         { caId: "d0", name: "베스트상품", localId: "best" },
       ];
 
-      const SUBCATEGORY_MAP: Record<string, { id: string; name: string }[]> = {
-        "j0": [
-          { id: "j0d0", name: "이번달의신상" }, { id: "j0c0", name: "26년1월" }, { id: "j0b0", name: "25년12월" },
-        ],
-        "brand": [],
-        "gender": [],
-        "watch": [],
-        "i0": [
-          { id: "i010", name: "자켓/점퍼" }, { id: "i020", name: "패딩/털" }, { id: "i030", name: "가죽옷" },
-          { id: "i040", name: "코트/정장" }, { id: "i050", name: "후드티/집업" }, { id: "i060", name: "셔츠/남방" },
-          { id: "i070", name: "베스트/조끼" }, { id: "i080", name: "니트/스웨터" }, { id: "i090", name: "가디건" },
-          { id: "i0a0", name: "반팔티/폴로티" }, { id: "i0b0", name: "긴팔티/맨투맨" }, { id: "i0c0", name: "운동복/추리닝" },
-          { id: "i0d0", name: "팬츠/청바지" }, { id: "i0e0", name: "반바지" }, { id: "i0f0", name: "세트" },
-          { id: "i0g0", name: "원피스" }, { id: "i0h0", name: "수영복" },
-        ],
-        "e0": [
-          { id: "e010", name: "토트백" }, { id: "e020", name: "크로스백" }, { id: "e030", name: "숄더백" },
-          { id: "e050", name: "백팩" }, { id: "e060", name: "파우치/클러치" }, { id: "e070", name: "여행가방" },
-          { id: "e080", name: "캐리어" }, { id: "e090", name: "벨트백/새들/슬링" }, { id: "e0a0", name: "미니백" },
-          { id: "e0b0", name: "기타" }, { id: "e0d0", name: "캐리어" }, { id: "e0e0", name: "서류가방/메신저" },
-        ],
-        "g0": [
-          { id: "g010", name: "스니커즈" }, { id: "g020", name: "운동화" }, { id: "g030", name: "구두" },
-          { id: "g040", name: "샌들/슬리퍼" }, { id: "g050", name: "부츠/워커" }, { id: "g060", name: "로퍼/슬립온" },
-          { id: "g080", name: "단화/플랫" }, { id: "g090", name: "펌프스/힐" },
-        ],
-        "h0": [
-          { id: "h010", name: "장지갑/소지갑" }, { id: "h020", name: "카드지갑" }, { id: "h030", name: "동전지갑" },
-        ],
-        "70": [
-          { id: "7010", name: "골프의류" }, { id: "7020", name: "골프가방" }, { id: "7030", name: "골프신발" },
-          { id: "7040", name: "골프잡화" }, { id: "7050", name: "골프용품" },
-        ],
-        "f0": [
-          { id: "f010", name: "벨트" }, { id: "f020", name: "선글라스" }, { id: "f030", name: "스카프/머플러" },
-          { id: "f040", name: "넥타이" }, { id: "f050", name: "만년필/볼팬" }, { id: "f060", name: "라이터/듀풍" },
-          { id: "f070", name: "모자" }, { id: "f080", name: "장갑" }, { id: "f090", name: "백참/브로치" },
-          { id: "f0a0", name: "목걸이" }, { id: "f0b0", name: "팔찌" }, { id: "f0c0", name: "반지" },
-          { id: "f0d0", name: "귀걸이" }, { id: "f0e0", name: "키홀더" }, { id: "f0f0", name: "우산" },
-          { id: "f0h0", name: "기타" },
-        ],
-        "d0": [],
-        "80": [
-          { id: "80b0", name: "가방/백" }, { id: "80c0", name: "의류" }, { id: "80f0", name: "지갑" },
-          { id: "80g0", name: "신발" }, { id: "80i0", name: "벨트" }, { id: "80j0", name: "잡화/소품/ACC" },
-        ],
-        "a0": [
-          { id: "a010", name: "의류" }, { id: "a020", name: "가방/백" }, { id: "a030", name: "클러치/지갑" },
-          { id: "a040", name: "잡화/소품/ACC" }, { id: "a050", name: "바지/팬츠" }, { id: "a060", name: "신발" },
-        ],
+      const fetchSubcategoriesFromSite = async (hdrs: Record<string, string>): Promise<Record<string, { id: string; name: string }[]>> => {
+        try {
+          bagstyleProgress.message = '사이트에서 소분류 정보 수집 중...';
+          const response = await fetch("https://bagstyle.site/", { headers: hdrs });
+          if (!response.ok) return {};
+          const html = await response.text();
+          
+          const subcatMap: Record<string, { id: string; name: string }[]> = {};
+          const re = /ca_id=([a-zA-Z0-9]+)"[^>]*>\s*([^<]+)/g;
+          let m;
+          const allEntries: { id: string; name: string }[] = [];
+          while ((m = re.exec(html)) !== null) {
+            const id = m[1], name = m[2].trim();
+            if (name && name.length > 0) allEntries.push({ id, name });
+          }
+          
+          for (const cat of ALL_CATEGORIES) {
+            const prefix = cat.caId;
+            const directChildren = allEntries.filter(e => {
+              if (!e.id.startsWith(prefix)) return false;
+              if (e.id === prefix) return false;
+              const suffix = e.id.substring(prefix.length);
+              return suffix.length === 2 || suffix.length === 3;
+            });
+            
+            const uniqueChildren: { id: string; name: string }[] = [];
+            const seen = new Set<string>();
+            for (const child of directChildren) {
+              if (!seen.has(child.id)) {
+                seen.add(child.id);
+                uniqueChildren.push(child);
+              }
+            }
+            
+            if (uniqueChildren.length > 0) {
+              subcatMap[cat.caId] = uniqueChildren;
+            }
+          }
+          
+          console.log('[bagstyle] Discovered subcategories:', Object.entries(subcatMap).map(([k, v]) => `${k}: ${v.length}`).join(', '));
+          return subcatMap;
+        } catch (error) {
+          console.error('[bagstyle] Failed to fetch subcategories from site:', error);
+          return {};
+        }
       };
 
       const CATEGORIES = selectedCategories && selectedCategories.length > 0
@@ -2771,6 +2765,8 @@ export async function registerRoutes(
         }
         return undefined;
       };
+
+      let SUBCATEGORY_MAP: Record<string, { id: string; name: string }[]> = {};
 
       const fetchProductList = async (caId: string, page: number): Promise<string[]> => {
         try {
@@ -2989,6 +2985,8 @@ export async function registerRoutes(
           }
         }
 
+        SUBCATEGORY_MAP = await fetchSubcategoriesFromSite(headers);
+        
         bagstyleProgress.message = '카테고리 생성 중...';
         for (const cat of ALL_CATEGORIES) {
           try {
@@ -3035,76 +3033,148 @@ export async function registerRoutes(
               }
             } catch {}
           }
+          
+          bagstyleProgress.message = `카테고리 [${cat.name}] 생성 완료 (소분류 ${subcats.length}개)`;
         }
 
         let totalInserted = 0;
+        const globalSeenIds = new Set<string>();
 
         for (const category of CATEGORIES) {
           bagstyleProgress.category = category.name;
-          bagstyleProgress.message = `[${category.name}] 상품 목록 수집 중...`;
+          const subcats = SUBCATEGORY_MAP[category.caId] || [];
+          
+          if (subcats.length > 0) {
+            for (const subcat of subcats) {
+              bagstyleProgress.message = `[${category.name} > ${subcat.name}] 상품 목록 수집 중...`;
+              
+              const allIds = new Set<string>();
+              let page = 1;
+              let emptyCount = 0;
 
-          const allIds = new Set<string>();
-          let page = 1;
-          let emptyCount = 0;
+              while (emptyCount < 3) {
+                const ids = await fetchProductList(subcat.id, page);
+                let newCount = 0;
+                ids.forEach(id => { if (!allIds.has(id) && !globalSeenIds.has(id)) { allIds.add(id); newCount++; } });
+                if (newCount === 0) emptyCount++; else emptyCount = 0;
+                page++;
+                await delay(50);
+              }
 
-          while (emptyCount < 3) {
-            const ids = await fetchProductList(category.caId, page);
-            let newCount = 0;
-            ids.forEach(id => { if (!allIds.has(id)) { allIds.add(id); newCount++; } });
-            if (newCount === 0) emptyCount++; else emptyCount = 0;
-            page++;
-            await delay(50);
+              if (allIds.size === 0) continue;
 
-            if (page % 10 === 0) {
-              bagstyleProgress.message = `[${category.name}] 페이지 ${page} 스캔 중... (${allIds.size}개 발견)`;
+              bagstyleProgress.message = `[${category.name} > ${subcat.name}] ${allIds.size}개 상품 수집 중...`;
+              bagstyleProgress.total = allIds.size;
+              bagstyleProgress.current = 0;
+
+              const idsArray = Array.from(allIds);
+
+              for (let i = 0; i < idsArray.length; i += 10) {
+                const batch = idsArray.slice(i, i + 10);
+                const results = await Promise.all(batch.map(id => fetchProductDetail(id, category.localId, category.caId)));
+
+                for (const p of results) {
+                  if (p && p.price > 0) {
+                    try {
+                      const brandId = await getOrCreateBrand(p.brandName);
+                      await storage.createProduct({
+                        name: p.name,
+                        categoryId: p.categoryId,
+                        subcategoryId: subcat.id,
+                        brandId: brandId,
+                        price: p.price,
+                        originalPrice: p.originalPrice,
+                        description: p.description,
+                        detailContent: p.detailContent,
+                        imageUrl: p.imageUrl,
+                        imageUrls: p.imageUrls.length > 0 ? p.imageUrls : [p.imageUrl],
+                        detailImageUrls: p.detailImageUrls,
+                        options: p.options || undefined,
+                        discountPercent: p.discountPercent,
+                        isBest: p.isBest,
+                        isNew: totalInserted % 10 === 0,
+                        isActive: true,
+                      });
+                      totalInserted++;
+                      globalSeenIds.add(p.sourceId);
+                    } catch {}
+                  }
+                }
+
+                bagstyleProgress.current = Math.min(i + 10, idsArray.length);
+                bagstyleProgress.message = `[${category.name} > ${subcat.name}] 저장 중... (${bagstyleProgress.current}/${allIds.size})`;
+                await delay(80);
+              }
+              
+              console.log(`[bagstyle][${category.name} > ${subcat.name}] ${allIds.size} products, total: ${totalInserted}`);
             }
-          }
+          } else {
+            bagstyleProgress.message = `[${category.name}] 상품 목록 수집 중...`;
 
-          if (allIds.size === 0) continue;
+            const allIds = new Set<string>();
+            let page = 1;
+            let emptyCount = 0;
 
-          bagstyleProgress.message = `[${category.name}] ${allIds.size}개 상품 상세 정보 수집 중...`;
-          bagstyleProgress.total = allIds.size;
-          bagstyleProgress.current = 0;
+            while (emptyCount < 3) {
+              const ids = await fetchProductList(category.caId, page);
+              let newCount = 0;
+              ids.forEach(id => { if (!allIds.has(id) && !globalSeenIds.has(id)) { allIds.add(id); newCount++; } });
+              if (newCount === 0) emptyCount++; else emptyCount = 0;
+              page++;
+              await delay(50);
 
-          const idsArray = Array.from(allIds);
-
-          for (let i = 0; i < idsArray.length; i += 10) {
-            const batch = idsArray.slice(i, i + 10);
-            const results = await Promise.all(batch.map(id => fetchProductDetail(id, category.localId, category.caId)));
-
-            for (const p of results) {
-              if (p && p.price > 0) {
-                try {
-                  const brandId = await getOrCreateBrand(p.brandName);
-                  await storage.createProduct({
-                    name: p.name,
-                    categoryId: p.categoryId,
-                    subcategoryId: p.subcategoryId,
-                    brandId: brandId,
-                    price: p.price,
-                    originalPrice: p.originalPrice,
-                    description: p.description,
-                    detailContent: p.detailContent,
-                    imageUrl: p.imageUrl,
-                    imageUrls: p.imageUrls.length > 0 ? p.imageUrls : [p.imageUrl],
-                    detailImageUrls: p.detailImageUrls,
-                    options: p.options || undefined,
-                    discountPercent: p.discountPercent,
-                    isBest: p.isBest,
-                    isNew: totalInserted % 10 === 0,
-                    isActive: true,
-                  });
-                  totalInserted++;
-                } catch {}
+              if (page % 10 === 0) {
+                bagstyleProgress.message = `[${category.name}] 페이지 ${page} 스캔 중... (${allIds.size}개 발견)`;
               }
             }
 
-            bagstyleProgress.current = Math.min(i + 10, idsArray.length);
-            bagstyleProgress.message = `[${category.name}] 상품 저장 중... (${bagstyleProgress.current}/${allIds.size})`;
-            await delay(80);
-          }
+            if (allIds.size === 0) continue;
 
-          console.log(`[bagstyle][${category.name}] ${allIds.size} products processed, total: ${totalInserted}`);
+            bagstyleProgress.message = `[${category.name}] ${allIds.size}개 상품 상세 정보 수집 중...`;
+            bagstyleProgress.total = allIds.size;
+            bagstyleProgress.current = 0;
+
+            const idsArray = Array.from(allIds);
+
+            for (let i = 0; i < idsArray.length; i += 10) {
+              const batch = idsArray.slice(i, i + 10);
+              const results = await Promise.all(batch.map(id => fetchProductDetail(id, category.localId, category.caId)));
+
+              for (const p of results) {
+                if (p && p.price > 0) {
+                  try {
+                    const brandId = await getOrCreateBrand(p.brandName);
+                    await storage.createProduct({
+                      name: p.name,
+                      categoryId: p.categoryId,
+                      subcategoryId: p.subcategoryId,
+                      brandId: brandId,
+                      price: p.price,
+                      originalPrice: p.originalPrice,
+                      description: p.description,
+                      detailContent: p.detailContent,
+                      imageUrl: p.imageUrl,
+                      imageUrls: p.imageUrls.length > 0 ? p.imageUrls : [p.imageUrl],
+                      detailImageUrls: p.detailImageUrls,
+                      options: p.options || undefined,
+                      discountPercent: p.discountPercent,
+                      isBest: p.isBest,
+                      isNew: totalInserted % 10 === 0,
+                      isActive: true,
+                    });
+                    totalInserted++;
+                    globalSeenIds.add(p.sourceId);
+                  } catch {}
+                }
+              }
+
+              bagstyleProgress.current = Math.min(i + 10, idsArray.length);
+              bagstyleProgress.message = `[${category.name}] 상품 저장 중... (${bagstyleProgress.current}/${allIds.size})`;
+              await delay(80);
+            }
+
+            console.log(`[bagstyle][${category.name}] ${allIds.size} products processed, total: ${totalInserted}`);
+          }
         }
 
         bagstyleProgress.status = 'completed';
