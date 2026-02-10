@@ -3018,17 +3018,38 @@ export async function registerRoutes(
 
       try {
         if (clearExisting) {
-          bagstyleProgress.message = '기존 상품 삭제 중...';
+          bagstyleProgress.message = '기존 데이터 삭제 중... (상품)';
           const existing = await storage.getAllProducts();
           for (const p of existing) {
             await storage.deleteProduct(p.id);
           }
+
+          bagstyleProgress.message = '기존 데이터 삭제 중... (서브카테고리)';
+          const existingSubs = await storage.getAllSubcategories();
+          for (const s of existingSubs) {
+            await storage.deleteSubcategory(s.id);
+          }
+
+          bagstyleProgress.message = '기존 데이터 삭제 중... (카테고리)';
+          const existingCats = await storage.getAllCategories();
+          for (const c of existingCats) {
+            await storage.deleteCategory(c.id);
+          }
         }
 
+        bagstyleProgress.message = '카테고리 생성 중...';
         for (const cat of ALL_CATEGORIES) {
           try {
             const existingCats = await storage.getAllCategories();
-            if (!existingCats.find(c => c.id === cat.localId || c.slug === cat.localId)) {
+            const found = existingCats.find(c => c.id === cat.localId || c.slug === cat.localId);
+            if (found) {
+              await storage.updateCategory(found.id, {
+                name: cat.name,
+                slug: cat.localId,
+                sortOrder: ALL_CATEGORIES.indexOf(cat) * 10,
+                isActive: true,
+              });
+            } else {
               await storage.createCategory({
                 id: cat.localId,
                 name: cat.name,
@@ -3043,7 +3064,15 @@ export async function registerRoutes(
           for (const sub of subcats) {
             try {
               const existingSubs = await storage.getAllSubcategories();
-              if (!existingSubs.find(s => s.id === sub.id || (s.categoryId === cat.localId && s.slug === sub.id))) {
+              const foundSub = existingSubs.find(s => s.id === sub.id || (s.categoryId === cat.localId && s.slug === sub.id));
+              if (foundSub) {
+                await storage.updateSubcategory(foundSub.id, {
+                  name: sub.name,
+                  slug: sub.id,
+                  sortOrder: subcats.indexOf(sub) * 10,
+                  isActive: true,
+                });
+              } else {
                 await storage.createSubcategory({
                   categoryId: cat.localId,
                   name: sub.name,
