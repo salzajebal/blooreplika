@@ -22,34 +22,6 @@ if (typeof window !== 'undefined') {
   });
 }
 
-function getStockDisplay(productId: string): string {
-  let hash = 0;
-  for (let i = 0; i < productId.length; i++) {
-    const char = productId.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  const val = Math.abs(hash % 3) + 1;
-  return `${val}`;
-}
-
-function StockIndicator({ productId, isSoldOut }: { productId: string; isSoldOut?: boolean }) {
-  if (isSoldOut) {
-    return (
-      <div className="flex items-center gap-1.5 bg-gray-100 px-3 py-1.5 rounded-lg">
-        <span className="text-gray-500 font-bold text-sm">품절</span>
-      </div>
-    );
-  }
-  
-  const stockNum = getStockDisplay(productId);
-  return (
-    <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
-      <Package className="w-4 h-4 text-green-500" />
-      <span className="text-green-600 font-bold text-sm">재고 {stockNum}개 남음</span>
-    </div>
-  );
-}
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -327,9 +299,6 @@ export default function ProductDetail() {
                   {product.isSoldOut && (
                     <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">SOLD OUT</span>
                   )}
-                </div>
-                <div className="mb-4">
-                  <StockIndicator productId={product.id} isSoldOut={!!product.isSoldOut} />
                 </div>
               </div>
 
