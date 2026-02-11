@@ -773,8 +773,48 @@ export async function registerRoutes(
       return res.status(401).json({ success: false, error: "Unauthorized" });
     }
     try {
+      const existingBrands = await storage.getAllBrands();
+      const brandNameToId = new Map<string, string>();
+      for (const b of existingBrands) {
+        brandNameToId.set(b.name, b.id);
+      }
+
+      let brandsCreated = 0;
+      for (const [brandName, keywords] of Object.entries(BRAND_KEYWORDS)) {
+        if (!brandNameToId.has(brandName)) {
+          try {
+            const englishKw = keywords.find(kw => /^[a-z\s\-&']+$/i.test(kw));
+            const slug = (englishKw || brandName)
+              .toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '') || `brand-${Date.now()}-${brandsCreated}`;
+            const newBrand = await storage.createBrand({
+              name: brandName,
+              slug: slug,
+              isActive: true,
+              sortOrder: brandsCreated,
+            });
+            brandNameToId.set(brandName, newBrand.id);
+            brandsCreated++;
+          } catch (e: any) {
+            if (e.message?.includes('duplicate') || e.code === '23505') {
+              const refreshed = await storage.getAllBrands();
+              const found = refreshed.find(b => b.name === brandName);
+              if (found) brandNameToId.set(brandName, found.id);
+              else {
+                const bySlug = refreshed.find(b => {
+                  const englishKw2 = keywords.find(kw => /^[a-z\s\-&']+$/i.test(kw));
+                  const expectedSlug = (englishKw2 || brandName).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
+                  return b.slug === expectedSlug;
+                });
+                if (bySlug) brandNameToId.set(brandName, bySlug.id);
+              }
+            } else {
+              console.error(`Failed to create brand ${brandName}:`, e.message);
+            }
+          }
+        }
+      }
+
       const allProducts = await storage.getAllProducts();
-      const allBrands = await storage.getAllBrands();
       let htmlFixed = 0;
       let classified = 0;
       let alreadyClassified = 0;
@@ -782,44 +822,46 @@ export async function registerRoutes(
 
       const decodeEntities = (text: string): string => {
         return text
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"')
-          .replace(/&#39;/g, "'")
-          .replace(/&#x27;/g, "'")
-          .replace(/&#x2F;/g, '/')
-          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#x27;/g, "'")
+          .replace(/&#x2F;/g, '/').replace(/&nbsp;/g, ' ')
           .replace(/&#(\d+);/g, (_m, code) => String.fromCharCode(parseInt(code, 10)));
+      };
+
+      const matchBrand = (text: string): string | undefined => {
+        const lower = text.toLowerCase();
+        for (const [brandName, keywords] of Object.entries(BRAND_KEYWORDS)) {
+          for (const kw of keywords) {
+            if (lower.includes(kw.toLowerCase())) {
+              return brandNameToId.get(brandName);
+            }
+          }
+        }
+        return undefined;
       };
 
       for (let i = 0; i < allProducts.length; i += batchSize) {
         const batch = allProducts.slice(i, i + batchSize);
-        const updates = batch.map(async (product) => {
+        await Promise.all(batch.map(async (product) => {
           const updateData: Record<string, any> = {};
-
           const decodedName = decodeEntities(product.name);
           if (decodedName !== product.name) {
             updateData.name = decodedName;
             htmlFixed++;
           }
-
           if (product.brandId) {
             alreadyClassified++;
           } else {
-            const nameToMatch = decodedName || product.name;
-            const matchedBrandId = matchBrandFromText(nameToMatch, allBrands);
+            const matchedBrandId = matchBrand(decodedName || product.name);
             if (matchedBrandId) {
               updateData.brandId = matchedBrandId;
               classified++;
             }
           }
-
           if (Object.keys(updateData).length > 0) {
             await storage.updateProduct(product.id, updateData);
           }
-        });
-        await Promise.all(updates);
+        }));
       }
 
       brandsCache.clear();
@@ -828,15 +870,17 @@ export async function registerRoutes(
         success: true,
         data: {
           total: allProducts.length,
+          brandsCreated,
+          totalBrands: brandNameToId.size,
           htmlFixed,
           classified,
           alreadyClassified,
-          unclassified: allProducts.length - htmlFixed - classified - alreadyClassified,
+          unclassified: allProducts.length - classified - alreadyClassified,
         },
       });
     } catch (error) {
       console.error("Error fixing products:", error);
-      res.status(500).json({ success: false, error: "Failed to fix products" });
+      res.status(500).json({ success: false, error: String(error) });
     }
   });
 
