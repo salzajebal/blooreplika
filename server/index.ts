@@ -144,9 +144,7 @@ async function runStartupMaintenance() {
     );
     if (!needsFix) return;
 
-    log('Starting product data maintenance...', 'maintenance');
-
-    const allBrands = await storage.getAllBrands();
+    log(`Starting product data maintenance for ${allProducts.length} products...`, 'maintenance');
 
     const BRAND_KEYWORDS: Record<string, string[]> = {
       '구찌': ['구찌', 'gucci'], '루이비통': ['루이비통', 'louis vuitton', 'louisvuitton', 'lv'],
@@ -156,7 +154,7 @@ async function runStartupMaintenance() {
       '셀린느': ['셀린느', '셀린', 'celine', 'céline'],
       '보테가 베네타': ['보테가', '보테가베네타', 'bottega', 'bottega veneta'],
       '펜디': ['펜디', 'fendi'], '미우미우': ['미우미우', 'miu miu', 'miumiu'],
-      '몽클레어': ['몽클레어', 'moncler'], '톰브라운': ['톰브라운', 'thom browne', 'thombrowne'],
+      '몽클레어': ['몽클레어', 'moncler', 'moncler'], '톰브라운': ['톰브라운', 'thom browne', 'thombrowne'],
       '발렌티노': ['발렌티노', 'valentino'], '지방시': ['지방시', 'givenchy'],
       '로에베': ['로에베', 'loewe'], '생로랑': ['생로랑', 'saint laurent', 'ysl', 'yves saint laurent'],
       '베르사체': ['베르사체', 'versace'],
@@ -206,16 +204,48 @@ async function runStartupMaintenance() {
       '입생로랑': ['입생로랑', 'saint laurent', 'ysl'],
     };
 
-    const matchBrand = (text: string): string | undefined => {
-      const lower = text.toLowerCase();
-      for (const brand of allBrands) {
-        const keywords = BRAND_KEYWORDS[brand.name];
-        if (keywords) {
-          for (const kw of keywords) {
-            if (lower.includes(kw.toLowerCase())) return brand.id;
+    const existingBrands = await storage.getAllBrands();
+    const brandNameToId = new Map<string, string>();
+    for (const b of existingBrands) {
+      brandNameToId.set(b.name, b.id);
+    }
+
+    let brandsCreated = 0;
+    for (const [brandName, keywords] of Object.entries(BRAND_KEYWORDS)) {
+      if (!brandNameToId.has(brandName)) {
+        try {
+          const englishKw = keywords.find(kw => /^[a-z\s\-&']+$/i.test(kw));
+          const slug = (englishKw || brandName)
+            .toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '') || `brand-${Date.now()}-${brandsCreated}`;
+          const newBrand = await storage.createBrand({
+            name: brandName,
+            slug: slug,
+            isActive: true,
+            sortOrder: brandsCreated,
+          });
+          brandNameToId.set(brandName, newBrand.id);
+          brandsCreated++;
+        } catch (e: any) {
+          if (e.message?.includes('duplicate') || e.code === '23505') {
+            const refreshed = await storage.getAllBrands();
+            const found = refreshed.find(b => b.name === brandName);
+            if (found) brandNameToId.set(brandName, found.id);
+          } else {
+            console.error(`[maintenance] Failed to create brand ${brandName}:`, e.message);
           }
         }
-        if (lower.includes(brand.name.toLowerCase())) return brand.id;
+      }
+    }
+    log(`Created ${brandsCreated} new brands (${brandNameToId.size} total)`, 'maintenance');
+
+    const matchBrand = (text: string): string | undefined => {
+      const lower = text.toLowerCase();
+      for (const [brandName, keywords] of Object.entries(BRAND_KEYWORDS)) {
+        for (const kw of keywords) {
+          if (lower.includes(kw.toLowerCase())) {
+            return brandNameToId.get(brandName);
+          }
+        }
       }
       return undefined;
     };
@@ -245,9 +275,12 @@ async function runStartupMaintenance() {
           await storage.updateProduct(product.id, updateData);
         }
       }));
+      if (i % 500 === 0 && i > 0) {
+        log(`Processed ${i}/${allProducts.length} products...`, 'maintenance');
+      }
     }
 
-    log(`Maintenance done: ${htmlFixed} names fixed, ${classified} brands classified out of ${allProducts.length} products`, 'maintenance');
+    log(`Maintenance done: ${brandsCreated} brands created, ${htmlFixed} names fixed, ${classified} brands classified out of ${allProducts.length} products`, 'maintenance');
   } catch (error) {
     console.error('[maintenance] Error:', error);
   }
