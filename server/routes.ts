@@ -849,13 +849,18 @@ export async function registerRoutes(
             updateData.name = decodedName;
             htmlFixed++;
           }
-          if (product.brandId) {
+          const forceReclassify = req.body?.force === true;
+          if (product.brandId && !forceReclassify) {
             alreadyClassified++;
           } else {
             const matchedBrandId = matchBrand(decodedName || product.name);
             if (matchedBrandId) {
-              updateData.brandId = matchedBrandId;
-              classified++;
+              if (product.brandId !== matchedBrandId) {
+                updateData.brandId = matchedBrandId;
+                classified++;
+              } else {
+                alreadyClassified++;
+              }
             }
           }
           if (Object.keys(updateData).length > 0) {
