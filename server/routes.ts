@@ -258,7 +258,7 @@ export async function registerRoutes(
   
   // Separate brands cache with longer TTL (10 minutes)
   const brandsCache = new Map<string, { data: unknown[]; timestamp: number }>();
-  const BRANDS_CACHE_TTL = 600000; // 10 minutes
+  const BRANDS_CACHE_TTL = 60000; // 1 minute
   
   // Separate counts cache with medium TTL (5 minutes)
   const countsCache = new Map<string, { total: number; timestamp: number }>();
@@ -274,7 +274,7 @@ export async function registerRoutes(
       const cached = brandsCache.get(cacheKey);
       if (cached && (Date.now() - cached.timestamp) < BRANDS_CACHE_TTL) {
         res.setHeader("X-Cache", "HIT");
-        res.setHeader("Cache-Control", "public, max-age=600");
+        res.setHeader("Cache-Control", "public, max-age=60");
         return res.json({ success: true, data: cached.data });
       }
       
@@ -284,7 +284,7 @@ export async function registerRoutes(
       brandsCache.set(cacheKey, { data: brandsData, timestamp: Date.now() });
       
       res.setHeader("X-Cache", "MISS");
-      res.setHeader("Cache-Control", "public, max-age=600");
+      res.setHeader("Cache-Control", "public, max-age=60");
       res.json({ success: true, data: brandsData });
     } catch (error) {
       console.error("Error fetching brands:", error);
