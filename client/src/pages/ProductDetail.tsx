@@ -500,6 +500,10 @@ export default function ProductDetail() {
                 data-testid="content-detail"
                 dangerouslySetInnerHTML={{ 
                   __html: product.detailContent
+                    .replace(/src="\/styleis\/data\//g, 'src="https://bagstyle.site/styleis/data/')
+                    .replace(/src='\/styleis\/data\//g, "src='https://bagstyle.site/styleis/data/")
+                    .replace(/src="\/data\//g, 'src="https://bagstyle.site/data/')
+                    .replace(/src='\/data\//g, "src='https://bagstyle.site/data/")
                     .replace(/src="(https?:\/\/bagstyle\.site\/(?:styleis\/)?data\/[^"]+)"/g, (_match: string, url: string) => 
                       `src="${getProxiedImageUrl(url, 'large')}" style="max-width:100%;height:auto;"`
                     )
