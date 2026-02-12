@@ -3000,20 +3000,19 @@ export async function registerRoutes(
       };
 
       const getOrCreateBrand = async (brandName: string, productName?: string): Promise<string | undefined> => {
-        const textToMatch = brandName || productName || '';
-        if (!textToMatch) return undefined;
-        const key = textToMatch.toLowerCase().trim();
-        if (brandCache.has(key)) return brandCache.get(key);
-
         const existingBrands = await getAllBrandsCached();
 
-        const matchedId = matchBrandFromText(textToMatch, existingBrands);
-        if (matchedId) {
-          brandCache.set(key, matchedId);
-          return matchedId;
+        if (productName && productName.trim()) {
+          const productMatchId = matchBrandFromText(productName, existingBrands);
+          if (productMatchId) {
+            return productMatchId;
+          }
         }
 
         if (brandName && brandName.trim()) {
+          const brandMatchId = matchBrandFromText(brandName, existingBrands);
+          if (brandMatchId) return brandMatchId;
+
           const slug = brandName.toLowerCase().trim().replace(/\s+/g, '').replace(/[^a-z0-9가-힣]/g, '');
           let found = existingBrands.find(b => b.slug === slug || b.name.toLowerCase() === brandName.toLowerCase().trim());
 
@@ -3032,18 +3031,7 @@ export async function registerRoutes(
             }
           }
 
-          if (found) {
-            brandCache.set(key, found.id);
-            return found.id;
-          }
-        }
-
-        if (productName && productName !== textToMatch) {
-          const productMatchId = matchBrandFromText(productName, existingBrands);
-          if (productMatchId) {
-            brandCache.set(key, productMatchId);
-            return productMatchId;
-          }
+          if (found) return found.id;
         }
 
         return undefined;
@@ -3213,11 +3201,13 @@ export async function registerRoutes(
           }
 
           const detailImages: string[] = [];
-          const detailRegex = /(?:https?:\/\/bagstyle\.site)?\/data\/(?:editor|ebcontents)\/[^"'\s]+\.(jpg|jpeg|png|webp|gif|JPG|JPEG|PNG|WEBP|GIF)/gi;
+          const detailRegex = /(?:https?:\/\/bagstyle\.site)?(?:\/styleis)?\/data\/(?:editor|ebcontents)\/[^"'\s]+\.(jpg|jpeg|png|webp|gif|JPG|JPEG|PNG|WEBP|GIF)/gi;
           const detailMatches = html.match(detailRegex) || [];
           detailMatches.forEach(img => {
             let clean = img.replace(/^http:/, 'https:');
-            if (clean.startsWith('/')) clean = `https://bagstyle.site${clean}`;
+            if (clean.startsWith('/styleis/')) clean = `https://bagstyle.site${clean}`;
+            else if (clean.startsWith('/data/')) clean = `https://bagstyle.site${clean}`;
+            else if (clean.startsWith('/')) clean = `https://bagstyle.site${clean}`;
             if (!detailImages.includes(clean)) detailImages.push(clean);
           });
 
@@ -3225,6 +3215,8 @@ export async function registerRoutes(
           const detailContentDiv = $('#sit_inf_explan');
           if (detailContentDiv.length) {
             let rawHtml = detailContentDiv.html()?.trim() || '';
+            rawHtml = rawHtml.replace(/src="\/styleis\/data\//g, 'src="https://bagstyle.site/styleis/data/');
+            rawHtml = rawHtml.replace(/src='\/styleis\/data\//g, "src='https://bagstyle.site/styleis/data/");
             rawHtml = rawHtml.replace(/src="\/data\//g, 'src="https://bagstyle.site/data/');
             rawHtml = rawHtml.replace(/src='\/data\//g, "src='https://bagstyle.site/data/");
             detailContent = rawHtml;
