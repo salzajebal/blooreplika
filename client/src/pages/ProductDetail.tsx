@@ -498,6 +498,18 @@ export default function ProductDetail() {
               <div 
                 className="text-gray-700 mb-6 text-center detail-html-content" 
                 data-testid="content-detail"
+                ref={(el) => {
+                  if (!el) return;
+                  const imgs = el.querySelectorAll('img');
+                  imgs.forEach(img => {
+                    img.onerror = () => { img.style.display = 'none'; };
+                    img.onload = () => {
+                      if (img.naturalWidth <= 400 && img.naturalHeight <= 300) {
+                        img.style.display = 'none';
+                      }
+                    };
+                  });
+                }}
                 dangerouslySetInnerHTML={{ 
                   __html: product.detailContent
                     .replace(/src="\/styleis\/data\//g, 'src="https://bagstyle.site/styleis/data/')
@@ -534,7 +546,13 @@ export default function ProductDetail() {
                       alt={`${product.name} 상세 설명 이미지 ${index + 1}`}
                       className="max-w-full rounded-lg shadow-sm"
                       style={{ maxHeight: 'none' }}
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }}
+                      onLoad={(e) => {
+                        const img = e.target as HTMLImageElement;
+                        if (img.naturalWidth <= 400 && img.naturalHeight <= 300) {
+                          img.parentElement!.style.display = 'none';
+                        }
+                      }}
                       data-testid={`img-detail-${index}`}
                     />
                   </div>
