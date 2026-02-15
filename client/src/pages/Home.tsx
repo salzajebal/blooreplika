@@ -241,9 +241,25 @@ function TopBrandSection() {
 
     let productImage = '';
     if (matchedBrand) {
-      const brandProduct = products.find((p: any) => String(p.brandId) === String(matchedBrand.id));
-      if (brandProduct) {
-        productImage = getProxiedImageUrl(brandProduct.imageUrl, 'thumb');
+      const brandProducts = products.filter((p: any) => String(p.brandId) === String(matchedBrand.id));
+      if (brandProducts.length > 0) {
+        const categoryMap: Record<string, any> = {};
+        brandProducts.forEach((p: any) => {
+          const cat = p.categoryId || p.subcategoryId || 'other';
+          if (!categoryMap[cat]) categoryMap[cat] = p;
+        });
+        const categories = Object.keys(categoryMap);
+        const priorityOrder = ['bags', 'clothing', 'jewelry', 'wallets', 'accessories', 'shoes'];
+        let selected = null;
+        for (const pCat of priorityOrder) {
+          const match = categories.find(c => c.toLowerCase().includes(pCat));
+          if (match) { selected = categoryMap[match]; break; }
+        }
+        if (!selected) {
+          const randomIndex = Math.floor(Math.random() * categories.length);
+          selected = categoryMap[categories[randomIndex]];
+        }
+        productImage = getProxiedImageUrl(selected.imageUrl, 'thumb');
       }
     }
 
@@ -274,7 +290,7 @@ function TopBrandSection() {
               className="flex flex-col items-center group"
               data-testid={`top-brand-${brand.name}`}
             >
-              <div className="w-full aspect-square bg-gray-50 rounded-sm flex items-center justify-center p-4 md:p-6 group-hover:bg-gray-100 transition-colors overflow-hidden">
+              <div className="w-full aspect-square bg-gray-50 rounded-xl flex items-center justify-center p-4 md:p-6 group-hover:bg-gray-100 transition-colors overflow-hidden">
                 {brand.displayImage ? (
                   <img
                     src={brand.displayImage}
