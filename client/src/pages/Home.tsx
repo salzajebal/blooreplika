@@ -91,19 +91,19 @@ function MainBannerSlider() {
 
   return (
     <section className="relative w-full overflow-hidden bg-white" data-testid="main-banner">
-      <div className="relative w-full">
+      <div className="relative w-full max-h-[220px] md:max-h-[450px] overflow-hidden">
         <div className="overflow-hidden">
           <div 
             className="flex transition-transform duration-500 ease-in-out"
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
           >
             {bannerList.map((banner: any, index: number) => (
-              <div key={index} className="w-full flex-shrink-0">
+              <div key={index} className="w-full flex-shrink-0 max-h-[220px] md:max-h-[450px]">
                 <Link href={banner.linkUrl || "/products"}>
                   <img 
                     src={banner.imageUrl}
                     alt={banner.title || `배너 ${index + 1}`}
-                    className="w-full h-auto object-cover"
+                    className="w-full h-full object-cover"
                   />
                 </Link>
               </div>
