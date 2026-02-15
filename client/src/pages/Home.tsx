@@ -2,39 +2,9 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Heart, ShoppingBag, Eye, Search, ArrowUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, ArrowUp } from "lucide-react";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
-import { useState, useEffect, useRef } from "react";
-import { useWishlist } from "@/contexts/WishlistContext";
-import { useToast } from "@/hooks/use-toast";
-
-function TrustIcons() {
-  return (
-    <div className="flex items-center gap-1 my-1.5">
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-        <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" fill="#2563eb" opacity="0.15"/>
-        <path d="M12 2L3 7v5c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z" stroke="#2563eb" strokeWidth="1.5" fill="none"/>
-        <path d="M9 12l2 2 4-4" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="10" fill="#059669" opacity="0.15"/>
-        <circle cx="12" cy="12" r="10" stroke="#059669" strokeWidth="1.5"/>
-        <path d="M8 12l3 3 5-5" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
-      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
-        <rect x="3" y="6" width="18" height="13" rx="2" fill="#d97706" opacity="0.15"/>
-        <rect x="3" y="6" width="18" height="13" rx="2" stroke="#d97706" strokeWidth="1.5"/>
-        <path d="M3 10h18" stroke="#d97706" strokeWidth="1.5"/>
-        <path d="M7 15h4" stroke="#d97706" strokeWidth="1.5" strokeLinecap="round"/>
-      </svg>
-    </div>
-  );
-}
-
-function formatManwon(price: number): string {
-  const manwon = Math.round(price / 10000);
-  return `${manwon}만원`;
-}
+import { useState, useEffect } from "react";
 
 function FloatingButtons() {
   const [kakaoLink, setKakaoLink] = useState("");
@@ -214,31 +184,126 @@ function QuickMenu() {
   );
 }
 
+function TopBrandSection() {
+  const topBrandNames = [
+    { ko: "롤렉스", en: "rolex" },
+    { ko: "샤넬", en: "chanel" },
+    { ko: "크롬하츠", en: "chrome hearts" },
+    { ko: "몽클레르", en: "moncler" },
+    { ko: "디올", en: "dior" },
+    { ko: "톰브라운", en: "thom browne" },
+    { ko: "보테가베네타", en: "bottega veneta" },
+    { ko: "조던", en: "jordan" },
+    { ko: "프라다", en: "prada" },
+    { ko: "구찌", en: "gucci" },
+    { ko: "까르띠에", en: "cartier" },
+    { ko: "에르메스", en: "hermes" },
+    { ko: "셀린느", en: "celine" },
+    { ko: "고야드", en: "goyard" },
+    { ko: "미우미우", en: "miu miu" },
+  ];
+
+  const { data: brandsData } = useQuery({
+    queryKey: ['/api/brands'],
+    queryFn: async () => {
+      const res = await fetch('/api/brands');
+      const data = await res.json();
+      return data.success ? data.data : [];
+    }
+  });
+
+  const { data: productsData } = useQuery({
+    queryKey: ['/api/products/top-brand'],
+    queryFn: async () => {
+      const res = await fetch('/api/products?limit=100');
+      const data = await res.json();
+      return data.success ? data.data : [];
+    }
+  });
+
+  const brands = brandsData || [];
+  const products = productsData || [];
+
+  const brandDisplayData = topBrandNames.map((tb) => {
+    const matchedBrand = brands.find((b: any) => {
+      const bName = (b.name || '').toLowerCase();
+      const bSlug = (b.slug || '').toLowerCase();
+      const enLower = tb.en.toLowerCase();
+      const enNoSpace = enLower.replace(/\s/g, '');
+      return bName === tb.ko ||
+             bName.toLowerCase() === enLower ||
+             bSlug === enLower ||
+             bSlug === enNoSpace ||
+             bName.includes(enLower) ||
+             bName.includes(enNoSpace) ||
+             bName.includes(tb.ko);
+    });
+
+    let productImage = '';
+    if (matchedBrand) {
+      const brandProduct = products.find((p: any) => String(p.brandId) === String(matchedBrand.id));
+      if (brandProduct) {
+        productImage = getProxiedImageUrl(brandProduct.imageUrl, 'thumb');
+      }
+    }
+
+    const brandPath = matchedBrand 
+      ? `/products?brand=${encodeURIComponent(matchedBrand.id)}` 
+      : `/products?search=${encodeURIComponent(tb.ko)}`;
+
+    return {
+      name: tb.ko,
+      displayImage: productImage,
+      brandId: matchedBrand?.id,
+      path: brandPath,
+    };
+  });
+
+  return (
+    <section className="bg-white py-10 md:py-14 border-b border-gray-100" data-testid="top-brand-section">
+      <div className="max-w-[1200px] mx-auto px-4">
+        <div className="mb-8">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900" style={{ fontFamily: "'Playfair Display', serif" }}>Top Brand</h2>
+          <p className="text-sm text-gray-500 mt-1">인기 탑 브랜드</p>
+        </div>
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 md:gap-4">
+          {brandDisplayData.map((brand) => (
+            <Link
+              key={brand.name}
+              href={brand.path}
+              className="flex flex-col items-center group"
+              data-testid={`top-brand-${brand.name}`}
+            >
+              <div className="w-full aspect-square bg-gray-50 rounded-sm flex items-center justify-center p-4 md:p-6 group-hover:bg-gray-100 transition-colors overflow-hidden">
+                {brand.displayImage ? (
+                  <img
+                    src={brand.displayImage}
+                    alt={brand.name}
+                    className="w-full h-full object-contain"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    loading="lazy"
+                  />
+                ) : (
+                  <span className="text-gray-300 text-xs text-center">{brand.name}</span>
+                )}
+              </div>
+              <span className="text-xs md:text-sm text-gray-600 mt-2.5 text-center group-hover:text-black transition-colors">{brand.name}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ForYouSection({ products, brands }: { products: any[]; brands: any[] }) {
-  const { toggleItem, isInWishlist } = useWishlist();
-  const { toast } = useToast();
+  const [currentPage, setCurrentPage] = useState(0);
 
   if (products.length === 0) return null;
 
   const getBrandName = (brandId: string) => {
     const brand = brands?.find((b: any) => b.id === brandId);
     return brand?.name || 'BRAND';
-  };
-
-  const handleWishlistToggle = (e: React.MouseEvent, product: any) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const wasInWishlist = isInWishlist(String(product.id));
-    toggleItem({
-      id: String(product.id),
-      name: product.name,
-      price: Number(product.price),
-      imageUrl: product.imageUrl,
-    });
-    toast({
-      title: wasInWishlist ? "관심상품 삭제" : "관심상품 등록",
-      description: wasInWishlist ? "삭제되었습니다." : "등록되었습니다.",
-    });
   };
 
   const brandGroups: Record<string, any[]> = {};
@@ -250,46 +315,77 @@ function ForYouSection({ products, brands }: { products: any[]; brands: any[] })
 
   const brandEntries = Object.entries(brandGroups).filter(([, items]) => items.length >= 2);
 
+  const pairsPerPage = 2;
+  const brandPairs: [string, any[]][][] = [];
+  for (let i = 0; i < brandEntries.length; i += pairsPerPage) {
+    brandPairs.push(brandEntries.slice(i, i + pairsPerPage));
+  }
+
+  const totalPages = brandPairs.length;
+
+  const goToPrev = () => {
+    setCurrentPage((prev) => (prev === 0 ? totalPages - 1 : prev - 1));
+  };
+  const goToNext = () => {
+    setCurrentPage((prev) => (prev + 1) % totalPages);
+  };
+
+  const currentPairs = brandPairs[currentPage] || [];
+
   return (
     <section className="bg-white py-10 md:py-14">
       <div className="max-w-[1200px] mx-auto px-4">
-        <div className="mb-6 md:mb-8 pb-5 border-b border-gray-200">
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 italic" style={{ fontFamily: "'Playfair Display', serif" }}>For You</h2>
-          <p className="text-sm md:text-base text-gray-500 mt-1.5">고객님을 위해 준비해 봤어요.</p>
+        <div className="flex items-end justify-between mb-6 md:mb-8 pb-5 border-b border-gray-200">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 italic" style={{ fontFamily: "'Playfair Display', serif" }}>For You</h2>
+            <p className="text-sm md:text-base text-gray-500 mt-1.5">고객님을 위해 준비해 봤어요.</p>
+          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-500">{currentPage + 1} / {totalPages}</span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={goToPrev}
+                  className="w-8 h-8 border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  data-testid="foryou-prev"
+                >
+                  <ChevronLeft className="w-4 h-4 text-gray-600" />
+                </button>
+                <button
+                  onClick={goToNext}
+                  className="w-8 h-8 border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  data-testid="foryou-next"
+                >
+                  <ChevronRight className="w-4 h-4 text-gray-600" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="space-y-12">
-          {brandEntries.map(([brandId, items]) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
+          {currentPairs.map(([brandId, items]) => {
             const brandName = getBrandName(brandId);
             return (
-              <div key={brandId}>
-                <div className="flex items-center justify-between mb-5 pb-4 border-b border-gray-100">
-                  <div className="flex items-center gap-2.5">
-                    <Search className="w-5 h-5 text-gray-400" />
-                    <span className="text-base md:text-lg text-gray-600">지금 뜨는 <span className="text-black font-bold underline underline-offset-4">{brandName}</span> 의 인기상품</span>
+              <div key={brandId} className="border border-gray-100 rounded-sm p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Search className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm md:text-base text-gray-600">지금 뜨는 <span className="text-black font-bold underline underline-offset-4">{brandName}</span> 의 인기상품</span>
                   </div>
-                  <Link
-                    href={`/products?brand=${encodeURIComponent(brandId)}`}
-                    className="text-sm text-gray-500 hover:text-black transition-colors"
-                    data-testid={`foryou-more-${brandId}`}
-                  >
-                    더보기
-                  </Link>
                 </div>
 
-                <div className="flex gap-4 md:gap-5 overflow-x-auto scrollbar-hide pb-3">
-                  {items.slice(0, 10).map((product: any, idx: number) => (
+                <div className="grid grid-cols-3 gap-3">
+                  {items.slice(0, 6).map((product: any, idx: number) => (
                     <div
                       key={product.id}
-                      className="flex-shrink-0 w-[170px] md:w-[200px]"
                       data-testid={`foryou-product-${product.id}`}
                     >
                       <Link href={`/product/${product.id}`} className="block">
-                        <div className="relative aspect-square bg-gray-50 overflow-hidden mb-2.5">
-                          <div className="absolute top-2 left-2 z-10 flex items-center gap-2">
-                            <span className="text-lg font-black text-black/80">{idx + 1}</span>
+                        <div className="relative aspect-square bg-gray-50 overflow-hidden mb-2">
+                          <div className="absolute top-1.5 right-1.5 z-10">
                             {product.viewCount > 0 && (
-                              <span className="text-[11px] text-gray-500">조회 {Number(product.viewCount).toLocaleString()}</span>
+                              <span className="text-[10px] text-gray-500 bg-white/80 px-1.5 py-0.5 rounded">조회 {Number(product.viewCount).toLocaleString()}</span>
                             )}
                           </div>
                           <img
@@ -299,58 +395,22 @@ function ForYouSection({ products, brands }: { products: any[]; brands: any[] })
                             onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
                           />
                         </div>
-                        <p className="text-xs text-gray-400 uppercase font-medium tracking-wide">{brandName}</p>
-                        <p className="text-sm text-gray-700 line-clamp-2 leading-snug mt-1">{product.name}</p>
-                        {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-                          <p className="text-xs text-gray-400 mt-1.5">매장가 {formatManwon(Number(product.originalPrice))}</p>
-                        )}
-                        <TrustIcons />
-                        <div className="flex items-center gap-1.5">
-                          {product.discountPercent && product.discountPercent > 0 ? (
-                            <span className="text-xs text-red-500 font-bold">{product.discountPercent}%</span>
-                          ) : (
-                            <span className="text-xs text-gray-400">0%</span>
-                          )}
-                          <p className="text-sm md:text-base font-bold text-gray-900">{Number(product.price).toLocaleString()}원</p>
-                        </div>
-                        <p className="text-[11px] text-gray-400 mt-0.5">즉시구매가</p>
+                        <p className="text-[11px] text-gray-400 uppercase font-medium tracking-wide">{brandName}</p>
+                        <p className="text-xs text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
+                        <p className="text-sm font-bold text-gray-900 mt-1">{Number(product.price).toLocaleString()}원</p>
                       </Link>
-                      <div className="flex items-center gap-0 mt-2 border-t border-gray-100 pt-2">
-                        <button
-                          onClick={(e) => handleWishlistToggle(e, product)}
-                          className={`flex-1 flex items-center justify-center gap-1 py-1.5 text-[11px] hover:bg-gray-50 transition-colors ${
-                            isInWishlist(String(product.id)) ? 'text-red-500' : 'text-gray-500'
-                          }`}
-                          data-testid={`foryou-wishlist-${product.id}`}
-                        >
-                          <Heart className={`w-3 h-3 ${isInWishlist(String(product.id)) ? 'fill-current' : ''}`} />
-                          관심상품
-                        </button>
-                        <span className="text-gray-200">|</span>
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            toast({ title: "장바구니", description: "장바구니에 추가되었습니다." });
-                          }}
-                          className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[11px] text-gray-500 hover:bg-gray-50 transition-colors"
-                          data-testid={`foryou-cart-${product.id}`}
-                        >
-                          <ShoppingBag className="w-3 h-3" />
-                          장바구니
-                        </button>
-                        <span className="text-gray-200">|</span>
-                        <Link
-                          href={`/product/${product.id}`}
-                          className="flex-1 flex items-center justify-center gap-1 py-1.5 text-[11px] text-gray-500 hover:bg-gray-50 transition-colors"
-                          data-testid={`foryou-preview-${product.id}`}
-                        >
-                          <Eye className="w-3 h-3" />
-                          퀵프리뷰
-                        </Link>
-                      </div>
                     </div>
                   ))}
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-gray-100 text-center">
+                  <Link
+                    href={`/products?brand=${encodeURIComponent(brandId)}`}
+                    className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-black transition-colors border border-gray-200 px-6 py-2 rounded-sm hover:border-gray-400"
+                    data-testid={`foryou-more-${brandId}`}
+                  >
+                    더보기
+                  </Link>
                 </div>
               </div>
             );
@@ -390,6 +450,7 @@ export default function Home() {
       <main>
         <MainBannerSlider />
         <QuickMenu />
+        <TopBrandSection />
         <ForYouSection products={products} brands={brands} />
       </main>
       
