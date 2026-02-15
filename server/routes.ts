@@ -574,6 +574,48 @@ export async function registerRoutes(
   // ==================== BRANDS API ====================
   // Note: Main GET /api/brands with category filtering is defined earlier in this file
 
+  app.get("/api/brands/top", async (req: Request, res: Response) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 15;
+      const allBrands = await storage.getBrandsWithProductCount();
+      const sorted = allBrands
+        .filter(b => b.productCount > 0)
+        .sort((a, b) => b.productCount - a.productCount)
+        .slice(0, limit);
+
+      const result = await Promise.all(sorted.map(async (entry) => {
+        const { products } = await storage.getProductsPaginated(20, 0, undefined, undefined, undefined, entry.brand.id);
+        const categoryMap: Record<string, any> = {};
+        products.forEach((p: any) => {
+          const cat = p.categoryId || p.subcategoryId || 'other';
+          if (!categoryMap[cat]) categoryMap[cat] = p;
+        });
+        const categories = Object.keys(categoryMap);
+        const priorityOrder = ['bags', 'clothing', 'jewelry', 'wallets', 'accessories', 'shoes'];
+        let selected = null;
+        for (const pCat of priorityOrder) {
+          const match = categories.find(c => c.toLowerCase().includes(pCat));
+          if (match) { selected = categoryMap[match]; break; }
+        }
+        if (!selected && categories.length > 0) {
+          selected = categoryMap[categories[0]];
+        }
+        return {
+          id: entry.brand.id,
+          name: entry.brand.name,
+          slug: entry.brand.slug,
+          productCount: entry.productCount,
+          representativeImage: selected?.imageUrl || null,
+        };
+      }));
+
+      res.json({ success: true, data: result });
+    } catch (error) {
+      console.error("Error fetching top brands:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch top brands" });
+    }
+  });
+
   app.get("/api/brands/:id", async (req: Request, res: Response) => {
     try {
       const brand = await storage.getBrand(req.params.id);

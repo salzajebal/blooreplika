@@ -192,95 +192,21 @@ function QuickMenu() {
 }
 
 function TopBrandSection() {
-  const topBrandNames = [
-    { ko: "롤렉스", en: "rolex" },
-    { ko: "샤넬", en: "chanel" },
-    { ko: "크롬하츠", en: "chrome hearts" },
-    { ko: "몽클레르", en: "moncler" },
-    { ko: "디올", en: "dior" },
-    { ko: "톰브라운", en: "thom browne" },
-    { ko: "보테가베네타", en: "bottega veneta" },
-    { ko: "조던", en: "jordan" },
-    { ko: "프라다", en: "prada" },
-    { ko: "구찌", en: "gucci" },
-    { ko: "까르띠에", en: "cartier" },
-    { ko: "에르메스", en: "hermes" },
-    { ko: "셀린느", en: "celine" },
-    { ko: "고야드", en: "goyard" },
-    { ko: "미우미우", en: "miu miu" },
-  ];
-
-  const { data: brandsData } = useQuery({
-    queryKey: ['/api/brands'],
+  const { data: topBrandsData } = useQuery({
+    queryKey: ['/api/brands/top'],
     queryFn: async () => {
-      const res = await fetch('/api/brands');
+      const res = await fetch('/api/brands/top?limit=15');
       const data = await res.json();
       return data.success ? data.data : [];
     }
   });
 
-  const { data: productsData } = useQuery({
-    queryKey: ['/api/products/top-brand'],
-    queryFn: async () => {
-      const res = await fetch('/api/products?limit=100');
-      const data = await res.json();
-      return data.success ? data.data : [];
-    }
-  });
-
-  const brands = brandsData || [];
-  const products = productsData || [];
-
-  const brandDisplayData = topBrandNames.map((tb) => {
-    const matchedBrand = brands.find((b: any) => {
-      const bName = (b.name || '').toLowerCase();
-      const bSlug = (b.slug || '').toLowerCase();
-      const enLower = tb.en.toLowerCase();
-      const enNoSpace = enLower.replace(/\s/g, '');
-      return bName === tb.ko ||
-             bName.toLowerCase() === enLower ||
-             bSlug === enLower ||
-             bSlug === enNoSpace ||
-             bName.includes(enLower) ||
-             bName.includes(enNoSpace) ||
-             bName.includes(tb.ko);
-    });
-
-    let productImage = '';
-    if (matchedBrand) {
-      const brandProducts = products.filter((p: any) => String(p.brandId) === String(matchedBrand.id));
-      if (brandProducts.length > 0) {
-        const categoryMap: Record<string, any> = {};
-        brandProducts.forEach((p: any) => {
-          const cat = p.categoryId || p.subcategoryId || 'other';
-          if (!categoryMap[cat]) categoryMap[cat] = p;
-        });
-        const categories = Object.keys(categoryMap);
-        const priorityOrder = ['bags', 'clothing', 'jewelry', 'wallets', 'accessories', 'shoes'];
-        let selected = null;
-        for (const pCat of priorityOrder) {
-          const match = categories.find(c => c.toLowerCase().includes(pCat));
-          if (match) { selected = categoryMap[match]; break; }
-        }
-        if (!selected) {
-          const randomIndex = Math.floor(Math.random() * categories.length);
-          selected = categoryMap[categories[randomIndex]];
-        }
-        productImage = getProxiedImageUrl(selected.imageUrl, 'thumb');
-      }
-    }
-
-    const brandPath = matchedBrand 
-      ? `/products?brand=${encodeURIComponent(matchedBrand.id)}` 
-      : `/products?search=${encodeURIComponent(tb.ko)}`;
-
-    return {
-      name: tb.ko,
-      displayImage: productImage,
-      brandId: matchedBrand?.id,
-      path: brandPath,
-    };
-  });
+  const brandDisplayData = (topBrandsData || []).map((brand: any) => ({
+    name: brand.name,
+    displayImage: brand.representativeImage ? getProxiedImageUrl(brand.representativeImage, 'thumb') : '',
+    brandId: brand.id,
+    path: `/products?brand=${encodeURIComponent(brand.id)}`,
+  }));
 
   return (
     <section className="bg-white py-10 md:py-14 border-b border-gray-100" data-testid="top-brand-section">
