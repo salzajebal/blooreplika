@@ -121,10 +121,10 @@ export function Header() {
             <span className="tracking-wide">회원가입하고 첫 구매 전상품 15% 할인 !</span>
             <button
               onClick={() => setAnnouncementVisible(false)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white text-xs"
               data-testid="button-dismiss-announcement"
             >
-              <X className="w-3.5 h-3.5" />
+              취소
             </button>
           </div>
         )}
@@ -308,16 +308,16 @@ export function Header() {
               </form>
               <div>
                 <p className="text-xs text-gray-400 mb-3 font-medium">인기 검색어</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 gap-x-8 gap-y-0">
                   {popularSearches.map((term, i) => (
                     <button
                       key={term}
                       onClick={() => handleQuickSearch(term)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-100 rounded-full text-sm text-gray-700 transition-colors"
+                      className="flex items-center gap-3 py-2.5 text-sm text-gray-700 hover:text-black transition-colors text-left border-b border-gray-50"
                       data-testid={`search-popular-${i}`}
                     >
-                      <span className="text-xs text-gray-400 font-medium">{i + 1}</span>
-                      {term}
+                      <span className="text-sm text-red-500 font-bold w-5 text-center">{i + 1}</span>
+                      <span>{term}</span>
                     </button>
                   ))}
                 </div>

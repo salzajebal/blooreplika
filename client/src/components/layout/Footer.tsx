@@ -4,10 +4,23 @@ export function Footer() {
   return (
     <footer className="bg-[#1a1a1a] text-gray-400 mt-auto pb-20 md:pb-0">
       <div className="max-w-[1200px] mx-auto px-4 py-12 md:py-16">
-        <div className="mb-10">
-          <h3 className="text-white text-2xl font-black tracking-[0.15em] mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>LIKE IT</h3>
-          <div className="text-sm leading-relaxed text-gray-500">
-            <p>상호명: 라이크잇 | 대표: 홍길동 | 사업자등록번호: 123-45-67890</p>
+        <div className="mb-10 flex flex-col md:flex-row md:justify-between md:items-start gap-8">
+          <div>
+            <h3 className="text-white text-2xl font-black tracking-[0.15em] mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>LIKE IT</h3>
+            <div className="text-sm leading-loose text-gray-500">
+              <p>상호명: 라이크잇 | 대표: 홍길동</p>
+              <p>사업자등록번호: 123-45-67890 | 통신판매업신고: 제2024-서울강남-12345호</p>
+              <p>주소: 서울특별시 강남구 테헤란로 123, 4층</p>
+              <p>이메일: support@likeit.co.kr</p>
+            </div>
+          </div>
+          <div className="md:text-right">
+            <p className="text-white text-sm font-semibold mb-2">고객센터</p>
+            <p className="text-xl md:text-2xl text-white font-bold mb-1">1588-1234</p>
+            <div className="text-xs text-gray-500 leading-relaxed">
+              <p>평일 10:00 - 18:00 (점심 12:00 - 13:00)</p>
+              <p>토/일/공휴일 휴무</p>
+            </div>
           </div>
         </div>
 
