@@ -78,13 +78,9 @@ function MainBannerSlider() {
     );
   }
 
-  const currentBannerUrl = bannerList[currentSlide]?.imageUrl?.startsWith('http') 
-    ? getProxiedImageUrl(bannerList[currentSlide].imageUrl, "large") 
-    : bannerList[currentSlide]?.imageUrl;
-
   return (
     <section className="relative w-full overflow-hidden bg-white" data-testid="main-banner">
-      <div className="relative max-w-[1200px] mx-auto">
+      <div className="relative w-full">
         <div className="overflow-hidden">
           <div 
             className="flex transition-transform duration-500 ease-in-out"
@@ -94,10 +90,10 @@ function MainBannerSlider() {
               <div key={index} className="w-full flex-shrink-0">
                 <Link href={banner.linkUrl || "/products"}>
                   <img 
-                    src={banner.imageUrl?.startsWith('http') ? getProxiedImageUrl(banner.imageUrl, "large") : banner.imageUrl}
+                    src={banner.imageUrl}
                     alt={banner.title || `배너 ${index + 1}`}
                     className="w-full h-auto object-cover"
-                    style={{ maxHeight: '480px' }}
+                    style={{ minHeight: '300px', maxHeight: '600px' }}
                   />
                 </Link>
               </div>
@@ -156,20 +152,20 @@ function QuickMenu() {
   ];
 
   return (
-    <section className="bg-white py-5 md:py-7 border-b border-gray-100">
+    <section className="bg-white py-6 md:py-10 border-b border-gray-100">
       <div className="max-w-[1200px] mx-auto px-4">
-        <div className="flex gap-5 md:gap-6 overflow-x-auto scrollbar-hide pb-2 md:flex-wrap md:justify-center md:overflow-x-visible">
+        <div className="flex gap-6 md:gap-8 overflow-x-auto scrollbar-hide pb-3 md:flex-wrap md:justify-center md:overflow-x-visible">
           {menuItems.map((item) => (
             <Link
               key={item.name}
               href={item.path}
-              className="flex flex-col items-center gap-2 group flex-shrink-0"
+              className="flex flex-col items-center gap-2.5 group flex-shrink-0"
               data-testid={`quick-menu-${item.name}`}
             >
-              <div className="w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity flex items-center justify-center">
+              <div className="w-[60px] h-[60px] md:w-[80px] md:h-[80px] rounded-full overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity flex items-center justify-center">
                 <img src={item.image} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
               </div>
-              <span className="text-[10px] md:text-xs text-gray-600 text-center whitespace-nowrap group-hover:text-black transition-colors">{item.name}</span>
+              <span className="text-xs md:text-sm text-gray-600 text-center whitespace-nowrap group-hover:text-black transition-colors font-medium">{item.name}</span>
             </Link>
           ))}
         </div>
@@ -196,62 +192,62 @@ function ForYouSection({ products, brands }: { products: any[]; brands: any[] })
   const brandEntries = Object.entries(brandGroups).filter(([, items]) => items.length >= 2);
 
   return (
-    <section className="bg-white py-8 md:py-12">
+    <section className="bg-white py-10 md:py-14">
       <div className="max-w-[1200px] mx-auto px-4">
-        <div className="mb-6 md:mb-8">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-900 italic" style={{ fontFamily: "'Playfair Display', serif" }}>For You</h2>
-          <p className="text-xs md:text-sm text-gray-500 mt-1">고객님을 위해 준비해 봤어요.</p>
+        <div className="mb-8 md:mb-10">
+          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 italic" style={{ fontFamily: "'Playfair Display', serif" }}>For You</h2>
+          <p className="text-sm md:text-base text-gray-500 mt-1.5">고객님을 위해 준비해 봤어요.</p>
         </div>
 
-        <div className="space-y-8">
+        <div className="space-y-10">
           {brandEntries.map(([brandId, items]) => {
             const brandName = getBrandName(brandId);
             return (
-              <div key={brandId} className="border border-gray-100 rounded-lg p-4 md:p-6">
-                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
-                  <Search className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-600">지금 뜨는 <span className="text-black font-bold underline underline-offset-2">{brandName}</span> 의 인기상품</span>
+              <div key={brandId} className="border border-gray-100 rounded-lg p-5 md:p-8">
+                <div className="flex items-center gap-2.5 mb-5 pb-4 border-b border-gray-100">
+                  <Search className="w-5 h-5 text-gray-400" />
+                  <span className="text-base md:text-lg text-gray-600">지금 뜨는 <span className="text-black font-bold underline underline-offset-4">{brandName}</span> 의 인기상품</span>
                 </div>
 
-                <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
+                <div className="flex gap-4 md:gap-5 overflow-x-auto scrollbar-hide pb-3">
                   {items.slice(0, 10).map((product: any, idx: number) => (
                     <Link
                       key={product.id}
                       href={`/product/${product.id}`}
-                      className="flex-shrink-0 w-[140px] md:w-[170px] group"
+                      className="flex-shrink-0 w-[160px] md:w-[200px] group"
                       data-testid={`foryou-product-${product.id}`}
                     >
-                      <div className="relative aspect-square bg-gray-50 rounded overflow-hidden mb-2">
-                        <div className="absolute top-1.5 left-1.5 w-6 h-6 bg-black/70 text-white text-[10px] font-bold rounded-full flex items-center justify-center z-10">
+                      <div className="relative aspect-square bg-gray-50 rounded overflow-hidden mb-2.5">
+                        <div className="absolute top-2 left-2 w-7 h-7 bg-black/70 text-white text-xs font-bold rounded-full flex items-center justify-center z-10">
                           {idx + 1}
                         </div>
                         <img
-                          src={getProxiedImageUrl(product.imageUrl)}
+                          src={getProxiedImageUrl(product.imageUrl, "medium")}
                           alt={product.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
                         />
                         {product.viewCount > 0 && (
-                          <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 text-[10px] text-gray-500 bg-white/90 rounded px-1.5 py-0.5">
-                            <Eye className="w-3 h-3" />
+                          <div className="absolute top-2 right-2 flex items-center gap-1 text-xs text-gray-500 bg-white/90 rounded px-2 py-1">
+                            <Eye className="w-3.5 h-3.5" />
                             {Number(product.viewCount).toLocaleString()}
                           </div>
                         )}
                       </div>
-                      <p className="text-[10px] md:text-[11px] text-gray-400 uppercase font-medium tracking-wide">{brandName}</p>
-                      <p className="text-[11px] md:text-xs text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
-                      <div className="mt-1">
-                        <span className="text-[10px] text-gray-400">즉시구매가</span>
-                        <p className="text-xs md:text-sm font-bold text-gray-900">{Number(product.price).toLocaleString()}원</p>
+                      <p className="text-xs text-gray-400 uppercase font-medium tracking-wide">{brandName}</p>
+                      <p className="text-sm text-gray-700 line-clamp-2 leading-snug mt-1">{product.name}</p>
+                      <div className="mt-1.5">
+                        <span className="text-xs text-gray-400">즉시구매가</span>
+                        <p className="text-sm md:text-base font-bold text-gray-900">{Number(product.price).toLocaleString()}원</p>
                       </div>
                     </Link>
                   ))}
                 </div>
 
-                <div className="flex justify-center mt-4">
+                <div className="flex justify-center mt-5">
                   <Link
                     href={`/products?brand=${encodeURIComponent(brandId)}`}
-                    className="text-xs text-gray-500 border border-gray-200 rounded px-6 py-2 hover:border-gray-400 hover:text-black transition-colors"
+                    className="text-sm text-gray-500 border border-gray-200 rounded px-8 py-2.5 hover:border-gray-400 hover:text-black transition-colors"
                     data-testid={`foryou-more-${brandId}`}
                   >
                     더보기
@@ -289,65 +285,65 @@ function NewArrivalsSection({ products }: { products: any[] }) {
   if (products.length === 0) return null;
 
   return (
-    <section className="bg-white py-8 md:py-12 border-t border-gray-100">
+    <section className="bg-white py-10 md:py-14 border-t border-gray-100">
       <div className="max-w-[1200px] mx-auto px-4">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-lg md:text-xl font-bold text-gray-900">신상품</h2>
-            <p className="text-xs text-gray-500 mt-0.5">새로 입고된 상품을 확인해보세요</p>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">신상품</h2>
+            <p className="text-sm text-gray-500 mt-1">새로 입고된 상품을 확인해보세요</p>
           </div>
-          <Link href="/products" className="text-xs text-gray-500 hover:text-black border border-gray-300 px-3 py-1.5 rounded-full transition-colors">
+          <Link href="/products" className="text-sm text-gray-500 hover:text-black border border-gray-300 px-5 py-2 rounded-full transition-colors">
             전체보기
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-5">
           {products.slice(0, 8).map((product: any) => (
             <Link 
               key={product.id}
               href={`/product/${product.id}`} 
-              className="bg-white rounded-lg overflow-hidden group hover:shadow-md transition-all border border-gray-100"
+              className="bg-white overflow-hidden group hover:shadow-md transition-all border border-gray-100"
               data-testid={`product-card-${product.id}`}
             >
               <div className="aspect-square bg-gray-50 relative overflow-hidden">
                 <img 
-                  src={getProxiedImageUrl(product.imageUrl)} 
+                  src={getProxiedImageUrl(product.imageUrl, "medium")} 
                   alt={product.name} 
                   loading="lazy"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
                 />
                 {product.isBest && (
-                  <span className="absolute top-2 left-2 bg-black text-white text-[9px] px-2 py-0.5 font-bold rounded-sm">BEST</span>
+                  <span className="absolute top-2 left-2 bg-black text-white text-[10px] px-2.5 py-1 font-bold">BEST</span>
                 )}
                 {product.isNew && (
-                  <span className="absolute top-2 left-2 bg-red-500 text-white text-[9px] px-2 py-0.5 font-bold rounded-sm">NEW</span>
+                  <span className="absolute top-2 left-2 bg-red-500 text-white text-[10px] px-2.5 py-1 font-bold">NEW</span>
                 )}
                 {product.isSoldOut && (
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">SOLD OUT</span>
+                    <span className="text-white text-sm font-bold">SOLD OUT</span>
                   </div>
                 )}
                 <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1.5">
                   <button 
                     onClick={(e) => handleWishlistToggle(e, product)}
-                    className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-colors ${
+                    className={`w-9 h-9 rounded-full flex items-center justify-center shadow-sm transition-colors ${
                       isInWishlist(product.id) ? 'bg-red-500 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
                     }`}
                     data-testid={`button-wishlist-new-${product.id}`}
                   >
-                    <Heart className={`w-3.5 h-3.5 ${isInWishlist(product.id) ? 'fill-current' : ''}`} />
+                    <Heart className={`w-4 h-4 ${isInWishlist(product.id) ? 'fill-current' : ''}`} />
                   </button>
                 </div>
               </div>
-              <div className="p-3">
-                <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5 font-medium">{product.brandId || "BRAND"}</p>
-                <h3 className="text-xs md:text-sm text-gray-800 line-clamp-2 mb-2 leading-snug">{product.name}</h3>
-                <div className="flex items-baseline gap-1">
+              <div className="p-4">
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1 font-medium">{product.brandId || "BRAND"}</p>
+                <h3 className="text-sm md:text-base text-gray-800 line-clamp-2 mb-2 leading-snug">{product.name}</h3>
+                <div className="flex items-baseline gap-1.5">
                   {product.discountPercent > 0 && (
-                    <span className="text-red-500 text-xs font-bold">{product.discountPercent}%</span>
+                    <span className="text-red-500 text-sm font-bold">{product.discountPercent}%</span>
                   )}
-                  <span className="text-sm font-bold text-gray-900">{Number(product.price).toLocaleString()}원</span>
+                  <span className="text-base md:text-lg font-bold text-gray-900">{Number(product.price).toLocaleString()}원</span>
                 </div>
               </div>
             </Link>
@@ -371,21 +367,21 @@ function ReviewSection({ reviews }: { reviews: any[] }) {
   if (validReviews.length === 0) return null;
 
   return (
-    <section className="bg-white py-8 md:py-12 border-t border-gray-100">
+    <section className="bg-white py-10 md:py-14 border-t border-gray-100">
       <div className="max-w-[1200px] mx-auto px-4">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-lg md:text-xl font-bold text-gray-900">구매후기</h2>
-            <p className="text-xs text-gray-500 mt-0.5">고객님들의 소중한 리뷰</p>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">구매후기</h2>
+            <p className="text-sm text-gray-500 mt-1">고객님들의 소중한 리뷰</p>
           </div>
-          <Link href="/reviews" className="text-xs text-gray-500 hover:text-black border border-gray-300 px-3 py-1.5 rounded-full transition-colors">
+          <Link href="/reviews" className="text-sm text-gray-500 hover:text-black border border-gray-300 px-5 py-2 rounded-full transition-colors">
             전체보기
           </Link>
         </div>
 
         <div 
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scrollbar-hide pb-2"
+          className="flex gap-4 overflow-x-auto scrollbar-hide pb-3"
         >
           {validReviews.slice(0, 20).map((review: any) => {
             const imageUrl = getReviewImage(review);
@@ -393,18 +389,18 @@ function ReviewSection({ reviews }: { reviews: any[] }) {
               <Link 
                 key={review.id}
                 href={`/reviews/${review.id}`}
-                className="flex-shrink-0 w-[160px] md:w-[200px] group"
+                className="flex-shrink-0 w-[180px] md:w-[220px] group"
                 data-testid={`purchase-review-${review.id}`}
               >
-                <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden mb-2">
+                <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden mb-2.5">
                   <img 
-                    src={getProxiedImageUrl(imageUrl!)}
+                    src={getProxiedImageUrl(imageUrl!, "medium")}
                     alt={review.title || '후기'}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.5'; }}
                   />
                 </div>
-                <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed px-0.5">
+                <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed px-0.5">
                   {review.content || review.title}
                 </p>
               </Link>
@@ -420,11 +416,11 @@ function NoticeSection({ notices }: { notices: any[] }) {
   if (notices.length === 0) return null;
 
   return (
-    <section className="bg-white py-8 md:py-12 border-t border-gray-100">
+    <section className="bg-white py-10 md:py-14 border-t border-gray-100">
       <div className="max-w-[1200px] mx-auto px-4">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg md:text-xl font-bold text-gray-900">공지사항</h2>
-          <Link href="/notices" className="text-xs text-gray-500 hover:text-black transition-colors">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900">공지사항</h2>
+          <Link href="/notices" className="text-sm text-gray-500 hover:text-black transition-colors">
             더보기
           </Link>
         </div>
@@ -434,11 +430,11 @@ function NoticeSection({ notices }: { notices: any[] }) {
             <Link 
               key={notice.id}
               href={`/notices/${notice.id}`}
-              className="flex items-center justify-between py-3 hover:bg-gray-50 transition-colors group px-1"
+              className="flex items-center justify-between py-4 hover:bg-gray-50 transition-colors group px-2"
               data-testid={`notice-card-${notice.id}`}
             >
-              <p className="text-sm text-gray-800 line-clamp-1 group-hover:text-black transition-colors flex-1 mr-4">{notice.title}</p>
-              <span className="text-xs text-gray-400 flex-shrink-0">
+              <p className="text-base text-gray-800 line-clamp-1 group-hover:text-black transition-colors flex-1 mr-4">{notice.title}</p>
+              <span className="text-sm text-gray-400 flex-shrink-0">
                 {notice.createdAt ? new Date(notice.createdAt).toLocaleDateString('ko-KR') : ''}
               </span>
             </Link>

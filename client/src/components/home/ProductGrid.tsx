@@ -129,13 +129,13 @@ export function ProductGrid() {
   };
 
   return (
-    <section className="py-6 md:py-10">
-      <div className="mb-6">
-        <div className="flex flex-wrap justify-center gap-2 mb-6 px-1">
+    <section className="py-8 md:py-12">
+      <div className="mb-8">
+        <div className="flex flex-wrap justify-center gap-2.5 mb-8 px-1">
           <button 
             onClick={() => setActiveCategory("all")}
             className={cn(
-              "px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-medium transition-all border rounded-full",
+              "px-5 md:px-7 py-2.5 md:py-3 text-sm font-medium transition-all border rounded-full",
               activeCategory === "all" 
                 ? "bg-black text-white border-black" 
                 : "bg-white text-gray-600 border-gray-200 hover:border-black hover:text-black"
@@ -149,7 +149,7 @@ export function ProductGrid() {
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
               className={cn(
-                "px-4 md:px-6 py-2 md:py-2.5 text-xs md:text-sm font-medium transition-all border rounded-full",
+                "px-5 md:px-7 py-2.5 md:py-3 text-sm font-medium transition-all border rounded-full",
                 activeCategory === cat.id 
                   ? "bg-black text-white border-black" 
                   : "bg-white text-gray-600 border-gray-200 hover:border-black hover:text-black"
@@ -162,13 +162,13 @@ export function ProductGrid() {
         </div>
       </div>
 
-      <div className="flex justify-between items-end mb-5 pb-3 border-b border-gray-200">
+      <div className="flex justify-between items-end mb-6 pb-4 border-b border-gray-200">
         <div>
-          <h2 className="text-lg md:text-xl font-bold text-gray-900">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900">
             {activeCategory === "all" ? "전체 상품" : DEFAULT_CATEGORIES.find(c => c.id === activeCategory)?.name}
           </h2>
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-sm text-gray-500">
           총 <span className="font-bold text-black" data-testid="text-product-count">{totalCount.toLocaleString()}</span>개
           {totalPages > 1 && (
             <span className="ml-2">
@@ -184,7 +184,7 @@ export function ProductGrid() {
           <div className="text-gray-500 text-sm">상품을 불러오는 중...</div>
         </div>
       ) : products.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
           {products.map((product) => (
             <Link 
               key={product.id} 
@@ -194,7 +194,7 @@ export function ProductGrid() {
             >
               <div className="aspect-square bg-gray-50 relative overflow-hidden">
                 <img 
-                  src={getProxiedImageUrl(product.imageUrl)} 
+                  src={getProxiedImageUrl(product.imageUrl, "medium")} 
                   alt={product.name} 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
@@ -202,83 +202,83 @@ export function ProductGrid() {
                 
                 {product.isSoldOut && (
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
-                    <span className="text-white text-xs font-bold px-3 py-1 bg-black/60">SOLD OUT</span>
+                    <span className="text-white text-sm font-bold px-4 py-1.5 bg-black/60">SOLD OUT</span>
                   </div>
                 )}
                 <div className="absolute top-2 left-2 flex flex-col gap-1">
                   {product.isBest && (
-                    <span className="bg-black text-white text-[9px] px-2 py-0.5 font-bold">BEST</span>
+                    <span className="bg-black text-white text-[10px] px-2.5 py-1 font-bold">BEST</span>
                   )}
                   {product.isNew && (
-                    <span className="bg-red-500 text-white text-[9px] px-2 py-0.5 font-bold">NEW</span>
+                    <span className="bg-red-500 text-white text-[10px] px-2.5 py-1 font-bold">NEW</span>
                   )}
                 </div>
                 
-                <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-2 right-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button 
                     className={cn(
-                      "w-8 h-8 flex items-center justify-center shadow-sm bg-white",
+                      "w-9 h-9 flex items-center justify-center shadow-sm bg-white rounded-sm",
                       isInWishlist(product.id) && "opacity-100"
                     )} 
                     onClick={(e) => handleWishlistToggle(e, product)}
                     data-testid={`button-wishlist-${product.id}`}
                   >
-                    <Heart className={cn("w-4 h-4", isInWishlist(product.id) ? "fill-red-500 text-red-500" : "text-gray-400")} />
+                    <Heart className={cn("w-4.5 h-4.5", isInWishlist(product.id) ? "fill-red-500 text-red-500" : "text-gray-400")} />
                   </button>
                   <button 
-                    className="w-8 h-8 bg-white flex items-center justify-center text-gray-400 hover:text-gray-600 shadow-sm"
+                    className="w-9 h-9 bg-white flex items-center justify-center text-gray-400 hover:text-gray-600 shadow-sm rounded-sm"
                     onClick={(e) => {
                       e.preventDefault();
                       handleWishlistToggle(e, product);
                     }}
                     data-testid={`button-cart-${product.id}`}
                   >
-                    <ShoppingBag className="w-4 h-4" />
+                    <ShoppingBag className="w-4.5 h-4.5" />
                   </button>
                 </div>
               </div>
               
-              <div className="p-3 flex-1 flex flex-col">
-                <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5 font-medium">
+              <div className="p-4 flex-1 flex flex-col">
+                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1 font-medium">
                   {product.brandId || "BRAND"}
                 </p>
-                <h3 className="text-xs md:text-sm text-gray-800 line-clamp-2 mb-2 leading-snug flex-1">
+                <h3 className="text-sm md:text-base text-gray-800 line-clamp-2 mb-2.5 leading-snug flex-1">
                   {product.name}
                 </h3>
                 
-                <div className="pt-2 border-t border-gray-100">
+                <div className="pt-2.5 border-t border-gray-100">
                   {hasSale ? (
                     <div>
-                      <div className="flex items-center gap-1.5 mb-0.5">
-                        <span className="text-[10px] text-gray-400 line-through">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs text-gray-400 line-through">
                           {product.price.toLocaleString()}원
                         </span>
-                        <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 font-bold">
+                        <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 font-bold">
                           {salePercent}%
                         </span>
                       </div>
-                      <span className="text-sm md:text-base font-extrabold text-red-500" data-testid={`price-product-${product.id}`}>
+                      <span className="text-base md:text-lg font-extrabold text-red-500" data-testid={`price-product-${product.id}`}>
                         {calculateSalePrice(product.price).toLocaleString()}원
                       </span>
-                      <p className="text-[10px] text-gray-400 mt-0.5">즉시구매가</p>
+                      <p className="text-xs text-gray-400 mt-1">즉시구매가</p>
                     </div>
                   ) : (
                     <div>
                       {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-                        <p className="text-[10px] text-gray-400 mb-0.5">
+                        <p className="text-xs text-gray-400 mb-1">
                           매장가 <span className="line-through">{Number(product.originalPrice).toLocaleString()}원</span>
                         </p>
                       )}
-                      <span className="text-sm md:text-base font-extrabold text-gray-900" data-testid={`price-product-${product.id}`}>
+                      <span className="text-base md:text-lg font-extrabold text-gray-900" data-testid={`price-product-${product.id}`}>
                         {product.price.toLocaleString()}원
                       </span>
-                      <p className="text-[10px] text-gray-400 mt-0.5">즉시구매가</p>
+                      <p className="text-xs text-gray-400 mt-1">즉시구매가</p>
                     </div>
                   )}
                 </div>
                 {(product as any).viewCount > 0 && (
-                  <div className="flex items-center gap-1 mt-1.5 text-[10px] text-gray-400">
-                    <Eye className="w-3 h-3" />
+                  <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
+                    <Eye className="w-3.5 h-3.5" />
                     <span>조회 {(product as any).viewCount}</span>
                   </div>
                 )}

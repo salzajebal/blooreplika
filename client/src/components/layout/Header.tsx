@@ -117,7 +117,7 @@ export function Header() {
     <>
       <header className={`w-full sticky top-0 z-50 bg-white transition-shadow ${scrolled ? 'shadow-sm' : ''}`}>
         {announcementVisible && (
-          <div className="bg-black text-white text-center text-xs py-2.5 px-4 relative">
+          <div className="bg-black text-white text-center text-sm py-3 px-4 relative">
             <span className="tracking-wide">회원가입하고 첫 구매 전상품 15% 할인 !</span>
             <button
               onClick={() => setAnnouncementVisible(false)}
@@ -130,7 +130,7 @@ export function Header() {
         )}
 
         <div className="hidden md:block bg-[#f8f8f8] border-b border-gray-100">
-          <div className="max-w-[1200px] mx-auto px-4 h-8 flex items-center justify-between text-xs text-gray-500">
+          <div className="max-w-[1200px] mx-auto px-4 h-9 flex items-center justify-between text-[13px] text-gray-500">
             <div className="flex items-center gap-1">
             </div>
             <div className="flex items-center gap-3">
@@ -158,7 +158,7 @@ export function Header() {
         </div>
 
         <div className="bg-white border-b border-gray-100">
-          <div className="max-w-[1200px] mx-auto px-4 py-3 md:py-4">
+          <div className="max-w-[1200px] mx-auto px-4 py-4 md:py-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
@@ -261,7 +261,7 @@ export function Header() {
                 <li key={`${item.name}-${index}`}>
                   <Link 
                     href={item.path} 
-                    className={`block px-3 lg:px-4 py-3 text-[13px] text-gray-600 hover:text-black hover:font-medium transition-colors whitespace-nowrap ${location === item.path ? 'text-black font-semibold' : ''}`}
+                    className={`block px-4 lg:px-5 py-3.5 text-sm text-gray-600 hover:text-black hover:font-medium transition-colors whitespace-nowrap ${location === item.path ? 'text-black font-semibold' : ''}`}
                     data-testid={`nav-${item.name}`}
                   >
                     {item.name}
@@ -273,12 +273,12 @@ export function Header() {
         </nav>
 
         <div className="md:hidden bg-white border-b border-gray-100 overflow-x-auto scrollbar-hide">
-          <div className="flex items-center px-2 py-2 gap-0 min-w-max">
+          <div className="flex items-center px-3 py-2.5 gap-0 min-w-max">
             {categoryNavItems.map((item, index) => (
               <Link 
                 key={`${item.name}-m-${index}`}
                 href={item.path} 
-                className={`px-2.5 py-1 text-[11px] text-gray-600 hover:text-black whitespace-nowrap ${location === item.path ? 'text-black font-semibold' : ''}`}
+                className={`px-3 py-1.5 text-[13px] text-gray-600 hover:text-black whitespace-nowrap ${location === item.path ? 'text-black font-semibold' : ''}`}
                 data-testid={`nav-mobile-${item.name}`}
               >
                 {item.name}

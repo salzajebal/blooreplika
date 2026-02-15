@@ -394,26 +394,26 @@ export default function ProductList() {
           
           {brands.length > 0 && (
             <div className="mt-3">
-              <p className="text-[10px] text-gray-500 mb-2 font-medium">브랜드</p>
+              <p className="text-xs text-gray-500 mb-2 font-medium">브랜드</p>
               {brands.length > 10 && (
                 <div className="relative mb-2">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                   <input
                     type="text"
                     placeholder="브랜드 검색..."
                     value={brandSearch}
                     onChange={(e) => setBrandSearch(e.target.value)}
-                    className="w-full pl-7 pr-2 py-1.5 text-[10px] border rounded focus:outline-none focus:ring-1 focus:ring-black"
+                    className="w-full pl-8 pr-3 py-2 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-black"
                     data-testid="input-brand-search-mobile"
                   />
                 </div>
               )}
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {!brandSearch && (
                   <button 
                     onClick={() => setSelectedBrand(null)}
                     className={cn(
-                      "px-2.5 py-1 text-[10px] rounded-full border transition-colors",
+                      "px-3 py-1.5 text-xs rounded-full border transition-colors",
                       !selectedBrand 
                         ? "bg-gray-800 text-white border-gray-800" 
                         : "bg-white text-gray-600 border-gray-300 hover:border-gray-800"
@@ -428,7 +428,7 @@ export default function ProductList() {
                     key={brand.id}
                     onClick={() => { setSelectedBrand(brand.id); setBrandSearch(""); }}
                     className={cn(
-                      "px-2.5 py-1 text-[10px] rounded-full border transition-colors",
+                      "px-3 py-1.5 text-xs rounded-full border transition-colors",
                       selectedBrand === brand.id 
                         ? "bg-gray-800 text-white border-gray-800" 
                         : "bg-white text-gray-600 border-gray-300 hover:border-gray-800"
@@ -593,34 +593,34 @@ export default function ProductList() {
                       
                       <div className="absolute top-2 left-2 flex flex-col gap-1">
                         {product.isBest && (
-                          <span className="bg-black text-white text-[9px] px-2 py-0.5 font-bold">BEST</span>
+                          <span className="bg-black text-white text-[10px] px-2.5 py-1 font-bold">BEST</span>
                         )}
                         {product.isNew && (
-                          <span className="bg-red-500 text-white text-[9px] px-2 py-0.5 font-bold">NEW</span>
+                          <span className="bg-red-500 text-white text-[10px] px-2.5 py-1 font-bold">NEW</span>
                         )}
                       </div>
                       
                       <button 
                         onClick={(e) => handleWishlistToggle(e, product)}
                         className={cn(
-                          "absolute top-2 right-2 w-8 h-8 bg-white flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all",
+                          "absolute top-2 right-2 w-9 h-9 bg-white flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all rounded-sm",
                           isInWishlist(String(product.id)) && "opacity-100"
                         )}
                         data-testid={`button-wishlist-${product.id}`}
                       >
-                        <Heart className={cn("w-4 h-4", isInWishlist(String(product.id)) ? "fill-red-500 text-red-500" : "text-gray-400")} />
+                        <Heart className={cn("w-4.5 h-4.5", isInWishlist(String(product.id)) ? "fill-red-500 text-red-500" : "text-gray-400")} />
                       </button>
                     </div>
                     
                     
                     <div className={cn(
-                      viewMode === "grid" ? "p-3" : "flex-1 flex flex-col justify-center"
+                      viewMode === "grid" ? "p-4" : "flex-1 flex flex-col justify-center"
                     )}>
-                      <p className="text-[11px] md:text-xs text-gray-500 mb-1 font-medium tracking-wide">
+                      <p className="text-xs text-gray-500 mb-1 font-medium tracking-wide">
                         {brands.find(b => b.id === product.brandId)?.name?.toUpperCase() || ""}
                       </p>
                       <h3 className={cn(
-                        "font-medium text-sm mb-2 group-hover:text-gray-600 transition-colors",
+                        "font-medium text-sm md:text-base mb-2.5 group-hover:text-gray-600 transition-colors",
                         viewMode === "grid" && "line-clamp-2"
                       )}>
                         {decodeHtml(product.name)}
@@ -628,56 +628,56 @@ export default function ProductList() {
                       <div>
                         {(product.discountPercent && product.discountPercent > 0) ? (
                           <>
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                              <span className="text-[10px] text-gray-400 line-through">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs text-gray-400 line-through">
                                 {Number(product.price).toLocaleString()}원
                               </span>
-                              <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 font-bold">
+                              <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 font-bold">
                                 {product.discountPercent}%
                               </span>
                             </div>
-                            <span className="text-sm md:text-base font-extrabold text-red-500" data-testid={`price-product-${product.id}`}>
+                            <span className="text-base md:text-lg font-extrabold text-red-500" data-testid={`price-product-${product.id}`}>
                               {(Math.round(Number(product.price) * (100 - product.discountPercent) / 100 / 1000) * 1000).toLocaleString()}원
                             </span>
-                            <p className="text-[10px] text-gray-400 mt-0.5">즉시구매가</p>
+                            <p className="text-xs text-gray-400 mt-1">즉시구매가</p>
                           </>
                         ) : hasSale ? (
                           <>
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                              <span className="text-[10px] text-gray-400 line-through">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs text-gray-400 line-through">
                                 {Number(product.price).toLocaleString()}원
                               </span>
-                              <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 font-bold">
+                              <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 font-bold">
                                 {salePercent}%
                               </span>
                             </div>
-                            <span className="text-sm md:text-base font-extrabold text-red-500" data-testid={`price-product-${product.id}`}>
+                            <span className="text-base md:text-lg font-extrabold text-red-500" data-testid={`price-product-${product.id}`}>
                               {calculateSalePrice(Number(product.price)).toLocaleString()}원
                             </span>
-                            <p className="text-[10px] text-gray-400 mt-0.5">즉시구매가</p>
+                            <p className="text-xs text-gray-400 mt-1">즉시구매가</p>
                           </>
                         ) : (
                           <>
                             {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-                              <p className="text-[10px] text-gray-400 mb-0.5">
+                              <p className="text-xs text-gray-400 mb-1">
                                 매장가 <span className="line-through">{Number(product.originalPrice).toLocaleString()}원</span>
                               </p>
                             )}
-                            <span className="text-sm md:text-base font-extrabold text-gray-900" data-testid={`price-product-${product.id}`}>
+                            <span className="text-base md:text-lg font-extrabold text-gray-900" data-testid={`price-product-${product.id}`}>
                               {Number(product.price).toLocaleString()}원
                             </span>
-                            <p className="text-[10px] text-gray-400 mt-0.5">즉시구매가</p>
+                            <p className="text-xs text-gray-400 mt-1">즉시구매가</p>
                           </>
                         )}
                       </div>
                       {product.viewCount && product.viewCount > 0 && (
-                        <div className="flex items-center gap-1 mt-1.5 text-[10px] text-gray-400">
+                        <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
                           <span>조회 {product.viewCount}</span>
                         </div>
                       )}
                       {(product.reviewCount || 0) > 0 && (
-                        <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
-                          <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <div className="flex items-center gap-1 mt-1.5 text-sm text-gray-500">
+                          <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
                           <span>{Number(product.avgRating || 0).toFixed(1)}</span>
                           <span>({product.reviewCount})</span>
                         </div>

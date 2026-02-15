@@ -3,10 +3,10 @@ const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1558618666-fcd25c85cd64
 type ImageSize = "thumb" | "medium" | "large" | "mobile";
 
 const SIZE_CONFIG: Record<ImageSize, { width: number; quality: number }> = {
-  mobile: { width: 400, quality: 75 },
-  thumb: { width: 500, quality: 75 },
-  medium: { width: 800, quality: 80 },
-  large: { width: 1200, quality: 85 },
+  mobile: { width: 600, quality: 85 },
+  thumb: { width: 700, quality: 85 },
+  medium: { width: 1000, quality: 90 },
+  large: { width: 1400, quality: 92 },
 };
 
 export function isMobile(): boolean {
