@@ -90,20 +90,27 @@ function MainBannerSlider() {
   }
 
   return (
-    <section className="relative w-full overflow-hidden bg-white" data-testid="main-banner">
-      <div className="relative w-full max-h-[220px] md:max-h-[450px] overflow-hidden">
-        <div className="overflow-hidden">
+    <section className="relative w-full overflow-hidden bg-black" data-testid="main-banner">
+      <div className="relative w-full h-[220px] md:h-[450px] overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden">
           <div 
-            className="flex transition-transform duration-500 ease-in-out"
+            className="flex transition-transform duration-500 ease-in-out h-full"
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
           >
             {bannerList.map((banner: any, index: number) => (
-              <div key={index} className="w-full flex-shrink-0 max-h-[220px] md:max-h-[450px]">
-                <Link href={banner.linkUrl || "/products"}>
+              <div key={index} className="w-full flex-shrink-0 h-full relative">
+                <img 
+                  src={banner.imageUrl}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl"
+                  aria-hidden="true"
+                />
+                <div className="absolute inset-0 bg-black/20" aria-hidden="true" />
+                <Link href={banner.linkUrl || "/products"} className="relative block w-full h-full">
                   <img 
                     src={banner.imageUrl}
                     alt={banner.title || `배너 ${index + 1}`}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 </Link>
               </div>
