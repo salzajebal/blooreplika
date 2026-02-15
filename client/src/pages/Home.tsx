@@ -313,7 +313,35 @@ function ForYouSection({ products, brands }: { products: any[]; brands: any[] })
     brandGroups[brand].push(p);
   });
 
-  const brandEntries = Object.entries(brandGroups).filter(([, items]) => items.length >= 2);
+  const diversifyProducts = (items: any[], count: number): any[] => {
+    const categoryGroups: Record<string, any[]> = {};
+    items.forEach((item) => {
+      const cat = item.categoryId || item.subcategoryId || 'other';
+      if (!categoryGroups[cat]) categoryGroups[cat] = [];
+      categoryGroups[cat].push(item);
+    });
+    const categories = Object.keys(categoryGroups);
+    if (categories.length <= 1) return items.slice(0, count);
+    const result: any[] = [];
+    const usedIds = new Set<string>();
+    let catIndex = 0;
+    while (result.length < count && usedIds.size < items.length) {
+      const cat = categories[catIndex % categories.length];
+      const catItems = categoryGroups[cat];
+      const next = catItems.find((item: any) => !usedIds.has(String(item.id)));
+      if (next) {
+        usedIds.add(String(next.id));
+        result.push(next);
+      }
+      catIndex++;
+      if (catIndex >= categories.length * items.length) break;
+    }
+    return result;
+  };
+
+  const brandEntries: [string, any[]][] = Object.entries(brandGroups)
+    .filter(([, items]) => items.length >= 2)
+    .map(([brandId, items]) => [brandId, diversifyProducts(items, 6)]);
 
   const pairsPerPage = 2;
   const brandPairs: [string, any[]][][] = [];
@@ -425,7 +453,7 @@ export default function Home() {
   const { data: productsData } = useQuery({
     queryKey: ['/api/products/home'],
     queryFn: async () => {
-      const res = await fetch('/api/products?limit=50');
+      const res = await fetch('/api/products?limit=200');
       const data = await res.json();
       return data.success ? data.data : [];
     }
