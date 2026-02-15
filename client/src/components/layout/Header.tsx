@@ -45,6 +45,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [announcementVisible, setAnnouncementVisible] = useState(true);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -115,6 +116,19 @@ export function Header() {
   return (
     <>
       <header className={`w-full sticky top-0 z-50 bg-white transition-shadow ${scrolled ? 'shadow-sm' : ''}`}>
+        {announcementVisible && (
+          <div className="bg-black text-white text-center text-xs py-2.5 px-4 relative">
+            <span className="tracking-wide">회원가입하고 첫 구매 전상품 15% 할인 !</span>
+            <button
+              onClick={() => setAnnouncementVisible(false)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
+              data-testid="button-dismiss-announcement"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
         <div className="hidden md:block bg-[#f8f8f8] border-b border-gray-100">
           <div className="max-w-[1200px] mx-auto px-4 h-8 flex items-center justify-between text-xs text-gray-500">
             <div className="flex items-center gap-1">
@@ -156,7 +170,7 @@ export function Header() {
 
                   <SheetContent side="left" className="w-[300px] overflow-y-auto p-0" hideCloseButton>
                     <div className="bg-black text-white p-4 flex items-center justify-between">
-                      <Link href="/" className="text-lg font-bold tracking-wider" onClick={() => setMobileMenuOpen(false)}>LIKE IT</Link>
+                      <Link href="/" className="text-lg font-bold tracking-wider" onClick={() => setMobileMenuOpen(false)} style={{ fontFamily: "'Playfair Display', serif" }}>LIKE IT</Link>
                       <SheetClose asChild>
                         <Button variant="ghost" size="icon" className="text-white hover:text-gray-300 p-0">
                           <X className="w-5 h-5" />
@@ -243,7 +257,7 @@ export function Header() {
         <nav className="hidden md:block bg-white border-b border-gray-200">
           <div className="max-w-[1200px] mx-auto px-4">
             <ul className="flex items-center justify-center gap-0">
-              {menuItems.map((item, index) => (
+              {categoryNavItems.map((item, index) => (
                 <li key={`${item.name}-${index}`}>
                   <Link 
                     href={item.path} 
@@ -260,7 +274,7 @@ export function Header() {
 
         <div className="md:hidden bg-white border-b border-gray-100 overflow-x-auto scrollbar-hide">
           <div className="flex items-center px-2 py-2 gap-0 min-w-max">
-            {menuItems.slice(0, 16).map((item, index) => (
+            {categoryNavItems.map((item, index) => (
               <Link 
                 key={`${item.name}-m-${index}`}
                 href={item.path} 

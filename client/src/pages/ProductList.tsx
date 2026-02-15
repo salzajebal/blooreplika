@@ -16,7 +16,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 function ProductSkeleton() {
   return (
-    <div className="bg-white border border-gray-100 animate-pulse">
+    <div className="bg-white border border-gray-200 animate-pulse">
       <div className="aspect-square bg-gray-200" />
       <div className="p-3">
         <div className="h-3 bg-gray-200 rounded w-16 mb-2" />
@@ -561,7 +561,7 @@ export default function ProductList() {
                     key={product.id}
                     href={`/product/${product.id}`}
                     className={cn(
-                      "group bg-white border border-gray-100 hover:border-gray-300 transition-all",
+                      "group bg-white border border-gray-200 hover:shadow-md transition-all",
                       viewMode === "list" && "flex gap-4 p-4"
                     )}
                     data-testid={`card-product-${product.id}`}
@@ -586,29 +586,29 @@ export default function ProductList() {
                       )}
                       
                       {product.isSoldOut && (
-                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                          <span className="text-white font-bold text-sm">SOLD OUT</span>
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
+                          <span className="text-white text-xs font-bold px-3 py-1 bg-black/60">SOLD OUT</span>
                         </div>
                       )}
                       
                       <div className="absolute top-2 left-2 flex flex-col gap-1">
                         {product.isBest && (
-                          <span className="bg-black text-white text-[10px] px-2 py-0.5 font-medium">BEST</span>
+                          <span className="bg-black text-white text-[9px] px-2 py-0.5 font-bold">BEST</span>
                         )}
                         {product.isNew && (
-                          <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 font-medium">NEW</span>
+                          <span className="bg-red-500 text-white text-[9px] px-2 py-0.5 font-bold">NEW</span>
                         )}
                       </div>
                       
                       <button 
                         onClick={(e) => handleWishlistToggle(e, product)}
                         className={cn(
-                          "absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-opacity",
+                          "absolute top-2 right-2 w-8 h-8 bg-white flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all",
                           isInWishlist(String(product.id)) && "opacity-100"
                         )}
                         data-testid={`button-wishlist-${product.id}`}
                       >
-                        <Heart className={cn("w-4 h-4", isInWishlist(String(product.id)) && "fill-red-500 text-red-500")} />
+                        <Heart className={cn("w-4 h-4", isInWishlist(String(product.id)) ? "fill-red-500 text-red-500" : "text-gray-400")} />
                       </button>
                     </div>
                     
@@ -625,46 +625,58 @@ export default function ProductList() {
                       )}>
                         {decodeHtml(product.name)}
                       </h3>
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div>
                         {(product.discountPercent && product.discountPercent > 0) ? (
                           <>
-                            <span className="text-xs text-gray-400 line-through">
-                              {Number(product.price).toLocaleString()}원
-                            </span>
-                            <span className="font-bold text-red-500" data-testid={`price-product-${product.id}`}>
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <span className="text-[10px] text-gray-400 line-through">
+                                {Number(product.price).toLocaleString()}원
+                              </span>
+                              <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 font-bold">
+                                {product.discountPercent}%
+                              </span>
+                            </div>
+                            <span className="text-sm md:text-base font-extrabold text-red-500" data-testid={`price-product-${product.id}`}>
                               {(Math.round(Number(product.price) * (100 - product.discountPercent) / 100 / 1000) * 1000).toLocaleString()}원
                             </span>
-                            <span className="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded font-bold">
-                              {product.discountPercent}%
-                            </span>
+                            <p className="text-[10px] text-gray-400 mt-0.5">즉시구매가</p>
                           </>
                         ) : hasSale ? (
                           <>
-                            <span className="text-xs text-gray-400 line-through">
-                              {Number(product.price).toLocaleString()}원
-                            </span>
-                            <span className="font-bold text-red-500" data-testid={`price-product-${product.id}`}>
+                            <div className="flex items-center gap-1.5 mb-0.5">
+                              <span className="text-[10px] text-gray-400 line-through">
+                                {Number(product.price).toLocaleString()}원
+                              </span>
+                              <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 font-bold">
+                                {salePercent}%
+                              </span>
+                            </div>
+                            <span className="text-sm md:text-base font-extrabold text-red-500" data-testid={`price-product-${product.id}`}>
                               {calculateSalePrice(Number(product.price)).toLocaleString()}원
                             </span>
-                            <span className="text-[10px] bg-red-500 text-white px-1.5 py-0.5 rounded font-bold">
-                              {salePercent}%
-                            </span>
+                            <p className="text-[10px] text-gray-400 mt-0.5">즉시구매가</p>
                           </>
                         ) : (
                           <>
                             {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-                              <span className="text-xs text-gray-400 line-through">
-                                {Number(product.originalPrice).toLocaleString()}원
-                              </span>
+                              <p className="text-[10px] text-gray-400 mb-0.5">
+                                매장가 <span className="line-through">{Number(product.originalPrice).toLocaleString()}원</span>
+                              </p>
                             )}
-                            <span className="font-bold" data-testid={`price-product-${product.id}`}>
+                            <span className="text-sm md:text-base font-extrabold text-gray-900" data-testid={`price-product-${product.id}`}>
                               {Number(product.price).toLocaleString()}원
                             </span>
+                            <p className="text-[10px] text-gray-400 mt-0.5">즉시구매가</p>
                           </>
                         )}
                       </div>
+                      {product.viewCount && product.viewCount > 0 && (
+                        <div className="flex items-center gap-1 mt-1.5 text-[10px] text-gray-400">
+                          <span>조회 {product.viewCount}</span>
+                        </div>
+                      )}
                       {(product.reviewCount || 0) > 0 && (
-                        <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+                        <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
                           <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
                           <span>{Number(product.avgRating || 0).toFixed(1)}</span>
                           <span>({product.reviewCount})</span>
@@ -682,7 +694,7 @@ export default function ProductList() {
                     size="icon"
                     onClick={() => goToPage(currentPage - 1)}
                     disabled={currentPage === 1}
-                    className="h-9 w-9"
+                    className="h-9 w-9 rounded-none"
                     data-testid="button-prev-page"
                   >
                     <ChevronLeft className="h-4 w-4" />
@@ -694,7 +706,10 @@ export default function ProductList() {
                         key={idx}
                         variant={currentPage === page ? "default" : "outline"}
                         onClick={() => goToPage(page)}
-                        className="h-9 w-9 p-0"
+                        className={cn(
+                          "h-9 w-9 p-0 rounded-none text-sm",
+                          currentPage === page && "bg-black text-white hover:bg-gray-800"
+                        )}
                         data-testid={`button-page-${page}`}
                       >
                         {page}
@@ -709,7 +724,7 @@ export default function ProductList() {
                     size="icon"
                     onClick={() => goToPage(currentPage + 1)}
                     disabled={currentPage === totalPages}
-                    className="h-9 w-9"
+                    className="h-9 w-9 rounded-none"
                     data-testid="button-next-page"
                   >
                     <ChevronRight className="h-4 w-4" />

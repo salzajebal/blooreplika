@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Heart, Loader2, ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react";
+import { Heart, Loader2, ChevronLeft, ChevronRight, ShoppingBag, Eye } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
@@ -162,7 +162,7 @@ export function ProductGrid() {
         </div>
       </div>
 
-      <div className="flex justify-between items-end mb-5 pb-3 border-b border-gray-100">
+      <div className="flex justify-between items-end mb-5 pb-3 border-b border-gray-200">
         <div>
           <h2 className="text-lg md:text-xl font-bold text-gray-900">
             {activeCategory === "all" ? "전체 상품" : DEFAULT_CATEGORIES.find(c => c.id === activeCategory)?.name}
@@ -189,7 +189,7 @@ export function ProductGrid() {
             <Link 
               key={product.id} 
               href={`/product/${product.id}`}
-              className="group bg-white rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 flex flex-col cursor-pointer"
+              className="group bg-white border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer"
               data-testid={`card-product-${product.id}`}
             >
               <div className="aspect-square bg-gray-50 relative overflow-hidden">
@@ -202,40 +202,38 @@ export function ProductGrid() {
                 
                 {product.isSoldOut && (
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
-                    <span className="text-white text-xs font-bold px-3 py-1 bg-black/60 rounded">SOLD OUT</span>
+                    <span className="text-white text-xs font-bold px-3 py-1 bg-black/60">SOLD OUT</span>
                   </div>
                 )}
                 <div className="absolute top-2 left-2 flex flex-col gap-1">
                   {product.isBest && (
-                    <span className="bg-black text-white text-[9px] px-2 py-0.5 font-bold rounded-sm">BEST</span>
+                    <span className="bg-black text-white text-[9px] px-2 py-0.5 font-bold">BEST</span>
                   )}
                   {product.isNew && (
-                    <span className="bg-red-500 text-white text-[9px] px-2 py-0.5 font-bold rounded-sm">NEW</span>
+                    <span className="bg-red-500 text-white text-[9px] px-2 py-0.5 font-bold">NEW</span>
                   )}
                 </div>
                 
-                <div className="absolute bottom-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button 
                     className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center shadow-sm transition-colors",
-                      isInWishlist(product.id) 
-                        ? "bg-red-500 text-white" 
-                        : "bg-white text-gray-600 hover:bg-gray-50"
+                      "w-8 h-8 flex items-center justify-center shadow-sm bg-white",
+                      isInWishlist(product.id) && "opacity-100"
                     )} 
                     onClick={(e) => handleWishlistToggle(e, product)}
                     data-testid={`button-wishlist-${product.id}`}
                   >
-                    <Heart className={cn("w-3.5 h-3.5", isInWishlist(product.id) && "fill-current")} />
+                    <Heart className={cn("w-4 h-4", isInWishlist(product.id) ? "fill-red-500 text-red-500" : "text-gray-400")} />
                   </button>
                   <button 
-                    className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-gray-600 hover:bg-gray-50 shadow-sm transition-colors" 
+                    className="w-8 h-8 bg-white flex items-center justify-center text-gray-400 hover:text-gray-600 shadow-sm"
                     onClick={(e) => {
                       e.preventDefault();
                       handleWishlistToggle(e, product);
                     }}
                     data-testid={`button-cart-${product.id}`}
                   >
-                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <ShoppingBag className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -248,20 +246,21 @@ export function ProductGrid() {
                   {product.name}
                 </h3>
                 
-                <div className="pt-2 border-t border-gray-50">
+                <div className="pt-2 border-t border-gray-100">
                   {hasSale ? (
                     <div>
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <span className="text-[10px] text-gray-400 line-through">
                           {product.price.toLocaleString()}원
                         </span>
-                        <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 rounded font-bold">
+                        <span className="text-[9px] bg-red-500 text-white px-1.5 py-0.5 font-bold">
                           {salePercent}%
                         </span>
                       </div>
-                      <span className="text-sm md:text-base font-bold text-red-500" data-testid={`price-product-${product.id}`}>
+                      <span className="text-sm md:text-base font-extrabold text-red-500" data-testid={`price-product-${product.id}`}>
                         {calculateSalePrice(product.price).toLocaleString()}원
                       </span>
+                      <p className="text-[10px] text-gray-400 mt-0.5">즉시구매가</p>
                     </div>
                   ) : (
                     <div>
@@ -270,19 +269,25 @@ export function ProductGrid() {
                           매장가 <span className="line-through">{Number(product.originalPrice).toLocaleString()}원</span>
                         </p>
                       )}
-                      <span className="text-sm md:text-base font-bold text-gray-900" data-testid={`price-product-${product.id}`}>
+                      <span className="text-sm md:text-base font-extrabold text-gray-900" data-testid={`price-product-${product.id}`}>
                         {product.price.toLocaleString()}원
                       </span>
                       <p className="text-[10px] text-gray-400 mt-0.5">즉시구매가</p>
                     </div>
                   )}
                 </div>
+                {(product as any).viewCount > 0 && (
+                  <div className="flex items-center gap-1 mt-1.5 text-[10px] text-gray-400">
+                    <Eye className="w-3 h-3" />
+                    <span>조회 {(product as any).viewCount}</span>
+                  </div>
+                )}
               </div>
             </Link>
           ))}
         </div>
       ) : (
-        <div className="py-16 text-center bg-gray-50 rounded-lg">
+        <div className="py-16 text-center bg-gray-50">
           <p className="text-gray-500 mb-3 text-sm">해당 카테고리에 등록된 상품이 없습니다.</p>
           <p className="text-xs text-gray-400">관리자 페이지에서 상품을 추가해주세요.</p>
           <a href="/admin" className="inline-block mt-3 text-black hover:underline text-xs font-medium">
@@ -298,7 +303,7 @@ export function ProductGrid() {
             disabled={currentPage === 1}
             variant="outline"
             size="icon"
-            className="h-9 w-9 rounded-full"
+            className="h-9 w-9"
             data-testid="button-prev-page"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -311,7 +316,7 @@ export function ProductGrid() {
                 onClick={() => goToPage(page)}
                 variant={currentPage === page ? "default" : "outline"}
                 className={cn(
-                  "h-9 w-9 rounded-full text-sm",
+                  "h-9 w-9 text-sm",
                   currentPage === page && "bg-black text-white hover:bg-gray-800"
                 )}
                 data-testid={`button-page-${page}`}
@@ -328,7 +333,7 @@ export function ProductGrid() {
             disabled={currentPage === totalPages}
             variant="outline"
             size="icon"
-            className="h-9 w-9 rounded-full"
+            className="h-9 w-9"
             data-testid="button-next-page"
           >
             <ChevronRight className="w-4 h-4" />

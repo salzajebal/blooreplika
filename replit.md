@@ -1,8 +1,8 @@
 # Overview
 
-This is a Korean gold exchange e-commerce platform (한국골드금거래소 - Korea Gold Exchange) built as a full-stack web application. The platform allows users to browse and purchase precious metals (gold, silver, platinum) and related products, view real-time precious metal prices, and includes an admin panel for product management.
+This is a Korean luxury e-commerce platform (라이크잇 - LIKE IT) built as a full-stack web application. The platform allows users to browse and purchase luxury brand products including bags, clothing, shoes, wallets, jewelry, and accessories from 77+ luxury brands. It includes an admin panel for product management, member system, order processing, and real-time brand product crawling.
 
-The application serves as an online marketplace for gold bars, silver bars, jewelry, diamonds, and corporate gifts with real-time pricing updates based on international metal markets.
+The design follows pliki6.com's clean, minimal, white-dominant aesthetic with "LIKE IT" branding in Playfair Display font.
 
 # User Preferences
 

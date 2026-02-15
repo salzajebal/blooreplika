@@ -2,7 +2,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Heart, ShoppingBag, HelpCircle, Eye, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, HelpCircle, Eye, Search } from "lucide-react";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { useState, useEffect, useRef } from "react";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -83,21 +83,8 @@ function MainBannerSlider() {
     : bannerList[currentSlide]?.imageUrl;
 
   return (
-    <section className="relative w-full overflow-hidden bg-gray-900" style={{ maxHeight: '420px' }}>
-      {currentBannerUrl && (
-        <div 
-          className="absolute inset-0 z-0"
-          style={{
-            backgroundImage: `url(${currentBannerUrl})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            filter: 'blur(40px) brightness(0.6)',
-            transform: 'scale(1.2)',
-          }}
-        />
-      )}
-      
-      <div className="relative z-[1] max-w-[900px] mx-auto">
+    <section className="relative w-full overflow-hidden bg-white" data-testid="main-banner">
+      <div className="relative max-w-[1200px] mx-auto">
         <div className="overflow-hidden">
           <div 
             className="flex transition-transform duration-500 ease-in-out"
@@ -109,8 +96,8 @@ function MainBannerSlider() {
                   <img 
                     src={banner.imageUrl?.startsWith('http') ? getProxiedImageUrl(banner.imageUrl, "large") : banner.imageUrl}
                     alt={banner.title || `배너 ${index + 1}`}
-                    className="w-full h-auto object-contain"
-                    style={{ maxHeight: '420px' }}
+                    className="w-full h-auto object-cover"
+                    style={{ maxHeight: '480px' }}
                   />
                 </Link>
               </div>
@@ -142,7 +129,7 @@ function MainBannerSlider() {
                 key={index}
                 onClick={() => setCurrentSlide(index)}
                 className={`w-2 h-2 rounded-full transition-all ${
-                  index === currentSlide ? 'bg-white w-5' : 'bg-white/50'
+                  index === currentSlide ? 'bg-black w-5' : 'bg-gray-300'
                 }`}
                 aria-label={`슬라이드 ${index + 1}`}
               />
@@ -170,31 +157,16 @@ function QuickMenu() {
 
   return (
     <section className="bg-white py-5 md:py-7 border-b border-gray-100">
-      <div className="max-w-[900px] mx-auto px-4">
-        <div className="grid grid-cols-5 gap-4 md:gap-6">
-          {menuItems.slice(0, 5).map((item) => (
+      <div className="max-w-[1200px] mx-auto px-4">
+        <div className="flex gap-5 md:gap-6 overflow-x-auto scrollbar-hide pb-2 md:flex-wrap md:justify-center md:overflow-x-visible">
+          {menuItems.map((item) => (
             <Link
               key={item.name}
               href={item.path}
-              className="flex flex-col items-center gap-2 group"
+              className="flex flex-col items-center gap-2 group flex-shrink-0"
               data-testid={`quick-menu-${item.name}`}
             >
-              <div className="w-[120px] h-[120px] md:w-[148px] md:h-[148px] rounded-full overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity flex items-center justify-center mx-auto">
-                <img src={item.image} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
-              </div>
-              <span className="text-[10px] md:text-xs text-gray-600 text-center whitespace-nowrap group-hover:text-black transition-colors">{item.name}</span>
-            </Link>
-          ))}
-        </div>
-        <div className="grid grid-cols-5 gap-4 md:gap-6 mt-3 md:mt-4">
-          {menuItems.slice(5, 10).map((item) => (
-            <Link
-              key={item.name}
-              href={item.path}
-              className="flex flex-col items-center gap-2 group"
-              data-testid={`quick-menu-${item.name}`}
-            >
-              <div className="w-[120px] h-[120px] md:w-[148px] md:h-[148px] rounded-full overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity flex items-center justify-center mx-auto">
+              <div className="w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity flex items-center justify-center">
                 <img src={item.image} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
               </div>
               <span className="text-[10px] md:text-xs text-gray-600 text-center whitespace-nowrap group-hover:text-black transition-colors">{item.name}</span>
@@ -206,10 +178,13 @@ function QuickMenu() {
   );
 }
 
-function ForYouSection({ products }: { products: any[] }) {
-  const [page, setPage] = useState(0);
-
+function ForYouSection({ products, brands }: { products: any[]; brands: any[] }) {
   if (products.length === 0) return null;
+
+  const getBrandName = (brandId: string) => {
+    const brand = brands?.find((b: any) => b.id === brandId);
+    return brand?.name || 'BRAND';
+  };
 
   const brandGroups: Record<string, any[]> = {};
   products.forEach((p: any) => {
@@ -219,120 +194,72 @@ function ForYouSection({ products }: { products: any[] }) {
   });
 
   const brandEntries = Object.entries(brandGroups).filter(([, items]) => items.length >= 2);
-  const pairsPerPage = 2;
-  const totalPages = Math.max(1, Math.ceil(brandEntries.length / pairsPerPage));
-  const currentPairs = brandEntries.slice(page * pairsPerPage, page * pairsPerPage + pairsPerPage);
 
   return (
     <section className="bg-white py-8 md:py-12">
       <div className="max-w-[1200px] mx-auto px-4">
-        <div className="flex items-center justify-between mb-6 md:mb-8">
-          <div>
-            <h2 className="text-lg md:text-xl font-bold text-gray-900 italic" style={{ fontFamily: "'Playfair Display', serif" }}>For You</h2>
-            <p className="text-xs md:text-sm text-gray-500 mt-0.5">고객님을 위해 준비해 봤어요.</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-400">{page + 1} / {totalPages}</span>
-            <div className="flex gap-1">
-              <button
-                onClick={() => setPage(p => Math.max(0, p - 1))}
-                disabled={page === 0}
-                className="w-8 h-8 border border-gray-200 rounded-full flex items-center justify-center disabled:opacity-30 hover:border-gray-400 transition-colors"
-                data-testid="foryou-prev"
-              >
-                <ChevronLeft className="w-4 h-4 text-gray-600" />
-              </button>
-              <button
-                onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
-                disabled={page >= totalPages - 1}
-                className="w-8 h-8 border border-gray-200 rounded-full flex items-center justify-center disabled:opacity-30 hover:border-gray-400 transition-colors"
-                data-testid="foryou-next"
-              >
-                <ChevronRight className="w-4 h-4 text-gray-600" />
-              </button>
-            </div>
-          </div>
+        <div className="mb-6 md:mb-8">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900 italic" style={{ fontFamily: "'Playfair Display', serif" }}>For You</h2>
+          <p className="text-xs md:text-sm text-gray-500 mt-1">고객님을 위해 준비해 봤어요.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-          {currentPairs.map(([brand, items]) => (
-            <div key={brand} className="border border-gray-100 rounded-lg p-4 md:p-5">
-              <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
-                <Search className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600">지금 뜨는 <span className="text-black font-bold underline underline-offset-2">{brand}</span>의 인기상품</span>
-              </div>
+        <div className="space-y-8">
+          {brandEntries.map(([brandId, items]) => {
+            const brandName = getBrandName(brandId);
+            return (
+              <div key={brandId} className="border border-gray-100 rounded-lg p-4 md:p-6">
+                <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
+                  <Search className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-600">지금 뜨는 <span className="text-black font-bold underline underline-offset-2">{brandName}</span> 의 인기상품</span>
+                </div>
 
-              <div className="grid grid-cols-3 gap-2 md:gap-3 mb-3">
-                {items.slice(0, 3).map((product: any) => (
+                <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
+                  {items.slice(0, 10).map((product: any, idx: number) => (
+                    <Link
+                      key={product.id}
+                      href={`/product/${product.id}`}
+                      className="flex-shrink-0 w-[140px] md:w-[170px] group"
+                      data-testid={`foryou-product-${product.id}`}
+                    >
+                      <div className="relative aspect-square bg-gray-50 rounded overflow-hidden mb-2">
+                        <div className="absolute top-1.5 left-1.5 w-6 h-6 bg-black/70 text-white text-[10px] font-bold rounded-full flex items-center justify-center z-10">
+                          {idx + 1}
+                        </div>
+                        <img
+                          src={getProxiedImageUrl(product.imageUrl)}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                        />
+                        {product.viewCount > 0 && (
+                          <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 text-[10px] text-gray-500 bg-white/90 rounded px-1.5 py-0.5">
+                            <Eye className="w-3 h-3" />
+                            {Number(product.viewCount).toLocaleString()}
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-[10px] md:text-[11px] text-gray-400 uppercase font-medium tracking-wide">{brandName}</p>
+                      <p className="text-[11px] md:text-xs text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
+                      <div className="mt-1">
+                        <span className="text-[10px] text-gray-400">즉시구매가</span>
+                        <p className="text-xs md:text-sm font-bold text-gray-900">{Number(product.price).toLocaleString()}원</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+
+                <div className="flex justify-center mt-4">
                   <Link
-                    key={product.id}
-                    href={`/product/${product.id}`}
-                    className="group"
-                    data-testid={`foryou-product-${product.id}`}
+                    href={`/products?brand=${encodeURIComponent(brandId)}`}
+                    className="text-xs text-gray-500 border border-gray-200 rounded px-6 py-2 hover:border-gray-400 hover:text-black transition-colors"
+                    data-testid={`foryou-more-${brandId}`}
                   >
-                    <div className="relative aspect-square bg-gray-50 rounded overflow-hidden mb-1.5">
-                      <img
-                        src={getProxiedImageUrl(product.imageUrl)}
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-                      />
-                      {product.viewCount > 0 && (
-                        <div className="absolute top-1.5 right-1.5 text-[10px] text-gray-500 bg-white/80 rounded px-1.5 py-0.5">
-                          조회 {Number(product.viewCount).toLocaleString()}
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-[10px] md:text-[11px] text-gray-500 uppercase font-medium tracking-wide">{brand}</p>
-                    <p className="text-[10px] md:text-xs text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
-                    <p className="text-xs md:text-sm font-bold text-gray-900 mt-1">{Number(product.price).toLocaleString()}원</p>
+                    더보기
                   </Link>
-                ))}
+                </div>
               </div>
-
-              {items.length > 3 && (
-                <>
-                  <div className="grid grid-cols-3 gap-2 md:gap-3 mb-3">
-                    {items.slice(3, 5).map((product: any) => (
-                      <Link
-                        key={product.id}
-                        href={`/product/${product.id}`}
-                        className="group"
-                        data-testid={`foryou-product-${product.id}`}
-                      >
-                        <div className="relative aspect-square bg-gray-50 rounded overflow-hidden mb-1.5">
-                          <img
-                            src={getProxiedImageUrl(product.imageUrl)}
-                            alt={product.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-                          />
-                          {product.viewCount > 0 && (
-                            <div className="absolute top-1.5 right-1.5 text-[10px] text-gray-500 bg-white/80 rounded px-1.5 py-0.5">
-                              조회 {Number(product.viewCount).toLocaleString()}
-                            </div>
-                          )}
-                        </div>
-                        <p className="text-[10px] md:text-[11px] text-gray-500 uppercase font-medium tracking-wide">{brand}</p>
-                        <p className="text-[10px] md:text-xs text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
-                        <p className="text-xs md:text-sm font-bold text-gray-900 mt-1">{Number(product.price).toLocaleString()}원</p>
-                      </Link>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              <div className="flex justify-center mt-3">
-                <Link
-                  href={`/products?brand=${encodeURIComponent(brand)}`}
-                  className="text-xs text-gray-500 border border-gray-200 rounded px-6 py-2 hover:border-gray-400 hover:text-black transition-colors"
-                  data-testid={`foryou-more-${brand}`}
-                >
-                  더보기
-                </Link>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
@@ -362,7 +289,7 @@ function NewArrivalsSection({ products }: { products: any[] }) {
   if (products.length === 0) return null;
 
   return (
-    <section className="bg-[#fafafa] py-8 md:py-12">
+    <section className="bg-white py-8 md:py-12 border-t border-gray-100">
       <div className="max-w-[1200px] mx-auto px-4">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -379,7 +306,7 @@ function NewArrivalsSection({ products }: { products: any[] }) {
             <Link 
               key={product.id}
               href={`/product/${product.id}`} 
-              className="bg-white rounded-lg overflow-hidden group hover:shadow-md transition-all"
+              className="bg-white rounded-lg overflow-hidden group hover:shadow-md transition-all border border-gray-100"
               data-testid={`product-card-${product.id}`}
             >
               <div className="aspect-square bg-gray-50 relative overflow-hidden">
@@ -466,7 +393,7 @@ function ReviewSection({ reviews }: { reviews: any[] }) {
               <Link 
                 key={review.id}
                 href={`/reviews/${review.id}`}
-                className="flex-shrink-0 w-[180px] md:w-[220px] group"
+                className="flex-shrink-0 w-[160px] md:w-[200px] group"
                 data-testid={`purchase-review-${review.id}`}
               >
                 <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden mb-2">
@@ -493,7 +420,7 @@ function NoticeSection({ notices }: { notices: any[] }) {
   if (notices.length === 0) return null;
 
   return (
-    <section className="bg-[#fafafa] py-8 md:py-12 border-t border-gray-100">
+    <section className="bg-white py-8 md:py-12 border-t border-gray-100">
       <div className="max-w-[1200px] mx-auto px-4">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg md:text-xl font-bold text-gray-900">공지사항</h2>
@@ -502,30 +429,18 @@ function NoticeSection({ notices }: { notices: any[] }) {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="divide-y divide-gray-100">
           {notices.slice(0, 6).map((notice: any) => (
             <Link 
               key={notice.id}
               href={`/notices/${notice.id}`}
-              className="flex items-center gap-4 bg-white rounded-lg p-4 hover:shadow-sm transition-all group"
+              className="flex items-center justify-between py-3 hover:bg-gray-50 transition-colors group px-1"
               data-testid={`notice-card-${notice.id}`}
             >
-              {notice.imageUrl && (
-                <div className="w-16 h-16 flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden">
-                  <img 
-                    src={getProxiedImageUrl(notice.imageUrl)}
-                    alt={notice.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                  />
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm text-gray-800 font-medium line-clamp-1 group-hover:text-black transition-colors">{notice.title}</p>
-                <p className="text-xs text-gray-400 mt-1">
-                  {notice.createdAt ? new Date(notice.createdAt).toLocaleDateString('ko-KR') : ''}
-                </p>
-              </div>
+              <p className="text-sm text-gray-800 line-clamp-1 group-hover:text-black transition-colors flex-1 mr-4">{notice.title}</p>
+              <span className="text-xs text-gray-400 flex-shrink-0">
+                {notice.createdAt ? new Date(notice.createdAt).toLocaleDateString('ko-KR') : ''}
+              </span>
             </Link>
           ))}
         </div>
@@ -562,9 +477,19 @@ export default function Home() {
     }
   });
 
+  const { data: brandsData } = useQuery({
+    queryKey: ['/api/brands'],
+    queryFn: async () => {
+      const res = await fetch('/api/brands');
+      const data = await res.json();
+      return data.success ? data.data : [];
+    }
+  });
+
   const products = productsData || [];
   const reviews = reviewsData || [];
   const notices = noticesData || [];
+  const brands = brandsData || [];
 
   return (
     <div className="min-h-screen bg-white">
@@ -573,7 +498,7 @@ export default function Home() {
       <main>
         <MainBannerSlider />
         <QuickMenu />
-        <ForYouSection products={products} />
+        <ForYouSection products={products} brands={brands} />
         <NewArrivalsSection products={products.slice(0, 8)} />
         <ReviewSection reviews={reviews} />
         <NoticeSection notices={notices} />
