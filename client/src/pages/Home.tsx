@@ -223,17 +223,19 @@ function TopBrandSection() {
               className="flex flex-col items-center group"
               data-testid={`top-brand-${brand.name}`}
             >
-              <div className="w-full aspect-square bg-gray-50 rounded-xl flex items-center justify-center p-4 md:p-6 group-hover:bg-gray-100 transition-colors overflow-hidden">
+              <div className="w-full aspect-square rounded-xl overflow-hidden">
                 {brand.displayImage ? (
                   <img
                     src={brand.displayImage}
                     alt={brand.name}
-                    className="w-full h-full object-contain"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => { (e.target as HTMLImageElement).parentElement!.classList.add('bg-gray-50'); (e.target as HTMLImageElement).style.display = 'none'; }}
                     loading="lazy"
                   />
                 ) : (
-                  <span className="text-gray-300 text-xs text-center">{brand.name}</span>
+                  <div className="w-full h-full bg-gray-50 flex items-center justify-center">
+                    <span className="text-gray-300 text-xs text-center">{brand.name}</span>
+                  </div>
                 )}
               </div>
               <span className="text-xs md:text-sm text-gray-600 mt-2.5 text-center group-hover:text-black transition-colors">{brand.name}</span>
