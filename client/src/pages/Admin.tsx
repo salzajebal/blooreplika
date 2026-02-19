@@ -5526,11 +5526,13 @@ function InspectionAdminTab({ authToken }: { authToken: string }) {
   const { toast } = useToast();
 
   const [inspForm, setInspForm] = useState({
-    productName: "", imageUrl: "", category: "all", brandName: "", sortOrder: 0, isActive: true
+    productName: "", imageUrl: "", mediaType: "image" as string, category: "all", brandName: "", sortOrder: 0, isActive: true
   });
   const [shipForm, setShipForm] = useState({
-    imageUrl: "", brandName: "", category: "all", customerName: "", photoDate: "", sortOrder: 0, isActive: true
+    imageUrl: "", mediaType: "image" as string, brandName: "", category: "all", customerName: "", photoDate: "", sortOrder: 0, isActive: true
   });
+  const [inspUploading, setInspUploading] = useState(false);
+  const [shipUploading, setShipUploading] = useState(false);
 
   const CATEGORIES = [
     { id: "all", label: "전체" },
@@ -5559,8 +5561,40 @@ function InspectionAdminTab({ authToken }: { authToken: string }) {
 
   useEffect(() => { fetchData(); }, []);
 
+  const handleFileUpload = async (file: File, target: "inspection" | "shipping") => {
+    const setUploading = target === "inspection" ? setInspUploading : setShipUploading;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/admin/upload/inspection-media", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${authToken}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        if (target === "inspection") {
+          setInspForm(prev => ({ ...prev, imageUrl: data.url, mediaType: data.mediaType }));
+        } else {
+          setShipForm(prev => ({ ...prev, imageUrl: data.url, mediaType: data.mediaType }));
+        }
+        toast({ title: `${data.mediaType === "video" ? "영상" : "이미지"}이 업로드되었습니다.` });
+      } else {
+        toast({ title: data.error || "업로드 실패", variant: "destructive" });
+      }
+    } catch (e) {
+      toast({ title: "업로드 중 오류가 발생했습니다.", variant: "destructive" });
+    }
+    setUploading(false);
+  };
+
   const handleCreateInspection = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!inspForm.imageUrl) {
+      toast({ title: "파일을 먼저 업로드해주세요.", variant: "destructive" });
+      return;
+    }
     try {
       const res = await fetch("/api/inspections", {
         method: "POST",
@@ -5569,7 +5603,7 @@ function InspectionAdminTab({ authToken }: { authToken: string }) {
       });
       if (res.ok) {
         toast({ title: "검수 항목이 추가되었습니다." });
-        setInspForm({ productName: "", imageUrl: "", category: "all", brandName: "", sortOrder: 0, isActive: true });
+        setInspForm({ productName: "", imageUrl: "", mediaType: "image", category: "all", brandName: "", sortOrder: 0, isActive: true });
         setShowForm(false);
         fetchData();
       }
@@ -5580,6 +5614,10 @@ function InspectionAdminTab({ authToken }: { authToken: string }) {
 
   const handleCreateShipping = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!shipForm.imageUrl) {
+      toast({ title: "파일을 먼저 업로드해주세요.", variant: "destructive" });
+      return;
+    }
     try {
       const res = await fetch("/api/shipping-photos", {
         method: "POST",
@@ -5587,8 +5625,8 @@ function InspectionAdminTab({ authToken }: { authToken: string }) {
         body: JSON.stringify(shipForm)
       });
       if (res.ok) {
-        toast({ title: "실사 사진이 추가되었습니다." });
-        setShipForm({ imageUrl: "", brandName: "", category: "all", customerName: "", photoDate: "", sortOrder: 0, isActive: true });
+        toast({ title: "실사가 추가되었습니다." });
+        setShipForm({ imageUrl: "", mediaType: "image", brandName: "", category: "all", customerName: "", photoDate: "", sortOrder: 0, isActive: true });
         setShowForm(false);
         fetchData();
       }
@@ -5681,14 +5719,28 @@ function InspectionAdminTab({ authToken }: { authToken: string }) {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">이미지 URL *</label>
-                  <Input
-                    data-testid="input-insp-image"
-                    placeholder="https://..."
-                    value={inspForm.imageUrl}
-                    onChange={(e) => setInspForm({ ...inspForm, imageUrl: e.target.value })}
-                    required
+                  <label className="block text-sm font-medium text-gray-700 mb-1">이미지/영상 파일 *</label>
+                  <input
+                    data-testid="input-insp-file"
+                    type="file"
+                    accept="image/*,video/*"
+                    className="w-full border rounded-md px-3 py-2 text-sm"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(file, "inspection");
+                    }}
                   />
+                  {inspUploading && <p className="text-xs text-teal-600 mt-1">업로드 중...</p>}
+                  {inspForm.imageUrl && (
+                    <div className="mt-2">
+                      {inspForm.mediaType === "video" ? (
+                        <video src={inspForm.imageUrl} className="w-24 h-24 object-cover rounded" muted />
+                      ) : (
+                        <img src={inspForm.imageUrl} className="w-24 h-24 object-cover rounded" />
+                      )}
+                      <span className="text-xs text-gray-500 ml-2">{inspForm.mediaType === "video" ? "영상" : "이미지"}</span>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
@@ -5729,14 +5781,28 @@ function InspectionAdminTab({ authToken }: { authToken: string }) {
             <form onSubmit={handleCreateShipping} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">이미지 URL *</label>
-                  <Input
-                    data-testid="input-ship-image"
-                    placeholder="https://..."
-                    value={shipForm.imageUrl}
-                    onChange={(e) => setShipForm({ ...shipForm, imageUrl: e.target.value })}
-                    required
+                  <label className="block text-sm font-medium text-gray-700 mb-1">이미지/영상 파일 *</label>
+                  <input
+                    data-testid="input-ship-file"
+                    type="file"
+                    accept="image/*,video/*"
+                    className="w-full border rounded-md px-3 py-2 text-sm"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileUpload(file, "shipping");
+                    }}
                   />
+                  {shipUploading && <p className="text-xs text-teal-600 mt-1">업로드 중...</p>}
+                  {shipForm.imageUrl && (
+                    <div className="mt-2">
+                      {shipForm.mediaType === "video" ? (
+                        <video src={shipForm.imageUrl} className="w-24 h-24 object-cover rounded" muted />
+                      ) : (
+                        <img src={shipForm.imageUrl} className="w-24 h-24 object-cover rounded" />
+                      )}
+                      <span className="text-xs text-gray-500 ml-2">{shipForm.mediaType === "video" ? "영상" : "이미지"}</span>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">브랜드명 *</label>
@@ -5809,11 +5875,15 @@ function InspectionAdminTab({ authToken }: { authToken: string }) {
                 {inspections.map((item: any) => (
                   <div key={item.id} className={`border rounded-lg overflow-hidden ${!item.isActive ? "opacity-50" : ""}`}>
                     <div className="aspect-square bg-gray-50">
-                      <img src={item.imageUrl} alt={item.productName} className="w-full h-full object-cover" loading="lazy" />
+                      {item.mediaType === "video" ? (
+                        <video src={item.imageUrl} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+                      ) : (
+                        <img src={item.imageUrl} alt={item.productName} className="w-full h-full object-cover" loading="lazy" />
+                      )}
                     </div>
                     <div className="p-2">
                       <p className="text-xs line-clamp-2 mb-1">{item.productName}</p>
-                      <p className="text-[10px] text-gray-400">{item.category} {item.brandName && `| ${item.brandName}`}</p>
+                      <p className="text-[10px] text-gray-400">{item.mediaType === "video" ? "🎬 " : ""}{item.category} {item.brandName && `| ${item.brandName}`}</p>
                       <div className="flex gap-1 mt-2">
                         <Button
                           size="sm"
@@ -5848,10 +5918,14 @@ function InspectionAdminTab({ authToken }: { authToken: string }) {
                 {shippingPhotos.map((item: any) => (
                   <div key={item.id} className={`border rounded-lg overflow-hidden ${!item.isActive ? "opacity-50" : ""}`}>
                     <div className="aspect-square bg-gray-50">
-                      <img src={item.imageUrl} alt={item.brandName} className="w-full h-full object-cover" loading="lazy" />
+                      {item.mediaType === "video" ? (
+                        <video src={item.imageUrl} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+                      ) : (
+                        <img src={item.imageUrl} alt={item.brandName} className="w-full h-full object-cover" loading="lazy" />
+                      )}
                     </div>
                     <div className="p-2">
-                      <p className="text-xs font-semibold">{item.brandName}</p>
+                      <p className="text-xs font-semibold">{item.mediaType === "video" ? "🎬 " : ""}{item.brandName}</p>
                       <p className="text-[10px] text-gray-400">{item.photoDate} {item.customerName}</p>
                       <p className="text-[10px] text-gray-400">{item.category}</p>
                       <div className="flex gap-1 mt-2">

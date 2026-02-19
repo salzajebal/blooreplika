@@ -9,6 +9,7 @@ interface InspectionItem {
   id: string;
   productName: string;
   imageUrl: string;
+  mediaType: string;
   category: string;
   brandName: string | null;
   isActive: boolean;
@@ -18,6 +19,7 @@ interface InspectionItem {
 interface ShippingPhotoItem {
   id: string;
   imageUrl: string;
+  mediaType: string;
   brandName: string;
   category: string;
   customerName: string;
@@ -125,12 +127,23 @@ export default function Inspection() {
                     className="flex-shrink-0 w-[160px] md:w-[200px]"
                   >
                     <div className="aspect-square rounded-lg overflow-hidden bg-gray-50 mb-2">
-                      <img
-                        src={getProxiedImageUrl(item.imageUrl)}
-                        alt={item.productName}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
+                      {item.mediaType === "video" ? (
+                        <video
+                          src={item.imageUrl}
+                          className="w-full h-full object-cover"
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                        />
+                      ) : (
+                        <img
+                          src={getProxiedImageUrl(item.imageUrl)}
+                          alt={item.productName}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      )}
                     </div>
                     <p className="text-xs md:text-sm text-gray-700 line-clamp-2 leading-relaxed">
                       {item.productName}
@@ -188,12 +201,23 @@ export default function Inspection() {
                   className="group"
                 >
                   <div className="aspect-square rounded-lg overflow-hidden bg-gray-50 mb-3">
-                    <img
-                      src={getProxiedImageUrl(photo.imageUrl)}
-                      alt={`${photo.brandName} 검수사진`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      loading="lazy"
-                    />
+                    {photo.mediaType === "video" ? (
+                      <video
+                        src={photo.imageUrl}
+                        className="w-full h-full object-cover"
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                      />
+                    ) : (
+                      <img
+                        src={getProxiedImageUrl(photo.imageUrl)}
+                        alt={`${photo.brandName} 검수사진`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    )}
                   </div>
                   <div className="space-y-1">
                     <div className="inline-block px-2 py-0.5 bg-gray-100 rounded text-[10px] md:text-xs text-gray-600 font-medium">
