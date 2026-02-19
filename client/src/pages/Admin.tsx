@@ -303,6 +303,7 @@ export default function Admin() {
   }>({ status: 'idle', total: 0, current: 0, updated: 0, skipped: 0, message: '' });
   const [bagDetailOnlyMissing, setBagDetailOnlyMissing] = useState(true);
   const bagDetailIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [bagDetailCount, setBagDetailCount] = useState<{ total: number; missing: number } | null>(null);
 
   const [categoryDiscounts, setCategoryDiscounts] = useState<Record<string, number>>({});
   const [applyingCategoryDiscount, setApplyingCategoryDiscount] = useState<string | null>(null);
@@ -623,6 +624,20 @@ export default function Admin() {
     }
   };
 
+  const fetchBagDetailCount = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bag-details/count", { method: "GET" });
+      const data = await res.json();
+      if (data.success) {
+        setBagDetailCount({ total: data.total, missing: data.missing });
+      }
+    } catch {}
+  };
+
+  useEffect(() => {
+    fetchBagDetailCount();
+  }, []);
+
   const fetchBagDetailProgress = async () => {
     try {
       const res = await fetchWithAuth("/api/admin/crawl/bag-details/progress", { method: "GET" });
@@ -641,6 +656,7 @@ export default function Admin() {
             clearInterval(bagDetailIntervalRef.current);
             bagDetailIntervalRef.current = null;
           }
+          fetchBagDetailCount();
         }
       }
     } catch {}
@@ -5792,6 +5808,28 @@ export default function Admin() {
               </div>
               <div className="p-6 space-y-4">
                 <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+                  {bagDetailCount && (
+                    <div data-testid="status-bag-detail-count" className="bg-white border border-pink-300 rounded-lg p-3 mb-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">전체 가방 상품</span>
+                        <span className="text-sm font-bold text-gray-800">{bagDetailCount.total.toLocaleString()}개</span>
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-sm text-pink-600 font-medium">상세이미지 필요</span>
+                        <span className="text-sm font-bold text-pink-700">{bagDetailCount.missing.toLocaleString()}개</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                        <div
+                          className="bg-pink-500 h-1.5 rounded-full"
+                          style={{ width: `${bagDetailCount.total > 0 ? ((bagDetailCount.total - bagDetailCount.missing) / bagDetailCount.total) * 100 : 0}%` }}
+                        />
+                      </div>
+                      <div className="text-xs text-gray-400 mt-1 text-right">
+                        완료: {(bagDetailCount.total - bagDetailCount.missing).toLocaleString()}개 ({bagDetailCount.total > 0 ? Math.round(((bagDetailCount.total - bagDetailCount.missing) / bagDetailCount.total) * 100) : 0}%)
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-3 mb-4">
                     <input
                       data-testid="checkbox-bag-detail-only-missing"

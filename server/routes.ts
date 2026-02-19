@@ -4473,6 +4473,26 @@ export async function registerRoutes(
     res.json({ success: true, ...bagDetailProgress });
   });
 
+  app.get("/api/admin/crawl/bag-details/count", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const allProducts = await storage.getAllProducts();
+      const allCategories = await storage.getAllCategories();
+      const bagCategoryIds = allCategories
+        .filter(c => c.slug === 'bags' || c.name === '가방' || c.id === 'bags')
+        .map(c => c.id);
+      const bagProducts = allProducts.filter(p => bagCategoryIds.includes(p.categoryId || ''));
+      const missingProducts = bagProducts.filter(p => {
+        const hasOnlyThumbnail = !p.imageUrls || p.imageUrls.length <= 1;
+        const hasSharedDetailOnly = !p.detailImageUrls || p.detailImageUrls.length === 0 ||
+          (p.detailImageUrls.length > 0 && p.detailImageUrls.every(url => url.includes('/ebcontents/') || url.includes('/editor/')));
+        return hasOnlyThumbnail || hasSharedDetailOnly;
+      });
+      res.json({ success: true, total: bagProducts.length, missing: missingProducts.length });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   app.post("/api/admin/crawl/bag-details/start", requireAdminAuth, async (req: Request, res: Response) => {
     if (bagDetailProgress.status === 'running') {
       return res.status(400).json({ success: false, error: "이미 가방 상세이미지 크롤링이 진행 중입니다." });
@@ -4510,10 +4530,12 @@ export async function registerRoutes(
 
         let bagProducts = allProducts.filter(p => bagCategoryIds.includes(p.categoryId || ''));
         if (onlyMissing) {
-          bagProducts = bagProducts.filter(p =>
-            (!p.detailImageUrls || p.detailImageUrls.length === 0) &&
-            (!p.imageUrls || p.imageUrls.length <= 1)
-          );
+          bagProducts = bagProducts.filter(p => {
+            const hasOnlyThumbnail = !p.imageUrls || p.imageUrls.length <= 1;
+            const hasSharedDetailOnly = !p.detailImageUrls || p.detailImageUrls.length === 0 ||
+              (p.detailImageUrls.length > 0 && p.detailImageUrls.every(url => url.includes('/ebcontents/') || url.includes('/editor/')));
+            return hasOnlyThumbnail || hasSharedDetailOnly;
+          });
         }
 
         if (bagProducts.length === 0) {
