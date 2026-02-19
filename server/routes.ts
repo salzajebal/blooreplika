@@ -4191,6 +4191,203 @@ export async function registerRoutes(
     })();
   });
 
+  // ============= WATCH DETAIL IMAGE RE-CRAWL =============
+  let watchDetailProgress: {
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    updated: number;
+    skipped: number;
+    message: string;
+    startedAt?: Date;
+    completedAt?: Date;
+  } = { status: 'idle', total: 0, current: 0, updated: 0, skipped: 0, message: '' };
+
+  app.get("/api/admin/crawl/watch-details/progress", requireAdminAuth, (_req: Request, res: Response) => {
+    res.json({ success: true, ...watchDetailProgress });
+  });
+
+  app.post("/api/admin/crawl/watch-details/start", requireAdminAuth, async (req: Request, res: Response) => {
+    if (watchDetailProgress.status === 'running') {
+      return res.status(400).json({ success: false, error: "이미 시계 상세이미지 크롤링이 진행 중입니다." });
+    }
+
+    const { onlyMissing } = req.body;
+
+    watchDetailProgress = {
+      status: 'running', total: 0, current: 0, updated: 0, skipped: 0,
+      message: '시계 상품 상세이미지 크롤링 준비 중...', startedAt: new Date(),
+    };
+
+    res.json({ success: true, message: "시계 상세이미지 크롤링이 시작되었습니다." });
+
+    (async () => {
+      try {
+        const headers = {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Referer": "https://bloostore.co.kr/",
+          "Accept": "application/json, text/html, */*",
+        };
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+        const allProducts = await storage.getAllProducts();
+        const watchCategory = (await storage.getAllCategories()).find(c => c.id === 'watches' || c.slug === 'watches' || c.name === '시계');
+        if (!watchCategory) {
+          watchDetailProgress.status = 'error';
+          watchDetailProgress.message = '시계 카테고리를 찾을 수 없습니다.';
+          return;
+        }
+
+        let watchProducts = allProducts.filter(p => p.categoryId === watchCategory.id);
+        if (onlyMissing) {
+          watchProducts = watchProducts.filter(p => !p.imageUrls || p.imageUrls.length <= 1);
+        }
+
+        watchDetailProgress.total = watchProducts.length;
+        watchDetailProgress.message = `총 ${watchProducts.length}개 시계 상품 상세이미지 크롤링 시작...`;
+        console.log(`[watch-detail] Starting re-crawl for ${watchProducts.length} products`);
+
+        const brandProductCache = new Map<string, Array<{ name: string; idx: string; imageUrl: string }>>();
+
+        const fetchBrandProducts = async (brand: typeof BLOOSTORE_WATCH_BRANDS[0]): Promise<Array<{ name: string; idx: string; imageUrl: string }>> => {
+          if (brandProductCache.has(brand.id)) return brandProductCache.get(brand.id)!;
+
+          const results: Array<{ name: string; idx: string; imageUrl: string }> = [];
+          let page = 1;
+          const pageSize = 100;
+          let hasMore = true;
+
+          while (hasMore) {
+            try {
+              const ajaxUrl = `https://bloostore.co.kr/ajax/get_shop_list_view.cm?page=${page}&pagesize=${pageSize}&category=${brand.categoryId}&sort=recent&menu_url=${brand.pageUrl}`;
+              const response = await fetch(ajaxUrl, { headers });
+              if (!response.ok) { hasMore = false; continue; }
+              const data = await response.json() as { html: string; msg: string };
+              if (data.msg !== 'SUCCESS' || !data.html) { hasMore = false; continue; }
+
+              const itemPattern = /<div class="item-wrap"[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/g;
+              const items = data.html.match(itemPattern);
+              if (!items || items.length === 0) { hasMore = false; continue; }
+
+              for (const itemHtml of items) {
+                const nameMatch = itemHtml.match(/<h2>(.*?)<\/h2>/);
+                const imgMatch = itemHtml.match(/src="(https:\/\/cdn[^"]+)"/);
+                const linkMatch = itemHtml.match(/href="([^"]+)"/);
+                const productName = nameMatch ? nameMatch[1].trim() : null;
+                const imageUrl = imgMatch ? imgMatch[1] : '';
+                if (!productName) continue;
+                const idxMatch = linkMatch?.[1]?.match(/idx=(\d+)/);
+                if (idxMatch) {
+                  results.push({ name: productName, idx: idxMatch[1], imageUrl });
+                }
+              }
+
+              if (items.length < pageSize) hasMore = false;
+              else { page++; await delay(300); }
+            } catch (err) {
+              console.error(`[watch-detail] Error fetching brand list ${brand.name}:`, err);
+              hasMore = false;
+            }
+          }
+
+          brandProductCache.set(brand.id, results);
+          console.log(`[watch-detail] Cached ${results.length} products for ${brand.name}`);
+          return results;
+        };
+
+        watchDetailProgress.message = '브랜드별 상품 목록 수집 중...';
+        for (const brand of BLOOSTORE_WATCH_BRANDS) {
+          watchDetailProgress.message = `[${brand.name}] 상품 목록 수집 중...`;
+          await fetchBrandProducts(brand);
+          await delay(500);
+        }
+
+        for (let i = 0; i < watchProducts.length; i++) {
+          const product = watchProducts[i];
+          watchDetailProgress.current = i + 1;
+          watchDetailProgress.message = `(${i + 1}/${watchProducts.length}) ${product.name} 상세이미지 수집 중...`;
+
+          let foundIdx: string | null = null;
+          let foundBrand: typeof BLOOSTORE_WATCH_BRANDS[0] | null = null;
+
+          for (const brand of BLOOSTORE_WATCH_BRANDS) {
+            const cachedProducts = brandProductCache.get(brand.id) || [];
+            const match = cachedProducts.find(cp => cp.name === product.name);
+            if (match) {
+              foundIdx = match.idx;
+              foundBrand = brand;
+              break;
+            }
+          }
+
+          if (!foundIdx || !foundBrand) {
+            watchDetailProgress.skipped++;
+            console.log(`[watch-detail] No match for: ${product.name}`);
+            continue;
+          }
+
+          try {
+            const detailUrl = `https://bloostore.co.kr${foundBrand.pageUrl}?idx=${foundIdx}`;
+            await delay(500);
+            const detailResponse = await fetch(detailUrl, {
+              headers: { ...headers, "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "Accept-Language": "ko-KR,ko;q=0.9" },
+            });
+
+            if (!detailResponse.ok) {
+              watchDetailProgress.skipped++;
+              continue;
+            }
+
+            const detailHtml = await detailResponse.text();
+            let detailImages: string[] = [];
+
+            const slideSection = detailHtml.match(/class="[^"]*slide_02[\s\S]{0,30000}/);
+            if (slideSection) {
+              const slideImgMatches = slideSection[0].match(/https:\/\/cdn[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
+              if (slideImgMatches && slideImgMatches.length > 0) {
+                detailImages = [...new Set(slideImgMatches)];
+              }
+            }
+
+            if (detailImages.length <= 1) {
+              const allCdnImgs = detailHtml.match(/https:\/\/cdn-optimized\.imweb\.me\/upload\/[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
+              if (allCdnImgs && allCdnImgs.length > 0) {
+                const uniqueUploadImgs = [...new Set(allCdnImgs)];
+                if (uniqueUploadImgs.length > 1) {
+                  detailImages = uniqueUploadImgs;
+                }
+              }
+            }
+
+            if (detailImages.length > 0) {
+              await storage.updateProduct(product.id, {
+                imageUrl: detailImages[0],
+                imageUrls: detailImages,
+              });
+              watchDetailProgress.updated++;
+              console.log(`[watch-detail] Updated ${product.name}: ${detailImages.length} images`);
+            } else {
+              watchDetailProgress.skipped++;
+            }
+          } catch (err) {
+            watchDetailProgress.skipped++;
+            console.error(`[watch-detail] Error fetching detail for ${product.name}:`, err);
+          }
+        }
+
+        watchDetailProgress.status = 'completed';
+        watchDetailProgress.message = `완료! ${watchDetailProgress.updated}개 상품 업데이트, ${watchDetailProgress.skipped}개 건너뜀 (총 ${watchProducts.length}개)`;
+        watchDetailProgress.completedAt = new Date();
+        console.log(`[watch-detail] Complete: ${watchDetailProgress.updated} updated, ${watchDetailProgress.skipped} skipped`);
+
+      } catch (error: any) {
+        watchDetailProgress.status = 'error';
+        watchDetailProgress.message = `오류: ${error.message || '알 수 없는 오류'}`;
+        console.error('[watch-detail] Error:', error);
+      }
+    })();
+  });
+
   // Sync ALL accessory prices using comprehensive pattern matching
   app.post("/api/admin/sync-accessory-prices", requireAdminAuth, async (_req: Request, res: Response) => {
     try {

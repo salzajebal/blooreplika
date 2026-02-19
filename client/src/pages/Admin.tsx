@@ -282,6 +282,17 @@ export default function Admin() {
   ];
   const [selectedBloostoreBrands, setSelectedBloostoreBrands] = useState<string[]>([]);
 
+  const [watchDetailProgress, setWatchDetailProgress] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    updated: number;
+    skipped: number;
+    message: string;
+  }>({ status: 'idle', total: 0, current: 0, updated: 0, skipped: 0, message: '' });
+  const [watchDetailOnlyMissing, setWatchDetailOnlyMissing] = useState(true);
+  const watchDetailIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const [categoryDiscounts, setCategoryDiscounts] = useState<Record<string, number>>({});
   const [applyingCategoryDiscount, setApplyingCategoryDiscount] = useState<string | null>(null);
 
@@ -555,6 +566,49 @@ export default function Admin() {
       }
     } catch (error) {
       toast({ title: "오류", description: "시계 크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+
+  const fetchWatchDetailProgress = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/watch-details/progress", { method: "GET" });
+      const data = await res.json();
+      if (data.success) {
+        setWatchDetailProgress({
+          status: data.status,
+          total: data.total,
+          current: data.current,
+          updated: data.updated || 0,
+          skipped: data.skipped || 0,
+          message: data.message,
+        });
+        if (data.status === 'completed' || data.status === 'error') {
+          if (watchDetailIntervalRef.current) {
+            clearInterval(watchDetailIntervalRef.current);
+            watchDetailIntervalRef.current = null;
+          }
+        }
+      }
+    } catch {}
+  };
+
+  const startWatchDetailCrawl = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/watch-details/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ onlyMissing: watchDetailOnlyMissing }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "시계 상세이미지 크롤링 시작", description: "상세이미지 크롤링이 시작되었습니다." });
+        setWatchDetailProgress({ status: 'running', total: 0, current: 0, updated: 0, skipped: 0, message: '시작 중...' });
+        watchDetailIntervalRef.current = setInterval(fetchWatchDetailProgress, 1000);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "시계 상세이미지 크롤링을 시작할 수 없습니다.", variant: "destructive" });
     }
   };
 
@@ -5573,6 +5627,101 @@ export default function Admin() {
                     <li className="flex items-start gap-2">
                       <span className="text-blue-500 mt-1">•</span>
                       <span>크롤링된 상품은 '시계' 카테고리에 저장됩니다.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-amber-50 to-white">
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-amber-600" />
+                  시계 상세이미지 재크롤링
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">기존 시계 상품의 상세 이미지를 bloostore.co.kr에서 다시 가져옵니다.</p>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <input
+                      data-testid="checkbox-watch-detail-only-missing"
+                      type="checkbox"
+                      id="watchDetailOnlyMissing"
+                      checked={watchDetailOnlyMissing}
+                      onChange={(e) => setWatchDetailOnlyMissing(e.target.checked)}
+                      className="w-4 h-4 text-amber-600 rounded"
+                    />
+                    <label htmlFor="watchDetailOnlyMissing" className="text-sm text-gray-700">
+                      상세이미지가 없는 상품만 크롤링 (체크 해제 시 전체 재크롤링)
+                    </label>
+                  </div>
+
+                  {watchDetailProgress.status !== 'idle' && (
+                    <div data-testid="status-watch-detail-progress" className={`p-4 rounded-lg mb-4 ${
+                      watchDetailProgress.status === 'running' ? 'bg-amber-50 border border-amber-200' :
+                      watchDetailProgress.status === 'completed' ? 'bg-green-50 border border-green-200' :
+                      'bg-red-50 border border-red-200'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        {watchDetailProgress.status === 'running' && <Loader2 className="w-4 h-4 text-amber-600 animate-spin" />}
+                        {watchDetailProgress.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                        {watchDetailProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                        <span className={`text-sm font-medium ${
+                          watchDetailProgress.status === 'running' ? 'text-amber-700' :
+                          watchDetailProgress.status === 'completed' ? 'text-green-700' :
+                          'text-red-700'
+                        }`}>
+                          {watchDetailProgress.message}
+                        </span>
+                      </div>
+
+                      {watchDetailProgress.status === 'running' && watchDetailProgress.total > 0 && (
+                        <div className="space-y-1">
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-amber-500 h-2 rounded-full transition-all"
+                              style={{ width: `${Math.min(100, (watchDetailProgress.current / watchDetailProgress.total) * 100)}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>{watchDetailProgress.current}/{watchDetailProgress.total}</span>
+                            <span>업데이트: {watchDetailProgress.updated} | 건너뜀: {watchDetailProgress.skipped}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {watchDetailProgress.status === 'completed' && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          업데이트: {watchDetailProgress.updated}개 | 건너뜀: {watchDetailProgress.skipped}개
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <Button
+                    data-testid="button-start-watch-detail-crawl"
+                    onClick={startWatchDetailCrawl}
+                    disabled={watchDetailProgress.status === 'running'}
+                    className="w-full bg-amber-600 hover:bg-amber-700 text-white"
+                  >
+                    {watchDetailProgress.status === 'running' ? (
+                      <><Loader2 className="w-4 h-4 animate-spin mr-2" /> 크롤링 중...</>
+                    ) : (
+                      <><RefreshCw className="w-4 h-4 mr-2" /> 시계 상세이미지 재크롤링 시작</>
+                    )}
+                  </Button>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-500 mt-1">•</span>
+                      <span>기존 시계 상품의 상세 페이지에서 이미지를 다시 수집합니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-amber-500 mt-1">•</span>
+                      <span>상품명으로 bloostore 사이트에서 매칭하여 상세이미지를 가져옵니다.</span>
                     </li>
                   </ul>
                 </div>
