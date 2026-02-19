@@ -75,6 +75,34 @@ const reviewImageUpload = multer({
   },
 });
 
+const inspectionMediaUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      const dir = path.join(process.cwd(), "uploads", "inspection");
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (_req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `insp-${uniqueSuffix}${ext}`);
+    },
+  }),
+  limits: { fileSize: 100 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const imageTypes = /jpeg|jpg|png|gif|webp/;
+    const videoTypes = /mp4|mov|avi|webm|mkv/;
+    const ext = path.extname(file.originalname).toLowerCase().replace(".", "");
+    const isImage = imageTypes.test(ext) || file.mimetype.startsWith("image/");
+    const isVideo = videoTypes.test(ext) || file.mimetype.startsWith("video/");
+    if (isImage || isVideo) {
+      cb(null, true);
+    } else {
+      cb(new Error("이미지 또는 영상 파일만 업로드 가능합니다."));
+    }
+  },
+});
+
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "admin123";
 
@@ -4194,6 +4222,22 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching inspections:", error);
       res.status(500).json({ success: false, error: "Failed to fetch inspections" });
+    }
+  });
+
+  app.post("/api/admin/upload/inspection-media", requireAdminAuth, inspectionMediaUpload.single("file"), async (req: Request, res: Response) => {
+    try {
+      const file = req.file as Express.Multer.File;
+      if (!file) {
+        return res.status(400).json({ success: false, error: "파일이 필요합니다." });
+      }
+      const isVideo = file.mimetype.startsWith("video/");
+      const mediaType = isVideo ? "video" : "image";
+      const fileUrl = `/uploads/inspection/${file.filename}`;
+      res.json({ success: true, url: fileUrl, mediaType });
+    } catch (error) {
+      console.error("Error uploading inspection media:", error);
+      res.status(500).json({ success: false, error: "파일 업로드 실패" });
     }
   });
 
