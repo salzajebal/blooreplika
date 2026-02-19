@@ -235,6 +235,28 @@ export default function Admin() {
   ];
   const [selectedBagstyleCategories, setSelectedBagstyleCategories] = useState<string[]>([]);
 
+  const [bloostoreProgress, setBloostoreProgress] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    message: string;
+    brand: string;
+  }>({ status: 'idle', total: 0, current: 0, message: '', brand: '' });
+  const [clearBeforeBloostore, setClearBeforeBloostore] = useState(false);
+  const bloostoreIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const BLOOSTORE_BRANDS = [
+    { id: "rolex", name: "롤렉스" },
+    { id: "cartier", name: "까르띠에" },
+    { id: "iwc", name: "IWC" },
+    { id: "patek", name: "파텍필립" },
+    { id: "ap", name: "오데마피게" },
+    { id: "breitling", name: "브라이틀링" },
+    { id: "omega", name: "오메가" },
+    { id: "chanel", name: "샤넬" },
+  ];
+  const [selectedBloostoreBrands, setSelectedBloostoreBrands] = useState<string[]>([]);
+
   const [categoryDiscounts, setCategoryDiscounts] = useState<Record<string, number>>({});
   const [applyingCategoryDiscount, setApplyingCategoryDiscount] = useState<string | null>(null);
 
@@ -395,6 +417,72 @@ export default function Admin() {
 
   const deselectAllBagstyleCategories = () => {
     setSelectedBagstyleCategories([]);
+  };
+
+  const fetchBloostoreProgress = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bloostore/progress", { method: "GET" });
+      const data = await res.json();
+      if (data.success) {
+        setBloostoreProgress({
+          status: data.status,
+          total: data.total,
+          current: data.current,
+          message: data.message,
+          brand: data.brand || '',
+        });
+        if (data.status === 'completed' || data.status === 'error') {
+          if (bloostoreIntervalRef.current) {
+            clearInterval(bloostoreIntervalRef.current);
+            bloostoreIntervalRef.current = null;
+          }
+          fetchProductCount();
+          fetchProducts();
+        }
+      }
+    } catch {}
+  };
+
+  const startBloostoreCrawl = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bloostore/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clearExistingWatches: clearBeforeBloostore,
+          selectedBrands: selectedBloostoreBrands.length > 0 ? selectedBloostoreBrands : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const brandText = selectedBloostoreBrands.length > 0
+          ? `${selectedBloostoreBrands.length}개 브랜드`
+          : "전체 브랜드";
+        toast({ title: "블루스토어 시계 크롤링 시작", description: `${brandText} 크롤링이 시작되었습니다.` });
+        setBloostoreProgress({ status: 'running', total: 0, current: 0, message: '시작 중...', brand: '' });
+        bloostoreIntervalRef.current = setInterval(fetchBloostoreProgress, 500);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "시계 크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+
+  const toggleBloostoreBrand = (brandId: string) => {
+    setSelectedBloostoreBrands(prev =>
+      prev.includes(brandId)
+        ? prev.filter(id => id !== brandId)
+        : [...prev, brandId]
+    );
+  };
+
+  const selectAllBloostoreBrands = () => {
+    setSelectedBloostoreBrands(BLOOSTORE_BRANDS.map(b => b.id));
+  };
+
+  const deselectAllBloostoreBrands = () => {
+    setSelectedBloostoreBrands([]);
   };
 
   useEffect(() => {
@@ -5116,6 +5204,141 @@ export default function Admin() {
                     <li className="flex items-start gap-2">
                       <span className="text-teal-500 mt-1">•</span>
                       <span>브랜드 정보도 자동으로 생성됩니다.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Bloostore Watch Crawl Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Download className="w-5 h-5 text-blue-600" />
+                  bloostore.co.kr 시계 크롤링
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">bloostore.co.kr에서 시계 브랜드별 상품을 크롤링합니다.</p>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="clearBeforeBloostore"
+                        checked={clearBeforeBloostore}
+                        onChange={(e) => setClearBeforeBloostore(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 rounded"
+                      />
+                      <label htmlFor="clearBeforeBloostore" className="text-sm text-gray-700">
+                        크롤링 전 기존 시계 상품 모두 삭제
+                      </label>
+                    </div>
+
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-medium text-gray-800">브랜드 선택 (선택안하면 전체)</h5>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" onClick={selectAllBloostoreBrands}>전체 선택</Button>
+                          <Button size="sm" variant="outline" onClick={deselectAllBloostoreBrands}>선택 해제</Button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {BLOOSTORE_BRANDS.map((brand) => (
+                          <label
+                            key={brand.id}
+                            className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
+                              selectedBloostoreBrands.includes(brand.id)
+                                ? 'bg-blue-50 border-blue-300'
+                                : 'bg-white border-gray-200 hover:border-blue-200'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedBloostoreBrands.includes(brand.id)}
+                              onChange={() => toggleBloostoreBrand(brand.id)}
+                              className="w-4 h-4 text-blue-600 rounded"
+                            />
+                            <span className="text-sm">{brand.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                      {selectedBloostoreBrands.length > 0 && (
+                        <p className="text-xs text-blue-600 mt-2">
+                          선택된 브랜드: {selectedBloostoreBrands.map(id => BLOOSTORE_BRANDS.find(b => b.id === id)?.name).join(', ')}
+                        </p>
+                      )}
+                    </div>
+
+                    {bloostoreProgress.status !== 'idle' && (
+                      <div className={`p-4 rounded-lg ${
+                        bloostoreProgress.status === 'running' ? 'bg-blue-50 border border-blue-200' :
+                        bloostoreProgress.status === 'completed' ? 'bg-green-50 border border-green-200' :
+                        'bg-red-50 border border-red-200'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          {bloostoreProgress.status === 'running' && <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />}
+                          {bloostoreProgress.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                          {bloostoreProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                          <span className={`text-sm font-medium ${
+                            bloostoreProgress.status === 'running' ? 'text-blue-700' :
+                            bloostoreProgress.status === 'completed' ? 'text-green-700' :
+                            'text-red-700'
+                          }`}>
+                            {bloostoreProgress.message}
+                          </span>
+                        </div>
+
+                        {bloostoreProgress.status === 'running' && bloostoreProgress.current > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-xs text-blue-600">
+                              <span>{bloostoreProgress.current.toLocaleString()}개 수집됨</span>
+                              {bloostoreProgress.brand && <span>현재: {bloostoreProgress.brand}</span>}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex gap-3">
+                      <Button
+                        data-testid="button-start-bloostore-crawl"
+                        onClick={startBloostoreCrawl}
+                        disabled={bloostoreProgress.status === 'running'}
+                        className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+                      >
+                        {bloostoreProgress.status === 'running' ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            크롤링 중...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4 mr-2" />
+                            {selectedBloostoreBrands.length > 0
+                              ? `선택 브랜드 크롤링 (${selectedBloostoreBrands.length}개)`
+                              : '블루스토어 전체 시계 크롤링 시작'}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-1">•</span>
+                      <span>bloostore.co.kr에서 8개 시계 브랜드의 상품을 크롤링합니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-1">•</span>
+                      <span>롤렉스, 까르띠에, IWC, 파텍필립, 오데마피게, 브라이틀링, 오메가, 샤넬</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-1">•</span>
+                      <span>크롤링된 상품은 '시계' 카테고리에 저장됩니다.</span>
                     </li>
                   </ul>
                 </div>
