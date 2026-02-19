@@ -400,6 +400,116 @@ function ForYouSection({ products, brands }: { products: any[]; brands: any[] })
   );
 }
 
+function InspectionSection() {
+  const { data: inspections } = useQuery({
+    queryKey: ['/api/inspections/home'],
+    queryFn: async () => {
+      const res = await fetch('/api/inspections');
+      const data = await res.json();
+      return data.data || [];
+    }
+  });
+
+  const { data: shippingPhotos } = useQuery({
+    queryKey: ['/api/shipping-photos/home'],
+    queryFn: async () => {
+      const res = await fetch('/api/shipping-photos');
+      const data = await res.json();
+      return data.data || [];
+    }
+  });
+
+  const inspList = (inspections || []).slice(0, 8);
+  const shipList = (shippingPhotos || []).slice(0, 8);
+
+  if (inspList.length === 0 && shipList.length === 0) return null;
+
+  return (
+    <section className="bg-white py-8 md:py-12 border-b border-gray-100">
+      <div className="max-w-[1200px] mx-auto px-4">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg md:text-xl font-bold tracking-wide">실시간 검수</h2>
+          <Link href="/inspection" className="text-xs md:text-sm text-gray-400 hover:text-black transition-colors">
+            더보기 &gt;
+          </Link>
+        </div>
+
+        {inspList.length > 0 && (
+          <div className="overflow-x-auto pb-4 -mx-4 px-4 mb-8">
+            <div className="flex gap-3 md:gap-4" style={{ minWidth: "min-content" }}>
+              {inspList.map((item: any) => (
+                <Link
+                  key={item.id}
+                  href="/inspection"
+                  className="flex-shrink-0 w-[130px] md:w-[160px] group"
+                  data-testid={`home-inspection-${item.id}`}
+                >
+                  <div className="aspect-square rounded-lg overflow-hidden bg-gray-50 mb-2">
+                    {item.mediaType === "video" ? (
+                      <video
+                        src={item.imageUrl}
+                        className="w-full h-full object-cover"
+                        autoPlay loop muted playsInline
+                      />
+                    ) : (
+                      <img
+                        src={item.imageUrl}
+                        alt={item.productName}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed">{item.productName}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {shipList.length > 0 && (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base md:text-lg font-bold tracking-wide">발송전실사</h3>
+            </div>
+            <div className="overflow-x-auto pb-4 -mx-4 px-4">
+              <div className="flex gap-3 md:gap-4" style={{ minWidth: "min-content" }}>
+                {shipList.map((item: any) => (
+                  <Link
+                    key={item.id}
+                    href="/inspection"
+                    className="flex-shrink-0 w-[130px] md:w-[160px] group"
+                    data-testid={`home-shipping-${item.id}`}
+                  >
+                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-50 mb-2">
+                      {item.mediaType === "video" ? (
+                        <video
+                          src={item.imageUrl}
+                          className="w-full h-full object-cover"
+                          autoPlay loop muted playsInline
+                        />
+                      ) : (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.brandName}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      )}
+                    </div>
+                    <p className="text-xs font-semibold text-gray-800">{item.brandName}</p>
+                    <p className="text-[10px] text-gray-400">{item.photoDate} {item.customerName}</p>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   const { data: productsData } = useQuery({
     queryKey: ['/api/products/home'],
@@ -429,6 +539,7 @@ export default function Home() {
       <main>
         <MainBannerSlider />
         <QuickMenu />
+        <InspectionSection />
         <TopBrandSection />
         <ForYouSection products={products} brands={brands} />
       </main>
