@@ -466,12 +466,10 @@ export class DatabaseStorage implements IStorage {
     const results: { brand: Brand; productCount: number }[] = [];
     for (const brand of allBrands) {
       const productCount = countMap.get(brand.id) || 0;
-      if (productCount > 0) {
-        results.push({ brand, productCount });
-      }
+      results.push({ brand, productCount });
     }
     
-    return results.sort((a, b) => b.productCount - a.productCount);
+    return results;
   }
 
   async getBrand(id: string): Promise<Brand | undefined> {

@@ -608,10 +608,14 @@ export async function registerRoutes(
     try {
       const limit = parseInt(req.query.limit as string) || 15;
       const allBrands = await storage.getBrandsWithProductCount();
+      const rolexEntry = allBrands.find(b => b.brand.name === '롤렉스');
       const sorted = allBrands
-        .filter(b => b.productCount > 0)
+        .filter(b => b.productCount > 0 && b.brand.name !== '롤렉스')
         .sort((a, b) => b.productCount - a.productCount)
-        .slice(0, limit);
+        .slice(0, rolexEntry ? limit - 1 : limit);
+      if (rolexEntry) {
+        sorted.unshift(rolexEntry);
+      }
 
       const priorityCategories = ['bags', 'clothing', 'jewelry', 'wallets', 'women', 'men', 'golf', 'new-arrivals', 'shoes'];
 
