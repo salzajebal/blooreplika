@@ -2067,7 +2067,7 @@ export default function Admin() {
       </div>
       
       <div className="container mx-auto px-4 py-6">
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+        <div className="flex gap-2 mb-6 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0" style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "thin" }}>
           {adminRole === "super_admin" && (
             <>
               <Button
