@@ -235,6 +235,31 @@ export default function Admin() {
   ];
   const [selectedBagstyleCategories, setSelectedBagstyleCategories] = useState<string[]>([]);
 
+  const BAG_SUBCATEGORIES = [
+    { id: "e010", name: "숄더백", count: 12140 },
+    { id: "e020", name: "토트백", count: 7675 },
+    { id: "e030", name: "클러치백", count: 2025 },
+    { id: "e050", name: "백팩", count: 1712 },
+    { id: "e060", name: "파우치백", count: 623 },
+    { id: "e070", name: "크로스백", count: 2819 },
+    { id: "e080", name: "벨트백/새들/슬링", count: 1162 },
+    { id: "e090", name: "미니백", count: 763 },
+    { id: "e0a0", name: "메신져/서류가방", count: 958 },
+    { id: "e0b0", name: "여행가방", count: 443 },
+    { id: "e0d0", name: "캐리어", count: 234 },
+    { id: "e0e0", name: "기타", count: 387 },
+  ];
+  const [selectedBagSubcategories, setSelectedBagSubcategories] = useState<string[]>([]);
+  const [clearBeforeBags, setClearBeforeBags] = useState(false);
+  const [bagCrawlProgress, setBagCrawlProgress] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    message: string;
+    subcategory: string;
+  }>({ status: 'idle', total: 0, current: 0, message: '', subcategory: '' });
+  const bagCrawlIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const [bloostoreProgress, setBloostoreProgress] = useState<{
     status: 'idle' | 'running' | 'completed' | 'error';
     total: number;
@@ -417,6 +442,70 @@ export default function Admin() {
 
   const deselectAllBagstyleCategories = () => {
     setSelectedBagstyleCategories([]);
+  };
+
+  const fetchBagCrawlProgress = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bags/progress", { method: "GET" });
+      const data = await res.json();
+      if (data.success) {
+        setBagCrawlProgress({
+          status: data.status,
+          total: data.total,
+          current: data.current,
+          message: data.message,
+          subcategory: data.subcategory || '',
+        });
+        if (data.status === 'completed' || data.status === 'error') {
+          if (bagCrawlIntervalRef.current) {
+            clearInterval(bagCrawlIntervalRef.current);
+            bagCrawlIntervalRef.current = null;
+          }
+          fetchProductCount();
+          fetchProducts();
+        }
+      }
+    } catch {}
+  };
+
+  const startBagCrawl = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bags/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clearExistingBags: clearBeforeBags,
+          selectedSubcategories: selectedBagSubcategories.length > 0 ? selectedBagSubcategories : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const subText = selectedBagSubcategories.length > 0
+          ? `${selectedBagSubcategories.length}개 소분류`
+          : "전체 소분류";
+        toast({ title: "가방 크롤링 시작", description: `${subText} 크롤링이 시작되었습니다.` });
+        setBagCrawlProgress({ status: 'running', total: 0, current: 0, message: '시작 중...', subcategory: '' });
+        bagCrawlIntervalRef.current = setInterval(fetchBagCrawlProgress, 500);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "가방 크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+
+  const toggleBagSubcategory = (id: string) => {
+    setSelectedBagSubcategories(prev =>
+      prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
+    );
+  };
+
+  const selectAllBagSubcategories = () => {
+    setSelectedBagSubcategories(BAG_SUBCATEGORIES.map(s => s.id));
+  };
+
+  const deselectAllBagSubcategories = () => {
+    setSelectedBagSubcategories([]);
   };
 
   const fetchBloostoreProgress = async () => {
@@ -5204,6 +5293,151 @@ export default function Admin() {
                     <li className="flex items-start gap-2">
                       <span className="text-teal-500 mt-1">•</span>
                       <span>브랜드 정보도 자동으로 생성됩니다.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* Bag-Only Crawl Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Download className="w-5 h-5 text-purple-600" />
+                  가방 전체 크롤링 (bagstyle.site)
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">bagstyle.site에서 가방 카테고리(e0)의 12개 소분류, 약 30,960개 상품을 크롤링합니다.</p>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <input
+                        data-testid="checkbox-clear-before-bags"
+                        type="checkbox"
+                        id="clearBeforeBags"
+                        checked={clearBeforeBags}
+                        onChange={(e) => setClearBeforeBags(e.target.checked)}
+                        className="w-4 h-4 text-purple-600 rounded"
+                      />
+                      <label htmlFor="clearBeforeBags" className="text-sm text-gray-700">
+                        크롤링 전 기존 가방 상품 모두 삭제
+                      </label>
+                    </div>
+
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h5 className="font-medium text-gray-800">소분류 선택 (선택안하면 전체)</h5>
+                        <div className="flex gap-2">
+                          <Button data-testid="button-select-all-bag-subcategories" size="sm" variant="outline" onClick={selectAllBagSubcategories}>전체 선택</Button>
+                          <Button data-testid="button-deselect-all-bag-subcategories" size="sm" variant="outline" onClick={deselectAllBagSubcategories}>선택 해제</Button>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {BAG_SUBCATEGORIES.map((sub) => (
+                          <label
+                            key={sub.id}
+                            className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors ${
+                              selectedBagSubcategories.includes(sub.id)
+                                ? 'bg-purple-50 border-purple-300'
+                                : 'bg-white border-gray-200 hover:border-purple-200'
+                            }`}
+                          >
+                            <input
+                              data-testid={`checkbox-bag-sub-${sub.id}`}
+                              type="checkbox"
+                              checked={selectedBagSubcategories.includes(sub.id)}
+                              onChange={() => toggleBagSubcategory(sub.id)}
+                              className="w-4 h-4 text-purple-600 rounded"
+                            />
+                            <span className="text-sm">{sub.name}</span>
+                            <span className="text-xs text-gray-400 ml-auto">({sub.count.toLocaleString()})</span>
+                          </label>
+                        ))}
+                      </div>
+                      {selectedBagSubcategories.length > 0 && (
+                        <p className="text-xs text-purple-600 mt-2">
+                          선택: {selectedBagSubcategories.map(id => BAG_SUBCATEGORIES.find(s => s.id === id)?.name).join(', ')}
+                          {' '}(약 {selectedBagSubcategories.reduce((sum, id) => sum + (BAG_SUBCATEGORIES.find(s => s.id === id)?.count || 0), 0).toLocaleString()}개)
+                        </p>
+                      )}
+                    </div>
+
+                    {bagCrawlProgress.status !== 'idle' && (
+                      <div data-testid="status-bag-crawl-progress" className={`p-4 rounded-lg ${
+                        bagCrawlProgress.status === 'running' ? 'bg-purple-50 border border-purple-200' :
+                        bagCrawlProgress.status === 'completed' ? 'bg-green-50 border border-green-200' :
+                        'bg-red-50 border border-red-200'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          {bagCrawlProgress.status === 'running' && <Loader2 className="w-4 h-4 text-purple-600 animate-spin" />}
+                          {bagCrawlProgress.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                          {bagCrawlProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                          <span className={`text-sm font-medium ${
+                            bagCrawlProgress.status === 'running' ? 'text-purple-700' :
+                            bagCrawlProgress.status === 'completed' ? 'text-green-700' :
+                            'text-red-700'
+                          }`}>
+                            {bagCrawlProgress.message}
+                          </span>
+                        </div>
+
+                        {bagCrawlProgress.status === 'running' && bagCrawlProgress.total > 0 && (
+                          <div className="space-y-2">
+                            <div className="w-full bg-purple-100 rounded-full h-3">
+                              <div
+                                className="bg-purple-500 h-3 rounded-full transition-all duration-300"
+                                style={{ width: `${Math.round((bagCrawlProgress.current / bagCrawlProgress.total) * 100)}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-xs text-purple-600">
+                              <span>{bagCrawlProgress.current.toLocaleString()} / {bagCrawlProgress.total.toLocaleString()}</span>
+                              <span>{Math.round((bagCrawlProgress.current / bagCrawlProgress.total) * 100)}%</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="flex gap-3">
+                      <Button
+                        data-testid="button-start-bag-crawl"
+                        onClick={startBagCrawl}
+                        disabled={bagCrawlProgress.status === 'running'}
+                        className="bg-purple-600 hover:bg-purple-700 text-white flex-1"
+                      >
+                        {bagCrawlProgress.status === 'running' ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            가방 크롤링 중...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4 mr-2" />
+                            {selectedBagSubcategories.length > 0
+                              ? `선택 소분류 크롤링 (${selectedBagSubcategories.length}개)`
+                              : '가방 전체 크롤링 시작 (약 30,960개)'}
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-500 mt-1">•</span>
+                      <span>bagstyle.site의 가방 카테고리에서 12개 소분류별로 상품을 크롤링합니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-500 mt-1">•</span>
+                      <span>중복 상품은 자동으로 제외되며, 상세 이미지도 함께 수집됩니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-purple-500 mt-1">•</span>
+                      <span>약 30,000개 상품 크롤링에 상당한 시간이 소요될 수 있습니다.</span>
                     </li>
                   </ul>
                 </div>

@@ -3553,6 +3553,366 @@ export async function registerRoutes(
     })();
   });
 
+  // ============= BAGSTYLE BAG-ONLY CRAWLER =============
+  const BAGSTYLE_BAG_SUBCATEGORIES = [
+    { id: "e010", name: "숄더백", count: 12140 },
+    { id: "e020", name: "토트백", count: 7675 },
+    { id: "e030", name: "클러치백", count: 2025 },
+    { id: "e050", name: "백팩", count: 1712 },
+    { id: "e060", name: "파우치백", count: 623 },
+    { id: "e070", name: "크로스백", count: 2819 },
+    { id: "e080", name: "벨트백/새들/슬링", count: 1162 },
+    { id: "e090", name: "미니백", count: 763 },
+    { id: "e0a0", name: "메신져/서류가방", count: 958 },
+    { id: "e0b0", name: "여행가방", count: 443 },
+    { id: "e0d0", name: "캐리어", count: 234 },
+    { id: "e0e0", name: "기타", count: 387 },
+  ];
+
+  let bagCrawlProgress: {
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    message: string;
+    subcategory: string;
+    startedAt?: Date;
+    completedAt?: Date;
+  } = { status: 'idle', total: 0, current: 0, message: '', subcategory: '' };
+
+  app.get("/api/admin/crawl/bags/subcategories", requireAdminAuth, async (_req: Request, res: Response) => {
+    res.json({ success: true, subcategories: BAGSTYLE_BAG_SUBCATEGORIES });
+  });
+
+  app.get("/api/admin/crawl/bags/progress", requireAdminAuth, async (_req: Request, res: Response) => {
+    res.json({ success: true, ...bagCrawlProgress });
+  });
+
+  app.post("/api/admin/crawl/bags/start", requireAdminAuth, async (req: Request, res: Response) => {
+    if (bagCrawlProgress.status === 'running') {
+      return res.status(400).json({ success: false, error: "이미 가방 크롤링이 진행 중입니다." });
+    }
+
+    const { clearExistingBags, selectedSubcategories } = req.body;
+
+    bagCrawlProgress.status = 'running';
+    bagCrawlProgress.total = 0;
+    bagCrawlProgress.current = 0;
+    bagCrawlProgress.message = '가방 크롤링 준비 중...';
+    bagCrawlProgress.subcategory = '';
+    bagCrawlProgress.startedAt = new Date();
+
+    res.json({ success: true, message: "가방 크롤링이 시작되었습니다." });
+
+    (async () => {
+      try {
+        const headers = {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Referer": "https://bagstyle.site/",
+        };
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+        const bagCategory = await (async () => {
+          const existingCats = await storage.getAllCategories();
+          const found = existingCats.find(c => c.id === 'bags' || c.slug === 'bags' || c.name === '가방');
+          if (found) return found;
+          return await storage.createCategory({
+            id: 'bags',
+            name: '가방',
+            slug: 'bags',
+            sortOrder: 40,
+            isActive: true,
+          });
+        })();
+
+        if (clearExistingBags) {
+          bagCrawlProgress.message = '기존 가방 상품 삭제 중...';
+          try {
+            const allProducts = await storage.getAllProducts();
+            const bagProducts = allProducts.filter(p => p.categoryId === bagCategory.id);
+            for (const product of bagProducts) {
+              await storage.deleteProduct(product.id);
+            }
+            console.log(`[bags] Deleted ${bagProducts.length} existing bag products`);
+          } catch (err) {
+            console.error('[bags] Error clearing bag products:', err);
+          }
+        }
+
+        const subsToProcess = selectedSubcategories && selectedSubcategories.length > 0
+          ? BAGSTYLE_BAG_SUBCATEGORIES.filter(s => selectedSubcategories.includes(s.id))
+          : BAGSTYLE_BAG_SUBCATEGORIES;
+
+        for (const sub of subsToProcess) {
+          try {
+            const existingSubs = await storage.getAllSubcategories();
+            const foundSub = existingSubs.find(s => s.id === sub.id || (s.categoryId === bagCategory.id && s.slug === sub.id));
+            if (!foundSub) {
+              await storage.createSubcategory({
+                categoryId: bagCategory.id,
+                name: sub.name,
+                slug: sub.id,
+                sortOrder: BAGSTYLE_BAG_SUBCATEGORIES.indexOf(sub) * 10,
+                isActive: true,
+              });
+            }
+          } catch {}
+        }
+
+        let totalInserted = 0;
+        const globalSeenIds = new Set<string>();
+
+        const existingProducts = await storage.getAllProducts();
+        const existingBagNames = new Set(
+          existingProducts.filter(p => p.categoryId === bagCategory.id).map(p => p.name)
+        );
+
+        const brandCache = new Map<string, string>();
+        let cachedBrands: { id: string; name: string; slug: string }[] | null = null;
+        const getAllBrandsCached = async () => {
+          if (!cachedBrands) cachedBrands = await storage.getAllBrands();
+          return cachedBrands;
+        };
+        const getOrCreateBrand = async (brandName: string, productName?: string): Promise<string | undefined> => {
+          const existingBrands = await getAllBrandsCached();
+          if (productName) {
+            const productMatchId = matchBrandFromText(productName, existingBrands);
+            if (productMatchId) return productMatchId;
+          }
+          if (brandName && brandName.trim()) {
+            const brandMatchId = matchBrandFromText(brandName, existingBrands);
+            if (brandMatchId) return brandMatchId;
+            const slug = brandName.toLowerCase().trim().replace(/\s+/g, '').replace(/[^a-z0-9가-힣]/g, '');
+            let found = existingBrands.find(b => b.slug === slug || b.name.toLowerCase() === brandName.toLowerCase().trim());
+            if (!found) {
+              try {
+                found = await storage.createBrand({ name: brandName.trim(), slug, sortOrder: 100, isActive: true });
+                cachedBrands = null;
+              } catch {
+                const retry = (await storage.getAllBrands()).find(b => b.slug === slug);
+                if (retry) found = retry;
+              }
+            }
+            if (found) return found.id;
+          }
+          return undefined;
+        };
+
+        const decodeHtmlEntities = (text: string): string => {
+          return text.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'").replace(/&#x27;/g, "'").replace(/&#x2F;/g, '/').replace(/&nbsp;/g, ' ')
+            .replace(/&#(\d+);/g, (_m, code) => String.fromCharCode(parseInt(code, 10)));
+        };
+
+        const fetchBagProductList = async (caId: string, page: number): Promise<string[]> => {
+          try {
+            const url = `https://bagstyle.site/shop/list.php?ca_id=${caId}&page=${page}`;
+            const response = await fetch(url, { headers });
+            if (!response.ok) return [];
+            const html = await response.text();
+            const matches = (html.match(/it_id=(\d+)/g) || []).map(m => m.replace('it_id=', ''));
+            return Array.from(new Set(matches));
+          } catch { return []; }
+        };
+
+        const fetchBagProductDetail = async (sourceId: string) => {
+          const url = `https://bagstyle.site/shop/item.php?it_id=${sourceId}`;
+          try {
+            const response = await fetch(url, { headers });
+            if (!response.ok) return null;
+            const html = await response.text();
+            const cheerioModule = await import('cheerio');
+            const $ = cheerioModule.load(html);
+
+            let name = '';
+            const h1 = $('h1.sit_tit');
+            if (h1.length) name = decodeHtmlEntities(h1.text().trim());
+            if (!name) {
+              const titleMatch = html.match(/<title>([^|<]+)/i);
+              if (titleMatch) name = decodeHtmlEntities(titleMatch[1].trim());
+            }
+            if (!name) name = `상품 ${sourceId}`;
+
+            let brandName = '';
+            const breadcrumbLinks = $('nav a, .breadcrumb a, ol.breadcrumb a');
+            breadcrumbLinks.each((_i, el) => {
+              const text = $(el).text().trim();
+              if (text && text.length > 1 && text.length < 30 && !text.includes('홈') && !text.includes('HOME')) {
+                const href = $(el).attr('href') || '';
+                if (!href.includes('ca_id=')) brandName = text;
+              }
+            });
+            if (!brandName) {
+              const brandEl = $('td:contains("브랜드")').next('td');
+              if (brandEl.length) brandName = brandEl.text().trim();
+            }
+            if (!brandName) {
+              const brandMatch = html.match(/브랜드[^<]*<\/td>\s*<td[^>]*>([^<]+)/i);
+              if (brandMatch) brandName = brandMatch[1].trim();
+            }
+
+            let price = 0, originalPrice = 0;
+            const salePriceMatch = html.match(/판매가[^0-9]*(\d{1,3}(?:,\d{3})+)/);
+            if (salePriceMatch) price = parseInt(salePriceMatch[1].replace(/,/g, ''), 10);
+            const normalPriceMatch = html.match(/정상가[^0-9]*(\d{1,3}(?:,\d{3})+)/);
+            if (normalPriceMatch) originalPrice = parseInt(normalPriceMatch[1].replace(/,/g, ''), 10);
+            if (!price) {
+              const anyPrice = html.match(/(\d{1,3}(?:,\d{3})+)원/);
+              if (anyPrice) price = parseInt(anyPrice[1].replace(/,/g, ''), 10);
+            }
+
+            let description = '';
+            const explanDiv = $('#sit_inf_explan');
+            if (explanDiv.length) description = explanDiv.text().trim().slice(0, 2000);
+            if (!description) description = name;
+
+            const mainImages: string[] = [];
+            const imgRegex = new RegExp(`https?://bagstyle\\.site/data/item/${sourceId}/[^"'\\s]+\\.(jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP)`, 'gi');
+            const mainImgMatches = html.match(imgRegex) || [];
+            mainImgMatches.forEach(img => {
+              const clean = img.replace(/^http:/, 'https:').split('?')[0];
+              if (!clean.includes('_100x100') && !clean.includes('_77x82') && !mainImages.includes(clean)) mainImages.push(clean);
+            });
+            if (mainImages.length === 0) {
+              const relImgRegex = new RegExp(`/data/item/${sourceId}/[^"'\\s]+\\.(jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP)`, 'gi');
+              const relMatches = html.match(relImgRegex) || [];
+              relMatches.forEach(img => {
+                const full = `https://bagstyle.site${img.split('?')[0]}`;
+                if (!full.includes('_100x100') && !full.includes('_77x82') && !mainImages.includes(full)) mainImages.push(full);
+              });
+            }
+
+            const detailImages: string[] = [];
+            const detailRegex = /(?:https?:\/\/bagstyle\.site)?(?:\/styleis)?\/data\/(?:editor|ebcontents)\/[^"'\s]+\.(jpg|jpeg|png|webp|gif|JPG|JPEG|PNG|WEBP|GIF)/gi;
+            const detailMatches = html.match(detailRegex) || [];
+            detailMatches.forEach(img => {
+              let clean = img.split('?')[0];
+              if (clean.startsWith('/styleis/')) clean = `https://bagstyle.site${clean}`;
+              else if (clean.startsWith('/data/')) clean = `https://bagstyle.site${clean}`;
+              else if (clean.startsWith('/')) clean = `https://bagstyle.site${clean}`;
+              if (!detailImages.includes(clean)) detailImages.push(clean);
+            });
+
+            let rawHtml = '';
+            const explanHtml = $('#sit_inf_explan').html();
+            if (explanHtml) {
+              rawHtml = explanHtml;
+              rawHtml = rawHtml.replace(/src="\/styleis\/data\//g, 'src="https://bagstyle.site/styleis/data/');
+              rawHtml = rawHtml.replace(/src='\/styleis\/data\//g, "src='https://bagstyle.site/styleis/data/");
+              rawHtml = rawHtml.replace(/src="\/data\//g, 'src="https://bagstyle.site/data/');
+              rawHtml = rawHtml.replace(/src='\/data\//g, "src='https://bagstyle.site/data/");
+            }
+
+            const discountPercent = originalPrice > 0 && price < originalPrice
+              ? Math.round(((originalPrice - price) / originalPrice) * 100)
+              : 0;
+
+            return {
+              sourceId,
+              name,
+              brandName,
+              price,
+              originalPrice: originalPrice || price,
+              description,
+              detailContent: rawHtml,
+              imageUrl: mainImages[0] || '',
+              imageUrls: mainImages,
+              detailImageUrls: detailImages,
+              discountPercent,
+              isBest: false,
+            };
+          } catch (err) {
+            console.error(`[bags] Error fetching detail for ${sourceId}:`, err);
+            return null;
+          }
+        };
+
+        for (const sub of subsToProcess) {
+          bagCrawlProgress.subcategory = sub.name;
+          bagCrawlProgress.message = `[${sub.name}] 상품 목록 수집 중...`;
+          console.log(`[bags] Crawling subcategory: ${sub.name} (${sub.id})`);
+
+          const allIds = new Set<string>();
+          let page = 1;
+          let emptyCount = 0;
+
+          while (emptyCount < 3) {
+            const ids = await fetchBagProductList(sub.id, page);
+            let newCount = 0;
+            ids.forEach(id => { if (!allIds.has(id) && !globalSeenIds.has(id)) { allIds.add(id); newCount++; } });
+            if (newCount === 0) emptyCount++; else emptyCount = 0;
+            page++;
+            await delay(50);
+
+            if (page % 20 === 0) {
+              bagCrawlProgress.message = `[${sub.name}] 페이지 ${page} 스캔 중... (${allIds.size}개 발견)`;
+            }
+          }
+
+          if (allIds.size === 0) {
+            console.log(`[bags] ${sub.name}: no products found`);
+            continue;
+          }
+
+          bagCrawlProgress.message = `[${sub.name}] ${allIds.size}개 상품 상세 정보 수집 중...`;
+          bagCrawlProgress.total = allIds.size;
+          bagCrawlProgress.current = 0;
+
+          const idsArray = Array.from(allIds);
+
+          for (let i = 0; i < idsArray.length; i += 10) {
+            const batch = idsArray.slice(i, i + 10);
+            const results = await Promise.all(batch.map(id => fetchBagProductDetail(id)));
+
+            for (const p of results) {
+              if (p && p.price > 0) {
+                if (existingBagNames.has(p.name)) continue;
+                try {
+                  const brandId = await getOrCreateBrand(p.brandName, p.name);
+                  await storage.createProduct({
+                    name: p.name,
+                    categoryId: bagCategory.id,
+                    subcategoryId: sub.id,
+                    brandId: brandId,
+                    price: p.price,
+                    originalPrice: p.originalPrice,
+                    description: p.description,
+                    detailContent: p.detailContent,
+                    imageUrl: p.imageUrl,
+                    imageUrls: p.imageUrls.length > 0 ? p.imageUrls : [p.imageUrl],
+                    detailImageUrls: p.detailImageUrls,
+                    discountPercent: p.discountPercent,
+                    isBest: p.isBest,
+                    isNew: totalInserted % 10 === 0,
+                    isActive: true,
+                  });
+                  totalInserted++;
+                  globalSeenIds.add(p.sourceId);
+                  existingBagNames.add(p.name);
+                } catch {}
+              }
+            }
+
+            bagCrawlProgress.current = Math.min(i + 10, idsArray.length);
+            bagCrawlProgress.message = `[${sub.name}] 저장 중... (${bagCrawlProgress.current}/${allIds.size}) - 총 ${totalInserted}개`;
+            await delay(80);
+          }
+
+          console.log(`[bags] ${sub.name}: ${allIds.size} products, total: ${totalInserted}`);
+        }
+
+        bagCrawlProgress.status = 'completed';
+        bagCrawlProgress.message = `완료! 총 ${totalInserted}개 가방 상품이 크롤링되었습니다.`;
+        bagCrawlProgress.completedAt = new Date();
+        console.log(`[bags] Crawl complete: ${totalInserted} bag products`);
+
+      } catch (error: any) {
+        bagCrawlProgress.status = 'error';
+        bagCrawlProgress.message = `오류: ${error.message || '알 수 없는 오류'}`;
+        console.error('[bags] Crawl error:', error);
+      }
+    })();
+  });
+
   // ============= BLOOSTORE WATCH CRAWLER =============
   const BLOOSTORE_WATCH_BRANDS = [
     { id: "rolex", name: "롤렉스", pageUrl: "/412/", categoryId: "s2023110807dcda38ffad5" },
