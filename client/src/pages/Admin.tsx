@@ -293,6 +293,17 @@ export default function Admin() {
   const [watchDetailOnlyMissing, setWatchDetailOnlyMissing] = useState(true);
   const watchDetailIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [bagDetailProgress, setBagDetailProgress] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    updated: number;
+    skipped: number;
+    message: string;
+  }>({ status: 'idle', total: 0, current: 0, updated: 0, skipped: 0, message: '' });
+  const [bagDetailOnlyMissing, setBagDetailOnlyMissing] = useState(true);
+  const bagDetailIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const [categoryDiscounts, setCategoryDiscounts] = useState<Record<string, number>>({});
   const [applyingCategoryDiscount, setApplyingCategoryDiscount] = useState<string | null>(null);
 
@@ -609,6 +620,49 @@ export default function Admin() {
       }
     } catch (error) {
       toast({ title: "오류", description: "시계 상세이미지 크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+
+  const fetchBagDetailProgress = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bag-details/progress", { method: "GET" });
+      const data = await res.json();
+      if (data.success) {
+        setBagDetailProgress({
+          status: data.status,
+          total: data.total,
+          current: data.current,
+          updated: data.updated || 0,
+          skipped: data.skipped || 0,
+          message: data.message,
+        });
+        if (data.status === 'completed' || data.status === 'error') {
+          if (bagDetailIntervalRef.current) {
+            clearInterval(bagDetailIntervalRef.current);
+            bagDetailIntervalRef.current = null;
+          }
+        }
+      }
+    } catch {}
+  };
+
+  const startBagDetailCrawl = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bag-details/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ onlyMissing: bagDetailOnlyMissing }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "가방 상세이미지 크롤링 시작", description: "상세이미지 크롤링이 시작되었습니다." });
+        setBagDetailProgress({ status: 'running', total: 0, current: 0, updated: 0, skipped: 0, message: '시작 중...' });
+        bagDetailIntervalRef.current = setInterval(fetchBagDetailProgress, 1000);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "가방 상세이미지 크롤링을 시작할 수 없습니다.", variant: "destructive" });
     }
   };
 
@@ -5722,6 +5776,101 @@ export default function Admin() {
                     <li className="flex items-start gap-2">
                       <span className="text-amber-500 mt-1">•</span>
                       <span>상품명으로 bloostore 사이트에서 매칭하여 상세이미지를 가져옵니다.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-pink-50 to-white">
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-pink-600" />
+                  가방 상세이미지 재크롤링
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">기존 가방 상품의 상세 이미지를 bagstyle.site에서 다시 가져옵니다.</p>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="bg-pink-50 border border-pink-200 rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <input
+                      data-testid="checkbox-bag-detail-only-missing"
+                      type="checkbox"
+                      id="bagDetailOnlyMissing"
+                      checked={bagDetailOnlyMissing}
+                      onChange={(e) => setBagDetailOnlyMissing(e.target.checked)}
+                      className="w-4 h-4 text-pink-600 rounded"
+                    />
+                    <label htmlFor="bagDetailOnlyMissing" className="text-sm text-gray-700">
+                      상세이미지가 없는 상품만 크롤링 (체크 해제 시 전체 재크롤링)
+                    </label>
+                  </div>
+
+                  {bagDetailProgress.status !== 'idle' && (
+                    <div data-testid="status-bag-detail-progress" className={`p-4 rounded-lg mb-4 ${
+                      bagDetailProgress.status === 'running' ? 'bg-pink-50 border border-pink-200' :
+                      bagDetailProgress.status === 'completed' ? 'bg-green-50 border border-green-200' :
+                      'bg-red-50 border border-red-200'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        {bagDetailProgress.status === 'running' && <Loader2 className="w-4 h-4 text-pink-600 animate-spin" />}
+                        {bagDetailProgress.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                        {bagDetailProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                        <span className={`text-sm font-medium ${
+                          bagDetailProgress.status === 'running' ? 'text-pink-700' :
+                          bagDetailProgress.status === 'completed' ? 'text-green-700' :
+                          'text-red-700'
+                        }`}>
+                          {bagDetailProgress.message}
+                        </span>
+                      </div>
+
+                      {bagDetailProgress.status === 'running' && bagDetailProgress.total > 0 && (
+                        <div className="space-y-1">
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-pink-500 h-2 rounded-full transition-all"
+                              style={{ width: `${Math.min(100, (bagDetailProgress.current / bagDetailProgress.total) * 100)}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>{bagDetailProgress.current}/{bagDetailProgress.total}</span>
+                            <span>업데이트: {bagDetailProgress.updated} | 건너뜀: {bagDetailProgress.skipped}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {bagDetailProgress.status === 'completed' && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          업데이트: {bagDetailProgress.updated}개 | 건너뜀: {bagDetailProgress.skipped}개
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <Button
+                    data-testid="button-start-bag-detail-crawl"
+                    onClick={startBagDetailCrawl}
+                    disabled={bagDetailProgress.status === 'running'}
+                    className="w-full bg-pink-600 hover:bg-pink-700 text-white"
+                  >
+                    {bagDetailProgress.status === 'running' ? (
+                      <><Loader2 className="w-4 h-4 animate-spin mr-2" /> 크롤링 중...</>
+                    ) : (
+                      <><RefreshCw className="w-4 h-4 mr-2" /> 가방 상세이미지 재크롤링 시작</>
+                    )}
+                  </Button>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-pink-500 mt-1">•</span>
+                      <span>기존 가방 상품의 상세 페이지에서 메인/상세 이미지를 다시 수집합니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-pink-500 mt-1">•</span>
+                      <span>상품 이미지 URL에서 상품 ID를 추출하여 bagstyle.site 상세 페이지에 직접 접근합니다.</span>
                     </li>
                   </ul>
                 </div>

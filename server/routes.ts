@@ -4388,6 +4388,191 @@ export async function registerRoutes(
     })();
   });
 
+  // ============= BAG DETAIL IMAGE RE-CRAWL =============
+  let bagDetailProgress: {
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    updated: number;
+    skipped: number;
+    message: string;
+    startedAt?: Date;
+    completedAt?: Date;
+  } = { status: 'idle', total: 0, current: 0, updated: 0, skipped: 0, message: '' };
+
+  app.get("/api/admin/crawl/bag-details/progress", requireAdminAuth, (_req: Request, res: Response) => {
+    res.json({ success: true, ...bagDetailProgress });
+  });
+
+  app.post("/api/admin/crawl/bag-details/start", requireAdminAuth, async (req: Request, res: Response) => {
+    if (bagDetailProgress.status === 'running') {
+      return res.status(400).json({ success: false, error: "이미 가방 상세이미지 크롤링이 진행 중입니다." });
+    }
+
+    const { onlyMissing } = req.body;
+
+    bagDetailProgress = {
+      status: 'running', total: 0, current: 0, updated: 0, skipped: 0,
+      message: '가방 상품 상세이미지 크롤링 준비 중...', startedAt: new Date(),
+    };
+
+    res.json({ success: true, message: "가방 상세이미지 크롤링이 시작되었습니다." });
+
+    (async () => {
+      try {
+        const headers = {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Referer": "https://bagstyle.site/",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        };
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+        const allProducts = await storage.getAllProducts();
+        const allCategories = await storage.getAllCategories();
+        const bagCategoryIds = allCategories
+          .filter(c => c.slug === 'bags' || c.name === '가방' || c.id === 'bags')
+          .map(c => c.id);
+
+        if (bagCategoryIds.length === 0) {
+          bagDetailProgress.status = 'error';
+          bagDetailProgress.message = '가방 카테고리를 찾을 수 없습니다.';
+          return;
+        }
+
+        let bagProducts = allProducts.filter(p => bagCategoryIds.includes(p.categoryId || ''));
+        if (onlyMissing) {
+          bagProducts = bagProducts.filter(p =>
+            (!p.detailImageUrls || p.detailImageUrls.length === 0) &&
+            (!p.imageUrls || p.imageUrls.length <= 1)
+          );
+        }
+
+        if (bagProducts.length === 0) {
+          bagDetailProgress.status = 'completed';
+          bagDetailProgress.message = '크롤링할 가방 상품이 없습니다.';
+          bagDetailProgress.completedAt = new Date();
+          return;
+        }
+
+        bagDetailProgress.total = bagProducts.length;
+        bagDetailProgress.message = `총 ${bagProducts.length}개 가방 상품 상세이미지 크롤링 시작...`;
+        console.log(`[bag-detail] Starting re-crawl for ${bagProducts.length} products`);
+
+        const cheerioModule = await import('cheerio');
+
+        const extractSourceId = (product: typeof bagProducts[0]): string | null => {
+          const url = product.imageUrl || '';
+          const match = url.match(/\/data\/item\/([^\/]+)\//);
+          if (match) return match[1];
+          if (product.imageUrls && product.imageUrls.length > 0) {
+            for (const imgUrl of product.imageUrls) {
+              const m = imgUrl.match(/\/data\/item\/([^\/]+)\//);
+              if (m) return m[1];
+            }
+          }
+          return null;
+        };
+
+        for (let i = 0; i < bagProducts.length; i++) {
+          const product = bagProducts[i];
+          bagDetailProgress.current = i + 1;
+          bagDetailProgress.message = `(${i + 1}/${bagProducts.length}) ${product.name} 상세이미지 수집 중...`;
+
+          const sourceId = extractSourceId(product);
+          if (!sourceId) {
+            bagDetailProgress.skipped++;
+            console.log(`[bag-detail] No source ID for: ${product.name}`);
+            continue;
+          }
+
+          try {
+            const detailUrl = `https://bagstyle.site/shop/item.php?it_id=${sourceId}`;
+            await delay(200);
+            const response = await fetch(detailUrl, { headers });
+            if (!response.ok) {
+              bagDetailProgress.skipped++;
+              continue;
+            }
+
+            const html = await response.text();
+            const $ = cheerioModule.load(html);
+
+            const mainImages: string[] = [];
+            const imgRegex = new RegExp(`https?://bagstyle\\.site/data/item/${sourceId}/[^"'\\s]+\\.(jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP)`, 'gi');
+            const mainImgMatches = html.match(imgRegex) || [];
+            mainImgMatches.forEach(img => {
+              const clean = img.replace(/^http:/, 'https:').split('?')[0];
+              if (!clean.includes('_100x100') && !clean.includes('_77x82') && !mainImages.includes(clean)) mainImages.push(clean);
+            });
+            if (mainImages.length === 0) {
+              const relImgRegex = new RegExp(`/data/item/${sourceId}/[^"'\\s]+\\.(jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP)`, 'gi');
+              const relMatches = html.match(relImgRegex) || [];
+              relMatches.forEach(img => {
+                const full = `https://bagstyle.site${img.split('?')[0]}`;
+                if (!full.includes('_100x100') && !full.includes('_77x82') && !mainImages.includes(full)) mainImages.push(full);
+              });
+            }
+
+            const detailImages: string[] = [];
+            const detailRegex = /(?:https?:\/\/bagstyle\.site)?(?:\/styleis)?\/data\/(?:editor|ebcontents)\/[^"'\s]+\.(jpg|jpeg|png|webp|gif|JPG|JPEG|PNG|WEBP|GIF)/gi;
+            const detailMatches = html.match(detailRegex) || [];
+            detailMatches.forEach(img => {
+              let clean = img.split('?')[0];
+              if (clean.startsWith('/styleis/')) clean = `https://bagstyle.site${clean}`;
+              else if (clean.startsWith('/data/')) clean = `https://bagstyle.site${clean}`;
+              else if (clean.startsWith('/')) clean = `https://bagstyle.site${clean}`;
+              if (!detailImages.includes(clean)) detailImages.push(clean);
+            });
+
+            let detailContent = '';
+            const explanHtml = $('#sit_inf_explan').html();
+            if (explanHtml) {
+              detailContent = explanHtml
+                .replace(/src="\/styleis\/data\//g, 'src="https://bagstyle.site/styleis/data/')
+                .replace(/src='\/styleis\/data\//g, "src='https://bagstyle.site/styleis/data/")
+                .replace(/src="\/data\//g, 'src="https://bagstyle.site/data/')
+                .replace(/src='\/data\//g, "src='https://bagstyle.site/data/");
+            }
+
+            const hasNewImages = mainImages.length > 0 || detailImages.length > 0;
+
+            if (hasNewImages) {
+              const updateData: Record<string, any> = {};
+              if (mainImages.length > 0) {
+                updateData.imageUrl = mainImages[0];
+                updateData.imageUrls = mainImages;
+              }
+              if (detailImages.length > 0) {
+                updateData.detailImageUrls = detailImages;
+              }
+              if (detailContent) {
+                updateData.detailContent = detailContent;
+              }
+              await storage.updateProduct(product.id, updateData);
+              bagDetailProgress.updated++;
+              console.log(`[bag-detail] Updated ${product.name}: ${mainImages.length} main, ${detailImages.length} detail images`);
+            } else {
+              bagDetailProgress.skipped++;
+            }
+          } catch (err) {
+            bagDetailProgress.skipped++;
+            console.error(`[bag-detail] Error fetching detail for ${product.name}:`, err);
+          }
+        }
+
+        bagDetailProgress.status = 'completed';
+        bagDetailProgress.message = `완료! ${bagDetailProgress.updated}개 상품 업데이트, ${bagDetailProgress.skipped}개 건너뜀 (총 ${bagProducts.length}개)`;
+        bagDetailProgress.completedAt = new Date();
+        console.log(`[bag-detail] Complete: ${bagDetailProgress.updated} updated, ${bagDetailProgress.skipped} skipped`);
+
+      } catch (error: any) {
+        bagDetailProgress.status = 'error';
+        bagDetailProgress.message = `오류: ${error.message || '알 수 없는 오류'}`;
+        console.error('[bag-detail] Error:', error);
+      }
+    })();
+  });
+
   // Sync ALL accessory prices using comprehensive pattern matching
   app.post("/api/admin/sync-accessory-prices", requireAdminAuth, async (_req: Request, res: Response) => {
     try {
