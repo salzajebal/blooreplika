@@ -608,6 +608,7 @@ export const inspections = pgTable("inspections", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   productName: text("product_name").notNull(),
   imageUrl: text("image_url").notNull(),
+  mediaType: text("media_type").notNull().default("image"),
   category: text("category").notNull().default("all"),
   brandName: text("brand_name"),
   sortOrder: integer("sort_order").default(0),
@@ -627,6 +628,7 @@ export type Inspection = typeof inspections.$inferSelect;
 export const shippingPhotos = pgTable("shipping_photos", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   imageUrl: text("image_url").notNull(),
+  mediaType: text("media_type").notNull().default("image"),
   brandName: text("brand_name").notNull(),
   category: text("category").notNull().default("all"),
   customerName: text("customer_name").notNull(),
