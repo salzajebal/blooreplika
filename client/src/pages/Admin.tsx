@@ -269,6 +269,16 @@ export default function Admin() {
   }>({ status: 'idle', total: 0, current: 0, message: '', brand: '' });
   const [clearBeforeBloostore, setClearBeforeBloostore] = useState(false);
   const bloostoreIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [watchImageUpdateProgress, setWatchImageUpdateProgress] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    updated: number;
+    skipped: number;
+    message: string;
+  }>({ status: 'idle', total: 0, current: 0, updated: 0, skipped: 0, message: '' });
+  const [watchImageOnlyMissing, setWatchImageOnlyMissing] = useState(true);
+  const watchImageIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const BLOOSTORE_BRANDS = [
     { id: "rolex", name: "롤렉스" },
@@ -555,6 +565,49 @@ export default function Admin() {
       }
     } catch (error) {
       toast({ title: "오류", description: "시계 크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+
+  const fetchWatchImageUpdateProgress = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bloostore/update-images/progress");
+      const data = await res.json();
+      if (data.success) {
+        setWatchImageUpdateProgress({
+          status: data.status,
+          total: data.total,
+          current: data.current,
+          updated: data.updated,
+          skipped: data.skipped,
+          message: data.message,
+        });
+        if (data.status === 'completed' || data.status === 'error') {
+          if (watchImageIntervalRef.current) {
+            clearInterval(watchImageIntervalRef.current);
+            watchImageIntervalRef.current = null;
+          }
+        }
+      }
+    } catch (e) { /* ignore */ }
+  };
+
+  const startWatchImageUpdate = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bloostore/update-images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ onlyMissing: watchImageOnlyMissing }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "상세이미지 업데이트 시작", description: "기존 시계 상품의 상세이미지를 가져옵니다." });
+        setWatchImageUpdateProgress({ status: 'running', total: 0, current: 0, updated: 0, skipped: 0, message: '시작 중...' });
+        watchImageIntervalRef.current = setInterval(fetchWatchImageUpdateProgress, 500);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "상세이미지 업데이트를 시작할 수 없습니다.", variant: "destructive" });
     }
   };
 
@@ -5575,6 +5628,87 @@ export default function Admin() {
                       <span>크롤링된 상품은 '시계' 카테고리에 저장됩니다.</span>
                     </li>
                   </ul>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4 mt-4">
+                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4 text-orange-600" />
+                    기존 시계 상세이미지 업데이트
+                  </h4>
+                  <p className="text-sm text-gray-500 mb-3">이미 크롤링된 시계 상품들의 상세이미지를 bloostore에서 다시 가져옵니다.</p>
+
+                  <div className="flex items-center gap-3 mb-3">
+                    <input
+                      data-testid="checkbox-watch-image-only-missing"
+                      type="checkbox"
+                      id="watchImageOnlyMissing"
+                      checked={watchImageOnlyMissing}
+                      onChange={(e) => setWatchImageOnlyMissing(e.target.checked)}
+                      className="w-4 h-4 text-orange-600 rounded"
+                    />
+                    <label htmlFor="watchImageOnlyMissing" className="text-sm text-gray-700">
+                      이미지 없는 상품만 업데이트 (체크 해제 시 전체 상품 이미지 재수집)
+                    </label>
+                  </div>
+
+                  <Button
+                    data-testid="button-start-watch-image-update"
+                    onClick={startWatchImageUpdate}
+                    disabled={watchImageUpdateProgress.status === 'running'}
+                    className="bg-orange-600 hover:bg-orange-700 text-white w-full"
+                  >
+                    {watchImageUpdateProgress.status === 'running' ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        상세이미지 업데이트 중...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        기존 시계 상세이미지 가져오기
+                      </>
+                    )}
+                  </Button>
+
+                  {watchImageUpdateProgress.status !== 'idle' && (
+                    <div data-testid="status-watch-image-update" className={`mt-3 p-4 rounded-lg ${
+                      watchImageUpdateProgress.status === 'running' ? 'bg-orange-50 border border-orange-200' :
+                      watchImageUpdateProgress.status === 'completed' ? 'bg-green-50 border border-green-200' :
+                      'bg-red-50 border border-red-200'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        {watchImageUpdateProgress.status === 'running' && <Loader2 className="w-4 h-4 text-orange-600 animate-spin" />}
+                        {watchImageUpdateProgress.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                        {watchImageUpdateProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                        <span className={`text-sm font-medium ${
+                          watchImageUpdateProgress.status === 'running' ? 'text-orange-700' :
+                          watchImageUpdateProgress.status === 'completed' ? 'text-green-700' :
+                          'text-red-700'
+                        }`}>
+                          {watchImageUpdateProgress.message}
+                        </span>
+                      </div>
+                      {watchImageUpdateProgress.status === 'running' && watchImageUpdateProgress.total > 0 && (
+                        <div className="space-y-2">
+                          <div className="w-full bg-orange-100 rounded-full h-2">
+                            <div
+                              className="bg-orange-600 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${Math.round((watchImageUpdateProgress.current / watchImageUpdateProgress.total) * 100)}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>{watchImageUpdateProgress.current} / {watchImageUpdateProgress.total}</span>
+                            <span>업데이트: {watchImageUpdateProgress.updated} | 건너뜀: {watchImageUpdateProgress.skipped}</span>
+                          </div>
+                        </div>
+                      )}
+                      {watchImageUpdateProgress.status === 'completed' && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          업데이트: {watchImageUpdateProgress.updated}개 | 건너뜀: {watchImageUpdateProgress.skipped}개
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
