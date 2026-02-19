@@ -4092,7 +4092,8 @@ export async function registerRoutes(
 
                   crawledNames.add(dedupeKey);
 
-                  let detailImages: string[] = imageUrl ? [imageUrl] : [];
+                  const listingThumbnail = imageUrl || '';
+                  let detailImages: string[] = [];
 
                   const idxMatch = productLink?.match(/idx=(\d+)/);
                   if (idxMatch) {
@@ -4112,31 +4113,62 @@ export async function registerRoutes(
 
                       if (detailResponse.ok) {
                         const detailHtml = await detailResponse.text();
-                        const slideSection = detailHtml.match(/class="[^"]*slide_02[\s\S]{0,30000}/);
-                        if (slideSection) {
-                          const slideImgMatches = slideSection[0].match(/https:\/\/cdn[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
-                          if (slideImgMatches && slideImgMatches.length > 0) {
-                            const uniqueImgs = [...new Set(slideImgMatches)];
-                            detailImages = uniqueImgs;
-                            console.log(`[bloostore] ${productName}: ${uniqueImgs.length} detail images found`);
+
+                        const productImgs: string[] = [];
+                        const slide01Section = detailHtml.match(/class="[^"]*slide_01[\s\S]{0,30000}?class="[^"]*slide_02/);
+                        if (slide01Section) {
+                          const slide01Imgs = slide01Section[0].match(/https:\/\/cdn[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
+                          if (slide01Imgs) {
+                            slide01Imgs.forEach(img => {
+                              if (!productImgs.includes(img)) productImgs.push(img);
+                            });
                           }
                         }
 
-                        if (detailImages.length <= 1) {
-                          const allCdnImgs = detailHtml.match(/https:\/\/cdn-optimized\.imweb\.me\/upload\/[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
-                          if (allCdnImgs && allCdnImgs.length > 0) {
-                            const uniqueUploadImgs = [...new Set(allCdnImgs)];
-                            if (uniqueUploadImgs.length > 1) {
-                              detailImages = uniqueUploadImgs;
-                              console.log(`[bloostore] ${productName}: ${uniqueUploadImgs.length} upload images found (fallback)`);
+                        if (productImgs.length === 0) {
+                          const mainImgSection = detailHtml.match(/class="[^"]*item-detail-img[\s\S]{0,10000}?class="[^"]*slide/);
+                          if (mainImgSection) {
+                            const mainImgs = mainImgSection[0].match(/https:\/\/cdn[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
+                            if (mainImgs) {
+                              mainImgs.forEach(img => {
+                                if (!productImgs.includes(img)) productImgs.push(img);
+                              });
                             }
                           }
+                        }
+
+                        if (productImgs.length === 0) {
+                          const allCdnImgs = detailHtml.match(/https:\/\/cdn-optimized\.imweb\.me\/upload\/[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
+                          if (allCdnImgs) {
+                            const unique = [...new Set(allCdnImgs)];
+                            const slideSection = detailHtml.match(/class="[^"]*slide_02[\s\S]{0,30000}/);
+                            const slide02Imgs = new Set<string>();
+                            if (slideSection) {
+                              const s2matches = slideSection[0].match(/https:\/\/cdn[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
+                              if (s2matches) s2matches.forEach(img => slide02Imgs.add(img));
+                            }
+                            unique.forEach(img => {
+                              if (!slide02Imgs.has(img) && !productImgs.includes(img)) {
+                                productImgs.push(img);
+                              }
+                            });
+                          }
+                        }
+
+                        detailImages = productImgs;
+                        if (detailImages.length > 0) {
+                          console.log(`[bloostore] ${productName}: ${detailImages.length} product-specific images found`);
                         }
                       }
                     } catch (detailErr) {
                       console.error(`[bloostore] Error fetching detail for ${productName}:`, detailErr);
                     }
                   }
+
+                  const finalImageUrl = listingThumbnail || detailImages[0] || '';
+                  const finalImageUrls = listingThumbnail
+                    ? [listingThumbnail, ...detailImages.filter(img => img !== listingThumbnail)]
+                    : detailImages.length > 0 ? detailImages : (listingThumbnail ? [listingThumbnail] : []);
 
                   await storage.createProduct({
                     name: productName,
@@ -4145,8 +4177,8 @@ export async function registerRoutes(
                     description: `${brand.name} ${productName}`,
                     categoryId: watchCategory.id,
                     brandId: brandId || undefined,
-                    imageUrl: detailImages[0] || imageUrl || '',
-                    images: detailImages,
+                    imageUrl: finalImageUrl,
+                    imageUrls: finalImageUrls,
                     isActive: true,
                     isNew: true,
                     isBest: false,
@@ -4309,6 +4341,7 @@ export async function registerRoutes(
 
           let foundIdx: string | null = null;
           let foundBrand: typeof BLOOSTORE_WATCH_BRANDS[0] | null = null;
+          let listingThumbnail: string = '';
 
           for (const brand of BLOOSTORE_WATCH_BRANDS) {
             const cachedProducts = brandProductCache.get(brand.id) || [];
@@ -4316,6 +4349,7 @@ export async function registerRoutes(
             if (match) {
               foundIdx = match.idx;
               foundBrand = brand;
+              listingThumbnail = match.imageUrl || '';
               break;
             }
           }
@@ -4334,38 +4368,73 @@ export async function registerRoutes(
             });
 
             if (!detailResponse.ok) {
-              watchDetailProgress.skipped++;
+              if (listingThumbnail) {
+                await storage.updateProduct(product.id, {
+                  imageUrl: listingThumbnail,
+                  imageUrls: [listingThumbnail],
+                });
+                watchDetailProgress.updated++;
+              } else {
+                watchDetailProgress.skipped++;
+              }
               continue;
             }
 
             const detailHtml = await detailResponse.text();
-            let detailImages: string[] = [];
+            const productImgs: string[] = [];
 
-            const slideSection = detailHtml.match(/class="[^"]*slide_02[\s\S]{0,30000}/);
-            if (slideSection) {
-              const slideImgMatches = slideSection[0].match(/https:\/\/cdn[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
-              if (slideImgMatches && slideImgMatches.length > 0) {
-                detailImages = [...new Set(slideImgMatches)];
+            const slide01Section = detailHtml.match(/class="[^"]*slide_01[\s\S]{0,30000}?class="[^"]*slide_02/);
+            if (slide01Section) {
+              const slide01Imgs = slide01Section[0].match(/https:\/\/cdn[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
+              if (slide01Imgs) {
+                slide01Imgs.forEach(img => {
+                  if (!productImgs.includes(img)) productImgs.push(img);
+                });
               }
             }
 
-            if (detailImages.length <= 1) {
-              const allCdnImgs = detailHtml.match(/https:\/\/cdn-optimized\.imweb\.me\/upload\/[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
-              if (allCdnImgs && allCdnImgs.length > 0) {
-                const uniqueUploadImgs = [...new Set(allCdnImgs)];
-                if (uniqueUploadImgs.length > 1) {
-                  detailImages = uniqueUploadImgs;
+            if (productImgs.length === 0) {
+              const mainImgSection = detailHtml.match(/class="[^"]*item-detail-img[\s\S]{0,10000}?class="[^"]*slide/);
+              if (mainImgSection) {
+                const mainImgs = mainImgSection[0].match(/https:\/\/cdn[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
+                if (mainImgs) {
+                  mainImgs.forEach(img => {
+                    if (!productImgs.includes(img)) productImgs.push(img);
+                  });
                 }
               }
             }
 
-            if (detailImages.length > 0) {
+            if (productImgs.length === 0) {
+              const allCdnImgs = detailHtml.match(/https:\/\/cdn-optimized\.imweb\.me\/upload\/[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
+              if (allCdnImgs) {
+                const unique = [...new Set(allCdnImgs)];
+                const slideSection = detailHtml.match(/class="[^"]*slide_02[\s\S]{0,30000}/);
+                const slide02Imgs = new Set<string>();
+                if (slideSection) {
+                  const s2matches = slideSection[0].match(/https:\/\/cdn[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
+                  if (s2matches) s2matches.forEach(img => slide02Imgs.add(img));
+                }
+                unique.forEach(img => {
+                  if (!slide02Imgs.has(img) && !productImgs.includes(img)) {
+                    productImgs.push(img);
+                  }
+                });
+              }
+            }
+
+            const finalImageUrl = listingThumbnail || productImgs[0] || product.imageUrl || '';
+            const finalImageUrls = listingThumbnail
+              ? [listingThumbnail, ...productImgs.filter(img => img !== listingThumbnail)]
+              : productImgs.length > 0 ? productImgs : (listingThumbnail ? [listingThumbnail] : []);
+
+            if (finalImageUrl || finalImageUrls.length > 0) {
               await storage.updateProduct(product.id, {
-                imageUrl: detailImages[0],
-                imageUrls: detailImages,
+                imageUrl: finalImageUrl,
+                imageUrls: finalImageUrls.length > 0 ? finalImageUrls : [finalImageUrl],
               });
               watchDetailProgress.updated++;
-              console.log(`[watch-detail] Updated ${product.name}: ${detailImages.length} images`);
+              console.log(`[watch-detail] Updated ${product.name}: thumbnail=${listingThumbnail ? 'yes' : 'no'}, ${productImgs.length} detail imgs`);
             } else {
               watchDetailProgress.skipped++;
             }
