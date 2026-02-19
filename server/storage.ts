@@ -25,7 +25,9 @@ import {
   type PointTransaction, type InsertPointTransaction, pointTransactions,
   type SiteSetting, type InsertSiteSetting, siteSettings,
   type VisitorSession, type InsertVisitorSession, visitorSessions,
-  type PageView, type InsertPageView, pageViews
+  type PageView, type InsertPageView, pageViews,
+  type Inspection, type InsertInspection, inspections,
+  type ShippingPhoto, type InsertShippingPhoto, shippingPhotos
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, inArray } from "drizzle-orm";
@@ -233,6 +235,22 @@ export interface IStorage {
   getCategoryProductCount(categoryId: string): Promise<number>;
   applyCategoryDiscount(categoryId: string, discountPercent: number): Promise<number>;
   
+  // Inspections
+  getAllInspections(): Promise<Inspection[]>;
+  getActiveInspections(category?: string): Promise<Inspection[]>;
+  getInspection(id: string): Promise<Inspection | undefined>;
+  createInspection(inspection: InsertInspection): Promise<Inspection>;
+  updateInspection(id: string, inspection: Partial<InsertInspection>): Promise<Inspection | undefined>;
+  deleteInspection(id: string): Promise<boolean>;
+
+  // Shipping Photos
+  getAllShippingPhotos(): Promise<ShippingPhoto[]>;
+  getActiveShippingPhotos(category?: string): Promise<ShippingPhoto[]>;
+  getShippingPhoto(id: string): Promise<ShippingPhoto | undefined>;
+  createShippingPhoto(photo: InsertShippingPhoto): Promise<ShippingPhoto>;
+  updateShippingPhoto(id: string, photo: Partial<InsertShippingPhoto>): Promise<ShippingPhoto | undefined>;
+  deleteShippingPhoto(id: string): Promise<boolean>;
+
   // Visitor Tracking
   trackVisitor(session: InsertVisitorSession): Promise<VisitorSession>;
   updateVisitorActivity(sessionId: string, page?: string): Promise<void>;
@@ -1321,6 +1339,75 @@ export class DatabaseStorage implements IStorage {
       pageViews: pageViewCount,
       recentPages: recentPagesResult
     };
+  }
+  // Inspections
+  async getAllInspections(): Promise<Inspection[]> {
+    return db.select().from(inspections).orderBy(desc(inspections.createdAt));
+  }
+
+  async getActiveInspections(category?: string): Promise<Inspection[]> {
+    const conditions: any[] = [eq(inspections.isActive, true)];
+    if (category && category !== "all") {
+      conditions.push(eq(inspections.category, category));
+    }
+    return db.select().from(inspections)
+      .where(and(...conditions))
+      .orderBy(inspections.sortOrder, desc(inspections.createdAt));
+  }
+
+  async getInspection(id: string): Promise<Inspection | undefined> {
+    const [item] = await db.select().from(inspections).where(eq(inspections.id, id));
+    return item;
+  }
+
+  async createInspection(data: InsertInspection): Promise<Inspection> {
+    const [item] = await db.insert(inspections).values(data).returning();
+    return item;
+  }
+
+  async updateInspection(id: string, data: Partial<InsertInspection>): Promise<Inspection | undefined> {
+    const [item] = await db.update(inspections).set(data).where(eq(inspections.id, id)).returning();
+    return item;
+  }
+
+  async deleteInspection(id: string): Promise<boolean> {
+    const result = await db.delete(inspections).where(eq(inspections.id, id)).returning();
+    return result.length > 0;
+  }
+
+  // Shipping Photos
+  async getAllShippingPhotos(): Promise<ShippingPhoto[]> {
+    return db.select().from(shippingPhotos).orderBy(desc(shippingPhotos.createdAt));
+  }
+
+  async getActiveShippingPhotos(category?: string): Promise<ShippingPhoto[]> {
+    const conditions: any[] = [eq(shippingPhotos.isActive, true)];
+    if (category && category !== "all") {
+      conditions.push(eq(shippingPhotos.category, category));
+    }
+    return db.select().from(shippingPhotos)
+      .where(and(...conditions))
+      .orderBy(desc(shippingPhotos.createdAt));
+  }
+
+  async getShippingPhoto(id: string): Promise<ShippingPhoto | undefined> {
+    const [item] = await db.select().from(shippingPhotos).where(eq(shippingPhotos.id, id));
+    return item;
+  }
+
+  async createShippingPhoto(data: InsertShippingPhoto): Promise<ShippingPhoto> {
+    const [item] = await db.insert(shippingPhotos).values(data).returning();
+    return item;
+  }
+
+  async updateShippingPhoto(id: string, data: Partial<InsertShippingPhoto>): Promise<ShippingPhoto | undefined> {
+    const [item] = await db.update(shippingPhotos).set(data).where(eq(shippingPhotos.id, id)).returning();
+    return item;
+  }
+
+  async deleteShippingPhoto(id: string): Promise<boolean> {
+    const result = await db.delete(shippingPhotos).where(eq(shippingPhotos.id, id)).returning();
+    return result.length > 0;
   }
 }
 

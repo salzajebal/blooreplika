@@ -74,7 +74,7 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff" | "inspection">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [visitorStats, setVisitorStats] = useState<{ realtime: number; today: number; pageViews: number; recentPages: { page: string; count: number }[] } | null>(null);
   
@@ -2081,6 +2081,15 @@ export default function Admin() {
                     {chatConversations.filter(c => c.status === "open").length}
                   </span>
                 )}
+              </Button>
+              <Button
+                data-testid="tab-inspection"
+                variant={activeTab === "inspection" ? "default" : "outline"}
+                onClick={() => setActiveTab("inspection")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "inspection" ? "bg-teal-500 hover:bg-teal-600" : ""}`}
+              >
+                <Search className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">검수 관리</span>
               </Button>
               <Button
                 data-testid="tab-settings"
@@ -5115,6 +5124,10 @@ export default function Admin() {
           </div>
         )}
 
+        {activeTab === "inspection" && adminRole === "super_admin" && (
+          <InspectionAdminTab authToken={authToken} />
+        )}
+
         {activeTab === "staff" && adminRole === "super_admin" && (
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -5276,6 +5289,373 @@ export default function Admin() {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function InspectionAdminTab({ authToken }: { authToken: string }) {
+  const [inspections, setInspections] = useState<any[]>([]);
+  const [shippingPhotos, setShippingPhotos] = useState<any[]>([]);
+  const [activeSection, setActiveSection] = useState<"inspections" | "shipping">("inspections");
+  const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const { toast } = useToast();
+
+  const [inspForm, setInspForm] = useState({
+    productName: "", imageUrl: "", category: "all", brandName: "", sortOrder: 0, isActive: true
+  });
+  const [shipForm, setShipForm] = useState({
+    imageUrl: "", brandName: "", category: "all", customerName: "", photoDate: "", sortOrder: 0, isActive: true
+  });
+
+  const CATEGORIES = [
+    { id: "all", label: "전체" },
+    { id: "clothing", label: "의류" },
+    { id: "bags", label: "가방" },
+    { id: "shoes", label: "신발" },
+    { id: "acc", label: "ACC" },
+  ];
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [inspRes, shipRes] = await Promise.all([
+        fetch("/api/admin/inspections", { headers: { Authorization: `Bearer ${authToken}` } }),
+        fetch("/api/admin/shipping-photos", { headers: { Authorization: `Bearer ${authToken}` } })
+      ]);
+      const inspData = await inspRes.json();
+      const shipData = await shipRes.json();
+      setInspections(inspData.data || []);
+      setShippingPhotos(shipData.data || []);
+    } catch (e) {
+      console.error(e);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  const handleCreateInspection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/inspections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify(inspForm)
+      });
+      if (res.ok) {
+        toast({ title: "검수 항목이 추가되었습니다." });
+        setInspForm({ productName: "", imageUrl: "", category: "all", brandName: "", sortOrder: 0, isActive: true });
+        setShowForm(false);
+        fetchData();
+      }
+    } catch (e) {
+      toast({ title: "오류가 발생했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleCreateShipping = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch("/api/shipping-photos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify(shipForm)
+      });
+      if (res.ok) {
+        toast({ title: "실사 사진이 추가되었습니다." });
+        setShipForm({ imageUrl: "", brandName: "", category: "all", customerName: "", photoDate: "", sortOrder: 0, isActive: true });
+        setShowForm(false);
+        fetchData();
+      }
+    } catch (e) {
+      toast({ title: "오류가 발생했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async (type: "inspection" | "shipping", id: string) => {
+    if (!confirm("삭제하시겠습니까?")) return;
+    const url = type === "inspection" ? `/api/inspections/${id}` : `/api/shipping-photos/${id}`;
+    try {
+      await fetch(url, { method: "DELETE", headers: { Authorization: `Bearer ${authToken}` } });
+      toast({ title: "삭제되었습니다." });
+      fetchData();
+    } catch (e) {
+      toast({ title: "삭제 실패", variant: "destructive" });
+    }
+  };
+
+  const handleToggleActive = async (type: "inspection" | "shipping", id: string, currentActive: boolean) => {
+    const url = type === "inspection" ? `/api/inspections/${id}` : `/api/shipping-photos/${id}`;
+    try {
+      await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ isActive: !currentActive })
+      });
+      fetchData();
+    } catch (e) {
+      toast({ title: "변경 실패", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex gap-2 mb-4">
+        <Button
+          data-testid="btn-section-inspections"
+          variant={activeSection === "inspections" ? "default" : "outline"}
+          onClick={() => { setActiveSection("inspections"); setShowForm(false); }}
+          className={activeSection === "inspections" ? "bg-teal-500 hover:bg-teal-600" : ""}
+        >
+          실시간 검수 ({inspections.length})
+        </Button>
+        <Button
+          data-testid="btn-section-shipping"
+          variant={activeSection === "shipping" ? "default" : "outline"}
+          onClick={() => { setActiveSection("shipping"); setShowForm(false); }}
+          className={activeSection === "shipping" ? "bg-teal-500 hover:bg-teal-600" : ""}
+        >
+          발송전실사 ({shippingPhotos.length})
+        </Button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <h3 className="text-lg font-bold flex items-center gap-2">
+            <Search className="w-5 h-5 text-teal-600" />
+            {activeSection === "inspections" ? "실시간 검수 관리" : "발송전실사 관리"}
+          </h3>
+          <div className="flex gap-2">
+            <Button data-testid="btn-refresh-inspection" variant="outline" size="sm" onClick={fetchData}>
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+            <Button
+              data-testid="btn-add-inspection"
+              onClick={() => setShowForm(!showForm)}
+              className="bg-teal-600 hover:bg-teal-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              추가
+            </Button>
+          </div>
+        </div>
+
+        {showForm && activeSection === "inspections" && (
+          <div className="p-6 bg-teal-50 border-b border-teal-100">
+            <h4 className="font-semibold mb-4">새 검수 항목 추가</h4>
+            <form onSubmit={handleCreateInspection} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">상품명 *</label>
+                  <Input
+                    data-testid="input-insp-name"
+                    placeholder="상품명"
+                    value={inspForm.productName}
+                    onChange={(e) => setInspForm({ ...inspForm, productName: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">이미지 URL *</label>
+                  <Input
+                    data-testid="input-insp-image"
+                    placeholder="https://..."
+                    value={inspForm.imageUrl}
+                    onChange={(e) => setInspForm({ ...inspForm, imageUrl: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+                  <select
+                    data-testid="select-insp-category"
+                    className="w-full border rounded-md px-3 py-2"
+                    value={inspForm.category}
+                    onChange={(e) => setInspForm({ ...inspForm, category: e.target.value })}
+                  >
+                    {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">브랜드명</label>
+                  <Input
+                    data-testid="input-insp-brand"
+                    placeholder="브랜드명"
+                    value={inspForm.brandName}
+                    onChange={(e) => setInspForm({ ...inspForm, brandName: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button data-testid="btn-save-insp" type="submit" className="bg-teal-600 hover:bg-teal-700">
+                  <Check className="w-4 h-4 mr-2" /> 저장
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                  <X className="w-4 h-4 mr-2" /> 취소
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {showForm && activeSection === "shipping" && (
+          <div className="p-6 bg-teal-50 border-b border-teal-100">
+            <h4 className="font-semibold mb-4">새 실사 사진 추가</h4>
+            <form onSubmit={handleCreateShipping} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">이미지 URL *</label>
+                  <Input
+                    data-testid="input-ship-image"
+                    placeholder="https://..."
+                    value={shipForm.imageUrl}
+                    onChange={(e) => setShipForm({ ...shipForm, imageUrl: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">브랜드명 *</label>
+                  <Input
+                    data-testid="input-ship-brand"
+                    placeholder="브랜드명"
+                    value={shipForm.brandName}
+                    onChange={(e) => setShipForm({ ...shipForm, brandName: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+                  <select
+                    data-testid="select-ship-category"
+                    className="w-full border rounded-md px-3 py-2"
+                    value={shipForm.category}
+                    onChange={(e) => setShipForm({ ...shipForm, category: e.target.value })}
+                  >
+                    {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">고객명 * (예: 정**)</label>
+                  <Input
+                    data-testid="input-ship-customer"
+                    placeholder="정**"
+                    value={shipForm.customerName}
+                    onChange={(e) => setShipForm({ ...shipForm, customerName: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">날짜 * (예: 2월 11일)</label>
+                  <Input
+                    data-testid="input-ship-date"
+                    placeholder="2월 11일"
+                    value={shipForm.photoDate}
+                    onChange={(e) => setShipForm({ ...shipForm, photoDate: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button data-testid="btn-save-ship" type="submit" className="bg-teal-600 hover:bg-teal-700">
+                  <Check className="w-4 h-4 mr-2" /> 저장
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setShowForm(false)}>
+                  <X className="w-4 h-4 mr-2" /> 취소
+                </Button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        <div className="p-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-teal-600" />
+              <span className="ml-2">로딩 중...</span>
+            </div>
+          ) : activeSection === "inspections" ? (
+            inspections.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Search className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p>등록된 검수 항목이 없습니다.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {inspections.map((item: any) => (
+                  <div key={item.id} className={`border rounded-lg overflow-hidden ${!item.isActive ? "opacity-50" : ""}`}>
+                    <div className="aspect-square bg-gray-50">
+                      <img src={item.imageUrl} alt={item.productName} className="w-full h-full object-cover" loading="lazy" />
+                    </div>
+                    <div className="p-2">
+                      <p className="text-xs line-clamp-2 mb-1">{item.productName}</p>
+                      <p className="text-[10px] text-gray-400">{item.category} {item.brandName && `| ${item.brandName}`}</p>
+                      <div className="flex gap-1 mt-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-1 text-xs"
+                          onClick={() => handleToggleActive("inspection", item.id, item.isActive)}
+                        >
+                          {item.isActive ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-1 text-xs text-red-500"
+                          onClick={() => handleDelete("inspection", item.id)}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          ) : (
+            shippingPhotos.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <Image className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p>등록된 실사 사진이 없습니다.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {shippingPhotos.map((item: any) => (
+                  <div key={item.id} className={`border rounded-lg overflow-hidden ${!item.isActive ? "opacity-50" : ""}`}>
+                    <div className="aspect-square bg-gray-50">
+                      <img src={item.imageUrl} alt={item.brandName} className="w-full h-full object-cover" loading="lazy" />
+                    </div>
+                    <div className="p-2">
+                      <p className="text-xs font-semibold">{item.brandName}</p>
+                      <p className="text-[10px] text-gray-400">{item.photoDate} {item.customerName}</p>
+                      <p className="text-[10px] text-gray-400">{item.category}</p>
+                      <div className="flex gap-1 mt-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-1 text-xs"
+                          onClick={() => handleToggleActive("shipping", item.id, item.isActive)}
+                        >
+                          {item.isActive ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-1 text-xs text-red-500"
+                          onClick={() => handleDelete("shipping", item.id)}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+        </div>
       </div>
     </div>
   );

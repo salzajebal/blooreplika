@@ -27,6 +27,7 @@ const menuItems = [
   { name: '1:1 비교', path: '/comparison' },
   { name: '베스트리뷰', path: '/reviews' },
   { name: '블로그', path: '/blog' },
+  { name: '검수', path: '/inspection' },
   { name: '라이크잇초이스', path: '/choice' },
   ...categoryNavItems,
   { name: '커뮤니티', path: '/comparison' },

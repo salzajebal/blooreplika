@@ -602,3 +602,45 @@ export const insertPageViewSchema = createInsertSchema(pageViews).omit({
 
 export type InsertPageView = z.infer<typeof insertPageViewSchema>;
 export type PageView = typeof pageViews.$inferSelect;
+
+// Inspections table (실시간 검수)
+export const inspections = pgTable("inspections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productName: text("product_name").notNull(),
+  imageUrl: text("image_url").notNull(),
+  category: text("category").notNull().default("all"),
+  brandName: text("brand_name"),
+  sortOrder: integer("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertInspectionSchema = createInsertSchema(inspections).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertInspection = z.infer<typeof insertInspectionSchema>;
+export type Inspection = typeof inspections.$inferSelect;
+
+// Shipping Photos table (발송 전 실사)
+export const shippingPhotos = pgTable("shipping_photos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  imageUrl: text("image_url").notNull(),
+  brandName: text("brand_name").notNull(),
+  category: text("category").notNull().default("all"),
+  customerName: text("customer_name").notNull(),
+  photoDate: text("photo_date").notNull(),
+  productId: varchar("product_id"),
+  sortOrder: integer("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertShippingPhotoSchema = createInsertSchema(shippingPhotos).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertShippingPhoto = z.infer<typeof insertShippingPhotoSchema>;
+export type ShippingPhoto = typeof shippingPhotos.$inferSelect;
