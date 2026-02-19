@@ -3697,6 +3697,8 @@ export async function registerRoutes(
                 continue;
               }
 
+              const fullListingHtml = data.html;
+
               for (const itemHtml of items) {
                 try {
                   const nameMatch = itemHtml.match(/<h2>(.*?)<\/h2>/);
@@ -3726,6 +3728,52 @@ export async function registerRoutes(
 
                   crawledNames.add(dedupeKey);
 
+                  let detailImages: string[] = imageUrl ? [imageUrl] : [];
+
+                  const idxMatch = productLink?.match(/idx=(\d+)/);
+                  if (idxMatch) {
+                    const idx = idxMatch[1];
+                    const detailUrl = `https://bloostore.co.kr${brand.pageUrl}?idx=${idx}`;
+                    bloostoreProgress.message = `[${brand.name}] 상세 이미지 수집 중... (${productName})`;
+
+                    try {
+                      await delay(500);
+                      const detailResponse = await fetch(detailUrl, {
+                        headers: {
+                          ...headers,
+                          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                          "Accept-Language": "ko-KR,ko;q=0.9",
+                        },
+                      });
+
+                      if (detailResponse.ok) {
+                        const detailHtml = await detailResponse.text();
+                        const slideSection = detailHtml.match(/class="[^"]*slide_02[\s\S]{0,30000}/);
+                        if (slideSection) {
+                          const slideImgMatches = slideSection[0].match(/https:\/\/cdn[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
+                          if (slideImgMatches && slideImgMatches.length > 0) {
+                            const uniqueImgs = [...new Set(slideImgMatches)];
+                            detailImages = uniqueImgs;
+                            console.log(`[bloostore] ${productName}: ${uniqueImgs.length} detail images found`);
+                          }
+                        }
+
+                        if (detailImages.length <= 1) {
+                          const allCdnImgs = detailHtml.match(/https:\/\/cdn-optimized\.imweb\.me\/upload\/[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
+                          if (allCdnImgs && allCdnImgs.length > 0) {
+                            const uniqueUploadImgs = [...new Set(allCdnImgs)];
+                            if (uniqueUploadImgs.length > 1) {
+                              detailImages = uniqueUploadImgs;
+                              console.log(`[bloostore] ${productName}: ${uniqueUploadImgs.length} upload images found (fallback)`);
+                            }
+                          }
+                        }
+                      }
+                    } catch (detailErr) {
+                      console.error(`[bloostore] Error fetching detail for ${productName}:`, detailErr);
+                    }
+                  }
+
                   await storage.createProduct({
                     name: productName,
                     price: price,
@@ -3733,8 +3781,8 @@ export async function registerRoutes(
                     description: `${brand.name} ${productName}`,
                     categoryId: watchCategory.id,
                     brandId: brandId || undefined,
-                    imageUrl: imageUrl || '',
-                    images: imageUrl ? [imageUrl] : [],
+                    imageUrl: detailImages[0] || imageUrl || '',
+                    images: detailImages,
                     isActive: true,
                     isNew: true,
                     isBest: false,
@@ -3743,7 +3791,7 @@ export async function registerRoutes(
                   totalInserted++;
                   brandProductCount++;
                   bloostoreProgress.current = totalInserted;
-                  bloostoreProgress.message = `[${brand.name}] ${brandProductCount}개 상품 수집 (페이지 ${page})`;
+                  bloostoreProgress.message = `[${brand.name}] ${brandProductCount}개 상품 수집 (페이지 ${page}, 이미지 ${detailImages.length}장)`;
                 } catch (itemErr) {
                   console.error(`[bloostore] Error processing item in ${brand.name}:`, itemErr);
                 }
