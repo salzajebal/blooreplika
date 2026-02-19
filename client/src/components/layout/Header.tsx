@@ -16,6 +16,7 @@ const categoryNavItems = [
   { name: '신발', path: '/products/shoes' },
   { name: '골프', path: '/products/golf' },
   { name: '쥬얼리/잡화', path: '/products/jewelry' },
+  { name: '시계', path: '/products/watches' },
   { name: '당일배송', path: '/products/sameday' },
   { name: '할인상품', path: '/products/sale' },
   { name: '베스트상품', path: '/products/best' },

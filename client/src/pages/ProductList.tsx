@@ -38,6 +38,7 @@ const CATEGORIES = [
   { id: "shoes", name: "신발", slug: "shoes" },
   { id: "golf", name: "골프", slug: "golf" },
   { id: "jewelry", name: "쥬얼리/잡화", slug: "jewelry" },
+  { id: "watches", name: "시계", slug: "watches" },
   { id: "sameday", name: "당일배송", slug: "sameday" },
   { id: "sale", name: "할인상품", slug: "sale" },
   { id: "best", name: "베스트상품", slug: "best" },
