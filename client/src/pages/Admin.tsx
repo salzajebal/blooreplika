@@ -718,15 +718,23 @@ export default function Admin() {
 
   const startPuppeteerBatchCrawl = async () => {
     try {
-      const watchCategory = categories.find((c: any) => c.slug === 'watches' || c.name === '시계');
       const res = await fetchWithAuth("/api/admin/crawl/puppeteer-details/batch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           onlyMissing: puppeteerOnlyMissing,
-          categoryId: watchCategory?.id,
         }),
       });
+      if (!res.ok) {
+        const text = await res.text();
+        try {
+          const errData = JSON.parse(text);
+          toast({ title: "오류", description: errData.error || `서버 오류 (${res.status})`, variant: "destructive" });
+        } catch {
+          toast({ title: "오류", description: `서버 오류 (${res.status})`, variant: "destructive" });
+        }
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         toast({ title: "상세이미지 크롤링 시작", description: "상세이미지를 가져오고 있습니다." });
@@ -735,8 +743,9 @@ export default function Admin() {
       } else {
         toast({ title: "오류", description: data.error, variant: "destructive" });
       }
-    } catch (error) {
-      toast({ title: "오류", description: "상세이미지 크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    } catch (error: any) {
+      console.error("[crawl] Error:", error);
+      toast({ title: "오류", description: error?.message || "상세이미지 크롤링을 시작할 수 없습니다.", variant: "destructive" });
     }
   };
 

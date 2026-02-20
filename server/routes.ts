@@ -4544,6 +4544,8 @@ export async function registerRoutes(
   });
 
   app.post("/api/admin/crawl/puppeteer-details/batch", requireAdminAuth, async (req: Request, res: Response) => {
+    console.log("[detail-batch] Endpoint called, body:", JSON.stringify(req.body));
+    try {
     if (puppeteerDetailProgress.status === 'running') {
       return res.status(400).json({ success: false, error: "이미 상세이미지 크롤링이 진행 중입니다." });
     }
@@ -4624,6 +4626,12 @@ export async function registerRoutes(
         console.error('[detail-batch] Error:', error);
       }
     })();
+    } catch (err: any) {
+      console.error("[detail-batch] Handler error:", err);
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, error: err.message || "서버 오류가 발생했습니다." });
+      }
+    }
   });
 
   // ============= BAG DETAIL IMAGE RE-CRAWL =============
