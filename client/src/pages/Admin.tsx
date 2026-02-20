@@ -10,7 +10,7 @@ import {
   Lock, User, Mail, Phone, CheckCircle, XCircle,
   Star, FileText, Bell, Calendar, Tag,
   Clock, Snowflake, Unlock, Settings, Link2, Upload,
-  MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2, Search, Shield, Image
+  MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2, Search, Shield, Image, Globe
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage, Order, CouponPayment } from "@shared/schema";
@@ -304,6 +304,17 @@ export default function Admin() {
   const [bagDetailOnlyMissing, setBagDetailOnlyMissing] = useState(true);
   const bagDetailIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [bagDetailCount, setBagDetailCount] = useState<{ total: number; missing: number } | null>(null);
+
+  const [puppeteerProgress, setPuppeteerProgress] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    updated: number;
+    skipped: number;
+    message: string;
+  }>({ status: 'idle', total: 0, current: 0, updated: 0, skipped: 0, message: '' });
+  const [puppeteerOnlyMissing, setPuppeteerOnlyMissing] = useState(true);
+  const puppeteerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const [categoryDiscounts, setCategoryDiscounts] = useState<Record<string, number>>({});
   const [applyingCategoryDiscount, setApplyingCategoryDiscount] = useState<string | null>(null);
@@ -679,6 +690,71 @@ export default function Admin() {
       }
     } catch (error) {
       toast({ title: "오류", description: "가방 상세이미지 크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+
+  const fetchPuppeteerProgress = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/puppeteer-details/progress", { method: "GET" });
+      const data = await res.json();
+      if (data.success) {
+        setPuppeteerProgress({
+          status: data.status,
+          total: data.total,
+          current: data.current,
+          updated: data.updated || 0,
+          skipped: data.skipped || 0,
+          message: data.message,
+        });
+        if (data.status === 'completed' || data.status === 'error') {
+          if (puppeteerIntervalRef.current) {
+            clearInterval(puppeteerIntervalRef.current);
+            puppeteerIntervalRef.current = null;
+          }
+        }
+      }
+    } catch {}
+  };
+
+  const startPuppeteerBatchCrawl = async () => {
+    try {
+      const watchCategory = categories.find((c: any) => c.slug === 'watches' || c.name === '시계');
+      const res = await fetchWithAuth("/api/admin/crawl/puppeteer-details/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          onlyMissing: puppeteerOnlyMissing,
+          categoryId: watchCategory?.id,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "Puppeteer 상세이미지 크롤링 시작", description: "헤드리스 브라우저로 상세이미지를 가져오고 있습니다." });
+        setPuppeteerProgress({ status: 'running', total: 0, current: 0, updated: 0, skipped: 0, message: '시작 중...' });
+        puppeteerIntervalRef.current = setInterval(fetchPuppeteerProgress, 2000);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "Puppeteer 상세이미지 크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+
+  const fetchSingleDetailImages = async (productId: string) => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/puppeteer-details/single", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "상세이미지 가져오기 시작", description: "헤드리스 브라우저로 상세이미지를 가져오고 있습니다. 잠시 후 새로고침하세요." });
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "상세이미지를 가져올 수 없습니다.", variant: "destructive" });
     }
   };
 
@@ -5792,6 +5868,105 @@ export default function Admin() {
                     <li className="flex items-start gap-2">
                       <span className="text-amber-500 mt-1">•</span>
                       <span>상품명으로 bloostore 사이트에서 매칭하여 상세이미지를 가져옵니다.</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-violet-50 to-white">
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-violet-600" />
+                  Puppeteer 상세이미지 크롤링 (헤드리스 브라우저)
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">헤드리스 브라우저를 사용하여 JavaScript로 로딩되는 상세이미지(상품 설명 이미지)를 자동으로 가져옵니다.</p>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="bg-violet-50 border border-violet-200 rounded-lg p-4">
+                  <div className="flex items-center gap-3 mb-4">
+                    <input
+                      data-testid="checkbox-puppeteer-only-missing"
+                      type="checkbox"
+                      id="puppeteerOnlyMissing"
+                      checked={puppeteerOnlyMissing}
+                      onChange={(e) => setPuppeteerOnlyMissing(e.target.checked)}
+                      className="w-4 h-4 text-violet-600 rounded"
+                    />
+                    <label htmlFor="puppeteerOnlyMissing" className="text-sm text-gray-700">
+                      상세이미지가 없는 상품만 크롤링
+                    </label>
+                  </div>
+
+                  {puppeteerProgress.status !== 'idle' && (
+                    <div data-testid="status-puppeteer-progress" className={`p-4 rounded-lg mb-4 ${
+                      puppeteerProgress.status === 'running' ? 'bg-violet-50 border border-violet-200' :
+                      puppeteerProgress.status === 'completed' ? 'bg-green-50 border border-green-200' :
+                      'bg-red-50 border border-red-200'
+                    }`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        {puppeteerProgress.status === 'running' && <Loader2 className="w-4 h-4 text-violet-600 animate-spin" />}
+                        {puppeteerProgress.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                        {puppeteerProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                        <span className={`text-sm font-medium ${
+                          puppeteerProgress.status === 'running' ? 'text-violet-700' :
+                          puppeteerProgress.status === 'completed' ? 'text-green-700' :
+                          'text-red-700'
+                        }`}>
+                          {puppeteerProgress.message}
+                        </span>
+                      </div>
+
+                      {puppeteerProgress.status === 'running' && puppeteerProgress.total > 0 && (
+                        <div className="space-y-1">
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-violet-500 h-2 rounded-full transition-all"
+                              style={{ width: `${Math.min(100, (puppeteerProgress.current / puppeteerProgress.total) * 100)}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>{puppeteerProgress.current}/{puppeteerProgress.total}</span>
+                            <span>업데이트: {puppeteerProgress.updated} | 건너뜀: {puppeteerProgress.skipped}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {puppeteerProgress.status === 'completed' && (
+                        <div className="text-xs text-gray-500 mt-1">
+                          업데이트: {puppeteerProgress.updated}개 | 건너뜀: {puppeteerProgress.skipped}개
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <Button
+                    data-testid="button-start-puppeteer-crawl"
+                    onClick={startPuppeteerBatchCrawl}
+                    disabled={puppeteerProgress.status === 'running'}
+                    className="w-full bg-violet-600 hover:bg-violet-700 text-white"
+                  >
+                    {puppeteerProgress.status === 'running' ? (
+                      <><Loader2 className="w-4 h-4 animate-spin mr-2" /> 크롤링 중...</>
+                    ) : (
+                      <><Globe className="w-4 h-4 mr-2" /> Puppeteer 상세이미지 일괄 크롤링 시작</>
+                    )}
+                  </Button>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4">
+                  <ul className="text-sm text-gray-600 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-violet-500 mt-1">•</span>
+                      <span>실제 브라우저(Chromium)를 사용하여 JavaScript로 로딩되는 상세이미지를 가져옵니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-violet-500 mt-1">•</span>
+                      <span>bloostore 상품 페이지의 상세 설명 영역에 있는 이미지를 자동 추출합니다.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-violet-500 mt-1">•</span>
+                      <span>상품당 약 5~10초 소요되며, 전체 상품 수에 따라 시간이 걸릴 수 있습니다.</span>
                     </li>
                   </ul>
                 </div>

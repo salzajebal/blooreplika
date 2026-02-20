@@ -136,6 +136,8 @@ export const products = pgTable("products", {
   imageUrl: text("image_url"),
   imageUrls: text("image_urls").array().default([]),
   detailImageUrls: text("detail_image_urls").array().default([]),
+  sourceUrl: text("source_url"),
+  sourceIdx: integer("source_idx"),
   options: text("options"),
   stock: integer("stock").default(0),
   isBest: boolean("is_best").default(false),
