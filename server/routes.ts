@@ -4289,28 +4289,35 @@ export async function registerRoutes(
         console.log(`[watch-detail] Starting re-crawl for ${watchProducts.length} products`);
 
         const allSiteProducts: Array<{ name: string; idx: number; imageUrl: string; brand: string }> = [];
+        const seenIdx = new Set<number>();
 
         const fetchBrandListingProducts = async (brand: typeof BLOOSTORE_WATCH_BRANDS[0]) => {
           let page = 1;
-          let hasMore = true;
-          while (hasMore) {
+          const MAX_PAGES = 50;
+          while (page <= MAX_PAGES) {
             try {
               const listUrl = `https://bloostore.co.kr${brand.pageUrl}?page=${page}`;
               watchDetailProgress.message = `[${brand.name}] 상품 목록 수집 중... (페이지 ${page})`;
               const response = await fetch(listUrl, {
                 headers: { ...headers, "Accept": "text/html", "Accept-Language": "ko-KR,ko;q=0.9" },
               });
-              if (!response.ok) { hasMore = false; continue; }
+              if (!response.ok) break;
               const html = await response.text();
 
               const propRegex = /data-product-properties='\{(.*?)\}'/g;
               let m;
-              let foundCount = 0;
+              let newCount = 0;
+              let duplicateCount = 0;
               while ((m = propRegex.exec(html)) !== null) {
                 try {
                   const text = m[1].replace(/&quot;/g, '"');
                   const data = JSON.parse('{' + text + '}');
                   if (data.name && data.idx && data.image_url) {
+                    if (seenIdx.has(data.idx)) {
+                      duplicateCount++;
+                      continue;
+                    }
+                    seenIdx.add(data.idx);
                     const cleanUrl = data.image_url.split('?')[0];
                     allSiteProducts.push({
                       name: data.name.trim(),
@@ -4318,17 +4325,18 @@ export async function registerRoutes(
                       imageUrl: cleanUrl,
                       brand: brand.name,
                     });
-                    foundCount++;
+                    newCount++;
                   }
                 } catch {}
               }
 
-              console.log(`[watch-detail] ${brand.name} page ${page}: ${foundCount} products`);
-              if (foundCount === 0) hasMore = false;
-              else { page++; await delay(500); }
+              console.log(`[watch-detail] ${brand.name} page ${page}: ${newCount} new, ${duplicateCount} duplicates`);
+              if (newCount === 0) break;
+              page++;
+              await delay(500);
             } catch (err) {
               console.error(`[watch-detail] Error fetching ${brand.name} page ${page}:`, err);
-              hasMore = false;
+              break;
             }
           }
         };
