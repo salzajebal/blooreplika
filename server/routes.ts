@@ -3724,8 +3724,7 @@ export async function registerRoutes(
             const response = await fetch(url, { headers });
             if (!response.ok) return null;
             const html = await response.text();
-            const cheerioModule = await import('cheerio');
-            const $ = cheerioModule.load(html);
+            const $ = cheerio.load(html);
 
             let name = '';
             const h1 = $('h1.sit_tit');
@@ -4466,8 +4465,7 @@ export async function registerRoutes(
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
     });
     const html = await resp.text();
-    const cheerioModule = await import('cheerio');
-    const $ = cheerioModule.load(html);
+    const $ = cheerio.load(html);
 
     const detailImages: string[] = [];
 
@@ -4476,7 +4474,7 @@ export async function registerRoutes(
       const templateEl = $(sel);
       if (templateEl.length > 0) {
         const templateHtml = templateEl.html() || '';
-        const $t = cheerioModule.load(templateHtml);
+        const $t = cheerio.load(templateHtml);
         $t('img').each((_i: number, el: any) => {
           const src = $t(el).attr('src') || $t(el).attr('data-original') || $t(el).attr('data-src') || '';
           if (src && src.includes('cdn') && !detailImages.includes(src.split('?')[0])) {
@@ -4490,7 +4488,7 @@ export async function registerRoutes(
       const templateRegex = /prodDetailPC['"]?[^>]*>([\s\S]*?)<\/(?:template|script)>/i;
       const match = html.match(templateRegex);
       if (match && match[1]) {
-        const $t = cheerioModule.load(match[1]);
+        const $t = cheerio.load(match[1]);
         $t('img').each((_i: number, el: any) => {
           const src = $t(el).attr('src') || $t(el).attr('data-original') || $t(el).attr('data-src') || '';
           if (src && src.includes('cdn') && !detailImages.includes(src.split('?')[0])) {
@@ -4720,8 +4718,6 @@ export async function registerRoutes(
         bagDetailProgress.message = `총 ${bagProducts.length}개 가방 상품 상세이미지 크롤링 시작...`;
         console.log(`[bag-detail] Starting re-crawl for ${bagProducts.length} products`);
 
-        const cheerioModule = await import('cheerio');
-
         const extractSourceId = (product: typeof bagProducts[0]): string | null => {
           const url = product.imageUrl || '';
           const match = url.match(/\/data\/item\/([^\/]+)\//);
@@ -4757,7 +4753,7 @@ export async function registerRoutes(
             }
 
             const html = await response.text();
-            const $ = cheerioModule.load(html);
+            const $ = cheerio.load(html);
 
             const mainImages: string[] = [];
             const imgRegex = new RegExp(`https?://bagstyle\\.site/data/item/${sourceId}/[^"'\\s]+\\.(jpg|jpeg|png|webp|JPG|JPEG|PNG|WEBP)`, 'gi');
