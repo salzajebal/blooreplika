@@ -4025,6 +4025,12 @@ export async function registerRoutes(
         let totalInserted = 0;
         const crawledNames = new Set<string>();
 
+        const existingWatchNames = new Set(
+          (await storage.getAllProducts())
+            .filter(p => p.categoryId === watchCategory.id)
+            .map(p => p.name)
+        );
+
         for (const brand of brandsToProcess) {
           bloostoreProgress.brand = brand.name;
           bloostoreProgress.message = `[${brand.name}] 상품 수집 중...`;
@@ -4034,6 +4040,8 @@ export async function registerRoutes(
           const pageSize = 20;
           let hasMore = true;
           let brandProductCount = 0;
+
+          const seenProductIdx = new Set<number>();
 
           while (hasMore) {
             try {
@@ -4053,132 +4061,111 @@ export async function registerRoutes(
                 continue;
               }
 
-              const itemPattern = /<div class="item-wrap"[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/g;
-              const items = data.html.match(itemPattern);
+              const pageProducts: Array<{ name: string; idx: number; imageUrl: string; price: number }> = [];
+              let newOnPage = 0;
 
-              if (!items || items.length === 0) {
+              const $ = cheerio.load(data.html);
+              $('[data-product-properties]').each((_i, el) => {
+                try {
+                  const rawAttr = $(el).attr('data-product-properties') || '';
+                  const parsed = JSON.parse(rawAttr);
+                  if (parsed.name && parsed.idx) {
+                    if (seenProductIdx.has(parsed.idx)) return;
+                    seenProductIdx.add(parsed.idx);
+                    const cleanImgUrl = parsed.image_url ? parsed.image_url.split('?')[0] : '';
+                    pageProducts.push({
+                      name: parsed.name.trim(),
+                      idx: parsed.idx,
+                      imageUrl: cleanImgUrl,
+                      price: parsed.price || 0,
+                    });
+                    newOnPage++;
+                  }
+                } catch (parseErr) {
+                  console.error(`[bloostore] Failed to parse product properties:`, parseErr);
+                }
+              });
+
+              console.log(`[bloostore] ${brand.name} page ${page}: ${newOnPage} new products (${$('[data-product-properties]').length} total on page)`);
+
+              if (newOnPage === 0) {
                 hasMore = false;
                 continue;
               }
 
-              const fullListingHtml = data.html;
-
-              for (const itemHtml of items) {
+              for (const prod of pageProducts) {
                 try {
-                  const nameMatch = itemHtml.match(/<h2>(.*?)<\/h2>/);
-                  const priceMatch = itemHtml.match(/class="pay[^"]*"[^>]*>[\s]*([\d,]+)원/);
-                  const imgMatch = itemHtml.match(/src="(https:\/\/cdn[^"]+)"/);
-                  const linkMatch = itemHtml.match(/href="([^"]+)"/);
-                  const prodCodeMatch = itemHtml.match(/data-prodcode="([^"]+)"/);
-
-                  const productName = nameMatch ? nameMatch[1].trim() : null;
-                  const priceStr = priceMatch ? priceMatch[1].replace(/,/g, '') : null;
-                  const imageUrl = imgMatch ? imgMatch[1] : null;
-                  const productLink = linkMatch ? linkMatch[1] : null;
-                  const prodCode = prodCodeMatch ? prodCodeMatch[1] : null;
-
-                  if (!productName) continue;
-
-                  const price = priceStr ? parseInt(priceStr) : 0;
-
-                  const brandId = await getOrCreateWatchBrand(brand.name);
-
-                  const dedupeKey = `${brand.name}:${productName}`;
+                  const dedupeKey = `${brand.name}:${prod.name}`;
                   if (crawledNames.has(dedupeKey)) continue;
-
-                  const existingProducts = await storage.getAllProducts();
-                  const duplicate = existingProducts.find(p => p.name === productName && p.categoryId === watchCategory.id);
-                  if (duplicate) continue;
+                  if (existingWatchNames.has(prod.name)) continue;
 
                   crawledNames.add(dedupeKey);
+                  const brandId = await getOrCreateWatchBrand(brand.name);
 
-                  const listingThumbnail = imageUrl || '';
                   let detailImages: string[] = [];
+                  bloostoreProgress.message = `[${brand.name}] 상세 이미지 수집 중... (${prod.name})`;
 
-                  const idxMatch = productLink?.match(/idx=(\d+)/);
-                  if (idxMatch) {
-                    const idx = idxMatch[1];
-                    const detailUrl = `https://bloostore.co.kr${brand.pageUrl}?idx=${idx}`;
-                    bloostoreProgress.message = `[${brand.name}] 상세 이미지 수집 중... (${productName})`;
+                  try {
+                    await delay(400);
+                    const detailUrl = `https://bloostore.co.kr/shop_view/?idx=${prod.idx}`;
+                    const detailResponse = await fetch(detailUrl, {
+                      headers: { ...headers, "Accept": "text/html", "Accept-Language": "ko-KR,ko;q=0.9" },
+                    });
 
-                    try {
-                      await delay(500);
-                      const detailResponse = await fetch(detailUrl, {
-                        headers: {
-                          ...headers,
-                          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                          "Accept-Language": "ko-KR,ko;q=0.9",
-                        },
-                      });
+                    if (detailResponse.ok) {
+                      const detailHtml = await detailResponse.text();
 
-                      if (detailResponse.ok) {
-                        const detailHtml = await detailResponse.text();
-
-                        const productImgs: string[] = [];
-                        const slide01Section = detailHtml.match(/class="[^"]*slide_01[\s\S]{0,30000}?class="[^"]*slide_02/);
-                        if (slide01Section) {
-                          const slide01Imgs = slide01Section[0].match(/https:\/\/cdn[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
-                          if (slide01Imgs) {
-                            slide01Imgs.forEach(img => {
-                              if (!productImgs.includes(img)) productImgs.push(img);
-                            });
-                          }
-                        }
-
-                        if (productImgs.length === 0) {
-                          const mainImgSection = detailHtml.match(/class="[^"]*item-detail-img[\s\S]{0,10000}?class="[^"]*slide/);
-                          if (mainImgSection) {
-                            const mainImgs = mainImgSection[0].match(/https:\/\/cdn[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
-                            if (mainImgs) {
-                              mainImgs.forEach(img => {
-                                if (!productImgs.includes(img)) productImgs.push(img);
-                              });
-                            }
-                          }
-                        }
-
-                        if (productImgs.length === 0) {
-                          const allCdnImgs = detailHtml.match(/https:\/\/cdn-optimized\.imweb\.me\/upload\/[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
-                          if (allCdnImgs) {
-                            const unique = [...new Set(allCdnImgs)];
-                            const slideSection = detailHtml.match(/class="[^"]*slide_02[\s\S]{0,30000}/);
-                            const slide02Imgs = new Set<string>();
-                            if (slideSection) {
-                              const s2matches = slideSection[0].match(/https:\/\/cdn[^"'\s>]+\.(jpg|jpeg|png|webp)/g);
-                              if (s2matches) s2matches.forEach(img => slide02Imgs.add(img));
-                            }
-                            unique.forEach(img => {
-                              if (!slide02Imgs.has(img) && !productImgs.includes(img)) {
-                                productImgs.push(img);
-                              }
-                            });
-                          }
-                        }
-
-                        detailImages = productImgs;
-                        if (detailImages.length > 0) {
-                          console.log(`[bloostore] ${productName}: ${detailImages.length} product-specific images found`);
-                        }
+                      const owlSection = detailHtml.match(/owl-carousel prod-owl-list[\s\S]*?<\/div>\s*<\/div>/);
+                      if (owlSection) {
+                        const srcImgs = owlSection[0].match(/src="(https:\/\/cdn[^"]+)"/g) || [];
+                        srcImgs.forEach(m => {
+                          const url = m.replace('src="', '').replace('"', '').split('?')[0];
+                          if (!detailImages.includes(url)) detailImages.push(url);
+                        });
+                        const dataOrigImgs = owlSection[0].match(/data-original="(https:\/\/cdn[^"]+)"/g) || [];
+                        dataOrigImgs.forEach(m => {
+                          const url = m.replace('data-original="', '').replace('"', '').split('?')[0];
+                          if (!detailImages.includes(url)) detailImages.push(url);
+                        });
                       }
-                    } catch (detailErr) {
-                      console.error(`[bloostore] Error fetching detail for ${productName}:`, detailErr);
+
+                      const goodsImgSection = detailHtml.match(/shop_goods_img[\s\S]*?<\/ul>/);
+                      if (goodsImgSection) {
+                        const bgUrls = goodsImgSection[0].match(/url\('(https:\/\/cdn[^']+)'\)/g) || [];
+                        bgUrls.forEach(m => {
+                          const url = m.replace("url('", '').replace("')", '').split('?')[0];
+                          if (!detailImages.includes(url)) detailImages.push(url);
+                        });
+                      }
+
+                      const ogMatch = detailHtml.match(/og:image[^>]*content="(https:\/\/cdn[^"]+)"/);
+                      if (ogMatch) {
+                        const ogUrl = ogMatch[1].split('?')[0];
+                        if (!detailImages.includes(ogUrl)) detailImages.unshift(ogUrl);
+                      }
                     }
+                  } catch (detailErr) {
+                    console.error(`[bloostore] Error fetching detail for ${prod.name}:`, detailErr);
                   }
 
-                  const finalImageUrl = listingThumbnail || detailImages[0] || '';
-                  const finalImageUrls = listingThumbnail
-                    ? [listingThumbnail, ...detailImages.filter(img => img !== listingThumbnail)]
-                    : detailImages.length > 0 ? detailImages : (listingThumbnail ? [listingThumbnail] : []);
+                  const listingImg = prod.imageUrl;
+                  const finalImages: string[] = [];
+                  if (listingImg) finalImages.push(listingImg);
+                  detailImages.forEach(img => {
+                    if (!finalImages.includes(img)) finalImages.push(img);
+                  });
+
+                  const finalImageUrl = listingImg || detailImages[0] || '';
 
                   await storage.createProduct({
-                    name: productName,
-                    price: price,
-                    originalPrice: price,
-                    description: `${brand.name} ${productName}`,
+                    name: prod.name,
+                    price: prod.price,
+                    originalPrice: prod.price,
+                    description: `${brand.name} ${prod.name}`,
                     categoryId: watchCategory.id,
                     brandId: brandId || undefined,
                     imageUrl: finalImageUrl,
-                    imageUrls: finalImageUrls,
+                    imageUrls: finalImages.length > 0 ? finalImages : [finalImageUrl],
                     isActive: true,
                     isNew: true,
                     isBest: false,
@@ -4187,17 +4174,18 @@ export async function registerRoutes(
                   totalInserted++;
                   brandProductCount++;
                   bloostoreProgress.current = totalInserted;
-                  bloostoreProgress.message = `[${brand.name}] ${brandProductCount}개 상품 수집 (페이지 ${page}, 이미지 ${detailImages.length}장)`;
+                  bloostoreProgress.message = `[${brand.name}] ${brandProductCount}개 상품 수집 (이미지 ${finalImages.length}장) - ${prod.name}`;
+                  console.log(`[bloostore] Created: ${prod.name} (listing=${listingImg ? 'yes' : 'no'}, detail=${detailImages.length}imgs)`);
                 } catch (itemErr) {
-                  console.error(`[bloostore] Error processing item in ${brand.name}:`, itemErr);
+                  console.error(`[bloostore] Error processing ${prod.name}:`, itemErr);
                 }
               }
 
-              if (items.length < pageSize) {
+              if (pageProducts.length < pageSize) {
                 hasMore = false;
               } else {
                 page++;
-                await delay(1000);
+                await delay(800);
               }
             } catch (pageErr) {
               console.error(`[bloostore] Error on page ${page} for ${brand.name}:`, pageErr);
@@ -4304,18 +4292,17 @@ export async function registerRoutes(
               if (!response.ok) break;
               const html = await response.text();
 
-              const propRegex = /data-product-properties='\{(.*?)\}'/g;
-              let m;
               let newCount = 0;
               let duplicateCount = 0;
-              while ((m = propRegex.exec(html)) !== null) {
+              const $list = cheerio.load(html);
+              $list('[data-product-properties]').each((_i, el) => {
                 try {
-                  const text = m[1].replace(/&quot;/g, '"');
-                  const data = JSON.parse('{' + text + '}');
+                  const rawAttr = $list(el).attr('data-product-properties') || '';
+                  const data = JSON.parse(rawAttr);
                   if (data.name && data.idx && data.image_url) {
                     if (seenIdx.has(data.idx)) {
                       duplicateCount++;
-                      continue;
+                      return;
                     }
                     seenIdx.add(data.idx);
                     const cleanUrl = data.image_url.split('?')[0];
@@ -4327,10 +4314,12 @@ export async function registerRoutes(
                     });
                     newCount++;
                   }
-                } catch {}
-              }
+                } catch (e) {
+                  console.error(`[watch-detail] Failed to parse product properties:`, e);
+                }
+              });
 
-              console.log(`[watch-detail] ${brand.name} page ${page}: ${newCount} new, ${duplicateCount} duplicates`);
+              console.log(`[watch-detail] ${brand.name} page ${page}: ${newCount} new, ${duplicateCount} duplicates (${$list('[data-product-properties]').length} total)`);
               if (newCount === 0) break;
               page++;
               await delay(500);
