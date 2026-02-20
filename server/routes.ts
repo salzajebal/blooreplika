@@ -4,6 +4,7 @@ import * as cheerio from "cheerio";
 import compression from "compression";
 import { storage } from "./storage";
 import { 
+  type Product,
   insertProductSchema, 
   insertCategorySchema, 
   insertSubcategorySchema,
@@ -4239,51 +4240,22 @@ export async function registerRoutes(
       };
       const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-      const allProducts = await storage.getAllProducts();
-      const productsNeedingSource = allProducts.filter(p => {
-        if (p.sourceUrl || p.sourceIdx) return false;
-        const imgs = [p.imageUrl, ...(p.imageUrls || [])].filter(Boolean) as string[];
-        return imgs.some(url => url.includes('cdn-optimized.imweb.me') || url.includes('cdn.imweb.me'));
-      });
-
-      console.log(`[backfill] Found ${productsNeedingSource.length} bloostore products needing source backfill`);
-
-      if (productsNeedingSource.length === 0) {
-        return res.json({ success: true, message: "소스 정보가 필요한 블루스토어 제품이 없습니다.", matched: 0, total: 0 });
-      }
-
       backfillProgress = {
-        status: 'running', total: productsNeedingSource.length, matched: 0,
-        message: '소스 정보 복구 준비 중...', startedAt: new Date(),
+        status: 'running', total: 0, matched: 0,
+        message: '블루스토어 상품 목록 수집 중...', startedAt: new Date(),
       };
 
-      res.json({ success: true, message: `${productsNeedingSource.length}개 제품 소스 매칭 시작`, total: productsNeedingSource.length });
+      res.json({ success: true, message: "소스 매칭 시작 (백그라운드)" });
 
       (async () => {
         try {
-          type ProductItem = typeof allProducts[0];
-          const imgToProducts = new Map<string, ProductItem[]>();
-          const nameToProducts = new Map<string, ProductItem[]>();
-          for (const p of productsNeedingSource) {
-            const imgs = [p.imageUrl, ...(p.imageUrls || [])].filter(Boolean) as string[];
-            for (const img of imgs) {
-              const cleanImg = img.split('?')[0];
-              if (!imgToProducts.has(cleanImg)) imgToProducts.set(cleanImg, []);
-              imgToProducts.get(cleanImg)!.push(p);
-            }
-            const cleanName = p.name.trim().toLowerCase().replace(/\s+/g, ' ');
-            if (!nameToProducts.has(cleanName)) nameToProducts.set(cleanName, []);
-            nameToProducts.get(cleanName)!.push(p);
-          }
-
-          let totalMatched = 0;
-          const updatedIds = new Set<number>();
+          const bloostoreProducts: Array<{ name: string; idx: number; imageUrl: string }> = [];
 
           for (const brand of BLOOSTORE_WATCH_BRANDS) {
             let page = 1;
             const pageSize = 50;
             let hasMore = true;
-            backfillProgress.message = `[${brand.name}] 매칭 중...`;
+            backfillProgress.message = `[${brand.name}] 상품 목록 수집 중...`;
 
             while (hasMore) {
               try {
@@ -4300,29 +4272,13 @@ export async function registerRoutes(
 
                 for (let i = 0; i < elements.length; i++) {
                   try {
-                    const el = elements[i];
-                    const parsed = JSON.parse($(el).attr('data-product-properties') || '');
-                    if (!parsed.name || !parsed.idx) continue;
-
-                    const cleanImg = parsed.image_url ? parsed.image_url.split('?')[0] : '';
-                    const cleanName = parsed.name.trim().toLowerCase().replace(/\s+/g, ' ');
-
-                    let matchedProducts: ProductItem[] = [];
-                    if (cleanImg && imgToProducts.has(cleanImg)) {
-                      matchedProducts = imgToProducts.get(cleanImg)!;
-                    } else if (nameToProducts.has(cleanName)) {
-                      matchedProducts = nameToProducts.get(cleanName)!;
-                    }
-
-                    for (const mp of matchedProducts) {
-                      if (updatedIds.has(mp.id)) continue;
-                      updatedIds.add(mp.id);
-                      await storage.updateProduct(mp.id, {
-                        sourceUrl: `https://bloostore.co.kr/shop_view/?idx=${parsed.idx}`,
-                        sourceIdx: parsed.idx,
+                    const parsed = JSON.parse($(elements[i]).attr('data-product-properties') || '');
+                    if (parsed.name && parsed.idx) {
+                      bloostoreProducts.push({
+                        name: parsed.name.trim(),
+                        idx: parsed.idx,
+                        imageUrl: parsed.image_url ? parsed.image_url.split('?')[0] : '',
                       });
-                      totalMatched++;
-                      backfillProgress.matched = totalMatched;
                     }
                   } catch {}
                 }
@@ -4335,7 +4291,66 @@ export async function registerRoutes(
                 hasMore = false;
               }
             }
-            console.log(`[backfill] ${brand.name}: matched ${totalMatched} so far`);
+            console.log(`[backfill] ${brand.name}: collected ${bloostoreProducts.length} total products from bloostore`);
+          }
+
+          console.log(`[backfill] Total bloostore products collected: ${bloostoreProducts.length}`);
+          backfillProgress.total = bloostoreProducts.length;
+          backfillProgress.message = `DB 상품 매칭 중... (블루스토어 ${bloostoreProducts.length}개)`;
+
+          const imgLookup = new Map<string, { idx: number }>();
+          const nameLookup = new Map<string, { idx: number }>();
+          for (const bp of bloostoreProducts) {
+            if (bp.imageUrl) imgLookup.set(bp.imageUrl, { idx: bp.idx });
+            const cleanName = bp.name.toLowerCase().replace(/\s+/g, ' ');
+            nameLookup.set(cleanName, { idx: bp.idx });
+          }
+
+          let totalMatched = 0;
+          const batchSize = 500;
+          let offset = 0;
+          let hasMoreDB = true;
+
+          while (hasMoreDB) {
+            const { products: batch, total } = await storage.getProductsFullPaginated(batchSize, offset);
+            backfillProgress.message = `DB 매칭 중... (${offset}/${total})`;
+
+            for (const product of batch) {
+              if (product.sourceUrl || product.sourceIdx) continue;
+
+              const imgs = [product.imageUrl, ...(product.imageUrls || [])].filter(Boolean) as string[];
+              const isBloostore = imgs.some(url => url.includes('cdn-optimized.imweb.me') || url.includes('cdn.imweb.me'));
+              if (!isBloostore) continue;
+
+              let matchedIdx: number | null = null;
+
+              for (const img of imgs) {
+                const cleanImg = img.split('?')[0];
+                if (imgLookup.has(cleanImg)) {
+                  matchedIdx = imgLookup.get(cleanImg)!.idx;
+                  break;
+                }
+              }
+
+              if (!matchedIdx) {
+                const cleanName = product.name.trim().toLowerCase().replace(/\s+/g, ' ');
+                if (nameLookup.has(cleanName)) {
+                  matchedIdx = nameLookup.get(cleanName)!.idx;
+                }
+              }
+
+              if (matchedIdx) {
+                await storage.updateProduct(product.id, {
+                  sourceUrl: `https://bloostore.co.kr/shop_view/?idx=${matchedIdx}`,
+                  sourceIdx: matchedIdx,
+                });
+                totalMatched++;
+                backfillProgress.matched = totalMatched;
+              }
+            }
+
+            offset += batchSize;
+            if (batch.length < batchSize) hasMoreDB = false;
           }
 
           backfillProgress.status = 'completed';
@@ -4705,46 +4720,45 @@ export async function registerRoutes(
 
     (async () => {
       try {
-        let allProducts = await storage.getAllProducts();
-        console.log(`[detail-batch] Total products in DB: ${allProducts.length}`);
-
-        if (productIds && productIds.length > 0) {
-          allProducts = allProducts.filter(p => productIds.includes(p.id));
-        } else if (categoryId) {
-          allProducts = allProducts.filter(p => p.categoryId === categoryId);
-        }
-
-        const getSourceUrl = (product: typeof allProducts[0]): string | null => {
+        const getSourceUrl = (product: Product): string | null => {
           if (product.sourceUrl) return product.sourceUrl;
           if (product.sourceIdx) return `https://bloostore.co.kr/shop_view/?idx=${product.sourceIdx}`;
-
           const allImgUrls = [product.imageUrl, ...(product.imageUrls || [])].filter(Boolean) as string[];
-
           for (const imgUrl of allImgUrls) {
             const bagMatch = imgUrl.match(/bagstyle\.site\/data\/item\/([^\/]+)\//);
-            if (bagMatch) {
-              return `https://bagstyle.site/shop/item.php?it_id=${bagMatch[1]}`;
-            }
+            if (bagMatch) return `https://bagstyle.site/shop/item.php?it_id=${bagMatch[1]}`;
           }
           return null;
         };
 
-        let targetProducts = allProducts.filter(p => {
-          const url = getSourceUrl(p);
-          return url !== null;
-        });
+        const targetProducts: Product[] = [];
 
-        console.log(`[detail-batch] Products with detectable source: ${targetProducts.length}`);
-
-        if (onlyMissing) {
-          targetProducts = targetProducts.filter(p => !p.detailImageUrls || p.detailImageUrls.length === 0);
+        if (productIds && productIds.length > 0) {
+          for (const pid of productIds) {
+            const p = await storage.getProduct(pid);
+            if (p) targetProducts.push(p);
+          }
+        } else {
+          const batchSize = 500;
+          let offset = 0;
+          let hasMoreDB = true;
+          while (hasMoreDB) {
+            const { products: batch } = await storage.getProductsFullPaginated(batchSize, offset, categoryId || undefined);
+            for (const p of batch) {
+              const url = getSourceUrl(p);
+              if (!url) continue;
+              if (onlyMissing && p.detailImageUrls && p.detailImageUrls.length > 0) continue;
+              targetProducts.push(p);
+            }
+            offset += batchSize;
+            if (batch.length < batchSize) hasMoreDB = false;
+            puppeteerDetailProgress.message = `상품 스캔 중... (${offset}개 확인)`;
+          }
         }
 
-        console.log(`[detail-batch] After onlyMissing filter: ${targetProducts.length}`);
-
+        console.log(`[detail-batch] Target products: ${targetProducts.length}`);
         puppeteerDetailProgress.total = targetProducts.length;
         puppeteerDetailProgress.message = `총 ${targetProducts.length}개 상품 상세이미지 크롤링 시작...`;
-        console.log(`[detail-batch] Starting for ${targetProducts.length} products`);
 
         for (let i = 0; i < targetProducts.length; i++) {
           const product = targetProducts[i];

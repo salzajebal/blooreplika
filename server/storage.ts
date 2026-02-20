@@ -43,6 +43,7 @@ export interface IStorage {
   // Products
   getAllProducts(): Promise<Product[]>;
   getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string): Promise<{ products: Product[], total: number }>;
+  getProductsFullPaginated(limit: number, offset: number, categoryId?: string): Promise<{ products: Product[], total: number }>;
   getProductsCount(categoryId?: string): Promise<number>;
   getProductsByCategory(categoryId: string): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
@@ -328,6 +329,17 @@ export class DatabaseStorage implements IStorage {
     return { products: productList as Product[], total: countResult[0]?.count || 0 };
   }
   
+  async getProductsFullPaginated(limit: number, offset: number, categoryId?: string): Promise<{ products: Product[], total: number }> {
+    const conditions: any[] = [];
+    if (categoryId) conditions.push(eq(products.categoryId, categoryId));
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const [countResult, productList] = await Promise.all([
+      db.select({ count: sql<number>`count(*)::int` }).from(products).where(whereClause),
+      db.select().from(products).where(whereClause).orderBy(desc(products.createdAt)).limit(limit).offset(offset)
+    ]);
+    return { products: productList, total: countResult[0]?.count || 0 };
+  }
+
   async getProductsCount(categoryId?: string): Promise<number> {
     const whereClause = categoryId ? eq(products.categoryId, categoryId) : undefined;
     const [result] = await db.select({ count: sql<number>`count(*)` }).from(products).where(whereClause);
