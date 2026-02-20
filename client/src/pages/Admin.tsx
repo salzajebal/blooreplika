@@ -729,14 +729,14 @@ export default function Admin() {
       });
       const data = await res.json();
       if (data.success) {
-        toast({ title: "Puppeteer 상세이미지 크롤링 시작", description: "헤드리스 브라우저로 상세이미지를 가져오고 있습니다." });
+        toast({ title: "상세이미지 크롤링 시작", description: "상세이미지를 가져오고 있습니다." });
         setPuppeteerProgress({ status: 'running', total: 0, current: 0, updated: 0, skipped: 0, message: '시작 중...' });
         puppeteerIntervalRef.current = setInterval(fetchPuppeteerProgress, 2000);
       } else {
         toast({ title: "오류", description: data.error, variant: "destructive" });
       }
     } catch (error) {
-      toast({ title: "오류", description: "Puppeteer 상세이미지 크롤링을 시작할 수 없습니다.", variant: "destructive" });
+      toast({ title: "오류", description: "상세이미지 크롤링을 시작할 수 없습니다.", variant: "destructive" });
     }
   };
 
@@ -5878,7 +5878,7 @@ export default function Admin() {
               <div className="px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-violet-50 to-white">
                 <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                   <Globe className="w-5 h-5 text-violet-600" />
-                  Puppeteer 상세이미지 크롤링 (헤드리스 브라우저)
+                  상세이미지 크롤링
                 </h3>
                 <p className="text-sm text-gray-500 mt-1">헤드리스 브라우저를 사용하여 JavaScript로 로딩되는 상세이미지(상품 설명 이미지)를 자동으로 가져옵니다.</p>
               </div>
@@ -5949,7 +5949,7 @@ export default function Admin() {
                     {puppeteerProgress.status === 'running' ? (
                       <><Loader2 className="w-4 h-4 animate-spin mr-2" /> 크롤링 중...</>
                     ) : (
-                      <><Globe className="w-4 h-4 mr-2" /> Puppeteer 상세이미지 일괄 크롤링 시작</>
+                      <><Globe className="w-4 h-4 mr-2" /> 상세이미지 일괄 크롤링 시작</>
                     )}
                   </Button>
                 </div>

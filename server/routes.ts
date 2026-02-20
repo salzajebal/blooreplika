@@ -4461,6 +4461,48 @@ export async function registerRoutes(
     res.json({ success: true, ...puppeteerDetailProgress });
   });
 
+  async function extractDetailImagesFromUrl(sourceUrl: string): Promise<string[]> {
+    const resp = await fetch(sourceUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+    });
+    const html = await resp.text();
+    const cheerioModule = await import('cheerio');
+    const $ = cheerioModule.load(html);
+
+    const detailImages: string[] = [];
+
+    const templateSelectors = ['#prodDetailPC', '#prodDetailMobile'];
+    for (const sel of templateSelectors) {
+      const templateEl = $(sel);
+      if (templateEl.length > 0) {
+        const templateHtml = templateEl.html() || '';
+        const $t = cheerioModule.load(templateHtml);
+        $t('img').each((_i: number, el: any) => {
+          const src = $t(el).attr('src') || $t(el).attr('data-original') || $t(el).attr('data-src') || '';
+          if (src && src.includes('cdn') && !detailImages.includes(src.split('?')[0])) {
+            detailImages.push(src.split('?')[0]);
+          }
+        });
+      }
+    }
+
+    if (detailImages.length === 0) {
+      const templateRegex = /prodDetailPC['"]?[^>]*>([\s\S]*?)<\/(?:template|script)>/i;
+      const match = html.match(templateRegex);
+      if (match && match[1]) {
+        const $t = cheerioModule.load(match[1]);
+        $t('img').each((_i: number, el: any) => {
+          const src = $t(el).attr('src') || $t(el).attr('data-original') || $t(el).attr('data-src') || '';
+          if (src && src.includes('cdn') && !detailImages.includes(src.split('?')[0])) {
+            detailImages.push(src.split('?')[0]);
+          }
+        });
+      }
+    }
+
+    return detailImages;
+  }
+
   app.post("/api/admin/crawl/puppeteer-details/single", requireAdminAuth, async (req: Request, res: Response) => {
     const { productId } = req.body;
     if (!productId) {
@@ -4481,90 +4523,24 @@ export async function registerRoutes(
         return res.status(400).json({ success: false, error: "이 상품에는 원본 URL이 없습니다. bloostore에서 크롤링된 상품만 지원됩니다." });
       }
 
-      res.json({ success: true, message: "상세이미지 가져오기가 시작되었습니다." });
+      const detailImages = await extractDetailImagesFromUrl(sourceUrl);
 
-      (async () => {
-        try {
-          const puppeteer = await import('puppeteer-core');
-          const { execSync } = await import('child_process');
-          const chromiumPath = process.env.CHROMIUM_PATH || (() => { try { return execSync('which chromium').toString().trim(); } catch { return '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium'; } })();
-          const browser = await puppeteer.default.launch({
-            executablePath: chromiumPath,
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
-          });
+      const existingImages = product.imageUrls || [];
+      const allImages = [...existingImages];
+      detailImages.forEach(img => {
+        if (!allImages.includes(img)) allImages.push(img);
+      });
 
-          const page = await browser.newPage();
-          await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-          await page.setViewport({ width: 1280, height: 800 });
+      await storage.updateProduct(product.id, {
+        imageUrls: allImages,
+        detailImageUrls: detailImages,
+        sourceUrl: sourceUrl,
+      });
 
-          console.log(`[puppeteer] Fetching detail images for: ${product.name} from ${sourceUrl}`);
-          await page.goto(sourceUrl, { waitUntil: 'networkidle2', timeout: 30000 });
-
-          await page.waitForSelector('._prod_detail_detail_lazy_load, #prod_detail_body', { timeout: 15000 }).catch(() => {});
-          await new Promise(r => setTimeout(r, 3000));
-
-          const detailImages = await page.evaluate(() => {
-            const images: string[] = [];
-            const detailBodies = document.querySelectorAll('._prod_detail_detail_lazy_load, #prod_detail_body');
-            detailBodies.forEach(body => {
-              const imgs = body.querySelectorAll('img');
-              imgs.forEach(img => {
-                const src = img.src || img.getAttribute('data-original') || img.getAttribute('data-src') || '';
-                if (src && src.includes('cdn') && !images.includes(src)) {
-                  images.push(src.split('?')[0]);
-                }
-              });
-            });
-
-            const owlCarousel = document.querySelector('.owl-carousel.prod-owl-list');
-            if (owlCarousel) {
-              const owlImgs = owlCarousel.querySelectorAll('img');
-              owlImgs.forEach(img => {
-                const src = img.src || '';
-                if (src && src.includes('cdn')) {
-                  const cleanSrc = src.split('?')[0];
-                  if (!images.includes(cleanSrc)) images.unshift(cleanSrc);
-                }
-              });
-            }
-
-            const thumbs = document.querySelector('.shop_goods_img');
-            if (thumbs) {
-              const lis = thumbs.querySelectorAll('li a');
-              lis.forEach(a => {
-                const style = (a as HTMLElement).getAttribute('style') || '';
-                const match = style.match(/url\(['"]?(https:\/\/cdn[^'")\s]+)['"]?\)/);
-                if (match) {
-                  const url = match[1].split('?')[0];
-                  if (!images.includes(url)) images.unshift(url);
-                }
-              });
-            }
-
-            return images;
-          });
-
-          await browser.close();
-
-          const existingImages = product.imageUrls || [];
-          const allImages = [...existingImages];
-          detailImages.forEach(img => {
-            if (!allImages.includes(img)) allImages.push(img);
-          });
-
-          await storage.updateProduct(product.id, {
-            imageUrls: allImages,
-            detailImageUrls: detailImages,
-            sourceUrl: sourceUrl,
-          });
-
-          console.log(`[puppeteer] Updated ${product.name}: ${detailImages.length} detail images found`);
-        } catch (err: any) {
-          console.error(`[puppeteer] Error fetching detail images for ${product.name}:`, err);
-        }
-      })();
+      console.log(`[detail-crawl] Updated ${product.name}: ${detailImages.length} detail images found`);
+      res.json({ success: true, message: `상세이미지 ${detailImages.length}개를 가져왔습니다.`, detailImages });
     } catch (error: any) {
+      console.error(`[detail-crawl] Error:`, error.message);
       res.status(500).json({ success: false, error: error.message });
     }
   });
@@ -4578,23 +4554,13 @@ export async function registerRoutes(
 
     puppeteerDetailProgress = {
       status: 'running', total: 0, current: 0, updated: 0, skipped: 0,
-      message: 'Puppeteer 상세이미지 크롤링 준비 중...', startedAt: new Date(),
+      message: '상세이미지 크롤링 준비 중...', startedAt: new Date(),
     };
 
-    res.json({ success: true, message: "Puppeteer 상세이미지 일괄 크롤링이 시작되었습니다." });
+    res.json({ success: true, message: "상세이미지 일괄 크롤링이 시작되었습니다." });
 
     (async () => {
-      let browser: any = null;
       try {
-        const puppeteer = await import('puppeteer-core');
-        const { execSync } = await import('child_process');
-        const chromiumPath = process.env.CHROMIUM_PATH || (() => { try { return execSync('which chromium').toString().trim(); } catch { return '/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium'; } })();
-        browser = await puppeteer.default.launch({
-          executablePath: chromiumPath,
-          headless: true,
-          args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--single-process'],
-        });
-
         let allProducts = await storage.getAllProducts();
 
         if (productIds && productIds.length > 0) {
@@ -4611,7 +4577,7 @@ export async function registerRoutes(
 
         puppeteerDetailProgress.total = targetProducts.length;
         puppeteerDetailProgress.message = `총 ${targetProducts.length}개 상품 상세이미지 크롤링 시작...`;
-        console.log(`[puppeteer-batch] Starting for ${targetProducts.length} products`);
+        console.log(`[detail-batch] Starting for ${targetProducts.length} products`);
 
         for (let i = 0; i < targetProducts.length; i++) {
           const product = targetProducts[i];
@@ -4621,56 +4587,7 @@ export async function registerRoutes(
           const sourceUrl = product.sourceUrl || `https://bloostore.co.kr/shop_view/?idx=${product.sourceIdx}`;
 
           try {
-            const page = await browser.newPage();
-            await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-            await page.setViewport({ width: 1280, height: 800 });
-
-            await page.goto(sourceUrl, { waitUntil: 'networkidle2', timeout: 30000 });
-            await page.waitForSelector('._prod_detail_detail_lazy_load, #prod_detail_body', { timeout: 10000 }).catch(() => {});
-            await new Promise(r => setTimeout(r, 2000));
-
-            const detailImages: string[] = await page.evaluate(() => {
-              const images: string[] = [];
-              const detailBodies = document.querySelectorAll('._prod_detail_detail_lazy_load, #prod_detail_body');
-              detailBodies.forEach((body: Element) => {
-                const imgs = body.querySelectorAll('img');
-                imgs.forEach((img: HTMLImageElement) => {
-                  const src = img.src || img.getAttribute('data-original') || img.getAttribute('data-src') || '';
-                  if (src && src.includes('cdn') && !images.includes(src)) {
-                    images.push(src.split('?')[0]);
-                  }
-                });
-              });
-
-              const owlCarousel = document.querySelector('.owl-carousel.prod-owl-list');
-              if (owlCarousel) {
-                const owlImgs = owlCarousel.querySelectorAll('img');
-                owlImgs.forEach((img: HTMLImageElement) => {
-                  const src = img.src || '';
-                  if (src && src.includes('cdn')) {
-                    const cleanSrc = src.split('?')[0];
-                    if (!images.includes(cleanSrc)) images.unshift(cleanSrc);
-                  }
-                });
-              }
-
-              const thumbs = document.querySelector('.shop_goods_img');
-              if (thumbs) {
-                const lis = thumbs.querySelectorAll('li a');
-                lis.forEach((a: Element) => {
-                  const style = (a as HTMLElement).getAttribute('style') || '';
-                  const match = style.match(/url\(['"]?(https:\/\/cdn[^'")\s]+)['"]?\)/);
-                  if (match) {
-                    const url = match[1].split('?')[0];
-                    if (!images.includes(url)) images.unshift(url);
-                  }
-                });
-              }
-
-              return images;
-            });
-
-            await page.close();
+            const detailImages = await extractDetailImagesFromUrl(sourceUrl);
 
             if (detailImages.length > 0) {
               const existingImages = product.imageUrls || [];
@@ -4685,32 +4602,28 @@ export async function registerRoutes(
                 sourceUrl: sourceUrl,
               });
               puppeteerDetailProgress.updated++;
-              console.log(`[puppeteer-batch] ${product.name}: ${detailImages.length} detail images`);
+              console.log(`[detail-batch] ${product.name}: ${detailImages.length} detail images`);
             } else {
               puppeteerDetailProgress.skipped++;
-              console.log(`[puppeteer-batch] ${product.name}: no detail images found`);
+              console.log(`[detail-batch] ${product.name}: no detail images found`);
             }
           } catch (err: any) {
             puppeteerDetailProgress.skipped++;
-            console.error(`[puppeteer-batch] Error for ${product.name}:`, err.message);
+            console.error(`[detail-batch] Error for ${product.name}:`, err.message);
           }
 
-          await new Promise(r => setTimeout(r, 500));
+          await new Promise(r => setTimeout(r, 300));
         }
 
         puppeteerDetailProgress.status = 'completed';
         puppeteerDetailProgress.message = `완료! ${puppeteerDetailProgress.updated}개 업데이트, ${puppeteerDetailProgress.skipped}개 건너뜀`;
         puppeteerDetailProgress.completedAt = new Date();
-        console.log(`[puppeteer-batch] Complete: ${puppeteerDetailProgress.updated} updated, ${puppeteerDetailProgress.skipped} skipped`);
+        console.log(`[detail-batch] Complete: ${puppeteerDetailProgress.updated} updated, ${puppeteerDetailProgress.skipped} skipped`);
 
       } catch (error: any) {
         puppeteerDetailProgress.status = 'error';
         puppeteerDetailProgress.message = `오류: ${error.message}`;
-        console.error('[puppeteer-batch] Error:', error);
-      } finally {
-        if (browser) {
-          try { await browser.close(); } catch {}
-        }
+        console.error('[detail-batch] Error:', error);
       }
     })();
   });
