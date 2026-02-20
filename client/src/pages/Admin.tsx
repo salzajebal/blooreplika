@@ -5949,33 +5949,66 @@ export default function Admin() {
                     </div>
                   )}
 
-                  <Button
-                    data-testid="button-start-puppeteer-crawl"
-                    onClick={startPuppeteerBatchCrawl}
-                    disabled={puppeteerProgress.status === 'running'}
-                    className="w-full bg-violet-600 hover:bg-violet-700 text-white"
-                  >
-                    {puppeteerProgress.status === 'running' ? (
-                      <><Loader2 className="w-4 h-4 animate-spin mr-2" /> 크롤링 중...</>
-                    ) : (
-                      <><Globe className="w-4 h-4 mr-2" /> 상세이미지 일괄 크롤링 시작</>
-                    )}
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      data-testid="button-backfill-source"
+                      onClick={async () => {
+                        try {
+                          const res = await fetchWithAuth("/api/admin/crawl/bloostore/backfill-source", { method: "POST" });
+                          const data = await res.json();
+                          if (data.success) {
+                            alert(`소스 복구 시작: ${data.message}`);
+                            const checkProgress = async () => {
+                              try {
+                                const pRes = await fetchWithAuth("/api/admin/crawl/bloostore/backfill-progress");
+                                const pData = await pRes.json();
+                                if (pData.status === 'running') {
+                                  setTimeout(checkProgress, 3000);
+                                } else if (pData.status === 'completed') {
+                                  alert(`소스 복구 완료: ${pData.matched}개 매칭됨`);
+                                }
+                              } catch {}
+                            };
+                            setTimeout(checkProgress, 3000);
+                          } else {
+                            alert(`오류: ${data.error || '알 수 없는 오류'}`);
+                          }
+                        } catch (err: any) {
+                          alert(`오류: ${err.message}`);
+                        }
+                      }}
+                      className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" /> 소스정보 복구
+                    </Button>
+                    <Button
+                      data-testid="button-start-puppeteer-crawl"
+                      onClick={startPuppeteerBatchCrawl}
+                      disabled={puppeteerProgress.status === 'running'}
+                      className="flex-1 bg-violet-600 hover:bg-violet-700 text-white"
+                    >
+                      {puppeteerProgress.status === 'running' ? (
+                        <><Loader2 className="w-4 h-4 animate-spin mr-2" /> 크롤링 중...</>
+                      ) : (
+                        <><Globe className="w-4 h-4 mr-2" /> 상세이미지 크롤링</>
+                      )}
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="border-t border-gray-200 pt-4">
                   <ul className="text-sm text-gray-600 space-y-2">
                     <li className="flex items-start gap-2">
-                      <span className="text-violet-500 mt-1">•</span>
-                      <span>실제 브라우저(Chromium)를 사용하여 JavaScript로 로딩되는 상세이미지를 가져옵니다.</span>
+                      <span className="text-amber-500 mt-1">•</span>
+                      <span>소스정보 복구: 블루스토어 상품의 원본 URL을 다시 매칭합니다. 상세이미지 크롤링 전에 먼저 실행하세요.</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-violet-500 mt-1">•</span>
-                      <span>bloostore 상품 페이지의 상세 설명 영역에 있는 이미지를 자동 추출합니다.</span>
+                      <span>상세이미지 크롤링: bagstyle/bloostore 상품의 상세 설명 이미지를 자동 추출합니다.</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-violet-500 mt-1">•</span>
-                      <span>상품당 약 5~10초 소요되며, 전체 상품 수에 따라 시간이 걸릴 수 있습니다.</span>
+                      <span>상품당 약 0.2~1초 소요되며, 전체 상품 수에 따라 시간이 걸릴 수 있습니다.</span>
                     </li>
                   </ul>
                 </div>
