@@ -37,8 +37,11 @@ const CATEGORIES = [
   { id: "acc", label: "ACC" },
 ];
 
-function getProxiedImageUrl(url: string): string {
-  if (!url) return "";
+const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&h=500&fit=crop";
+
+function getMediaUrl(url: string): string {
+  if (!url) return DEFAULT_IMAGE;
+  if (url.startsWith("/objects/") || url.startsWith("/uploads/")) return url;
   if (url.includes("pliki.wisacdn.com") || url.includes("bagstyle.site")) {
     return `/api/image-proxy?url=${encodeURIComponent(url)}&w=400&q=80`;
   }
@@ -129,7 +132,7 @@ export default function Inspection() {
                     <div className="aspect-square rounded-lg overflow-hidden bg-gray-50 mb-2">
                       {item.mediaType === "video" ? (
                         <video
-                          src={item.imageUrl}
+                          src={getMediaUrl(item.imageUrl)}
                           className="w-full h-full object-cover"
                           autoPlay
                           loop
@@ -138,10 +141,11 @@ export default function Inspection() {
                         />
                       ) : (
                         <img
-                          src={getProxiedImageUrl(item.imageUrl)}
+                          src={getMediaUrl(item.imageUrl)}
                           alt={item.productName}
                           className="w-full h-full object-cover"
                           loading="lazy"
+                          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
                         />
                       )}
                     </div>
@@ -203,7 +207,7 @@ export default function Inspection() {
                   <div className="aspect-square rounded-lg overflow-hidden bg-gray-50 mb-3">
                     {photo.mediaType === "video" ? (
                       <video
-                        src={photo.imageUrl}
+                        src={getMediaUrl(photo.imageUrl)}
                         className="w-full h-full object-cover"
                         autoPlay
                         loop
@@ -212,7 +216,7 @@ export default function Inspection() {
                       />
                     ) : (
                       <img
-                        src={getProxiedImageUrl(photo.imageUrl)}
+                        src={getMediaUrl(photo.imageUrl)}
                         alt={`${photo.brandName} 검수사진`}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"

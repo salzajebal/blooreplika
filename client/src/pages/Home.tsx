@@ -424,6 +424,12 @@ function InspectionSection() {
 
   if (inspList.length === 0 && shipList.length === 0) return null;
 
+  const getMediaUrl = (url: string) => {
+    if (!url) return DEFAULT_IMAGE;
+    if (url.startsWith("/objects/") || url.startsWith("/uploads/")) return url;
+    return getProxiedImageUrl(url);
+  };
+
   return (
     <section className="bg-white py-8 md:py-12 border-b border-gray-100">
       <div className="max-w-[1200px] mx-auto px-4">
@@ -447,16 +453,17 @@ function InspectionSection() {
                   <div className="aspect-square rounded-lg overflow-hidden bg-gray-50 mb-2">
                     {item.mediaType === "video" ? (
                       <video
-                        src={item.imageUrl}
+                        src={getMediaUrl(item.imageUrl)}
                         className="w-full h-full object-cover"
                         autoPlay loop muted playsInline
                       />
                     ) : (
                       <img
-                        src={item.imageUrl}
+                        src={getMediaUrl(item.imageUrl)}
                         alt={item.productName}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         loading="lazy"
+                        onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
                       />
                     )}
                   </div>
@@ -484,16 +491,17 @@ function InspectionSection() {
                     <div className="aspect-square rounded-lg overflow-hidden bg-gray-50 mb-2">
                       {item.mediaType === "video" ? (
                         <video
-                          src={item.imageUrl}
+                          src={getMediaUrl(item.imageUrl)}
                           className="w-full h-full object-cover"
                           autoPlay loop muted playsInline
                         />
                       ) : (
                         <img
-                          src={item.imageUrl}
+                          src={getMediaUrl(item.imageUrl)}
                           alt={item.brandName}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           loading="lazy"
+                          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
                         />
                       )}
                     </div>

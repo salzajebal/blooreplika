@@ -3,6 +3,7 @@ import { type Server } from "http";
 import * as cheerio from "cheerio";
 import compression from "compression";
 import { storage } from "./storage";
+import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 import { 
   type Product,
   insertProductSchema, 
@@ -157,6 +158,9 @@ export async function registerRoutes(
   app.use(compression());
   
   app.use("/uploads", express.default.static(path.join(process.cwd(), "uploads")));
+  
+  registerObjectStorageRoutes(app);
+  const objectStorageService = new ObjectStorageService();
   
   // ==================== IMAGE PROXY API ====================
   
@@ -5496,8 +5500,26 @@ export async function registerRoutes(
       }
       const isVideo = file.mimetype.startsWith("video/");
       const mediaType = isVideo ? "video" : "image";
-      const fileUrl = `/uploads/inspection/${file.filename}`;
-      res.json({ success: true, url: fileUrl, mediaType });
+
+      try {
+        const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+        const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+        const fileBuffer = fs.readFileSync(file.path);
+        const uploadRes = await fetch(uploadURL, {
+          method: "PUT",
+          body: fileBuffer,
+          headers: { "Content-Type": file.mimetype },
+        });
+        if (!uploadRes.ok) {
+          throw new Error(`Object storage upload failed: ${uploadRes.status}`);
+        }
+        fs.unlinkSync(file.path);
+        res.json({ success: true, url: objectPath, mediaType });
+      } catch (storageError) {
+        console.error("Object storage upload failed, using local fallback:", storageError);
+        const fileUrl = `/uploads/inspection/${file.filename}`;
+        res.json({ success: true, url: fileUrl, mediaType });
+      }
     } catch (error) {
       console.error("Error uploading inspection media:", error);
       res.status(500).json({ success: false, error: "파일 업로드 실패" });
