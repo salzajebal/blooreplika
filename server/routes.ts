@@ -167,11 +167,26 @@ export async function registerRoutes(
       const { db } = await import("./db");
       const { inspections, shippingPhotos } = await import("@shared/schema");
       const { like } = await import("drizzle-orm");
-      const deleted1 = await db.delete(inspections).where(like(inspections.imageUrl, '/uploads/%'));
-      const deleted2 = await db.delete(shippingPhotos).where(like(shippingPhotos.imageUrl, '/uploads/%'));
-      console.log("Cleaned up orphaned local file references from inspections and shipping_photos");
+      const localInsp = await db.select({ id: inspections.id, imageUrl: inspections.imageUrl })
+        .from(inspections).where(like(inspections.imageUrl, '/uploads/%'));
+      const localShip = await db.select({ id: shippingPhotos.id, imageUrl: shippingPhotos.imageUrl })
+        .from(shippingPhotos).where(like(shippingPhotos.imageUrl, '/uploads/%'));
+      
+      const orphanedInsp = localInsp.filter(r => !fs.existsSync(path.join(process.cwd(), r.imageUrl)));
+      const orphanedShip = localShip.filter(r => !fs.existsSync(path.join(process.cwd(), r.imageUrl)));
+
+      if (orphanedInsp.length > 0) {
+        const { inArray } = await import("drizzle-orm");
+        await db.delete(inspections).where(inArray(inspections.id, orphanedInsp.map(r => r.id)));
+        console.log(`Cleaned ${orphanedInsp.length} orphaned inspection records`);
+      }
+      if (orphanedShip.length > 0) {
+        const { inArray } = await import("drizzle-orm");
+        await db.delete(shippingPhotos).where(inArray(shippingPhotos.id, orphanedShip.map(r => r.id)));
+        console.log(`Cleaned ${orphanedShip.length} orphaned shipping photo records`);
+      }
     } catch (e) {
-      console.error("Cleanup error:", e);
+      console.error("Orphan cleanup error:", e);
     }
   })();
 
