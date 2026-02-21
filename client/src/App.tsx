@@ -31,6 +31,11 @@ import Blog from "@/pages/Blog";
 import Choice from "@/pages/Choice";
 import OrderInquiry from "@/pages/OrderInquiry";
 import Inspection from "@/pages/Inspection";
+import ContentPage from "@/pages/ContentPage";
+
+function BestPage() { return <ContentPage sectionType="best" />; }
+function LivePage() { return <ContentPage sectionType="live" />; }
+function MonthlyBenefitPage() { return <ContentPage sectionType="monthly_benefit" />; }
 
 function Router() {
   return (
@@ -56,6 +61,9 @@ function Router() {
       <Route path="/blog" component={Blog} />
       <Route path="/choice/:id" component={Choice} />
       <Route path="/choice" component={Choice} />
+      <Route path="/best" component={BestPage} />
+      <Route path="/live" component={LivePage} />
+      <Route path="/benefits" component={MonthlyBenefitPage} />
       <Route path="/guide" component={Guide} />
       <Route path="/cart" component={Cart} />
       <Route path="/profile" component={Profile} />

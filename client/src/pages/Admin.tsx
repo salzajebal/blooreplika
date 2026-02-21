@@ -74,7 +74,7 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff" | "inspection">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff" | "inspection" | "contentSections">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [visitorStats, setVisitorStats] = useState<{ realtime: number; today: number; pageViews: number; recentPages: { page: string; count: number }[] } | null>(null);
   
@@ -2476,6 +2476,15 @@ export default function Admin() {
               >
                 <Search className="w-4 h-4 md:mr-2" />
                 <span className="hidden md:inline">검수 관리</span>
+              </Button>
+              <Button
+                data-testid="tab-contentSections"
+                variant={activeTab === "contentSections" ? "default" : "outline"}
+                onClick={() => setActiveTab("contentSections")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "contentSections" ? "bg-pink-500 hover:bg-pink-600" : ""}`}
+              >
+                <Globe className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">콘텐츠 관리</span>
               </Button>
               <Button
                 data-testid="tab-settings"
@@ -6138,6 +6147,10 @@ export default function Admin() {
           <InspectionAdminTab authToken={authToken} />
         )}
 
+        {activeTab === "contentSections" && adminRole === "super_admin" && (
+          <ContentSectionsTab authToken={authToken} />
+        )}
+
         {activeTab === "staff" && adminRole === "super_admin" && (
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -6738,6 +6751,412 @@ function InspectionAdminTab({ authToken }: { authToken: string }) {
                 ))}
               </div>
             )
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const SECTION_TYPES = [
+  { value: "celeb_style", label: "셀럽 스타일" },
+  { value: "exhibition", label: "기획전" },
+  { value: "best", label: "베스트" },
+  { value: "live", label: "라이브" },
+  { value: "monthly_benefit", label: "이달의 혜택" },
+] as const;
+
+const getSectionLabel = (val: string) => SECTION_TYPES.find(s => s.value === val)?.label || val;
+
+function ContentSectionsTab({ authToken }: { authToken: string }) {
+  const { toast } = useToast();
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [filterType, setFilterType] = useState("all");
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    sectionType: "celeb_style" as string,
+    title: "",
+    description: "",
+    imageUrl: "",
+    linkUrl: "",
+    celebrity: "",
+    sortOrder: 0,
+    isActive: true,
+  });
+  const [productIds, setProductIds] = useState<string[]>([]);
+  const [productSearch, setProductSearch] = useState("");
+  const [productResults, setProductResults] = useState<any[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
+
+  const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+    return fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+        Authorization: `Bearer ${authToken}`,
+      },
+    });
+  };
+
+  const fetchItems = async () => {
+    setLoading(true);
+    try {
+      const query = filterType !== "all" ? `?sectionType=${filterType}` : "";
+      const res = await fetchWithAuth(`/api/admin/content-sections${query}`);
+      const data = await res.json();
+      if (Array.isArray(data)) setItems(data);
+      else if (data.data) setItems(data.data);
+      else setItems([]);
+    } catch {
+      toast({ title: "오류", description: "콘텐츠 목록을 불러올 수 없습니다.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchItems(); }, [filterType]);
+
+  const resetForm = () => {
+    setForm({ sectionType: "celeb_style", title: "", description: "", imageUrl: "", linkUrl: "", celebrity: "", sortOrder: 0, isActive: true });
+    setEditingId(null);
+    setProductIds([]);
+    setSelectedProducts([]);
+    setProductSearch("");
+    setProductResults([]);
+  };
+
+  const searchProducts = async (query: string) => {
+    if (query.length < 2) { setProductResults([]); return; }
+    try {
+      const res = await fetch(`/api/products?search=${encodeURIComponent(query)}&limit=10`);
+      const data = await res.json();
+      const list = data.success ? (data.data?.products || data.data || []) : [];
+      setProductResults(list.filter((p: any) => !productIds.includes(p.id)));
+    } catch { setProductResults([]); }
+  };
+
+  const addProduct = (product: any) => {
+    if (!productIds.includes(product.id)) {
+      setProductIds([...productIds, product.id]);
+      setSelectedProducts([...selectedProducts, product]);
+    }
+    setProductSearch("");
+    setProductResults([]);
+  };
+
+  const removeProduct = (pid: string) => {
+    setProductIds(productIds.filter(id => id !== pid));
+    setSelectedProducts(selectedProducts.filter(p => p.id !== pid));
+  };
+
+  const handleSubmit = async () => {
+    if (!form.title.trim()) {
+      toast({ title: "오류", description: "제목을 입력해주세요.", variant: "destructive" });
+      return;
+    }
+    try {
+      const body = { ...form, productIds };
+      if (form.sectionType !== "celeb_style") delete (body as any).celebrity;
+
+      if (editingId) {
+        const res = await fetchWithAuth(`/api/admin/content-sections/${editingId}`, {
+          method: "PUT",
+          body: JSON.stringify(body),
+        });
+        if (res.ok) {
+          toast({ title: "수정 완료", description: "콘텐츠가 수정되었습니다." });
+          resetForm();
+          setShowForm(false);
+          fetchItems();
+        } else {
+          const err = await res.json();
+          toast({ title: "오류", description: err.message || "수정 실패", variant: "destructive" });
+        }
+      } else {
+        const res = await fetchWithAuth("/api/admin/content-sections", {
+          method: "POST",
+          body: JSON.stringify(body),
+        });
+        if (res.ok) {
+          toast({ title: "등록 완료", description: "콘텐츠가 등록되었습니다." });
+          resetForm();
+          setShowForm(false);
+          fetchItems();
+        } else {
+          const err = await res.json();
+          toast({ title: "오류", description: err.message || "등록 실패", variant: "destructive" });
+        }
+      }
+    } catch {
+      toast({ title: "오류", description: "요청 중 오류가 발생했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleEdit = async (item: any) => {
+    setForm({
+      sectionType: item.sectionType || "celeb_style",
+      title: item.title || "",
+      description: item.description || "",
+      imageUrl: item.imageUrl || "",
+      linkUrl: item.linkUrl || "",
+      celebrity: item.celebrity || "",
+      sortOrder: item.sortOrder || 0,
+      isActive: item.isActive !== false,
+    });
+    setEditingId(item.id);
+    const ids = item.productIds || [];
+    setProductIds(ids);
+    if (ids.length > 0) {
+      try {
+        const prods: any[] = [];
+        for (const pid of ids) {
+          const res = await fetch(`/api/products/${pid}`);
+          const data = await res.json();
+          if (data.success && data.data) prods.push(data.data);
+        }
+        setSelectedProducts(prods);
+      } catch { setSelectedProducts([]); }
+    } else {
+      setSelectedProducts([]);
+    }
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("이 콘텐츠를 삭제하시겠습니까?")) return;
+    try {
+      const res = await fetchWithAuth(`/api/admin/content-sections/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        toast({ title: "삭제 완료", description: "콘텐츠가 삭제되었습니다." });
+        fetchItems();
+      } else {
+        toast({ title: "오류", description: "삭제 실패", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "삭제 요청 중 오류가 발생했습니다.", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <Globe className="w-5 h-5 text-pink-600" />
+              콘텐츠 관리
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">홈페이지 콘텐츠 섹션을 관리합니다</p>
+          </div>
+          <Button
+            data-testid="btn-add-content"
+            onClick={() => { resetForm(); setShowForm(!showForm); }}
+            className="bg-pink-500 hover:bg-pink-600"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            콘텐츠 추가
+          </Button>
+        </div>
+
+        <div className="p-4 border-b border-gray-100 flex flex-wrap gap-2">
+          <Button
+            data-testid="filter-all"
+            variant={filterType === "all" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilterType("all")}
+          >
+            전체
+          </Button>
+          {SECTION_TYPES.map(st => (
+            <Button
+              key={st.value}
+              data-testid={`filter-${st.value}`}
+              variant={filterType === st.value ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilterType(st.value)}
+            >
+              {st.label}
+            </Button>
+          ))}
+        </div>
+
+        {showForm && (
+          <div className="p-6 border-b border-gray-100 bg-gray-50">
+            <h4 className="font-semibold mb-4">{editingId ? "콘텐츠 수정" : "새 콘텐츠 추가"}</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">섹션 타입</label>
+                <select
+                  data-testid="input-sectionType"
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  value={form.sectionType}
+                  onChange={e => setForm({ ...form, sectionType: e.target.value })}
+                >
+                  {SECTION_TYPES.map(st => (
+                    <option key={st.value} value={st.value}>{st.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">제목</label>
+                <Input
+                  data-testid="input-title"
+                  value={form.title}
+                  onChange={e => setForm({ ...form, title: e.target.value })}
+                  placeholder="제목 입력"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1">설명</label>
+                <Textarea
+                  data-testid="input-description"
+                  value={form.description}
+                  onChange={e => setForm({ ...form, description: e.target.value })}
+                  placeholder="설명 입력"
+                  rows={2}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">이미지 URL</label>
+                <Input
+                  data-testid="input-imageUrl"
+                  value={form.imageUrl}
+                  onChange={e => setForm({ ...form, imageUrl: e.target.value })}
+                  placeholder="https://..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">링크 URL</label>
+                <Input
+                  data-testid="input-linkUrl"
+                  value={form.linkUrl}
+                  onChange={e => setForm({ ...form, linkUrl: e.target.value })}
+                  placeholder="https://..."
+                />
+              </div>
+              {form.sectionType === "celeb_style" && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">셀럽 이름</label>
+                  <Input
+                    data-testid="input-celebrity"
+                    value={form.celebrity}
+                    onChange={e => setForm({ ...form, celebrity: e.target.value })}
+                    placeholder="셀럽 이름 입력"
+                  />
+                </div>
+              )}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1">연결 상품</label>
+                <div className="relative">
+                  <Input
+                    data-testid="input-product-search"
+                    value={productSearch}
+                    onChange={e => { setProductSearch(e.target.value); searchProducts(e.target.value); }}
+                    placeholder="상품명으로 검색..."
+                  />
+                  {productResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {productResults.map((p: any) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          className="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2 text-sm border-b last:border-b-0"
+                          onClick={() => addProduct(p)}
+                        >
+                          {p.imageUrl && <img src={p.imageUrl} className="w-8 h-8 object-cover rounded" />}
+                          <span className="truncate">{p.name}</span>
+                          <span className="text-gray-400 ml-auto text-xs">{p.price?.toLocaleString()}원</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {selectedProducts.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {selectedProducts.map((p: any) => (
+                      <div key={p.id} className="flex items-center gap-1 bg-gray-100 rounded-full px-3 py-1 text-xs">
+                        <span className="truncate max-w-[150px]">{p.name}</span>
+                        <button type="button" onClick={() => removeProduct(p.id)} className="text-red-400 hover:text-red-600 ml-1">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs text-gray-400 mt-1">상품을 검색하여 이 콘텐츠에 연결할 수 있습니다. ({selectedProducts.length}개 선택됨)</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">정렬 순서</label>
+                <Input
+                  data-testid="input-sortOrder"
+                  type="number"
+                  value={form.sortOrder}
+                  onChange={e => setForm({ ...form, sortOrder: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="flex items-center gap-2 mt-6">
+                <input
+                  data-testid="input-isActive"
+                  type="checkbox"
+                  checked={form.isActive}
+                  onChange={e => setForm({ ...form, isActive: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <label className="text-sm">활성화</label>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button data-testid="btn-submit-content" onClick={handleSubmit} className="bg-pink-500 hover:bg-pink-600">
+                <Check className="w-4 h-4 mr-2" />
+                {editingId ? "수정" : "등록"}
+              </Button>
+              <Button data-testid="btn-cancel-content" variant="outline" onClick={() => { setShowForm(false); resetForm(); }}>
+                <X className="w-4 h-4 mr-2" />
+                취소
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <div className="p-6">
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">로딩 중...</div>
+          ) : items.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">등록된 콘텐츠가 없습니다.</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {items.map(item => (
+                <div key={item.id} data-testid={`content-item-${item.id}`} className="border rounded-lg overflow-hidden bg-white shadow-sm">
+                  {item.imageUrl && (
+                    <div className="h-40 bg-gray-100">
+                      <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-pink-100 text-pink-700">{getSectionLabel(item.sectionType)}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${item.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                        {item.isActive ? "활성" : "비활성"}
+                      </span>
+                    </div>
+                    <h4 className="font-semibold text-sm truncate" data-testid={`content-title-${item.id}`}>{item.title}</h4>
+                    {item.celebrity && <p className="text-xs text-gray-500 mt-1">셀럽: {item.celebrity}</p>}
+                    {item.description && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.description}</p>}
+                    <div className="flex gap-2 mt-3">
+                      <Button data-testid={`btn-edit-content-${item.id}`} size="sm" variant="outline" onClick={() => handleEdit(item)}>
+                        <Pencil className="w-3 h-3 mr-1" /> 수정
+                      </Button>
+                      <Button data-testid={`btn-delete-content-${item.id}`} size="sm" variant="outline" className="text-red-500 hover:text-red-700" onClick={() => handleDelete(item.id)}>
+                        <Trash2 className="w-3 h-3 mr-1" /> 삭제
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>

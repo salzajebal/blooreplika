@@ -24,7 +24,8 @@ import {
   insertCouponSchema,
   insertCouponPaymentSchema,
   insertInspectionSchema,
-  insertShippingPhotoSchema
+  insertShippingPhotoSchema,
+  insertContentSectionSchema
 } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
@@ -5613,6 +5614,80 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting shipping photo:", error);
       res.status(500).json({ success: false, error: "Failed to delete shipping photo" });
+    }
+  });
+
+  app.get("/api/content-sections", async (req: Request, res: Response) => {
+    try {
+      const { sectionType } = req.query;
+      const items = await storage.getActiveContentSections(sectionType as string || "");
+      const enriched = await Promise.all(items.map(async (item) => {
+        const pids = (item.productIds || []).filter(Boolean);
+        if (pids.length === 0) return { ...item, products: [] };
+        const prods = await Promise.all(pids.map(async (pid) => {
+          try {
+            const p = await storage.getProduct(pid);
+            return p ? { id: p.id, name: p.name, price: p.price, originalPrice: p.originalPrice, imageUrl: p.imageUrl, discountPercent: p.discountPercent } : null;
+          } catch { return null; }
+        }));
+        return { ...item, products: prods.filter(Boolean) };
+      }));
+      res.json({ success: true, data: enriched });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to fetch content sections" });
+    }
+  });
+
+  app.get("/api/content-sections/:id", async (req: Request, res: Response) => {
+    try {
+      const item = await storage.getContentSection(req.params.id);
+      if (!item) return res.status(404).json({ success: false, error: "Not found" });
+      res.json({ success: true, data: item });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to fetch content section" });
+    }
+  });
+
+  app.get("/api/admin/content-sections", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { sectionType } = req.query;
+      const items = await storage.getContentSections(sectionType as string | undefined);
+      res.json({ success: true, data: items });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to fetch content sections" });
+    }
+  });
+
+  app.post("/api/admin/content-sections", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const parsed = insertContentSectionSchema.parse(req.body);
+      const item = await storage.createContentSection(parsed);
+      res.json({ success: true, data: item });
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ success: false, error: "Invalid data", details: error.errors });
+      }
+      res.status(500).json({ success: false, error: "Failed to create content section" });
+    }
+  });
+
+  app.put("/api/admin/content-sections/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const item = await storage.updateContentSection(req.params.id, req.body);
+      if (!item) return res.status(404).json({ success: false, error: "Not found" });
+      res.json({ success: true, data: item });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to update content section" });
+    }
+  });
+
+  app.delete("/api/admin/content-sections/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteContentSection(req.params.id);
+      if (!success) return res.status(404).json({ success: false, error: "Not found" });
+      res.json({ success: true, message: "Deleted" });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to delete content section" });
     }
   });
 

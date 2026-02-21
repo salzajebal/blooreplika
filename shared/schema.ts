@@ -648,3 +648,27 @@ export const insertShippingPhotoSchema = createInsertSchema(shippingPhotos).omit
 
 export type InsertShippingPhoto = z.infer<typeof insertShippingPhotoSchema>;
 export type ShippingPhoto = typeof shippingPhotos.$inferSelect;
+
+export const contentSections = pgTable("content_sections", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sectionType: text("section_type").notNull(),
+  title: text("title").notNull(),
+  description: text("description"),
+  imageUrl: text("image_url"),
+  linkUrl: text("link_url"),
+  celebrity: text("celebrity"),
+  productIds: text("product_ids").array().default([]),
+  sortOrder: integer("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertContentSectionSchema = createInsertSchema(contentSections).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertContentSection = z.infer<typeof insertContentSectionSchema>;
+export type ContentSection = typeof contentSections.$inferSelect;

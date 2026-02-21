@@ -27,7 +27,8 @@ import {
   type VisitorSession, type InsertVisitorSession, visitorSessions,
   type PageView, type InsertPageView, pageViews,
   type Inspection, type InsertInspection, inspections,
-  type ShippingPhoto, type InsertShippingPhoto, shippingPhotos
+  type ShippingPhoto, type InsertShippingPhoto, shippingPhotos,
+  type ContentSection, type InsertContentSection, contentSections
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, inArray } from "drizzle-orm";
@@ -251,6 +252,14 @@ export interface IStorage {
   createShippingPhoto(photo: InsertShippingPhoto): Promise<ShippingPhoto>;
   updateShippingPhoto(id: string, photo: Partial<InsertShippingPhoto>): Promise<ShippingPhoto | undefined>;
   deleteShippingPhoto(id: string): Promise<boolean>;
+
+  // Content Sections
+  getContentSections(sectionType?: string): Promise<ContentSection[]>;
+  getActiveContentSections(sectionType: string): Promise<ContentSection[]>;
+  getContentSection(id: string): Promise<ContentSection | undefined>;
+  createContentSection(data: InsertContentSection): Promise<ContentSection>;
+  updateContentSection(id: string, data: Partial<InsertContentSection>): Promise<ContentSection | undefined>;
+  deleteContentSection(id: string): Promise<boolean>;
 
   // Visitor Tracking
   trackVisitor(session: InsertVisitorSession): Promise<VisitorSession>;
@@ -1417,6 +1426,45 @@ export class DatabaseStorage implements IStorage {
 
   async deleteShippingPhoto(id: string): Promise<boolean> {
     const result = await db.delete(shippingPhotos).where(eq(shippingPhotos.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getContentSections(sectionType?: string): Promise<ContentSection[]> {
+    if (sectionType) {
+      return db.select().from(contentSections)
+        .where(eq(contentSections.sectionType, sectionType))
+        .orderBy(contentSections.sortOrder, desc(contentSections.createdAt));
+    }
+    return db.select().from(contentSections)
+      .orderBy(contentSections.sortOrder, desc(contentSections.createdAt));
+  }
+
+  async getActiveContentSections(sectionType: string): Promise<ContentSection[]> {
+    return db.select().from(contentSections)
+      .where(and(
+        eq(contentSections.sectionType, sectionType),
+        eq(contentSections.isActive, true)
+      ))
+      .orderBy(contentSections.sortOrder, desc(contentSections.createdAt));
+  }
+
+  async getContentSection(id: string): Promise<ContentSection | undefined> {
+    const [item] = await db.select().from(contentSections).where(eq(contentSections.id, id));
+    return item;
+  }
+
+  async createContentSection(data: InsertContentSection): Promise<ContentSection> {
+    const [item] = await db.insert(contentSections).values(data).returning();
+    return item;
+  }
+
+  async updateContentSection(id: string, data: Partial<InsertContentSection>): Promise<ContentSection | undefined> {
+    const [item] = await db.update(contentSections).set(data).where(eq(contentSections.id, id)).returning();
+    return item;
+  }
+
+  async deleteContentSection(id: string): Promise<boolean> {
+    const result = await db.delete(contentSections).where(eq(contentSections.id, id)).returning();
     return result.length > 0;
   }
 }
