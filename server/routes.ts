@@ -162,6 +162,19 @@ export async function registerRoutes(
   registerObjectStorageRoutes(app);
   const objectStorageService = new ObjectStorageService();
   
+  (async () => {
+    try {
+      const { db } = await import("./db");
+      const { inspections, shippingPhotos } = await import("@shared/schema");
+      const { like } = await import("drizzle-orm");
+      const deleted1 = await db.delete(inspections).where(like(inspections.imageUrl, '/uploads/%'));
+      const deleted2 = await db.delete(shippingPhotos).where(like(shippingPhotos.imageUrl, '/uploads/%'));
+      console.log("Cleaned up orphaned local file references from inspections and shipping_photos");
+    } catch (e) {
+      console.error("Cleanup error:", e);
+    }
+  })();
+
   // ==================== IMAGE PROXY API ====================
   
   // In-memory image cache for faster subsequent loads
