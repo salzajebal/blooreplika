@@ -37,6 +37,7 @@ export default function ProductDetail() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<string>("");
   const [kakaoLink, setKakaoLink] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<"detail" | "review" | "shipping">("detail");
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -237,6 +238,9 @@ export default function ProductDetail() {
       <Header />
       
       <main className="flex-1 pb-28 lg:pb-0">
+        <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-2.5 text-center">
+          <p className="text-xs md:text-sm tracking-wider">라이크잇 정품보증 | 무료검수 | 전상품 무료배송 | 카카오톡 실시간 상담</p>
+        </div>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
           <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-500 mb-4 sm:mb-8 overflow-x-auto whitespace-nowrap">
             <Link href="/" className="hover:text-primary shrink-0">홈</Link>
@@ -489,178 +493,208 @@ export default function ProductDetail() {
             </div>
           </div>
 
-          <div className="mt-8 sm:mt-16 border-t border-gray-200 pt-8 sm:pt-12">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4 sm:mb-6 pb-3 sm:pb-4 border-b-2 border-primary inline-block">
-              상품 상세 정보
-            </h2>
-            
-            {product.detailContent && product.detailContent !== "프리미엄 명품 제품입니다." && (
-              <div 
-                className="text-gray-700 mb-6 text-center detail-html-content" 
-                data-testid="content-detail"
-                ref={(el) => {
-                  if (!el) return;
-                  const imgs = el.querySelectorAll('img');
-                  imgs.forEach(img => {
-                    img.onerror = () => { img.style.display = 'none'; };
-                    img.onload = () => {
-                      if (img.naturalWidth <= 400 && img.naturalHeight <= 300) {
-                        img.style.display = 'none';
-                      }
-                    };
-                  });
-                }}
-                dangerouslySetInnerHTML={{ 
-                  __html: product.detailContent
-                    .replace(/src="\/styleis\/data\//g, 'src="https://bagstyle.site/styleis/data/')
-                    .replace(/src='\/styleis\/data\//g, "src='https://bagstyle.site/styleis/data/")
-                    .replace(/src="\/data\//g, 'src="https://bagstyle.site/data/')
-                    .replace(/src='\/data\//g, "src='https://bagstyle.site/data/")
-                    .replace(/src="(https?:\/\/bagstyle\.site\/(?:styleis\/)?data\/[^"]+)"/g, (_match: string, url: string) => 
-                      `src="${getProxiedImageUrl(url, 'large')}" style="max-width:100%;height:auto;"`
-                    )
-                    .replace(/src='(https?:\/\/bagstyle\.site\/(?:styleis\/)?data\/[^']+)'/g, (_match: string, url: string) => 
-                      `src='${getProxiedImageUrl(url, 'large')}' style='max-width:100%;height:auto;'`
-                    )
-                }}
-              />
-            )}
-            
-            {product.detailImageUrls && product.detailImageUrls.length > 0 ? (
-              <div className="space-y-4 mb-8 sm:mb-12">
-                {product.detailImageUrls
-                  .filter(imgUrl => {
-                    const lowerUrl = imgUrl.toLowerCase();
-                    const excludePatterns = [
-                      'shipping', 'delivery', 'info_banner', 'notice',
-                      'haewoe', 'gyohwan', 'geomsu', 'unsong',
-                      '국내배송', '교환', '환불', '검수', '운송장', '배송안내',
-                      'cdamdong.co.kr/data/file/sj_note'
-                    ];
-                    return !excludePatterns.some(pattern => lowerUrl.includes(pattern));
-                  })
-                  .map((imgUrl, index) => (
-                  <div key={index} className="flex justify-center">
-                    <img
-                      src={getProxiedImageUrl(imgUrl, "large")}
-                      alt={`${product.name} 상세 설명 이미지 ${index + 1}`}
-                      className="max-w-full rounded-lg shadow-sm"
-                      style={{ maxHeight: 'none' }}
-                      onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }}
-                      onLoad={(e) => {
-                        const img = e.target as HTMLImageElement;
-                        if (img.naturalWidth <= 400 && img.naturalHeight <= 300) {
-                          img.parentElement!.style.display = 'none';
-                        }
-                      }}
-                      data-testid={`img-detail-${index}`}
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : product.imageUrls && product.imageUrls.length > 1 ? (
-              <div className="space-y-4 mb-8 sm:mb-12">
-                {product.imageUrls.slice(1).map((imgUrl, index) => (
-                  <div key={index} className="flex justify-center">
-                    <img
-                      src={getProxiedImageUrl(imgUrl, "large")}
-                      alt={`${product.name} 상세 이미지 ${index + 1}`}
-                      className="max-w-full rounded-lg shadow-sm"
-                      style={{ maxHeight: 'none' }}
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      data-testid={`img-detail-fallback-${index}`}
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : product.imageUrl ? (
-              <div className="space-y-4 mb-8 sm:mb-12">
-                <div className="flex justify-center">
-                  <img
-                    src={getProxiedImageUrl(product.imageUrl, "large")}
-                    alt={`${product.name} 상품 이미지`}
-                    className="max-w-full rounded-lg shadow-sm"
-                    style={{ maxHeight: 'none' }}
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                    data-testid="img-detail-main"
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="text-gray-500 text-center py-8 mb-8 sm:mb-12">
-                상품 상세 이미지가 없습니다.
-              </div>
-            )}
-
-            <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
-              <h3 className="font-bold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">배송 및 교환/반품 안내</h3>
-              <div className="grid md:grid-cols-2 gap-4 sm:gap-6 text-xs sm:text-sm text-gray-600">
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">배송 안내</h4>
-                  <ul className="space-y-1">
-                    <li>• 배송비: 전 상품 무료 배송</li>
-                    <li>• 배송 기간: 결제 확인 후 1~3일 이내</li>
-                    <li>• 배송사: CJ대한통운</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">교환/반품 안내</h4>
-                  <ul className="space-y-1">
-                    <li>• 상품 수령 후 7일 이내 교환/반품 가능</li>
-                    <li>• 단순 변심 시 왕복 배송비 고객 부담</li>
-                    <li>• 제품 하자 시 무료 교환 및 반품</li>
-                  </ul>
-                </div>
-              </div>
+          <div className="mt-8 sm:mt-12 border-t border-gray-200">
+            <div className="flex border-b border-gray-200">
+              <button
+                onClick={() => setActiveTab("detail")}
+                className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${activeTab === "detail" ? "border-black text-black" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+                data-testid="tab-detail"
+              >
+                상품상세
+              </button>
+              <button
+                onClick={() => setActiveTab("review")}
+                className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${activeTab === "review" ? "border-black text-black" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+                data-testid="tab-review"
+              >
+                구매후기 ({reviews.length})
+              </button>
+              <button
+                onClick={() => setActiveTab("shipping")}
+                className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${activeTab === "shipping" ? "border-black text-black" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+                data-testid="tab-shipping"
+              >
+                배송/교환
+              </button>
             </div>
           </div>
 
-          {reviews.length > 0 && (
-            <div className="mt-8 sm:mt-16 border-t border-gray-200 pt-8 sm:pt-12">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 pb-3 sm:pb-4 border-b-2 border-primary inline-block">
-                  고객 리뷰
-                </h2>
-                <Link href="/reviews" className="text-sm text-primary hover:underline">
-                  전체보기
-                </Link>
-              </div>
+          {activeTab === "detail" && (
+            <div className="pt-8 sm:pt-12">
+              {product.detailContent && product.detailContent !== "프리미엄 명품 제품입니다." && (
+                <div 
+                  className="text-gray-700 mb-6 text-center detail-html-content" 
+                  data-testid="content-detail"
+                  ref={(el) => {
+                    if (!el) return;
+                    const imgs = el.querySelectorAll('img');
+                    imgs.forEach(img => {
+                      img.onerror = () => { img.style.display = 'none'; };
+                      img.onload = () => {
+                        if (img.naturalWidth <= 400 && img.naturalHeight <= 300) {
+                          img.style.display = 'none';
+                        }
+                      };
+                    });
+                  }}
+                  dangerouslySetInnerHTML={{ 
+                    __html: product.detailContent
+                      .replace(/src="\/styleis\/data\//g, 'src="https://bagstyle.site/styleis/data/')
+                      .replace(/src='\/styleis\/data\//g, "src='https://bagstyle.site/styleis/data/")
+                      .replace(/src="\/data\//g, 'src="https://bagstyle.site/data/')
+                      .replace(/src='\/data\//g, "src='https://bagstyle.site/data/")
+                      .replace(/src="(https?:\/\/bagstyle\.site\/(?:styleis\/)?data\/[^"]+)"/g, (_match: string, url: string) => 
+                        `src="${getProxiedImageUrl(url, 'large')}" style="max-width:100%;height:auto;"`
+                      )
+                      .replace(/src='(https?:\/\/bagstyle\.site\/(?:styleis\/)?data\/[^']+)'/g, (_match: string, url: string) => 
+                        `src='${getProxiedImageUrl(url, 'large')}' style='max-width:100%;height:auto;'`
+                      )
+                  }}
+                />
+              )}
               
-              <div className="space-y-4">
-                {reviews.map((review) => (
-                  <div key={review.id} className="border border-gray-100 rounded-lg p-4" data-testid={`review-${review.id}`}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <Star 
-                            key={i} 
-                            className={`w-4 h-4 ${i < (review.rating || 5) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
-                          />
-                        ))}
-                      </div>
-                      <span className="text-sm font-medium">{review.authorName}</span>
-                      <span className="text-xs text-gray-400">
-                        {review.displayDate ? new Date(review.displayDate).toLocaleDateString('ko-KR') : ''}
-                      </span>
+              {product.detailImageUrls && product.detailImageUrls.length > 0 ? (
+                <div className="space-y-4 mb-8 sm:mb-12">
+                  {product.detailImageUrls
+                    .filter(imgUrl => {
+                      const lowerUrl = imgUrl.toLowerCase();
+                      const excludePatterns = [
+                        'shipping', 'delivery', 'info_banner', 'notice',
+                        'haewoe', 'gyohwan', 'geomsu', 'unsong',
+                        '국내배송', '교환', '환불', '검수', '운송장', '배송안내',
+                        'cdamdong.co.kr/data/file/sj_note'
+                      ];
+                      return !excludePatterns.some(pattern => lowerUrl.includes(pattern));
+                    })
+                    .map((imgUrl, index) => (
+                    <div key={index} className="flex justify-center">
+                      <img
+                        src={getProxiedImageUrl(imgUrl, "large")}
+                        alt={`${product.name} 상세 설명 이미지 ${index + 1}`}
+                        className="max-w-full rounded-lg shadow-sm"
+                        style={{ maxHeight: 'none' }}
+                        onError={(e) => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }}
+                        onLoad={(e) => {
+                          const img = e.target as HTMLImageElement;
+                          if (img.naturalWidth <= 400 && img.naturalHeight <= 300) {
+                            img.parentElement!.style.display = 'none';
+                          }
+                        }}
+                        data-testid={`img-detail-${index}`}
+                      />
                     </div>
-                    {review.title && (
-                      <h4 className="font-medium text-gray-900 mb-1">{review.title}</h4>
-                    )}
-                    <p className="text-sm text-gray-600">{review.content}</p>
-                    {review.imageUrls && review.imageUrls.length > 0 && (
-                      <div className="flex gap-2 mt-3">
-                        {review.imageUrls.slice(0, 3).map((url, i) => (
-                          <img 
-                            key={i} 
-                            src={url} 
-                            alt={`리뷰 이미지 ${i + 1}`}
-                            className="w-16 h-16 object-cover rounded"
-                          />
-                        ))}
-                      </div>
-                    )}
+                  ))}
+                </div>
+              ) : product.imageUrls && product.imageUrls.length > 1 ? (
+                <div className="space-y-4 mb-8 sm:mb-12">
+                  {product.imageUrls.slice(1).map((imgUrl, index) => (
+                    <div key={index} className="flex justify-center">
+                      <img
+                        src={getProxiedImageUrl(imgUrl, "large")}
+                        alt={`${product.name} 상세 이미지 ${index + 1}`}
+                        className="max-w-full rounded-lg shadow-sm"
+                        style={{ maxHeight: 'none' }}
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        data-testid={`img-detail-fallback-${index}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : product.imageUrl ? (
+                <div className="space-y-4 mb-8 sm:mb-12">
+                  <div className="flex justify-center">
+                    <img
+                      src={getProxiedImageUrl(product.imageUrl, "large")}
+                      alt={`${product.name} 상품 이미지`}
+                      className="max-w-full rounded-lg shadow-sm"
+                      style={{ maxHeight: 'none' }}
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      data-testid="img-detail-main"
+                    />
                   </div>
-                ))}
+                </div>
+              ) : (
+                <div className="text-gray-500 text-center py-8 mb-8 sm:mb-12">
+                  상품 상세 이미지가 없습니다.
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "review" && (
+            <div className="pt-8 sm:pt-12">
+              {reviews.length > 0 ? (
+                <div className="space-y-4">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="border border-gray-100 rounded-lg p-4" data-testid={`review-${review.id}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star 
+                              key={i} 
+                              className={`w-4 h-4 ${i < (review.rating || 5) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+                            />
+                          ))}
+                        </div>
+                        <span className="text-sm font-medium">{review.authorName}</span>
+                        <span className="text-xs text-gray-400">
+                          {review.displayDate ? new Date(review.displayDate).toLocaleDateString('ko-KR') : ''}
+                        </span>
+                      </div>
+                      {review.title && (
+                        <h4 className="font-medium text-gray-900 mb-1">{review.title}</h4>
+                      )}
+                      <p className="text-sm text-gray-600">{review.content}</p>
+                      {review.imageUrls && review.imageUrls.length > 0 && (
+                        <div className="flex gap-2 mt-3">
+                          {review.imageUrls.slice(0, 3).map((url, i) => (
+                            <img 
+                              key={i} 
+                              src={url} 
+                              alt={`리뷰 이미지 ${i + 1}`}
+                              className="w-16 h-16 object-cover rounded"
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <div className="text-center pt-4">
+                    <Link href="/reviews" className="text-sm text-primary hover:underline">
+                      전체 리뷰 보기
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-gray-500 text-center py-8">
+                  아직 작성된 리뷰가 없습니다.
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "shipping" && (
+            <div className="pt-8 sm:pt-12">
+              <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
+                <h3 className="font-bold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">배송 및 교환/반품 안내</h3>
+                <div className="grid md:grid-cols-2 gap-4 sm:gap-6 text-xs sm:text-sm text-gray-600">
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">배송 안내</h4>
+                    <ul className="space-y-1">
+                      <li>• 배송비: 전 상품 무료 배송</li>
+                      <li>• 배송 기간: 결제 확인 후 1~3일 이내</li>
+                      <li>• 배송사: CJ대한통운</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-2">교환/반품 안내</h4>
+                    <ul className="space-y-1">
+                      <li>• 상품 수령 후 7일 이내 교환/반품 가능</li>
+                      <li>• 단순 변심 시 왕복 배송비 고객 부담</li>
+                      <li>• 제품 하자 시 무료 교환 및 반품</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
           )}

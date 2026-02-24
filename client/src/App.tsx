@@ -32,6 +32,8 @@ import Choice from "@/pages/Choice";
 import OrderInquiry from "@/pages/OrderInquiry";
 import Inspection from "@/pages/Inspection";
 import ContentPage from "@/pages/ContentPage";
+import Magazine from "@/pages/Magazine";
+import Labs from "@/pages/Labs";
 
 function BestPage() { return <ContentPage sectionType="best" />; }
 function LivePage() { return <ContentPage sectionType="live" />; }
@@ -72,6 +74,8 @@ function Router() {
       <Route path="/orders" component={OrderInquiry} />
       <Route path="/search" component={ProductList} />
       <Route path="/inspection" component={Inspection} />
+      <Route path="/magazine" component={Magazine} />
+      <Route path="/labs" component={Labs} />
       <Route component={NotFound} />
     </Switch>
   );

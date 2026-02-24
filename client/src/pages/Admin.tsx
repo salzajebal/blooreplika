@@ -4926,6 +4926,8 @@ export default function Admin() {
               </div>
             </div>
             
+            <HomeSectionTitlesEditor />
+
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
               <div className="p-6 border-b border-gray-100">
                 <h3 className="text-lg font-bold flex items-center gap-2">
@@ -6312,6 +6314,87 @@ export default function Admin() {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function HomeSectionTitlesEditor() {
+  const sections = [
+    { key: "home_topBrand", defaultTitle: "Top Brand", defaultSubtitle: "인기 탑 브랜드", label: "Top Brand 섹션" },
+    { key: "home_forYou", defaultTitle: "For You", defaultSubtitle: "고객님을 위해 준비해 봤어요.", label: "For You 섹션" },
+  ];
+  const [values, setValues] = useState<Record<string, { title: string; subtitle: string }>>({});
+  const [saving, setSaving] = useState<string | null>(null);
+
+  useEffect(() => {
+    sections.forEach(async (s) => {
+      try {
+        const res = await fetch(`/api/settings/${s.key}`);
+        const data = await res.json();
+        if (data.success && data.data?.value) {
+          try {
+            const parsed = JSON.parse(data.data.value);
+            setValues(prev => ({ ...prev, [s.key]: parsed }));
+          } catch {}
+        }
+        if (!values[s.key]) {
+          setValues(prev => ({ ...prev, [s.key]: { title: s.defaultTitle, subtitle: s.defaultSubtitle } }));
+        }
+      } catch {}
+    });
+  }, []);
+
+  const handleSave = async (key: string) => {
+    setSaving(key);
+    try {
+      const token = localStorage.getItem("adminToken");
+      await fetch(`/api/admin/settings/${key}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ value: JSON.stringify(values[key]) }),
+      });
+    } catch {}
+    setSaving(null);
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
+      <div className="p-6 border-b border-gray-100">
+        <h3 className="text-lg font-bold flex items-center gap-2">
+          <Settings className="w-5 h-5 text-blue-600" />
+          홈 섹션 타이틀 설정
+        </h3>
+        <p className="text-sm text-gray-500 mt-1">메인 페이지의 각 섹션 제목과 부제를 변경합니다.</p>
+      </div>
+      <div className="p-6 space-y-6">
+        {sections.map((s) => (
+          <div key={s.key} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="font-semibold text-gray-800 mb-3">{s.label}</h4>
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">제목</label>
+                <Input
+                  value={values[s.key]?.title || s.defaultTitle}
+                  onChange={(e) => setValues(prev => ({ ...prev, [s.key]: { ...prev[s.key], title: e.target.value } }))}
+                  placeholder={s.defaultTitle}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">부제</label>
+                <Input
+                  value={values[s.key]?.subtitle || s.defaultSubtitle}
+                  onChange={(e) => setValues(prev => ({ ...prev, [s.key]: { ...prev[s.key], subtitle: e.target.value } }))}
+                  placeholder={s.defaultSubtitle}
+                />
+              </div>
+            </div>
+            <Button size="sm" onClick={() => handleSave(s.key)} disabled={saving === s.key} className="bg-blue-600 hover:bg-blue-700">
+              {saving === s.key ? <RefreshCw className="w-3 h-3 animate-spin mr-1" /> : null}
+              저장
+            </Button>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -562,14 +562,14 @@ export default function ProductList() {
                     key={product.id}
                     href={`/product/${product.id}`}
                     className={cn(
-                      "group bg-white border border-gray-200 hover:shadow-md transition-all",
+                      "group bg-white border border-gray-200 hover:shadow-md transition-all rounded-lg overflow-hidden",
                       viewMode === "list" && "flex gap-4 p-4"
                     )}
                     data-testid={`card-product-${product.id}`}
                   >
                     <div className={cn(
                       "bg-gray-50 relative overflow-hidden",
-                      viewMode === "grid" ? "aspect-square" : "w-32 h-32 flex-shrink-0"
+                      viewMode === "grid" ? "aspect-square rounded-lg" : "w-32 h-32 flex-shrink-0"
                     )}>
                       {product.imageUrl ? (
                         <img 
@@ -593,8 +593,10 @@ export default function ProductList() {
                       )}
                       
                       <div className="absolute top-2 left-2 flex flex-col gap-1">
-                        {product.isBest && (
-                          <span className="bg-black text-white text-[10px] px-2.5 py-1 font-bold">BEST</span>
+                        {(product.viewCount ?? 0) > 0 && (
+                          <span className="bg-black/70 text-white text-[10px] px-2 py-0.5 rounded font-medium">
+                            조회 {(product.viewCount ?? 0).toLocaleString()}
+                          </span>
                         )}
                         {product.isNew && (
                           <span className="bg-red-500 text-white text-[10px] px-2.5 py-1 font-bold">NEW</span>

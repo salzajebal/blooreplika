@@ -476,6 +476,19 @@ export async function registerRoutes(
       res.status(500).json({ success: false, error: "Failed to delete product" });
     }
   });
+
+  app.post("/api/admin/bulk-price-increase", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { db } = await import("./db");
+      const { products } = await import("@shared/schema");
+      const { sql } = await import("drizzle-orm");
+      await db.execute(sql`UPDATE products SET price = price + 20000, original_price = COALESCE(original_price, price) + 20000`);
+      res.json({ success: true, message: "All prices increased by 20,000 KRW" });
+    } catch (error) {
+      console.error("Error bulk price increase:", error);
+      res.status(500).json({ success: false, error: "Failed to update prices" });
+    }
+  });
   
   // ==================== CATEGORIES API ====================
   

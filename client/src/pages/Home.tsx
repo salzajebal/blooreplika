@@ -191,7 +191,27 @@ function QuickMenu() {
   );
 }
 
+function useSectionTitle(key: string, defaultTitle: string, defaultSubtitle: string) {
+  const { data } = useQuery({
+    queryKey: [`/api/settings/${key}`],
+    queryFn: async () => {
+      const res = await fetch(`/api/settings/${key}`);
+      const data = await res.json();
+      if (data.success && data.data?.value) {
+        try { return JSON.parse(data.data.value); } catch { return null; }
+      }
+      return null;
+    },
+    staleTime: 60000,
+  });
+  return {
+    title: data?.title || defaultTitle,
+    subtitle: data?.subtitle || defaultSubtitle,
+  };
+}
+
 function TopBrandSection() {
+  const { title, subtitle } = useSectionTitle("home_topBrand", "Top Brand", "인기 탑 브랜드");
   const { data: topBrandsData } = useQuery({
     queryKey: ['/api/brands/top'],
     queryFn: async () => {
@@ -209,21 +229,21 @@ function TopBrandSection() {
   }));
 
   return (
-    <section className="bg-white py-10 md:py-14 border-b border-gray-100" data-testid="top-brand-section">
+    <section className="bg-white py-6 md:py-8 border-b border-gray-100" data-testid="top-brand-section">
       <div className="max-w-[1200px] mx-auto px-4">
-        <div className="mb-8">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-900" style={{ fontFamily: "'Playfair Display', serif" }}>Top Brand</h2>
-          <p className="text-sm text-gray-500 mt-1">인기 탑 브랜드</p>
+        <div className="mb-4">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900" style={{ fontFamily: "'Playfair Display', serif" }}>{title}</h2>
+          <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 md:gap-4">
-          {brandDisplayData.map((brand) => (
+        <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 md:gap-3">
+          {brandDisplayData.map((brand: any) => (
             <Link
               key={brand.name}
               href={brand.path}
               className="flex flex-col items-center group"
               data-testid={`top-brand-${brand.name}`}
             >
-              <div className="w-full aspect-square rounded-xl overflow-hidden">
+              <div className="w-full aspect-[4/3] rounded-lg overflow-hidden">
                 {brand.displayImage ? (
                   <img
                     src={brand.displayImage}
@@ -238,7 +258,7 @@ function TopBrandSection() {
                   </div>
                 )}
               </div>
-              <span className="text-xs md:text-sm text-gray-600 mt-2.5 text-center group-hover:text-black transition-colors">{brand.name}</span>
+              <span className="text-[10px] md:text-xs text-gray-600 mt-1.5 text-center group-hover:text-black transition-colors">{brand.name}</span>
             </Link>
           ))}
         </div>
@@ -248,6 +268,7 @@ function TopBrandSection() {
 }
 
 function ForYouSection({ products, brands }: { products: any[]; brands: any[] }) {
+  const { title: sectionTitle, subtitle: sectionSubtitle } = useSectionTitle("home_forYou", "For You", "고객님을 위해 준비해 봤어요.");
   const [currentPage, setCurrentPage] = useState(0);
 
   if (products.length === 0) return null;
@@ -316,8 +337,8 @@ function ForYouSection({ products, brands }: { products: any[]; brands: any[] })
       <div className="max-w-[1200px] mx-auto px-4">
         <div className="flex items-end justify-between mb-6 md:mb-8 pb-5 border-b border-gray-200">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 italic" style={{ fontFamily: "'Playfair Display', serif" }}>For You</h2>
-            <p className="text-sm md:text-base text-gray-500 mt-1.5">고객님을 위해 준비해 봤어요.</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 italic" style={{ fontFamily: "'Playfair Display', serif" }}>{sectionTitle}</h2>
+            <p className="text-sm md:text-base text-gray-500 mt-1.5">{sectionSubtitle}</p>
           </div>
           {totalPages > 1 && (
             <div className="flex items-center gap-3">
