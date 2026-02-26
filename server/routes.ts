@@ -2646,7 +2646,7 @@ export async function registerRoutes(
   
   app.post("/api/orders", async (req: Request, res: Response) => {
     try {
-      const { couponPayment, isCartOrder, cartItems, ...orderData } = req.body;
+      const { couponPayment, isCartOrder, cartItems, paymentData, ...orderData } = req.body;
       
       if (isCartOrder && Array.isArray(cartItems) && cartItems.length > 0) {
         const orderNumber = `ORD${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
@@ -2743,6 +2743,79 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating order:", error);
       res.status(500).json({ success: false, error: "주문 수정 중 오류가 발생했습니다." });
+    }
+  });
+
+  // ==================== CARD PAYMENT (GH PAYMENTS) API ====================
+
+  app.post("/api/orders/payment-confirm", async (req: Request, res: Response) => {
+    try {
+      const { orderNumber, paymentData } = req.body;
+      if (!orderNumber || !paymentData) {
+        return res.status(400).json({ success: false, error: "결제 정보가 누락되었습니다." });
+      }
+
+      const existingOrder = await storage.getOrderByNumber(orderNumber);
+      if (!existingOrder) {
+        return res.status(404).json({ success: false, error: "주문을 찾을 수 없습니다." });
+      }
+
+      if (existingOrder.paymentStatus === "paid") {
+        return res.json({ success: true, data: existingOrder });
+      }
+
+      const paidAmount = parseInt(paymentData.amount, 10);
+      if (isNaN(paidAmount) || paidAmount !== existingOrder.totalAmount) {
+        console.error(`[Payment] Amount mismatch: paid=${paidAmount}, expected=${existingOrder.totalAmount}, order=${orderNumber}`);
+        await storage.updateOrderByNumber(orderNumber, { paymentStatus: "failed" });
+        return res.status(400).json({ success: false, error: "결제 금액이 주문 금액과 일치하지 않습니다." });
+      }
+
+      const order = await storage.updateOrderByNumber(orderNumber, {
+        paymentStatus: paymentData.resultCode === "0000" ? "paid" : "failed",
+        status: paymentData.resultCode === "0000" ? "confirmed" : "pending",
+      });
+
+      res.json({ success: true, data: order });
+    } catch (error) {
+      console.error("Error confirming payment:", error);
+      res.status(500).json({ success: false, error: "결제 확인 중 오류가 발생했습니다." });
+    }
+  });
+
+  app.post("/api/payments/webhook", async (req: Request, res: Response) => {
+    try {
+      const { trackId, resultCode, resultMsg, amount } = req.body;
+      console.log(`[GH Payment Webhook] trackId=${trackId}, resultCode=${resultCode}, resultMsg=${resultMsg}, amount=${amount}`);
+
+      if (trackId) {
+        const existingOrder = await storage.getOrderByNumber(trackId);
+        if (!existingOrder) {
+          console.error(`[Payment Webhook] Order not found: ${trackId}`);
+          return res.json({ success: false });
+        }
+
+        if (existingOrder.paymentStatus === "paid") {
+          return res.json({ success: true });
+        }
+
+        const paidAmount = parseInt(amount, 10);
+        if (isNaN(paidAmount) || paidAmount !== existingOrder.totalAmount) {
+          console.error(`[Payment Webhook] Amount mismatch: paid=${paidAmount}, expected=${existingOrder.totalAmount}, order=${trackId}`);
+          await storage.updateOrderByNumber(trackId, { paymentStatus: "failed" });
+          return res.json({ success: false });
+        }
+
+        await storage.updateOrderByNumber(trackId, {
+          paymentStatus: resultCode === "0000" ? "paid" : "failed",
+          status: resultCode === "0000" ? "confirmed" : "pending",
+        });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error processing payment webhook:", error);
+      res.status(500).json({ success: false });
     }
   });
 

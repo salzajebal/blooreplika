@@ -9,12 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
 import { CheckCircle, Package, User, MapPin, MessageCircle, CreditCard, Building2, Wallet } from "lucide-react";
-import { CardPaymentForm, type CouponPaymentData } from "@/components/checkout/CardPaymentForm";
+import { GHPaymentButton, type GHPaymentResult } from "@/components/checkout/CardPaymentForm";
 import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import type { Product } from "@shared/schema";
 
-type PaymentMethod = "coupon" | "bank" | null;
+type PaymentMethod = "card" | "bank" | null;
 
 
 function KakaoIcon({ className }: { className?: string }) {
@@ -39,8 +39,7 @@ export default function Order() {
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
-  const [cardPaymentValid, setCardPaymentValid] = useState(false);
-  const [couponPaymentData, setCouponPaymentData] = useState<CouponPaymentData | null>(null);
+  const [pendingOrderNumber, setPendingOrderNumber] = useState<string>("");
   const [memberPointBalance, setMemberPointBalance] = useState(0);
   const [pointsToUse, setPointsToUse] = useState(0);
   const [pointInputValue, setPointInputValue] = useState("");
@@ -304,7 +303,6 @@ export default function Order() {
         totalAmount: calculateSubtotal() - pointsToUse,
         pointsUsed: pointsToUse,
         paymentMethod: paymentMethod || undefined,
-        couponPayment: paymentMethod === "coupon" && couponPaymentData ? couponPaymentData : undefined,
       };
 
       const res = await fetch("/api/orders", {
@@ -319,8 +317,15 @@ export default function Order() {
       const data = await res.json();
       
       if (data.success) {
-        setOrderNumber(data.data.orderNumber);
-        setOrderComplete(true);
+        const createdOrderNumber = data.data.orderNumber;
+
+        if (paymentMethod === "card") {
+          setPendingOrderNumber(createdOrderNumber);
+          setSubmitting(false);
+        } else {
+          setOrderNumber(createdOrderNumber);
+          setOrderComplete(true);
+        }
       } else {
         throw new Error(data.error || "주문 처리 중 오류가 발생했습니다.");
       }
@@ -332,6 +337,45 @@ export default function Order() {
       });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handlePaymentResult = async (result: GHPaymentResult) => {
+    if (result.resultCode === "0000") {
+      try {
+        const confirmRes = await fetch("/api/orders/payment-confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderNumber: pendingOrderNumber,
+            paymentData: result,
+          }),
+        });
+        const confirmData = await confirmRes.json();
+        if (confirmData.success) {
+          setOrderNumber(pendingOrderNumber);
+          setOrderComplete(true);
+          toast({ title: "결제가 완료되었습니다." });
+        } else {
+          toast({
+            title: "결제 확인 오류",
+            description: confirmData.error || "결제 확인 중 문제가 발생했습니다. 고객센터에 문의해주세요.",
+            variant: "destructive",
+          });
+        }
+      } catch {
+        toast({
+          title: "결제 확인 오류",
+          description: "결제는 완료되었으나 서버 확인 중 문제가 발생했습니다. 고객센터에 문의해주세요.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "결제 실패",
+        description: result.resultMsg || "결제 처리 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -803,21 +847,21 @@ export default function Order() {
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod("coupon")}
+                  onClick={() => { setPaymentMethod("card"); setPendingOrderNumber(""); }}
                   className={cn(
                     "p-4 border-2 rounded-lg flex flex-col items-center gap-2 transition-all",
-                    paymentMethod === "coupon"
-                      ? "border-primary bg-primary/5 text-primary"
+                    paymentMethod === "card"
+                      ? "border-blue-500 bg-blue-50 text-blue-600"
                       : "border-gray-200 hover:border-gray-300"
                   )}
-                  data-testid="button-payment-coupon"
+                  data-testid="button-payment-card"
                 >
                   <CreditCard className="w-8 h-8" />
                   <span className="font-medium">카드결제</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod("bank")}
+                  onClick={() => { setPaymentMethod("bank"); setPendingOrderNumber(""); }}
                   className={cn(
                     "p-4 border-2 rounded-lg flex flex-col items-center gap-2 transition-all",
                     paymentMethod === "bank"
@@ -831,18 +875,25 @@ export default function Order() {
                 </button>
               </div>
 
-              {paymentMethod === "coupon" && (
-                <CardPaymentForm 
-                  onSubmit={(isValid, data) => {
-                    setCardPaymentValid(isValid);
-                    if (data) setCouponPaymentData(data);
-                  }}
-                  onChange={(data, isValid) => {
-                    setCouponPaymentData(data);
-                    setCardPaymentValid(isValid);
-                  }}
-                  totalAmount={product ? getEffectivePrice() * quantity : 0}
+              {paymentMethod === "card" && pendingOrderNumber && (
+                <GHPaymentButton
+                  orderNumber={pendingOrderNumber}
+                  totalAmount={isCartOrder ? calculateSubtotal() - pointsToUse : (product ? getEffectivePrice() * quantity - pointsToUse : 0)}
+                  itemName={isCartOrder ? (cartItems[0]?.name || "상품") + (cartItems.length > 1 ? ` 외 ${cartItems.length - 1}건` : "") : (product?.name || "상품")}
+                  userName={formData.memberName}
+                  userEmail={formData.memberEmail}
+                  userTel={formData.memberPhone}
+                  webhookUrl={`${window.location.origin}/api/payments/webhook`}
+                  redirectUrl={`${window.location.origin}/order-complete/${pendingOrderNumber}`}
+                  onPaymentResult={handlePaymentResult}
                 />
+              )}
+
+              {paymentMethod === "card" && !pendingOrderNumber && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
+                  <CreditCard className="w-5 h-5 inline mr-1" />
+                  아래 <strong>주문하기</strong> 버튼을 누르면 카드결제 창이 열립니다.
+                </div>
               )}
 
               {paymentMethod === "bank" && (
@@ -896,14 +947,16 @@ export default function Order() {
               </div>
             </div>
 
-            <Button
-              type="submit"
-              disabled={submitting}
-              className="w-full h-14 text-lg font-bold bg-primary hover:bg-primary/90"
-              data-testid="button-submit-order"
-            >
-              {submitting ? "주문 처리 중..." : "주문하기"}
-            </Button>
+            {!(paymentMethod === "card" && pendingOrderNumber) && (
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="w-full h-14 text-lg font-bold bg-primary hover:bg-primary/90"
+                data-testid="button-submit-order"
+              >
+                {submitting ? "주문 처리 중..." : paymentMethod === "card" ? "주문 후 결제하기" : "주문하기"}
+              </Button>
+            )}
           </form>
         </div>
       </main>

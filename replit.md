@@ -114,6 +114,15 @@ Preferred communication style: Simple, everyday language.
   - `@replit/vite-plugin-dev-banner` for development indicator
   - `@replit/vite-plugin-runtime-error-modal` for error overlay
 
+**Card Payment (건흥페이먼츠 / GH Payments):**
+- SDK loaded from `https://api.ghpayments.kr/js/clientsideV2.js`
+- Client-side: `GHPaymentButton` component in `client/src/components/checkout/CardPaymentForm.tsx` calls `MARU.pay()` with layer mode
+- Public key stored in `VITE_GH_PAYMENT_PUBLIC_KEY` env var
+- Payment flow: Order created first (pending) → User clicks card payment → SDK popup opens → Response callback → Server-side `/api/orders/payment-confirm` verifies amount and updates order
+- Webhook endpoint: `POST /api/payments/webhook` for server-to-server confirmation from GH Payments
+- Amount verification: Both payment-confirm and webhook endpoints validate paid amount matches order total
+- Idempotency: Already-paid orders are not re-processed
+
 **Pricing Data:**
 - Simulated real-time pricing with time-based fluctuation algorithm
 - Future integration point for real metals API (metals-api.com or similar)
