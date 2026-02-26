@@ -90,32 +90,33 @@ function MainBannerSlider() {
   }
 
   return (
-    <section className="relative w-full overflow-hidden bg-black" data-testid="main-banner">
-      <div className="relative w-full h-[220px] md:h-[450px] overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden">
-          <div 
-            className="flex transition-transform duration-500 ease-in-out h-full"
-            style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-          >
-            {bannerList.map((banner: any, index: number) => (
-              <div key={index} className="w-full flex-shrink-0 h-full relative">
+    <section className="relative w-full overflow-hidden" data-testid="main-banner">
+      <div className="relative w-full aspect-[16/9] md:aspect-[2.4/1] overflow-hidden">
+        <div 
+          className="flex transition-transform duration-500 ease-in-out h-full"
+          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+        >
+          {bannerList.map((banner: any, index: number) => (
+            <div key={index} className="w-full flex-shrink-0 h-full relative">
+              <Link href={banner.linkUrl || "/products"} className="block w-full h-full">
                 <img 
                   src={banner.imageUrl}
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl"
-                  aria-hidden="true"
+                  alt={banner.title || `배너 ${index + 1}`}
+                  className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-black/20" aria-hidden="true" />
-                <Link href={banner.linkUrl || "/products"} className="relative block w-full h-full">
-                  <img 
-                    src={banner.imageUrl}
-                    alt={banner.title || `배너 ${index + 1}`}
-                    className="w-full h-full object-contain"
-                  />
-                </Link>
-              </div>
-            ))}
-          </div>
+                {banner.title && (
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end">
+                    <div className="p-5 md:p-10 text-white">
+                      <h2 className="text-lg md:text-3xl font-bold mb-1 md:mb-2 drop-shadow-lg">{banner.title}</h2>
+                      {banner.subtitle && (
+                        <p className="text-xs md:text-base text-white/80 drop-shadow">{banner.subtitle}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </Link>
+            </div>
+          ))}
         </div>
       </div>
       
@@ -123,26 +124,26 @@ function MainBannerSlider() {
         <>
           <button 
             onClick={() => setCurrentSlide((prev) => (prev === 0 ? bannerList.length - 1 : prev - 1))}
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 hover:bg-white rounded-full flex items-center justify-center text-gray-800 shadow-sm z-10"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 md:w-10 md:h-10 bg-white/70 hover:bg-white rounded-full flex items-center justify-center text-gray-800 shadow-sm z-10"
             aria-label="이전"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button 
             onClick={() => setCurrentSlide((prev) => (prev + 1) % bannerList.length)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/80 hover:bg-white rounded-full flex items-center justify-center text-gray-800 shadow-sm z-10"
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 md:w-10 md:h-10 bg-white/70 hover:bg-white rounded-full flex items-center justify-center text-gray-800 shadow-sm z-10"
             aria-label="다음"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
           
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
             {bannerList.map((_: any, index: number) => (
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  index === currentSlide ? 'bg-black w-5' : 'bg-gray-300'
+                className={`h-1.5 rounded-full transition-all ${
+                  index === currentSlide ? 'bg-white w-6' : 'bg-white/50 w-1.5'
                 }`}
                 aria-label={`슬라이드 ${index + 1}`}
               />
@@ -169,20 +170,20 @@ function QuickMenu() {
   ];
 
   return (
-    <section className="bg-white py-6 md:py-10 border-b border-gray-100">
-      <div className="max-w-[1200px] mx-auto px-4">
-        <div className="flex gap-6 md:gap-8 overflow-x-auto scrollbar-hide pb-3 md:flex-wrap md:justify-center md:overflow-x-visible">
+    <section className="bg-white py-5 md:py-8 border-b border-gray-100">
+      <div className="max-w-[600px] md:max-w-[1200px] mx-auto px-4">
+        <div className="grid grid-cols-5 gap-y-4 gap-x-2 md:gap-x-6 md:gap-y-6 md:flex md:flex-wrap md:justify-center">
           {menuItems.map((item) => (
             <Link
               key={item.name}
               href={item.path}
-              className="flex flex-col items-center gap-2.5 group flex-shrink-0"
+              className="flex flex-col items-center gap-1.5 md:gap-2.5 group"
               data-testid={`quick-menu-${item.name}`}
             >
-              <div className="w-[60px] h-[60px] md:w-[80px] md:h-[80px] rounded-full overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity flex items-center justify-center">
+              <div className="w-[52px] h-[52px] md:w-[72px] md:h-[72px] rounded-full overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity flex items-center justify-center shadow-sm">
                 <img src={item.image} alt={item.name} className="w-full h-full object-cover" loading="lazy" />
               </div>
-              <span className="text-xs md:text-sm text-gray-600 text-center whitespace-nowrap group-hover:text-black transition-colors font-medium">{item.name}</span>
+              <span className="text-[11px] md:text-xs text-gray-600 text-center leading-tight group-hover:text-black transition-colors font-medium line-clamp-2 w-full">{item.name}</span>
             </Link>
           ))}
         </div>
