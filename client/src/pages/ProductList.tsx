@@ -70,14 +70,24 @@ export default function ProductList() {
 
   const categoryInfo = CATEGORIES.find(c => c.slug === categorySlug);
   
+  const [searchStr, setSearchStr] = useState(window.location.search);
+  useEffect(() => {
+    setSearchStr(window.location.search);
+  }, [location]);
+  useEffect(() => {
+    const onPop = () => setSearchStr(window.location.search);
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   const { searchQuery, subcategoryId, urlBrand } = useMemo(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(searchStr);
     return {
       searchQuery: params.get("q"),
       subcategoryId: params.get("sub"),
       urlBrand: params.get("brand"),
     };
-  }, [location]);
+  }, [searchStr]);
 
   const isGenderCategory = categorySlug === "men" || categorySlug === "women";
   const genderFromCategory = categorySlug === "men" ? "남성" : categorySlug === "women" ? "여성" : null;
