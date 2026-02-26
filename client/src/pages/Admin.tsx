@@ -8580,8 +8580,44 @@ function LabsTab({ authToken }: { authToken: string }) {
               )}
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium mb-1">이미지 URL</label>
-                <Input data-testid="input-labs-imageUrl" value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder="https://..." />
+                <label className="block text-sm font-medium mb-1">이미지</label>
+                <div className="flex gap-2 items-end">
+                  <Input data-testid="input-labs-imageUrl" value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder="https://... 또는 이미지 업로드" className="flex-1" />
+                  <label className="cursor-pointer flex-shrink-0">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const fd = new FormData();
+                        fd.append("image", file);
+                        try {
+                          const res = await fetch("/api/admin/upload/banner-image", {
+                            method: "POST",
+                            headers: { Authorization: `Bearer ${authToken}` },
+                            body: fd,
+                          });
+                          const data = await res.json();
+                          if (data.success && data.data?.imageUrl) {
+                            setForm(prev => ({ ...prev, imageUrl: data.data.imageUrl }));
+                          }
+                        } catch {}
+                        e.target.value = "";
+                      }}
+                    />
+                    <div className="px-3 py-2 border rounded-lg text-sm flex items-center gap-1 hover:bg-gray-50">
+                      <Upload className="w-3.5 h-3.5" />
+                      업로드
+                    </div>
+                  </label>
+                </div>
+                {form.imageUrl && (
+                  <div className="mt-2 rounded overflow-hidden border bg-gray-50 max-h-32">
+                    <img src={form.imageUrl} alt="미리보기" className="w-full h-32 object-cover" />
+                  </div>
+                )}
               </div>
 
               {(form.blockType === "hero" || form.blockType === "image") && (
