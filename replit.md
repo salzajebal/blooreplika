@@ -82,6 +82,7 @@ Preferred communication style: Simple, everyday language.
 - Magazines: Admin-managed magazine/gallery articles with categories, images, and overlay text
 - Content Sections: Dynamic homepage sections with banner images, product filtering, and tab-based benefits page
 - Labs Blocks: Admin-managed content blocks for Labs/branding page (hero, text, image, image_text types)
+- Reviews: Customer purchase reviews with star ratings, photo attachments, product association. List-style display matching rixxrixx.com design with thumbnails, masked usernames, time-ago display. ReviewWriteForm component shared between Reviews page (no product selection) and ProductDetail page (with product context).
 
 **Validation:**
 - Zod schemas derived from Drizzle schemas using drizzle-zod

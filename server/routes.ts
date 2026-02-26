@@ -2238,12 +2238,46 @@ export async function registerRoutes(
     try {
       const limit = parseInt(req.query.limit as string) || 100;
       const offset = parseInt(req.query.offset as string) || 0;
+      const productId = req.query.productId as string | undefined;
+      const search = req.query.search as string | undefined;
+      const photoOnly = req.query.photoOnly === "true";
       
-      const allReviews = await storage.getVisibleReviews();
+      let allReviews = await storage.getVisibleReviews();
+      
+      if (productId) {
+        allReviews = allReviews.filter(r => String(r.productId) === String(productId));
+      }
+      if (search) {
+        const q = search.toLowerCase();
+        allReviews = allReviews.filter(r =>
+          (r.productName && r.productName.toLowerCase().includes(q)) ||
+          (r.content && r.content.toLowerCase().includes(q)) ||
+          (r.title && r.title.toLowerCase().includes(q))
+        );
+      }
+      if (photoOnly) {
+        allReviews = allReviews.filter(r =>
+          (r.imageUrls && r.imageUrls.length > 0) || !!r.imageUrl
+        );
+      }
+
       const total = allReviews.length;
       const paginatedReviews = allReviews.slice(offset, offset + limit);
+
+      const reviewsWithProduct = await Promise.all(
+        paginatedReviews.map(async (review) => {
+          let productImageUrl: string | null = null;
+          if (review.productId) {
+            try {
+              const product = await storage.getProduct(review.productId);
+              if (product) productImageUrl = product.imageUrl;
+            } catch {}
+          }
+          return { ...review, productImageUrl };
+        })
+      );
       
-      res.json({ success: true, data: paginatedReviews, total });
+      res.json({ success: true, data: reviewsWithProduct, total });
     } catch (error) {
       console.error("Error fetching reviews:", error);
       res.status(500).json({ success: false, error: "리뷰를 불러올 수 없습니다." });

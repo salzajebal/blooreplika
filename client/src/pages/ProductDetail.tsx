@@ -3,13 +3,14 @@ import { useParams, Link, useLocation } from "wouter";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart, ChevronRight, Truck, Shield, ShoppingBag, Star, Package, AlertTriangle, MessageCircle, RefreshCw, Smartphone } from "lucide-react";
+import { ShoppingCart, Heart, ChevronRight, Truck, Shield, ShoppingBag, Star, Package, AlertTriangle, MessageCircle, RefreshCw, Smartphone, Pencil, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import type { Product, Brand, Review } from "@shared/schema";
 import { decodeHtml } from "@/lib/utils";
+import { ReviewWriteForm } from "@/pages/Reviews";
 
 // Global variable to store the deferred install prompt
 let deferredPrompt: any = null;
@@ -38,6 +39,19 @@ export default function ProductDetail() {
   const [selectedOption, setSelectedOption] = useState<string>("");
   const [kakaoLink, setKakaoLink] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"detail" | "review" | "shipping">("detail");
+  const [showReviewForm, setShowReviewForm] = useState(false);
+
+  const fetchProductReviews = async () => {
+    try {
+      const res = await fetch(`/api/reviews?productId=${id}`);
+      const data = await res.json();
+      if (data.success) {
+        setReviews(data.data.slice(0, 5));
+      }
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+    }
+  };
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -61,21 +75,9 @@ export default function ProductDetail() {
       }
     };
 
-    const fetchReviews = async () => {
-      try {
-        const res = await fetch(`/api/reviews?productId=${id}`);
-        const data = await res.json();
-        if (data.success) {
-          setReviews(data.data.slice(0, 5));
-        }
-      } catch (error) {
-        console.error("Error fetching reviews:", error);
-      }
-    };
-
     if (id) {
       fetchProduct();
-      fetchReviews();
+      fetchProductReviews();
     }
   }, [id]);
 
@@ -588,52 +590,75 @@ export default function ProductDetail() {
           )}
 
           {activeTab === "review" && (
-            <div className="pt-8 sm:pt-12">
+            <div className="pt-6 sm:pt-8">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm text-gray-500">구매후기 {reviews.length}건</span>
+                <Button size="sm" onClick={() => setShowReviewForm(!showReviewForm)} className="bg-black hover:bg-gray-800 text-xs h-8" data-testid="btn-write-review-product">
+                  <Pencil className="w-3 h-3 mr-1" />
+                  후기 작성
+                </Button>
+              </div>
+
+              {showReviewForm && product && (
+                <ReviewWriteForm
+                  productId={product.id?.toString()}
+                  productName={product.name}
+                  onClose={() => setShowReviewForm(false)}
+                  onSuccess={() => {
+                    setShowReviewForm(false);
+                    fetchProductReviews();
+                  }}
+                />
+              )}
+
               {reviews.length > 0 ? (
-                <div className="space-y-4">
-                  {reviews.map((review) => (
-                    <div key={review.id} className="border border-gray-100 rounded-lg p-4" data-testid={`review-${review.id}`}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star 
-                              key={i} 
-                              className={`w-4 h-4 ${i < (review.rating || 5) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+                <div className="divide-y divide-gray-100">
+                  {reviews.map((review) => {
+                    const hasPhoto = (review.imageUrls && review.imageUrls.length > 0) || !!review.imageUrl;
+                    const thumbUrl = hasPhoto
+                      ? (review.imageUrls?.[0] || review.imageUrl)
+                      : (product?.imageUrl || null);
+
+                    return (
+                      <div key={review.id} className="flex gap-3 py-3" data-testid={`review-${review.id}`}>
+                        <div className="w-14 h-14 flex-shrink-0 rounded overflow-hidden bg-gray-100">
+                          {thumbUrl ? (
+                            <img
+                              src={thumbUrl.startsWith("/api/") ? thumbUrl : getProxiedImageUrl(thumbUrl, "thumbnail")}
+                              alt=""
+                              className="w-full h-full object-cover"
+                              onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
                             />
-                          ))}
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-300">
+                              <Image className="w-5 h-5" />
+                            </div>
+                          )}
                         </div>
-                        <span className="text-sm font-medium">{review.authorName}</span>
-                        <span className="text-xs text-gray-400">
-                          {review.displayDate ? new Date(review.displayDate).toLocaleDateString('ko-KR') : ''}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-800 line-clamp-2 mb-1">{review.content}</p>
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <span>{review.authorName}</span>
+                            <span>{review.displayDate ? new Date(review.displayDate).toLocaleDateString('ko-KR') : ''}</span>
+                            <div className="flex items-center">
+                              {[...Array(5)].map((_, i) => (
+                                <Star key={i} className={`w-3 h-3 ${i < (review.rating || 5) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`} />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      {review.title && (
-                        <h4 className="font-medium text-gray-900 mb-1">{review.title}</h4>
-                      )}
-                      <p className="text-sm text-gray-600">{review.content}</p>
-                      {review.imageUrls && review.imageUrls.length > 0 && (
-                        <div className="flex gap-2 mt-3">
-                          {review.imageUrls.slice(0, 3).map((url, i) => (
-                            <img 
-                              key={i} 
-                              src={url} 
-                              alt={`리뷰 이미지 ${i + 1}`}
-                              className="w-16 h-16 object-cover rounded"
-                            />
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                   <div className="text-center pt-4">
-                    <Link href="/reviews" className="text-sm text-primary hover:underline">
-                      전체 리뷰 보기
+                    <Link href="/reviews" className="text-sm text-gray-500 hover:text-black hover:underline">
+                      전체 후기 보기 →
                     </Link>
                   </div>
                 </div>
               ) : (
-                <div className="text-gray-500 text-center py-8">
-                  아직 작성된 리뷰가 없습니다.
+                <div className="text-gray-400 text-center py-8 text-sm">
+                  아직 작성된 후기가 없습니다. 첫 번째 후기를 남겨주세요!
                 </div>
               )}
             </div>
