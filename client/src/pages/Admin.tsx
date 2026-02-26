@@ -6559,15 +6559,44 @@ function BenefitHeroSetting({ authToken }: { authToken: string }) {
       <div className="p-6">
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-1">배너 이미지 URL</label>
-            <div className="flex gap-3">
+            <label className="block text-sm font-medium mb-1">배너 이미지</label>
+            <div className="flex gap-2">
               <Input
                 data-testid="input-benefit-hero-url"
                 value={heroUrl}
                 onChange={e => setHeroUrl(e.target.value)}
-                placeholder="https://... (이미지 URL 입력)"
+                placeholder="https://... 또는 이미지 업로드"
                 className="flex-1"
               />
+              <label className="cursor-pointer flex-shrink-0">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const fd = new FormData();
+                    fd.append("image", file);
+                    try {
+                      const res = await fetch("/api/admin/upload/banner-image", {
+                        method: "POST",
+                        headers: { Authorization: `Bearer ${authToken}` },
+                        body: fd,
+                      });
+                      const data = await res.json();
+                      if (data.success && data.data?.imageUrl) {
+                        setHeroUrl(data.data.imageUrl);
+                      }
+                    } catch {}
+                    e.target.value = "";
+                  }}
+                />
+                <div className="px-3 py-2 border rounded-lg text-sm flex items-center gap-1 hover:bg-gray-50 h-full">
+                  <Upload className="w-3.5 h-3.5" />
+                  업로드
+                </div>
+              </label>
               <Button
                 data-testid="btn-save-benefit-hero"
                 onClick={save}
