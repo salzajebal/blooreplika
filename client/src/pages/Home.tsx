@@ -167,14 +167,33 @@ function QuickMenu() {
     { name: "라이브", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/9ae31c3dcae26a14f6d33e8f261915b7.jpg", path: "/live" },
     { name: "이달의 혜택", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/cb42e567c3a7d720530b7d4b5c8b1864.png", path: "/benefits" },
     { name: "구매 후기", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/3e60fc4da68ecc883a6de2887e24871a.jpg", path: "/reviews" },
-    { name: "라이크잇 랩스", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/e18260c9937b029fd70a2365ed71c48b.jpg", path: "/blog" },
+    { name: "라이크잇 랩스", image: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/e18260c9937b029fd70a2365ed71c48b.jpg", path: "https://xn--oi2bw61awb384c.kr/labs" },
   ];
 
   return (
     <section className="bg-white py-5 md:py-8 border-b border-gray-100">
       <div className="max-w-[600px] md:max-w-[1200px] mx-auto px-4">
         <div className="grid grid-cols-5 gap-y-4 gap-x-2 md:gap-x-6 md:gap-y-6 md:flex md:flex-wrap md:justify-center">
-          {menuItems.map((item) => (
+          {menuItems.map((item) => {
+            const isExternal = item.path.startsWith("http");
+            if (isExternal) {
+              return (
+                <a
+                  key={item.name}
+                  href={item.path}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center gap-1.5 md:gap-2.5 group"
+                  data-testid={`quick-menu-${item.name}`}
+                >
+                  <div className="w-[52px] h-[52px] md:w-[72px] md:h-[72px] rounded-full overflow-hidden bg-gray-50 group-hover:opacity-90 transition-opacity flex items-center justify-center shadow-sm">
+                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                  </div>
+                  <span className="text-[11px] md:text-xs text-gray-600 font-medium text-center leading-tight">{item.name}</span>
+                </a>
+              );
+            }
+            return (
             <Link
               key={item.name}
               href={item.path}
@@ -186,7 +205,8 @@ function QuickMenu() {
               </div>
               <span className="text-[11px] md:text-xs text-gray-600 text-center leading-tight group-hover:text-black transition-colors font-medium line-clamp-2 w-full">{item.name}</span>
             </Link>
-          ))}
+          );
+          })}
         </div>
       </div>
     </section>

@@ -87,7 +87,7 @@ const topNavItems = [
 const sideMenuLinks = [
   { name: '이달의 혜택', path: '/benefits' },
   { name: '매거진', path: '/magazine' },
-  { name: '라이크잇 랩스', path: '/labs' },
+  { name: '라이크잇 랩스', path: 'https://xn--oi2bw61awb384c.kr/labs' },
   { name: '실시간 검수', path: '/inspection' },
   { name: '구매 후기', path: '/reviews' },
   { name: '공지사항', path: '/notices' },
@@ -324,7 +324,24 @@ export function Header() {
 
                     <div className="p-4">
                       <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">더보기</div>
-                      {sideMenuLinks.map((item) => (
+                      {sideMenuLinks.map((item) => {
+                        const isExternal = item.path.startsWith("http");
+                        if (isExternal) {
+                          return (
+                            <a
+                              key={item.name}
+                              href={item.path}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-between py-2.5 text-sm text-gray-600 hover:text-black transition-colors"
+                              onClick={() => setMobileMenuOpen(false)}
+                            >
+                              <span>{item.name}</span>
+                              <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
+                            </a>
+                          );
+                        }
+                        return (
                         <Link
                           key={item.name}
                           href={item.path}
@@ -334,7 +351,8 @@ export function Header() {
                           <span>{item.name}</span>
                           <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
                         </Link>
-                      ))}
+                        );
+                      })}
                     </div>
                   </SheetContent>
                 </Sheet>
