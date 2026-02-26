@@ -267,8 +267,8 @@ function TopBrandSection() {
           <h2 className="text-xl md:text-2xl font-bold text-gray-900" style={{ fontFamily: "'Playfair Display', serif" }}>{title}</h2>
           <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
         </div>
-        <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 md:gap-3">
-          {brandDisplayData.map((brand: any) => (
+        <div className="grid grid-cols-5 gap-2 md:gap-3">
+          {brandDisplayData.slice(0, 15).map((brand: any) => (
             <Link
               key={brand.name}
               href={brand.path}
