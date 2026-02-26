@@ -340,7 +340,21 @@ export class DatabaseStorage implements IStorage {
     };
     
     const conditions: any[] = [];
-    if (categoryId) conditions.push(eq(products.categoryId, categoryId));
+    if (categoryId) {
+      if (categoryId === 'new-arrivals') {
+        conditions.push(eq(products.isNew, true));
+      } else if (categoryId === 'best') {
+        conditions.push(eq(products.isBest, true));
+      } else if (categoryId === 'sale') {
+        conditions.push(sql`${products.discountPercent} > 0`);
+      } else if (categoryId === 'men') {
+        conditions.push(sql`(${products.gender} = '남성' OR ${products.gender} = '공용')`);
+      } else if (categoryId === 'women') {
+        conditions.push(sql`(${products.gender} = '여성' OR ${products.gender} = '공용')`);
+      } else {
+        conditions.push(eq(products.categoryId, categoryId));
+      }
+    }
     if (subcategoryId) conditions.push(eq(products.subcategoryId, subcategoryId));
     if (search) conditions.push(sql`${products.name} ILIKE ${'%' + search + '%'}`);
     if (brandId) conditions.push(eq(products.brandId, brandId));

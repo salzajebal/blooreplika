@@ -70,13 +70,18 @@ export default function ProductList() {
 
   const categoryInfo = CATEGORIES.find(c => c.slug === categorySlug);
   
-  const { searchQuery, subcategoryId } = useMemo(() => {
+  const { searchQuery, subcategoryId, urlBrand } = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     return {
       searchQuery: params.get("q"),
-      subcategoryId: params.get("sub")
+      subcategoryId: params.get("sub"),
+      urlBrand: params.get("brand"),
     };
   }, [location]);
+
+  const isGenderCategory = categorySlug === "men" || categorySlug === "women";
+  const genderFromCategory = categorySlug === "men" ? "남성" : categorySlug === "women" ? "여성" : null;
+  const effectiveCategorySlug = isGenderCategory ? "all" : categorySlug;
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -124,27 +129,28 @@ export default function ProductList() {
 
   const fetchProducts = async (page: number, query?: string, brandIdFilter?: string | null, genderFilter?: string | null, subcatFilter?: string | null) => {
     const offset = (page - 1) * ITEMS_PER_PAGE;
-    const categoryParam = categorySlug && categorySlug !== "all" ? `&categoryId=${categorySlug}` : "";
+    const categoryParam = effectiveCategorySlug && effectiveCategorySlug !== "all" ? `&categoryId=${effectiveCategorySlug}` : "";
     const subcategoryParam = subcatFilter ? `&subcategoryId=${subcatFilter}` : (subcategoryId ? `&subcategoryId=${subcategoryId}` : "");
     const searchParam = query ? `&search=${encodeURIComponent(query)}` : "";
     const brandParam = brandIdFilter ? `&brandId=${encodeURIComponent(brandIdFilter)}` : "";
-    const genderParam = genderFilter ? `&gender=${encodeURIComponent(genderFilter)}` : "";
+    const effectiveGender = genderFilter !== undefined && genderFilter !== null ? genderFilter : genderFromCategory;
+    const genderParam = effectiveGender ? `&gender=${encodeURIComponent(effectiveGender)}` : "";
     const res = await fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}${subcategoryParam}${searchParam}${brandParam}${genderParam}`);
     const data = await res.json();
     return data;
   };
 
   const { data: productsData, isLoading: loading, isFetching, isPlaceholderData } = useQuery({
-    queryKey: ['products', categorySlug, subcategoryId, currentPage, searchQuery, selectedBrand, selectedGender, selectedSubcategory],
+    queryKey: ['products', effectiveCategorySlug, subcategoryId, currentPage, searchQuery, selectedBrand, selectedGender || genderFromCategory, selectedSubcategory],
     queryFn: () => fetchProducts(currentPage, searchQuery || undefined, selectedBrand, selectedGender, selectedSubcategory),
     placeholderData: (previousData) => previousData,
     staleTime: 30000,
   });
 
   const { data: brandsData } = useQuery({
-    queryKey: ['brands', categorySlug],
+    queryKey: ['brands', effectiveCategorySlug],
     queryFn: async () => {
-      const categoryParam = categorySlug && categorySlug !== "all" ? `?categoryId=${categorySlug}` : "";
+      const categoryParam = effectiveCategorySlug && effectiveCategorySlug !== "all" ? `?categoryId=${effectiveCategorySlug}` : "";
       const res = await fetch(`/api/brands${categoryParam}`);
       const data = await res.json();
       return data.success ? data.data : [];
@@ -153,14 +159,14 @@ export default function ProductList() {
   });
 
   const { data: subcategoriesData } = useQuery({
-    queryKey: ['subcategories', categorySlug],
+    queryKey: ['subcategories', effectiveCategorySlug],
     queryFn: async () => {
-      if (!categorySlug || categorySlug === "all") {
+      if (!effectiveCategorySlug || effectiveCategorySlug === "all") {
         const res = await fetch("/api/subcategories");
         const data = await res.json();
         return data.success ? data.data : [];
       }
-      const res = await fetch(`/api/subcategories?categoryId=${categorySlug}`);
+      const res = await fetch(`/api/subcategories?categoryId=${effectiveCategorySlug}`);
       const data = await res.json();
       return data.success ? data.data : [];
     },
@@ -181,7 +187,7 @@ export default function ProductList() {
   useEffect(() => {
     if (currentPage < totalPages) {
       queryClient.prefetchQuery({
-        queryKey: ['products', categorySlug, subcategoryId, currentPage + 1, searchQuery, selectedBrand, selectedGender, selectedSubcategory],
+        queryKey: ['products', effectiveCategorySlug, subcategoryId, currentPage + 1, searchQuery, selectedBrand, selectedGender || genderFromCategory, selectedSubcategory],
         queryFn: () => fetchProducts(currentPage + 1, searchQuery || undefined, selectedBrand, selectedGender, selectedSubcategory),
         staleTime: 30000,
       });
@@ -218,14 +224,22 @@ export default function ProductList() {
   }, [loading]);
 
   useEffect(() => {
+    if (urlBrand) {
+      setSelectedBrand(urlBrand);
+    }
+  }, [urlBrand]);
+
+  useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       sessionStorage.setItem("productListCategory", categorySlug || "");
       return;
     }
     setCurrentPage(1);
-    setSelectedBrand(null);
-    setSelectedGender(null);
+    if (!isGenderCategory) {
+      setSelectedGender(null);
+    }
+    setSelectedBrand(urlBrand || null);
     setSelectedSubcategory(null);
     sessionStorage.setItem("productListPage", "1");
     sessionStorage.setItem("productListScroll", "0");
@@ -306,7 +320,7 @@ export default function ProductList() {
   }, [products, sortBy]);
 
   const subcategories = subcategoriesData || [];
-  const activeFiltersCount = (selectedSubcategory ? 1 : 0) + (selectedBrand ? 1 : 0) + (selectedGender ? 1 : 0);
+  const activeFiltersCount = (selectedSubcategory ? 1 : 0) + (selectedBrand ? 1 : 0) + ((selectedGender || genderFromCategory) ? 1 : 0);
   const selectedBrandName = brands.find((b: any) => b.id === selectedBrand)?.name;
   const selectedSubcatName = subcategories.find((s: any) => s.id === selectedSubcategory)?.name;
 
@@ -450,7 +464,7 @@ export default function ProductList() {
           onClick={() => toggleDropdown("gender")}
           className={cn(
             "flex items-center gap-1.5 px-4 py-2 text-sm rounded-full border transition-colors",
-            selectedGender
+            (selectedGender || genderFromCategory)
               ? "bg-black text-white border-black"
               : openDropdown === "gender"
                 ? "border-black text-black"
@@ -459,26 +473,30 @@ export default function ProductList() {
           data-testid="button-filter-gender"
         >
           성별
-          {selectedGender && <span className="font-medium">: {selectedGender}</span>}
+          {(selectedGender || genderFromCategory) && <span className="font-medium">: {selectedGender || genderFromCategory}</span>}
           <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openDropdown === "gender" && "rotate-180")} />
         </button>
 
         {openDropdown === "gender" && (
           <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[140px]">
-            {GENDER_OPTIONS.map(opt => (
-              <button
-                key={opt.label}
-                onClick={() => { setSelectedGender(opt.value); setOpenDropdown(null); }}
-                className={cn(
-                  "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
-                  selectedGender === opt.value && "font-bold text-black"
-                )}
-                data-testid={`button-gender-${opt.label}`}
-              >
-                {opt.label}
-                {selectedGender === opt.value && <Check className="w-4 h-4" />}
-              </button>
-            ))}
+            {GENDER_OPTIONS.map(opt => {
+              const effectiveGenderVal = selectedGender !== null ? selectedGender : genderFromCategory;
+              const isActive = effectiveGenderVal === opt.value;
+              return (
+                <button
+                  key={opt.label}
+                  onClick={() => { setSelectedGender(opt.value); setOpenDropdown(null); }}
+                  className={cn(
+                    "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
+                    isActive && "font-bold text-black"
+                  )}
+                  data-testid={`button-gender-${opt.label}`}
+                >
+                  {opt.label}
+                  {isActive && <Check className="w-4 h-4" />}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
@@ -566,12 +584,14 @@ export default function ProductList() {
                   </button>
                 </span>
               )}
-              {selectedGender && (
+              {(selectedGender || genderFromCategory) && (
                 <span className="inline-flex items-center gap-1.5 bg-gray-100 text-sm px-3 py-1.5 rounded-full">
-                  성별: {selectedGender}
-                  <button onClick={() => setSelectedGender(null)} className="hover:text-black">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+                  성별: {selectedGender || genderFromCategory}
+                  {!isGenderCategory && (
+                    <button onClick={() => setSelectedGender(null)} className="hover:text-black">
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </span>
               )}
             </div>
