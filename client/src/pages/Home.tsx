@@ -540,6 +540,108 @@ function InspectionSection() {
   );
 }
 
+function DynamicHomeSections() {
+  const { data: sections } = useQuery({
+    queryKey: ['/api/content-sections', 'homepage_product'],
+    queryFn: async () => {
+      const res = await fetch('/api/content-sections?sectionType=homepage_product');
+      const data = await res.json();
+      return data.success ? data.data : [];
+    }
+  });
+
+  const { data: brandsData } = useQuery({
+    queryKey: ['/api/brands'],
+    queryFn: async () => {
+      const res = await fetch('/api/brands');
+      const data = await res.json();
+      return data.success ? data.data : [];
+    }
+  });
+
+  const brands = brandsData || [];
+  const getBrandName = (brandId: string) => {
+    const brand = brands.find((b: any) => b.id === brandId);
+    return brand?.name || '';
+  };
+
+  if (!sections || sections.length === 0) return null;
+
+  return (
+    <>
+      {sections.map((section: any) => (
+        <section key={section.id} className="bg-white" data-testid={`home-section-${section.id}`}>
+          {section.imageUrl && (
+            <Link href={section.linkUrl || "/products"} className="block w-full">
+              <img
+                src={section.imageUrl}
+                alt={section.title}
+                className="w-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+              />
+            </Link>
+          )}
+
+          {section.products && section.products.length > 0 && (
+            <div className="max-w-[1200px] mx-auto px-4 py-6 md:py-10">
+              <div className="flex items-end justify-between mb-4 md:mb-6">
+                <div>
+                  <h2 className="text-base md:text-xl font-bold tracking-wide uppercase">{section.title}</h2>
+                  {section.description && (
+                    <p className="text-xs md:text-sm text-gray-500 mt-1">{section.description}</p>
+                  )}
+                </div>
+                <Link
+                  href={section.linkUrl || `/products${section.categorySlug ? `?category=${section.categorySlug}` : ''}`}
+                  className="text-xs md:text-sm text-gray-400 hover:text-black transition-colors"
+                  data-testid={`section-more-${section.id}`}
+                >
+                  더보기
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+                {section.products.map((product: any) => (
+                  <Link
+                    key={product.id}
+                    href={`/product/${product.id}`}
+                    className="block group"
+                    data-testid={`section-product-${product.id}`}
+                  >
+                    <div className="aspect-square bg-gray-50 overflow-hidden mb-2">
+                      <img
+                        src={getProxiedImageUrl(product.imageUrl, "medium")}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                        onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                      />
+                    </div>
+                    <p className="text-[10px] md:text-xs text-gray-400 uppercase font-medium tracking-wide">{getBrandName(product.brandId)}</p>
+                    <p className="text-xs md:text-sm text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
+                    <div className="mt-1">
+                      {product.originalPrice && product.originalPrice > product.price && (
+                        <p className="text-[10px] md:text-xs text-gray-400 line-through">매장가 {Number(product.originalPrice).toLocaleString()}원</p>
+                      )}
+                      <p className="text-xs md:text-sm font-bold text-gray-900">{Number(product.price).toLocaleString()}원</p>
+                    </div>
+                    {(product.discountPercent > 0) && (
+                      <div className="flex gap-1 mt-1">
+                        <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded">적립</span>
+                        <span className="text-[10px] px-1.5 py-0.5 bg-green-50 text-green-600 rounded">무료배송</span>
+                      </div>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+      ))}
+    </>
+  );
+}
+
 export default function Home() {
   const { data: productsData } = useQuery({
     queryKey: ['/api/products/home'],
@@ -569,6 +671,7 @@ export default function Home() {
       <main>
         <MainBannerSlider />
         <QuickMenu />
+        <DynamicHomeSections />
         <InspectionSection />
         <TopBrandSection />
         <ForYouSection products={products} brands={brands} />

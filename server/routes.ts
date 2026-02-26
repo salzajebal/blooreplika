@@ -5683,14 +5683,40 @@ export async function registerRoutes(
       const items = await storage.getActiveContentSections(sectionType as string || "");
       const enriched = await Promise.all(items.map(async (item) => {
         const pids = (item.productIds || []).filter(Boolean);
-        if (pids.length === 0) return { ...item, products: [] };
-        const prods = await Promise.all(pids.map(async (pid) => {
+        if (pids.length > 0) {
+          const prods = await Promise.all(pids.map(async (pid) => {
+            try {
+              const p = await storage.getProduct(pid);
+              return p ? { id: p.id, name: p.name, price: p.price, originalPrice: p.originalPrice, imageUrl: p.imageUrl, discountPercent: p.discountPercent, brandId: p.brandId } : null;
+            } catch { return null; }
+          }));
+          return { ...item, products: prods.filter(Boolean) };
+        }
+        if (item.sectionType === "homepage_product" && (item.categorySlug || item.brandName)) {
           try {
-            const p = await storage.getProduct(pid);
-            return p ? { id: p.id, name: p.name, price: p.price, originalPrice: p.originalPrice, imageUrl: p.imageUrl, discountPercent: p.discountPercent } : null;
-          } catch { return null; }
-        }));
-        return { ...item, products: prods.filter(Boolean) };
+            const maxCount = item.maxProducts || 6;
+            let brandId: string | undefined;
+            if (item.brandName) {
+              const allBrands = await storage.getBrands();
+              const matched = allBrands.find((b: any) => b.name?.toLowerCase() === item.brandName?.toLowerCase());
+              brandId = matched?.id;
+            }
+            const result = await storage.getProductsPaginated(
+              maxCount, 0,
+              item.categorySlug || undefined,
+              undefined,
+              undefined,
+              brandId,
+              undefined
+            );
+            const prods = (result.products || []).map((p: any) => ({
+              id: p.id, name: p.name, price: p.price, originalPrice: p.originalPrice,
+              imageUrl: p.imageUrl, discountPercent: p.discountPercent, brandId: p.brandId,
+            }));
+            return { ...item, products: prods };
+          } catch { return { ...item, products: [] }; }
+        }
+        return { ...item, products: [] };
       }));
       res.json({ success: true, data: enriched });
     } catch (error) {

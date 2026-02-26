@@ -6842,6 +6842,7 @@ function InspectionAdminTab({ authToken }: { authToken: string }) {
 }
 
 const SECTION_TYPES = [
+  { value: "homepage_product", label: "홈 상품 섹션" },
   { value: "celeb_style", label: "셀럽 스타일" },
   { value: "exhibition", label: "기획전" },
   { value: "best", label: "베스트" },
@@ -6859,12 +6860,15 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
-    sectionType: "celeb_style" as string,
+    sectionType: "homepage_product" as string,
     title: "",
     description: "",
     imageUrl: "",
     linkUrl: "",
     celebrity: "",
+    categorySlug: "",
+    brandName: "",
+    maxProducts: 6,
     sortOrder: 0,
     isActive: true,
   });
@@ -6872,6 +6876,13 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
   const [productSearch, setProductSearch] = useState("");
   const [productResults, setProductResults] = useState<any[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [brands, setBrands] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("/api/categories").then(r => r.json()).then(d => { if (d.success) setCategories(d.data || []); }).catch(() => {});
+    fetch("/api/brands").then(r => r.json()).then(d => { if (d.success) setBrands(d.data || []); }).catch(() => {});
+  }, []);
 
   const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
     return fetch(url, {
@@ -6903,7 +6914,7 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
   useEffect(() => { fetchItems(); }, [filterType]);
 
   const resetForm = () => {
-    setForm({ sectionType: "celeb_style", title: "", description: "", imageUrl: "", linkUrl: "", celebrity: "", sortOrder: 0, isActive: true });
+    setForm({ sectionType: "homepage_product", title: "", description: "", imageUrl: "", linkUrl: "", celebrity: "", categorySlug: "", brandName: "", maxProducts: 6, sortOrder: 0, isActive: true });
     setEditingId(null);
     setProductIds([]);
     setSelectedProducts([]);
@@ -6941,8 +6952,13 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
       return;
     }
     try {
-      const body = { ...form, productIds };
-      if (form.sectionType !== "celeb_style") delete (body as any).celebrity;
+      const body = { ...form, productIds } as any;
+      if (form.sectionType !== "celeb_style") delete body.celebrity;
+      if (form.sectionType !== "homepage_product") {
+        delete body.categorySlug;
+        delete body.brandName;
+        delete body.maxProducts;
+      }
 
       if (editingId) {
         const res = await fetchWithAuth(`/api/admin/content-sections/${editingId}`, {
@@ -6980,12 +6996,15 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
 
   const handleEdit = async (item: any) => {
     setForm({
-      sectionType: item.sectionType || "celeb_style",
+      sectionType: item.sectionType || "homepage_product",
       title: item.title || "",
       description: item.description || "",
       imageUrl: item.imageUrl || "",
       linkUrl: item.linkUrl || "",
       celebrity: item.celebrity || "",
+      categorySlug: item.categorySlug || "",
+      brandName: item.brandName || "",
+      maxProducts: item.maxProducts || 6,
       sortOrder: item.sortOrder || 0,
       isActive: item.isActive !== false,
     });
@@ -7131,6 +7150,49 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
                   />
                 </div>
               )}
+              {form.sectionType === "homepage_product" && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">카테고리 (선택)</label>
+                    <select
+                      data-testid="input-categorySlug"
+                      className="w-full border rounded-lg px-3 py-2 text-sm"
+                      value={form.categorySlug}
+                      onChange={e => setForm({ ...form, categorySlug: e.target.value })}
+                    >
+                      <option value="">전체 (카테고리 필터 없음)</option>
+                      {categories.map((c: any) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">브랜드 (선택)</label>
+                    <select
+                      data-testid="input-brandName"
+                      className="w-full border rounded-lg px-3 py-2 text-sm"
+                      value={form.brandName}
+                      onChange={e => setForm({ ...form, brandName: e.target.value })}
+                    >
+                      <option value="">전체 (브랜드 필터 없음)</option>
+                      {brands.map((b: any) => (
+                        <option key={b.id} value={b.name}>{b.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">최대 상품 수</label>
+                    <Input
+                      data-testid="input-maxProducts"
+                      type="number"
+                      value={form.maxProducts}
+                      onChange={e => setForm({ ...form, maxProducts: parseInt(e.target.value) || 6 })}
+                      min={1}
+                      max={20}
+                    />
+                  </div>
+                </>
+              )}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-1">연결 상품</label>
                 <div className="relative">
@@ -7227,6 +7289,13 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
                     </div>
                     <h4 className="font-semibold text-sm truncate" data-testid={`content-title-${item.id}`}>{item.title}</h4>
                     {item.celebrity && <p className="text-xs text-gray-500 mt-1">셀럽: {item.celebrity}</p>}
+                    {item.sectionType === "homepage_product" && (
+                      <div className="text-xs text-gray-500 mt-1 space-y-0.5">
+                        {item.categorySlug && <p>카테고리: {item.categorySlug}</p>}
+                        {item.brandName && <p>브랜드: {item.brandName}</p>}
+                        <p>최대 상품: {item.maxProducts || 6}개</p>
+                      </div>
+                    )}
                     {item.description && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.description}</p>}
                     <div className="flex gap-2 mt-3">
                       <Button data-testid={`btn-edit-content-${item.id}`} size="sm" variant="outline" onClick={() => handleEdit(item)}>
