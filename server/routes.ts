@@ -80,6 +80,32 @@ const reviewImageUpload = multer({
   },
 });
 
+const bannerImageUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      const dir = path.join(process.cwd(), "uploads", "banners");
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (_req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `banner-${uniqueSuffix}${ext}`);
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      cb(null, true);
+    } else {
+      cb(new Error("이미지 파일만 업로드 가능합니다. (jpg, png, gif, webp)"));
+    }
+  },
+});
+
 const inspectionMediaUpload = multer({
   storage: multer.diskStorage({
     destination: (_req, _file, cb) => {
@@ -2579,6 +2605,63 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error updating site setting:", error);
       res.status(500).json({ success: false, error: "설정 저장에 실패했습니다." });
+    }
+  });
+
+  // ==================== PRODUCT DETAIL BANNER API ====================
+
+  app.get("/api/product-detail-banners", async (req: Request, res: Response) => {
+    try {
+      const banner1 = await storage.getSiteSetting("product_detail_banner_1");
+      const banner2 = await storage.getSiteSetting("product_detail_banner_2");
+      res.json({
+        success: true,
+        data: {
+          banner1: banner1?.value || null,
+          banner2: banner2?.value || null,
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching product detail banners:", error);
+      res.status(500).json({ success: false, error: "배너를 불러올 수 없습니다." });
+    }
+  });
+
+  app.post("/api/admin/upload/banner-image", requireAdminAuth, bannerImageUpload.single("image"), async (req: Request, res: Response) => {
+    try {
+      const file = req.file as Express.Multer.File;
+      if (!file) {
+        return res.status(400).json({ success: false, error: "이미지 파일이 필요합니다." });
+      }
+      const fileUrl = `/uploads/banners/${file.filename}`;
+      res.json({ success: true, data: { imageUrl: fileUrl } });
+    } catch (error) {
+      console.error("Error uploading banner image:", error);
+      res.status(500).json({ success: false, error: "배너 이미지 업로드에 실패했습니다." });
+    }
+  });
+
+  app.put("/api/admin/product-detail-banners", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { banner1, banner2 } = req.body;
+      if (banner1 !== undefined) {
+        if (banner1) {
+          await storage.setSiteSetting("product_detail_banner_1", banner1, "상품 상세 페이지 배너 1");
+        } else {
+          await storage.setSiteSetting("product_detail_banner_1", "", "상품 상세 페이지 배너 1");
+        }
+      }
+      if (banner2 !== undefined) {
+        if (banner2) {
+          await storage.setSiteSetting("product_detail_banner_2", banner2, "상품 상세 페이지 배너 2");
+        } else {
+          await storage.setSiteSetting("product_detail_banner_2", "", "상품 상세 페이지 배너 2");
+        }
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating product detail banners:", error);
+      res.status(500).json({ success: false, error: "배너 저장에 실패했습니다." });
     }
   });
 

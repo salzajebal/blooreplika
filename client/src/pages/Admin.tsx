@@ -197,6 +197,7 @@ export default function Admin() {
     kakaoPixelEnabled: false,
   });
   const [pixelLoading, setPixelLoading] = useState(false);
+  const [detailBannerSettings, setDetailBannerSettings] = useState({ banner1: "", banner2: "" });
   
   const [staffUsers, setStaffUsers] = useState<{id: string; username: string; name?: string | null; role?: string | null; createdAt?: Date | null}[]>([]);
   const [staffFormData, setStaffFormData] = useState({ username: "", password: "", name: "", staffRole: "review_admin" });
@@ -1269,6 +1270,10 @@ export default function Admin() {
     if (isAuthenticated && activeTab === "settings") {
       fetchProductCount();
       fetchPixelSettings();
+      fetch("/api/product-detail-banners")
+        .then(r => r.json())
+        .then(d => { if (d.success) setDetailBannerSettings(d.data); })
+        .catch(() => {});
     }
   }, [activeTab, isAuthenticated]);
 
@@ -5068,6 +5073,109 @@ export default function Admin() {
                     </li>
                   </ul>
                 </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Image className="w-5 h-5 text-purple-600" />
+                  상품 상세 페이지 배너 관리
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">상품 상세 페이지에 표시되는 프리미엄 배너 2개를 관리합니다.</p>
+              </div>
+              <div className="p-6 space-y-6">
+                {[1, 2].map((num) => {
+                  const bannerKey = num === 1 ? "banner1" : "banner2";
+                  const currentUrl = (detailBannerSettings as any)[bannerKey] || "";
+                  return (
+                    <div key={num} className="border border-gray-200 rounded-lg p-4">
+                      <h4 className="font-bold text-gray-900 mb-2">배너 {num}</h4>
+                      <p className="text-xs text-gray-500 mb-3">권장 사이즈: 1200 x 200px (가로형, 6:1 비율) · JPG/PNG/WebP · 최대 10MB</p>
+                      {currentUrl && (
+                        <div className="mb-3 border rounded overflow-hidden">
+                          <img src={currentUrl} alt={`배너 ${num} 미리보기`} className="w-full h-auto" />
+                        </div>
+                      )}
+                      <div className="flex gap-2">
+                        <label className="cursor-pointer">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            data-testid={`input-upload-detail-banner-${num}`}
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
+                              if (file.size > 10 * 1024 * 1024) {
+                                toast({ title: "오류", description: "파일 크기는 10MB 이하여야 합니다.", variant: "destructive" });
+                                return;
+                              }
+                              const fd = new FormData();
+                              fd.append("image", file);
+                              try {
+                                const uploadRes = await fetch("/api/admin/upload/banner-image", { method: "POST", headers: { Authorization: `Bearer ${authToken}` }, body: fd });
+                                const uploadData = await uploadRes.json();
+                                if (uploadData.success) {
+                                  const newUrl = uploadData.data.imageUrl;
+                                  const updateBody: any = {};
+                                  updateBody[bannerKey] = newUrl;
+                                  const saveRes = await fetchWithAuth("/api/admin/product-detail-banners", {
+                                    method: "PUT",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify(updateBody),
+                                  });
+                                  const saveData = await saveRes.json();
+                                  if (saveData.success) {
+                                    setDetailBannerSettings((prev: any) => ({ ...prev, [bannerKey]: newUrl }));
+                                    toast({ title: "성공", description: `배너 ${num}이(가) 업로드되었습니다.` });
+                                  }
+                                } else {
+                                  toast({ title: "오류", description: uploadData.error || "업로드 실패", variant: "destructive" });
+                                }
+                              } catch (err) {
+                                toast({ title: "오류", description: "배너 업로드에 실패했습니다.", variant: "destructive" });
+                              }
+                              e.target.value = "";
+                            }}
+                          />
+                          <span className="inline-flex items-center gap-1 px-4 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors">
+                            <Image className="w-4 h-4" />
+                            이미지 업로드
+                          </span>
+                        </label>
+                        {currentUrl && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-500 border-red-200 hover:bg-red-50"
+                            data-testid={`button-delete-detail-banner-${num}`}
+                            onClick={async () => {
+                              try {
+                                const updateBody: any = {};
+                                updateBody[bannerKey] = "";
+                                const res = await fetchWithAuth("/api/admin/product-detail-banners", {
+                                  method: "PUT",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify(updateBody),
+                                });
+                                const data = await res.json();
+                                if (data.success) {
+                                  setDetailBannerSettings((prev: any) => ({ ...prev, [bannerKey]: "" }));
+                                  toast({ title: "성공", description: `배너 ${num}이(가) 삭제되었습니다.` });
+                                }
+                              } catch (err) {
+                                toast({ title: "오류", description: "배너 삭제에 실패했습니다.", variant: "destructive" });
+                              }
+                            }}
+                          >
+                            삭제
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

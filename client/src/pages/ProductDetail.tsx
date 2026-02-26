@@ -34,6 +34,7 @@ export default function ProductDetail() {
   const [brand, setBrand] = useState<Brand | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [detailBanners, setDetailBanners] = useState<{ banner1: string | null; banner2: string | null }>({ banner1: null, banner2: null });
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedColor, setSelectedColor] = useState<string>("");
@@ -81,6 +82,10 @@ export default function ProductDetail() {
       fetchProduct();
       fetchProductReviews();
     }
+    fetch("/api/product-detail-banners")
+      .then(r => r.json())
+      .then(d => { if (d.success) setDetailBanners(d.data); })
+      .catch(() => {});
   }, [id]);
 
   useEffect(() => {
@@ -512,17 +517,40 @@ export default function ProductDetail() {
           </div>
 
           <div className="mt-8 sm:mt-12">
-            <a 
-              href="/"
-              className="block mb-6 rounded-lg overflow-hidden bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 p-6 sm:p-8 relative hover:opacity-95 transition-opacity"
-              data-testid="banner-premium"
-            >
-              <p className="text-gray-400 text-xs sm:text-sm mb-1">시작부터 끝까지 프리미엄</p>
-              <p className="text-white text-xl sm:text-2xl font-bold tracking-wide" style={{ fontFamily: "'Playfair Display', serif" }}>
-                LIKE IT Premium
-              </p>
-              <p className="text-gray-400 text-xs mt-2">정품보증 · 무료검수 · 전상품 무료배송</p>
-            </a>
+            {detailBanners.banner1 ? (
+              <a href="/" className="block mb-3 rounded-lg overflow-hidden hover:opacity-95 transition-opacity" data-testid="banner-premium-1">
+                <img src={detailBanners.banner1} alt="프리미엄 배너 1" className="w-full h-auto" />
+              </a>
+            ) : (
+              <a 
+                href="/"
+                className="block mb-3 rounded-lg overflow-hidden bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 p-6 sm:p-8 relative hover:opacity-95 transition-opacity"
+                data-testid="banner-premium-1"
+              >
+                <p className="text-gray-400 text-xs sm:text-sm mb-1">시작부터 끝까지 프리미엄</p>
+                <p className="text-white text-xl sm:text-2xl font-bold tracking-wide" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  LIKE IT Premium
+                </p>
+                <p className="text-gray-400 text-xs mt-2">정품보증 · 무료검수 · 전상품 무료배송</p>
+              </a>
+            )}
+            {detailBanners.banner2 ? (
+              <a href="/" className="block mb-6 rounded-lg overflow-hidden hover:opacity-95 transition-opacity" data-testid="banner-premium-2">
+                <img src={detailBanners.banner2} alt="프리미엄 배너 2" className="w-full h-auto" />
+              </a>
+            ) : (
+              <a 
+                href="/"
+                className="block mb-6 rounded-lg overflow-hidden bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 p-6 sm:p-8 relative hover:opacity-95 transition-opacity"
+                data-testid="banner-premium-2"
+              >
+                <p className="text-gray-400 text-xs sm:text-sm mb-1">시작부터 끝까지 프리미엄</p>
+                <p className="text-white text-xl sm:text-2xl font-bold tracking-wide" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  LIKE IT Premium
+                </p>
+                <p className="text-gray-400 text-xs mt-2">정품보증 · 무료검수 · 전상품 무료배송</p>
+              </a>
+            )}
 
             <div className="border-t border-gray-200">
             <div className="flex border-b border-gray-200">
