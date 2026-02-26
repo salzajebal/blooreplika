@@ -99,7 +99,7 @@ function MainBannerSlider() {
           {bannerList.map((banner: any, index: number) => (
             <div key={index} className="w-full flex-shrink-0 relative">
               <Link href={banner.linkUrl || "/products"} className="block w-full">
-                <div className="block md:hidden">
+                <div className="block md:hidden leading-[0]">
                   <img 
                     src={banner.imageUrl}
                     alt={banner.title || `배너 ${index + 1}`}
@@ -160,18 +160,6 @@ function MainBannerSlider() {
             <ChevronRight className="w-5 h-5" />
           </button>
           
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-            {bannerList.map((_: any, index: number) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`h-1.5 rounded-full transition-all ${
-                  index === currentSlide ? 'bg-white w-6' : 'bg-white/50 w-1.5'
-                }`}
-                aria-label={`슬라이드 ${index + 1}`}
-              />
-            ))}
-          </div>
         </>
       )}
     </section>
