@@ -36,6 +36,7 @@ interface ProductData {
   brand: string;
   isBest: boolean;
   description: string;
+  options: string | null;
 }
 
 const headers = {
@@ -165,6 +166,58 @@ async function fetchProductDetail(sourceId: string, categoryId: string): Promise
     
     const isBest = html.includes('BEST') || html.includes('best_icon');
     
+    const optionGroups: { label: string; values: string[] }[] = [];
+    $('.get_item_options select.it_option, .get_item_options select[id^="it_option"]').each((_, selectEl) => {
+      const selectId = $(selectEl).attr('id') || '';
+      const labelEl = $(`label[for="${selectId}"]`);
+      let label = labelEl.text().trim();
+      if (!label) {
+        label = $(selectEl).prev('label').text().trim() || $(selectEl).closest('tr').find('th, label').first().text().trim();
+      }
+      const values: string[] = [];
+      $(selectEl).find('option').each((__, optEl) => {
+        const val = $(optEl).attr('value') || '';
+        if (val) {
+          const optName = val.split(',')[0].trim();
+          if (optName) values.push(optName);
+        }
+      });
+      if (values.length > 0) {
+        const normalizedLabel = label.toLowerCase();
+        let type = 'option';
+        if (normalizedLabel.includes('컬러') || normalizedLabel.includes('색상') || normalizedLabel.includes('color')) {
+          type = 'color';
+        } else if (normalizedLabel.includes('사이즈') || normalizedLabel.includes('size') || normalizedLabel.includes('크기')) {
+          type = 'size';
+        }
+        optionGroups.push({ label: label || `옵션${optionGroups.length + 1}`, values });
+      }
+    });
+
+    let optionsJson: string | null = null;
+    if (optionGroups.length > 0) {
+      const colors: string[] = [];
+      const sizes: string[] = [];
+      const extras: { label: string; values: string[] }[] = [];
+      for (const group of optionGroups) {
+        const l = group.label.toLowerCase();
+        if (l.includes('컬러') || l.includes('색상') || l.includes('color')) {
+          colors.push(...group.values);
+        } else if (l.includes('사이즈') || l.includes('size') || l.includes('크기')) {
+          sizes.push(...group.values);
+        } else {
+          extras.push(group);
+        }
+      }
+      const optObj: any = {};
+      if (colors.length > 0) optObj.colors = colors;
+      if (sizes.length > 0) optObj.sizes = sizes;
+      if (extras.length > 0) optObj.extras = extras;
+      if (Object.keys(optObj).length > 0) {
+        optionsJson = JSON.stringify(optObj);
+      }
+    }
+
     const category = CATEGORIES.find(c => c.id === categoryId);
     
     return {
@@ -178,6 +231,7 @@ async function fetchProductDetail(sourceId: string, categoryId: string): Promise
       brand,
       isBest,
       description: brand ? `${brand} ${name}` : name,
+      options: optionsJson,
     };
   } catch (error) {
     console.error(`  Error fetching product ${sourceId}:`, error);
@@ -297,6 +351,7 @@ async function main() {
           imageUrls: p.imageUrls.length > 0 ? p.imageUrls : [p.imageUrl],
           detailImageUrls: p.detailImageUrls,
           gender: detectGender(p.name),
+          options: p.options,
           isBest: p.isBest || (i + idx) % 10 === 0,
           isNew: (i + idx) % 8 === 0,
           isActive: true,
@@ -321,6 +376,7 @@ async function main() {
             imageUrls: p.imageUrls.length > 0 ? p.imageUrls : [p.imageUrl],
             detailImageUrls: p.detailImageUrls,
             gender: detectGender(p.name),
+            options: p.options,
             isBest: p.isBest,
             isNew: false,
             isActive: true,

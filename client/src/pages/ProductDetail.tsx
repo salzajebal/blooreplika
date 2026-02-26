@@ -103,34 +103,42 @@ export default function ProductDetail() {
     fetchKakaoLink();
   }, []);
 
-  const parseProductOptions = (optionsString?: string | null): { colors: string[]; sizes: string[] } => {
-    if (!optionsString) return { colors: [], sizes: [] };
+  const parseProductOptions = (optionsString?: string | null): { colors: string[]; sizes: string[]; extras: { label: string; values: string[] }[] } => {
+    if (!optionsString) return { colors: [], sizes: [], extras: [] };
     try {
       const parsed = JSON.parse(optionsString);
       if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
         return {
           colors: Array.isArray(parsed.colors) ? parsed.colors : [],
           sizes: Array.isArray(parsed.sizes) ? parsed.sizes : [],
+          extras: Array.isArray(parsed.extras) ? parsed.extras : [],
         };
       }
       if (Array.isArray(parsed)) {
-        return { colors: [], sizes: parsed };
+        return { colors: [], sizes: parsed, extras: [] };
       }
-      return { colors: [], sizes: [] };
+      return { colors: [], sizes: [], extras: [] };
     } catch {
       const items = optionsString.split(",").map(o => o.trim()).filter(Boolean);
-      return { colors: [], sizes: items };
+      return { colors: [], sizes: items, extras: [] };
     }
   };
 
+  const [selectedExtras, setSelectedExtras] = useState<Record<string, string>>({});
+
   const getSelectedOptionDesc = (): string => {
-    const parts = [selectedColor, selectedSize].filter(Boolean);
+    const parts: string[] = [];
+    if (selectedColor) parts.push(`컬러:${selectedColor}`);
+    if (selectedSize) parts.push(`사이즈:${selectedSize}`);
+    Object.entries(selectedExtras).forEach(([label, value]) => {
+      if (value) parts.push(`${label}:${value}`);
+    });
     if (parts.length > 0) return parts.join(' / ');
     return selectedOption || '기본';
   };
 
   const validateOptionSelection = (): boolean => {
-    const { colors, sizes } = parseProductOptions(product?.options);
+    const { colors, sizes, extras } = parseProductOptions(product?.options);
     if (colors.length > 0 && !selectedColor) {
       toast({ title: "컬러를 선택해주세요.", variant: "destructive" });
       return false;
@@ -138,6 +146,12 @@ export default function ProductDetail() {
     if (sizes.length > 0 && !selectedSize) {
       toast({ title: "사이즈를 선택해주세요.", variant: "destructive" });
       return false;
+    }
+    for (const extra of extras) {
+      if (!selectedExtras[extra.label]) {
+        toast({ title: `${extra.label}을(를) 선택해주세요.`, variant: "destructive" });
+        return false;
+      }
     }
     return true;
   };
@@ -184,7 +198,10 @@ export default function ProductDetail() {
     const optionParts: string[] = [];
     if (selectedColor) optionParts.push(`컬러:${selectedColor}`);
     if (selectedSize) optionParts.push(`사이즈:${selectedSize}`);
-    if (!selectedColor && !selectedSize && selectedOption) optionParts.push(selectedOption);
+    Object.entries(selectedExtras).forEach(([label, value]) => {
+      if (value) optionParts.push(`${label}:${value}`);
+    });
+    if (!selectedColor && !selectedSize && Object.keys(selectedExtras).length === 0 && selectedOption) optionParts.push(selectedOption);
     const optionStr = optionParts.join(' / ');
     setLocation(`/order/${id}?quantity=${quantity}${optionStr ? `&option=${encodeURIComponent(optionStr)}` : ''}`);
   };
@@ -238,7 +255,7 @@ export default function ProductDetail() {
     );
   }
 
-  const { colors: productColors, sizes: productSizes } = parseProductOptions(product.options);
+  const { colors: productColors, sizes: productSizes, extras: productExtras } = parseProductOptions(product.options);
   const isWishlisted = isInWishlist(String(product.id));
   const discountPercent = (product.discountPercent && product.discountPercent > 0)
     ? product.discountPercent
@@ -251,7 +268,8 @@ export default function ProductDetail() {
 
   const hasColorOptions = productColors.length > 0;
   const hasSizeOptions = productSizes.length > 0;
-  const hasAnyOptions = hasColorOptions || hasSizeOptions;
+  const hasExtraOptions = productExtras.length > 0;
+  const hasAnyOptions = hasColorOptions || hasSizeOptions || hasExtraOptions;
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -421,7 +439,7 @@ export default function ProductDetail() {
                         className="w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-black"
                         data-testid="select-color"
                       >
-                        <option value="">- 선택 -</option>
+                        <option value="">선택</option>
                         {productColors.map((color) => (
                           <option key={color} value={color}>{color}</option>
                         ))}
@@ -438,7 +456,7 @@ export default function ProductDetail() {
                         className="w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-black"
                         data-testid="select-size"
                       >
-                        <option value="">- 선택 -</option>
+                        <option value="">선택</option>
                         {productSizes.map((size) => (
                           <option key={size} value={size}>{size}</option>
                         ))}
@@ -446,11 +464,32 @@ export default function ProductDetail() {
                     </div>
                   )}
 
-                  {(selectedColor || selectedSize) && (
+                  {productExtras.map((extra) => (
+                    <div key={extra.label} className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">{extra.label}</label>
+                      <select
+                        value={selectedExtras[extra.label] || ""}
+                        onChange={(e) => setSelectedExtras(prev => ({ ...prev, [extra.label]: e.target.value }))}
+                        className="w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-black"
+                        data-testid={`select-extra-${extra.label}`}
+                      >
+                        <option value="">선택</option>
+                        {extra.values.map((val) => (
+                          <option key={val} value={val}>{val}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+
+                  {(selectedColor || selectedSize || Object.values(selectedExtras).some(Boolean)) && (
                     <div className="bg-gray-50 rounded p-3 text-sm">
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600">
-                          {[selectedColor && `컬러:${selectedColor}`, selectedSize && `사이즈:${selectedSize}`].filter(Boolean).join(' / ')}
+                          {[
+                            selectedColor && `컬러:${selectedColor}`,
+                            selectedSize && `사이즈:${selectedSize}`,
+                            ...Object.entries(selectedExtras).filter(([, v]) => v).map(([k, v]) => `${k}:${v}`)
+                          ].filter(Boolean).join(' / ')}
                         </span>
                         <span className="font-bold">+0원</span>
                       </div>
