@@ -591,7 +591,17 @@ function DynamicHomeSections() {
   const brands = brandsData || [];
   const getBrandName = (brandId: string) => {
     const brand = brands.find((b: any) => b.id === brandId);
-    return brand?.name || '';
+    return brand?.name?.toUpperCase() || '';
+  };
+
+  const getMoreLink = (section: any) => {
+    if (section.linkUrl) return section.linkUrl;
+    if (section.brandName) {
+      const brand = brands.find((b: any) => b.name?.toLowerCase() === section.brandName?.toLowerCase());
+      if (brand) return `/products?brand=${encodeURIComponent(brand.id)}`;
+    }
+    if (section.categorySlug) return `/products/${section.categorySlug}`;
+    return "/products";
   };
 
   if (!sections || sections.length === 0) return null;
@@ -599,9 +609,9 @@ function DynamicHomeSections() {
   return (
     <>
       {sections.map((section: any) => (
-        <section key={section.id} className="bg-white" data-testid={`home-section-${section.id}`}>
+        <section key={section.id} className="bg-white border-b border-gray-100" data-testid={`home-section-${section.id}`}>
           {section.imageUrl && (
-            <Link href={section.linkUrl || "/products"} className="block w-full">
+            <Link href={getMoreLink(section)} className="block w-full">
               <img
                 src={section.imageUrl}
                 alt={section.title}
@@ -615,14 +625,14 @@ function DynamicHomeSections() {
             <div className="max-w-[1200px] mx-auto px-4 py-6 md:py-10">
               <div className="flex items-end justify-between mb-4 md:mb-6">
                 <div>
-                  <h2 className="text-base md:text-xl font-bold tracking-wide uppercase">{section.title}</h2>
+                  <h2 className="text-base md:text-xl font-bold tracking-wide uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>{section.title}</h2>
                   {section.description && (
                     <p className="text-xs md:text-sm text-gray-500 mt-1">{section.description}</p>
                   )}
                 </div>
                 <Link
-                  href={section.linkUrl || `/products${section.categorySlug ? `?category=${section.categorySlug}` : ''}`}
-                  className="text-xs md:text-sm text-gray-400 hover:text-black transition-colors"
+                  href={getMoreLink(section)}
+                  className="text-xs md:text-sm text-gray-400 hover:text-black transition-colors flex-shrink-0"
                   data-testid={`section-more-${section.id}`}
                 >
                   더보기
@@ -630,29 +640,46 @@ function DynamicHomeSections() {
               </div>
 
               <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
-                {section.products.map((product: any) => (
-                  <Link
-                    key={product.id}
-                    href={`/product/${product.id}`}
-                    className="block group"
-                    data-testid={`section-product-${product.id}`}
-                  >
-                    <div className="aspect-square bg-gray-50 overflow-hidden mb-2">
-                      <img
-                        src={getProxiedImageUrl(product.imageUrl, "medium")}
-                        alt={product.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                        onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-                      />
-                    </div>
-                    <p className="text-[10px] md:text-xs text-gray-400 uppercase font-medium tracking-wide">{getBrandName(product.brandId)}</p>
-                    <p className="text-xs md:text-sm text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
-                    <div className="mt-1">
-                      <p className="text-xs md:text-sm font-bold text-gray-900">{Number(product.price).toLocaleString()}원</p>
-                    </div>
-                  </Link>
-                ))}
+                {section.products.map((product: any) => {
+                  const hasDiscount = product.discountPercent && product.discountPercent > 0;
+                  const discountedPrice = hasDiscount
+                    ? Math.round(Number(product.price) * (100 - product.discountPercent) / 100 / 1000) * 1000
+                    : Number(product.price);
+
+                  return (
+                    <Link
+                      key={product.id}
+                      href={`/product/${product.id}`}
+                      className="block group"
+                      data-testid={`section-product-${product.id}`}
+                    >
+                      <div className="aspect-square bg-gray-50 overflow-hidden mb-2 rounded-lg">
+                        <img
+                          src={getProxiedImageUrl(product.imageUrl, "medium")}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                        />
+                      </div>
+                      <p className="text-[10px] md:text-xs text-gray-400 uppercase font-semibold tracking-wide">{getBrandName(product.brandId)}</p>
+                      <p className="text-xs md:text-sm text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
+                      {product.originalPrice && Number(product.originalPrice) > 0 && (
+                        <p className="text-[10px] md:text-xs text-gray-400 mt-1">매장가 {Math.round(Number(product.originalPrice) / 10000)}만원</p>
+                      )}
+                      <div className="mt-0.5 flex items-center gap-1.5">
+                        {hasDiscount && (
+                          <span className="text-xs md:text-sm font-bold text-red-500">{product.discountPercent}%</span>
+                        )}
+                        <p className="text-xs md:text-sm font-bold text-gray-900">{discountedPrice.toLocaleString()}원</p>
+                      </div>
+                      <div className="flex gap-1 mt-1.5">
+                        <span className="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded font-medium">적립</span>
+                        <span className="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-green-50 text-green-600 rounded font-medium">무료배송</span>
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
             </div>
           )}
