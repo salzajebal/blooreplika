@@ -722,22 +722,7 @@ export default function ProductList() {
                         {decodeHtml(product.name)}
                       </h3>
                       <div>
-                        {(product.discountPercent && product.discountPercent > 0) ? (
-                          <>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs text-gray-400 line-through">
-                                {Number(product.price).toLocaleString()}원
-                              </span>
-                              <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 font-bold">
-                                {product.discountPercent}%
-                              </span>
-                            </div>
-                            <span className="text-base md:text-lg font-extrabold text-red-500" data-testid={`price-product-${product.id}`}>
-                              {(Math.round(Number(product.price) * (100 - product.discountPercent) / 100 / 1000) * 1000).toLocaleString()}원
-                            </span>
-                            <p className="text-xs text-gray-400 mt-1">즉시구매가</p>
-                          </>
-                        ) : hasSale ? (
+                        {hasSale ? (
                           <>
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-xs text-gray-400 line-through">
@@ -754,11 +739,6 @@ export default function ProductList() {
                           </>
                         ) : (
                           <>
-                            {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-                              <p className="text-xs text-gray-400 mb-1">
-                                매장가 <span className="line-through">{Number(product.originalPrice).toLocaleString()}원</span>
-                              </p>
-                            )}
                             <span className="text-base md:text-lg font-extrabold text-gray-900" data-testid={`price-product-${product.id}`}>
                               {Number(product.price).toLocaleString()}원
                             </span>

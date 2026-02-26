@@ -34,14 +34,8 @@ function ProductCard({ product }: { product: any }) {
       <div className="px-1">
         <p className="text-xs text-gray-800 line-clamp-2 leading-relaxed mb-1">{product.name}</p>
         <div className="flex items-center gap-2">
-          {product.discountPercent > 0 && (
-            <span className="text-xs text-red-500 font-bold">{product.discountPercent}%</span>
-          )}
           <span className="text-sm font-bold text-gray-900">{Number(product.price).toLocaleString()}원</span>
         </div>
-        {product.originalPrice && product.originalPrice > product.price && (
-          <span className="text-[11px] text-gray-400 line-through">{Number(product.originalPrice).toLocaleString()}원</span>
-        )}
       </div>
     </Link>
   );

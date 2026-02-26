@@ -620,17 +620,8 @@ function DynamicHomeSections() {
                     <p className="text-[10px] md:text-xs text-gray-400 uppercase font-medium tracking-wide">{getBrandName(product.brandId)}</p>
                     <p className="text-xs md:text-sm text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
                     <div className="mt-1">
-                      {product.originalPrice && product.originalPrice > product.price && (
-                        <p className="text-[10px] md:text-xs text-gray-400 line-through">매장가 {Number(product.originalPrice).toLocaleString()}원</p>
-                      )}
                       <p className="text-xs md:text-sm font-bold text-gray-900">{Number(product.price).toLocaleString()}원</p>
                     </div>
-                    {(product.discountPercent > 0) && (
-                      <div className="flex gap-1 mt-1">
-                        <span className="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded">적립</span>
-                        <span className="text-[10px] px-1.5 py-0.5 bg-green-50 text-green-600 rounded">무료배송</span>
-                      </div>
-                    )}
                   </Link>
                 ))}
               </div>

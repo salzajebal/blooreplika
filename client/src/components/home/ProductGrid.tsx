@@ -264,11 +264,6 @@ export function ProductGrid() {
                     </div>
                   ) : (
                     <div>
-                      {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-                        <p className="text-xs text-gray-400 mb-1">
-                          매장가 <span className="line-through">{Number(product.originalPrice).toLocaleString()}원</span>
-                        </p>
-                      )}
                       <span className="text-base md:text-lg font-extrabold text-gray-900" data-testid={`price-product-${product.id}`}>
                         {product.price.toLocaleString()}원
                       </span>

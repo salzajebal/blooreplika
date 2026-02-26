@@ -362,13 +362,7 @@ export default function ProductDetail() {
               <div className="space-y-2 text-sm">
                 <div className="flex items-center">
                   <span className="text-gray-500 w-24">판매가격</span>
-                  {(product.discountPercent && product.discountPercent > 0) ? (
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-gray-400 line-through">{Number(product.price).toLocaleString()}원</span>
-                      <span className="font-bold text-red-500 text-lg" data-testid="price-product-detail">{finalPrice.toLocaleString()}원</span>
-                      <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded font-bold">{product.discountPercent}% OFF</span>
-                    </div>
-                  ) : hasSale ? (
+                  {hasSale ? (
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-gray-400 line-through">{Number(product.price).toLocaleString()}원</span>
                       <span className="font-bold text-red-500 text-lg" data-testid="price-product-detail">{calculateSalePrice(Number(product.price)).toLocaleString()}원</span>
@@ -376,9 +370,6 @@ export default function ProductDetail() {
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      {product.originalPrice && Number(product.originalPrice) > Number(product.price) && (
-                        <span className="text-gray-400 line-through">{Number(product.originalPrice).toLocaleString()}원</span>
-                      )}
                       <span className="font-bold text-gray-900" data-testid="price-product-detail">{Number(product.price).toLocaleString()}원</span>
                     </div>
                   )}

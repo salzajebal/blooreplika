@@ -3264,6 +3264,8 @@ export async function registerRoutes(
             if (anyPrice) price = parseInt(anyPrice[1].replace(/,/g, ''), 10);
           }
 
+          if (price > 0) price += 20000;
+
           const colors: string[] = [];
           const sizes: string[] = [];
           const option1Label = $('label[for="it_option_1"]').text().trim();
@@ -3808,6 +3810,8 @@ export async function registerRoutes(
               const anyPrice = html.match(/(\d{1,3}(?:,\d{3})+)원/);
               if (anyPrice) price = parseInt(anyPrice[1].replace(/,/g, ''), 10);
             }
+
+            if (price > 0) price += 20000;
 
             let description = '';
             const explanDiv = $('#sit_inf_explan');
