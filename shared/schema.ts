@@ -662,6 +662,7 @@ export const contentSections = pgTable("content_sections", {
   categorySlug: text("category_slug"),
   brandName: text("brand_name"),
   maxProducts: integer("max_products").default(6),
+  contentBlocks: text("content_blocks"),
   sortOrder: integer("sort_order").default(0),
   isActive: boolean("is_active").default(true),
   startDate: timestamp("start_date"),

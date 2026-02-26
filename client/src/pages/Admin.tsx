@@ -10,7 +10,8 @@ import {
   Lock, User, Mail, Phone, CheckCircle, XCircle,
   Star, FileText, Bell, Calendar, Tag,
   Clock, Snowflake, Unlock, Settings, Link2, Upload,
-  MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2, Search, Shield, Image, Globe, Gift
+  MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2, Search, Shield, Image, Globe, Gift,
+  ChevronUp, ChevronDown, Type, Minus, MousePointer, Palette
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage, Order, CouponPayment } from "@shared/schema";
@@ -7092,6 +7093,434 @@ const SECTION_TYPES = [
 
 const getSectionLabel = (val: string) => SECTION_TYPES.find(s => s.value === val)?.label || val;
 
+interface ContentBlock {
+  id: string;
+  type: "banner" | "text" | "buttons" | "coupon" | "divider";
+  imageUrl?: string;
+  linkUrl?: string;
+  heading?: string;
+  subheading?: string;
+  body?: string;
+  bgColor?: string;
+  buttons?: { label: string; linkUrl: string; style: "filled" | "outline" }[];
+  coupons?: { label: string; value: string }[];
+}
+
+const BLOCK_TYPES = [
+  { value: "banner", label: "배너", icon: Image },
+  { value: "text", label: "텍스트", icon: Type },
+  { value: "buttons", label: "버튼", icon: MousePointer },
+  { value: "coupon", label: "쿠폰", icon: Gift },
+  { value: "divider", label: "구분선", icon: Minus },
+] as const;
+
+function generateBlockId() {
+  return "blk_" + Math.random().toString(36).substring(2, 10);
+}
+
+function ContentBlockEditor({ blocks, onChange, authToken }: { blocks: ContentBlock[]; onChange: (blocks: ContentBlock[]) => void; authToken: string }) {
+  const [showBlockMenu, setShowBlockMenu] = useState(false);
+  const [uploadingBlockId, setUploadingBlockId] = useState<string | null>(null);
+
+  const addBlock = (type: ContentBlock["type"]) => {
+    const newBlock: ContentBlock = { id: generateBlockId(), type };
+    if (type === "banner") { newBlock.imageUrl = ""; newBlock.linkUrl = ""; }
+    if (type === "text") { newBlock.heading = ""; newBlock.subheading = ""; newBlock.body = ""; newBlock.bgColor = "#ffffff"; }
+    if (type === "buttons") { newBlock.buttons = [{ label: "", linkUrl: "", style: "filled" }]; }
+    if (type === "coupon") { newBlock.coupons = [{ label: "", value: "" }]; }
+    onChange([...blocks, newBlock]);
+    setShowBlockMenu(false);
+  };
+
+  const updateBlock = (id: string, updates: Partial<ContentBlock>) => {
+    onChange(blocks.map(b => b.id === id ? { ...b, ...updates } : b));
+  };
+
+  const removeBlock = (id: string) => {
+    onChange(blocks.filter(b => b.id !== id));
+  };
+
+  const moveBlock = (id: string, direction: "up" | "down") => {
+    const idx = blocks.findIndex(b => b.id === id);
+    if (idx < 0) return;
+    const newIdx = direction === "up" ? idx - 1 : idx + 1;
+    if (newIdx < 0 || newIdx >= blocks.length) return;
+    const newBlocks = [...blocks];
+    [newBlocks[idx], newBlocks[newIdx]] = [newBlocks[newIdx], newBlocks[idx]];
+    onChange(newBlocks);
+  };
+
+  const uploadBannerImage = async (blockId: string, file: File) => {
+    setUploadingBlockId(blockId);
+    try {
+      const fd = new FormData();
+      fd.append("image", file);
+      const res = await fetch("/api/admin/upload/banner-image", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${authToken}` },
+        body: fd,
+      });
+      const data = await res.json();
+      if (data.success && data.data?.imageUrl) {
+        updateBlock(blockId, { imageUrl: data.data.imageUrl });
+      }
+    } catch {} finally {
+      setUploadingBlockId(null);
+    }
+  };
+
+  const getBlockTypeLabel = (type: string) => BLOCK_TYPES.find(bt => bt.value === type)?.label || type;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <label className="block text-sm font-semibold">콘텐츠 블록 ({blocks.length}개)</label>
+        <div className="relative">
+          <Button
+            data-testid="btn-add-block"
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={() => setShowBlockMenu(!showBlockMenu)}
+            className="text-xs"
+          >
+            <Plus className="w-3 h-3 mr-1" />
+            블록 추가
+          </Button>
+          {showBlockMenu && (
+            <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg z-20 w-40">
+              {BLOCK_TYPES.map(bt => (
+                <button
+                  key={bt.value}
+                  type="button"
+                  data-testid={`btn-add-block-${bt.value}`}
+                  className="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2 text-sm border-b last:border-b-0"
+                  onClick={() => addBlock(bt.value as ContentBlock["type"])}
+                >
+                  <bt.icon className="w-4 h-4 text-gray-500" />
+                  {bt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {blocks.length === 0 && (
+        <div className="text-center py-6 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-lg">
+          블록을 추가하여 콘텐츠를 구성하세요
+        </div>
+      )}
+
+      {blocks.map((block, idx) => (
+        <div key={block.id} data-testid={`content-block-${block.id}`} className="border rounded-lg bg-white overflow-hidden">
+          <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border-b">
+            <span className="text-xs font-semibold text-pink-600 bg-pink-50 px-2 py-0.5 rounded">{getBlockTypeLabel(block.type)}</span>
+            <span className="text-xs text-gray-400">#{idx + 1}</span>
+            <div className="ml-auto flex items-center gap-1">
+              <button
+                type="button"
+                data-testid={`btn-move-up-${block.id}`}
+                disabled={idx === 0}
+                onClick={() => moveBlock(block.id, "up")}
+                className="p-1 hover:bg-gray-200 rounded disabled:opacity-30"
+              >
+                <ChevronUp className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                data-testid={`btn-move-down-${block.id}`}
+                disabled={idx === blocks.length - 1}
+                onClick={() => moveBlock(block.id, "down")}
+                className="p-1 hover:bg-gray-200 rounded disabled:opacity-30"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                data-testid={`btn-delete-block-${block.id}`}
+                onClick={() => removeBlock(block.id)}
+                className="p-1 hover:bg-red-100 text-red-500 rounded ml-1"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          <div className="p-3 space-y-2">
+            {block.type === "banner" && (
+              <>
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <label className="block text-xs text-gray-500 mb-1">이미지 URL</label>
+                    <Input
+                      data-testid={`block-banner-url-${block.id}`}
+                      value={block.imageUrl || ""}
+                      onChange={e => updateBlock(block.id, { imageUrl: e.target.value })}
+                      placeholder="https://... 또는 이미지 업로드"
+                      className="text-sm"
+                    />
+                  </div>
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadBannerImage(block.id, file);
+                      }}
+                    />
+                    <div className={`px-3 py-2 border rounded-lg text-sm flex items-center gap-1 hover:bg-gray-50 ${uploadingBlockId === block.id ? "opacity-50" : ""}`}>
+                      {uploadingBlockId === block.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                      업로드
+                    </div>
+                  </label>
+                </div>
+                {block.imageUrl && (
+                  <div className="mt-1 rounded overflow-hidden border bg-gray-50 max-h-32">
+                    <img src={block.imageUrl} alt="배너 미리보기" className="w-full h-32 object-cover" />
+                  </div>
+                )}
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">링크 URL (선택)</label>
+                  <Input
+                    data-testid={`block-banner-link-${block.id}`}
+                    value={block.linkUrl || ""}
+                    onChange={e => updateBlock(block.id, { linkUrl: e.target.value })}
+                    placeholder="https://..."
+                    className="text-sm"
+                  />
+                </div>
+              </>
+            )}
+
+            {block.type === "text" && (
+              <>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">제목</label>
+                  <Input
+                    data-testid={`block-text-heading-${block.id}`}
+                    value={block.heading || ""}
+                    onChange={e => updateBlock(block.id, { heading: e.target.value })}
+                    placeholder="제목 입력"
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">부제목</label>
+                  <Input
+                    data-testid={`block-text-subheading-${block.id}`}
+                    value={block.subheading || ""}
+                    onChange={e => updateBlock(block.id, { subheading: e.target.value })}
+                    placeholder="부제목 입력"
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">본문</label>
+                  <Textarea
+                    data-testid={`block-text-body-${block.id}`}
+                    value={block.body || ""}
+                    onChange={e => updateBlock(block.id, { body: e.target.value })}
+                    placeholder="본문 입력"
+                    rows={3}
+                    className="text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">배경색</label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      data-testid={`block-text-bgColor-${block.id}`}
+                      type="color"
+                      value={block.bgColor || "#ffffff"}
+                      onChange={e => updateBlock(block.id, { bgColor: e.target.value })}
+                      className="w-8 h-8 rounded border cursor-pointer"
+                    />
+                    <Input
+                      value={block.bgColor || "#ffffff"}
+                      onChange={e => updateBlock(block.id, { bgColor: e.target.value })}
+                      placeholder="#ffffff"
+                      className="text-sm w-32"
+                    />
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg border mt-2" style={{ backgroundColor: block.bgColor || "#ffffff" }}>
+                  <p className="text-xs text-gray-400 mb-1">미리보기:</p>
+                  {block.heading && <p className="font-bold text-sm">{block.heading}</p>}
+                  {block.subheading && <p className="text-xs text-gray-600">{block.subheading}</p>}
+                  {block.body && <p className="text-xs text-gray-500 mt-1">{block.body}</p>}
+                </div>
+              </>
+            )}
+
+            {block.type === "buttons" && (
+              <>
+                {(block.buttons || []).map((btn, btnIdx) => (
+                  <div key={btnIdx} className="flex items-center gap-2 p-2 bg-gray-50 rounded border">
+                    <div className="flex-1 grid grid-cols-3 gap-2">
+                      <Input
+                        data-testid={`block-btn-label-${block.id}-${btnIdx}`}
+                        value={btn.label}
+                        onChange={e => {
+                          const newBtns = [...(block.buttons || [])];
+                          newBtns[btnIdx] = { ...newBtns[btnIdx], label: e.target.value };
+                          updateBlock(block.id, { buttons: newBtns });
+                        }}
+                        placeholder="버튼 텍스트"
+                        className="text-xs"
+                      />
+                      <Input
+                        data-testid={`block-btn-link-${block.id}-${btnIdx}`}
+                        value={btn.linkUrl}
+                        onChange={e => {
+                          const newBtns = [...(block.buttons || [])];
+                          newBtns[btnIdx] = { ...newBtns[btnIdx], linkUrl: e.target.value };
+                          updateBlock(block.id, { buttons: newBtns });
+                        }}
+                        placeholder="링크 URL"
+                        className="text-xs"
+                      />
+                      <select
+                        data-testid={`block-btn-style-${block.id}-${btnIdx}`}
+                        value={btn.style}
+                        onChange={e => {
+                          const newBtns = [...(block.buttons || [])];
+                          newBtns[btnIdx] = { ...newBtns[btnIdx], style: e.target.value as "filled" | "outline" };
+                          updateBlock(block.id, { buttons: newBtns });
+                        }}
+                        className="border rounded px-2 py-1 text-xs"
+                      >
+                        <option value="filled">채움</option>
+                        <option value="outline">외곽선</option>
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newBtns = (block.buttons || []).filter((_, i) => i !== btnIdx);
+                        updateBlock(block.id, { buttons: newBtns });
+                      }}
+                      className="p-1 hover:bg-red-100 text-red-500 rounded"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  data-testid={`btn-add-button-${block.id}`}
+                  size="sm"
+                  variant="outline"
+                  className="text-xs"
+                  onClick={() => {
+                    const newBtns = [...(block.buttons || []), { label: "", linkUrl: "", style: "filled" as const }];
+                    updateBlock(block.id, { buttons: newBtns });
+                  }}
+                >
+                  <Plus className="w-3 h-3 mr-1" /> 버튼 추가
+                </Button>
+                {(block.buttons || []).length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2 p-2 border rounded bg-gray-50">
+                    <p className="text-xs text-gray-400 w-full mb-1">미리보기:</p>
+                    {(block.buttons || []).map((btn, i) => (
+                      <span
+                        key={i}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+                          btn.style === "filled"
+                            ? "bg-pink-500 text-white"
+                            : "border border-pink-500 text-pink-500"
+                        }`}
+                      >
+                        {btn.label || "버튼"}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {block.type === "coupon" && (
+              <>
+                {(block.coupons || []).map((coupon, cpIdx) => (
+                  <div key={cpIdx} className="flex items-center gap-2 p-2 bg-gray-50 rounded border">
+                    <div className="flex-1 grid grid-cols-2 gap-2">
+                      <Input
+                        data-testid={`block-coupon-label-${block.id}-${cpIdx}`}
+                        value={coupon.label}
+                        onChange={e => {
+                          const newCoupons = [...(block.coupons || [])];
+                          newCoupons[cpIdx] = { ...newCoupons[cpIdx], label: e.target.value };
+                          updateBlock(block.id, { coupons: newCoupons });
+                        }}
+                        placeholder="쿠폰 라벨 (예: 신규가입)"
+                        className="text-xs"
+                      />
+                      <Input
+                        data-testid={`block-coupon-value-${block.id}-${cpIdx}`}
+                        value={coupon.value}
+                        onChange={e => {
+                          const newCoupons = [...(block.coupons || [])];
+                          newCoupons[cpIdx] = { ...newCoupons[cpIdx], value: e.target.value };
+                          updateBlock(block.id, { coupons: newCoupons });
+                        }}
+                        placeholder="값 (예: 10,000 P 또는 -15%)"
+                        className="text-xs"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newCoupons = (block.coupons || []).filter((_, i) => i !== cpIdx);
+                        updateBlock(block.id, { coupons: newCoupons });
+                      }}
+                      className="p-1 hover:bg-red-100 text-red-500 rounded"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  data-testid={`btn-add-coupon-${block.id}`}
+                  size="sm"
+                  variant="outline"
+                  className="text-xs"
+                  onClick={() => {
+                    const newCoupons = [...(block.coupons || []), { label: "", value: "" }];
+                    updateBlock(block.id, { coupons: newCoupons });
+                  }}
+                >
+                  <Plus className="w-3 h-3 mr-1" /> 쿠폰 추가
+                </Button>
+                {(block.coupons || []).length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2 p-2 border rounded bg-gray-50">
+                    <p className="text-xs text-gray-400 w-full mb-1">미리보기:</p>
+                    {(block.coupons || []).map((cp, i) => (
+                      <div key={i} className="flex flex-col items-center border border-pink-300 rounded-lg px-4 py-2 bg-white">
+                        <span className="text-[10px] text-gray-500">{cp.label || "라벨"}</span>
+                        <span className="text-sm font-bold text-pink-600">{cp.value || "값"}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {block.type === "divider" && (
+              <div className="py-2">
+                <hr className="border-gray-300" />
+                <p className="text-xs text-gray-400 text-center mt-1">구분선</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ContentSectionsTab({ authToken }: { authToken: string }) {
   const { toast } = useToast();
   const [items, setItems] = useState<any[]>([]);
@@ -7112,6 +7541,7 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
     sortOrder: 0,
     isActive: true,
   });
+  const [contentBlocks, setContentBlocks] = useState<ContentBlock[]>([]);
   const [productIds, setProductIds] = useState<string[]>([]);
   const [productSearch, setProductSearch] = useState("");
   const [productResults, setProductResults] = useState<any[]>([]);
@@ -7160,6 +7590,7 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
     setSelectedProducts([]);
     setProductSearch("");
     setProductResults([]);
+    setContentBlocks([]);
   };
 
   const searchProducts = async (query: string) => {
@@ -7198,6 +7629,11 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
         delete body.categorySlug;
         delete body.brandName;
         delete body.maxProducts;
+      }
+      if (form.sectionType === "monthly_benefit" && contentBlocks.length > 0) {
+        body.contentBlocks = JSON.stringify(contentBlocks);
+      } else if (form.sectionType === "monthly_benefit") {
+        body.contentBlocks = null;
       }
 
       if (editingId) {
@@ -7249,6 +7685,14 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
       isActive: item.isActive !== false,
     });
     setEditingId(item.id);
+    if (item.contentBlocks) {
+      try {
+        const parsed = typeof item.contentBlocks === "string" ? JSON.parse(item.contentBlocks) : item.contentBlocks;
+        setContentBlocks(Array.isArray(parsed) ? parsed : []);
+      } catch { setContentBlocks([]); }
+    } else {
+      setContentBlocks([]);
+    }
     const ids = item.productIds || [];
     setProductIds(ids);
     if (ids.length > 0) {
@@ -7280,6 +7724,14 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
     } catch {
       toast({ title: "오류", description: "삭제 요청 중 오류가 발생했습니다.", variant: "destructive" });
     }
+  };
+
+  const getBlockCount = (item: any) => {
+    if (!item.contentBlocks) return 0;
+    try {
+      const parsed = typeof item.contentBlocks === "string" ? JSON.parse(item.contentBlocks) : item.contentBlocks;
+      return Array.isArray(parsed) ? parsed.length : 0;
+    } catch { return 0; }
   };
 
   return (
@@ -7433,6 +7885,15 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
                   </div>
                 </>
               )}
+              {form.sectionType === "monthly_benefit" && (
+                <div className="md:col-span-2">
+                  <ContentBlockEditor
+                    blocks={contentBlocks}
+                    onChange={setContentBlocks}
+                    authToken={authToken}
+                  />
+                </div>
+              )}
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-1">연결 상품</label>
                 <div className="relative">
@@ -7526,6 +7987,11 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
                       <span className={`text-xs px-2 py-0.5 rounded-full ${item.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
                         {item.isActive ? "활성" : "비활성"}
                       </span>
+                      {item.sectionType === "monthly_benefit" && getBlockCount(item) > 0 && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                          블록 {getBlockCount(item)}개
+                        </span>
+                      )}
                     </div>
                     <h4 className="font-semibold text-sm truncate" data-testid={`content-title-${item.id}`}>{item.title}</h4>
                     {item.celebrity && <p className="text-xs text-gray-500 mt-1">셀럽: {item.celebrity}</p>}
