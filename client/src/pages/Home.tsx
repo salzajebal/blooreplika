@@ -99,12 +99,34 @@ function MainBannerSlider() {
           {bannerList.map((banner: any, index: number) => (
             <div key={index} className="w-full flex-shrink-0 relative">
               <Link href={banner.linkUrl || "/products"} className="block w-full">
-                <img 
-                  src={banner.imageUrl}
-                  alt={banner.title || `배너 ${index + 1}`}
-                  className="w-full h-auto block"
-                  loading="eager"
-                />
+                <div className="block md:hidden">
+                  <img 
+                    src={banner.imageUrl}
+                    alt={banner.title || `배너 ${index + 1}`}
+                    className="w-full h-auto block"
+                    loading="eager"
+                  />
+                </div>
+                <div className="hidden md:block relative overflow-hidden" style={{ height: '480px' }}>
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: `url(${banner.imageUrl})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      filter: 'blur(30px) brightness(0.7)',
+                      transform: 'scale(1.2)',
+                    }}
+                  />
+                  <div className="relative h-full flex items-center justify-center">
+                    <img 
+                      src={banner.imageUrl}
+                      alt={banner.title || `배너 ${index + 1}`}
+                      className="h-full w-auto max-w-none object-contain"
+                      loading="eager"
+                    />
+                  </div>
+                </div>
                 {banner.title && (
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end">
                     <div className="p-5 md:p-10 text-white">
