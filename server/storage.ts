@@ -29,7 +29,8 @@ import {
   type Inspection, type InsertInspection, inspections,
   type ShippingPhoto, type InsertShippingPhoto, shippingPhotos,
   type ContentSection, type InsertContentSection, contentSections,
-  type Magazine, type InsertMagazine, magazines
+  type Magazine, type InsertMagazine, magazines,
+  type LabsBlock, type InsertLabsBlock, labsBlocks
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, inArray } from "drizzle-orm";
@@ -269,6 +270,14 @@ export interface IStorage {
   createMagazine(data: InsertMagazine): Promise<Magazine>;
   updateMagazine(id: string, data: Partial<InsertMagazine>): Promise<Magazine | undefined>;
   deleteMagazine(id: string): Promise<boolean>;
+
+  // Labs Blocks
+  getLabsBlocks(): Promise<LabsBlock[]>;
+  getActiveLabsBlocks(): Promise<LabsBlock[]>;
+  getLabsBlock(id: string): Promise<LabsBlock | undefined>;
+  createLabsBlock(data: InsertLabsBlock): Promise<LabsBlock>;
+  updateLabsBlock(id: string, data: Partial<InsertLabsBlock>): Promise<LabsBlock | undefined>;
+  deleteLabsBlock(id: string): Promise<boolean>;
 
   // Visitor Tracking
   trackVisitor(session: InsertVisitorSession): Promise<VisitorSession>;
@@ -1525,6 +1534,34 @@ export class DatabaseStorage implements IStorage {
 
   async deleteMagazine(id: string): Promise<boolean> {
     const result = await db.delete(magazines).where(eq(magazines.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getLabsBlocks(): Promise<LabsBlock[]> {
+    return db.select().from(labsBlocks).orderBy(labsBlocks.sortOrder);
+  }
+
+  async getActiveLabsBlocks(): Promise<LabsBlock[]> {
+    return db.select().from(labsBlocks).where(eq(labsBlocks.isActive, true)).orderBy(labsBlocks.sortOrder);
+  }
+
+  async getLabsBlock(id: string): Promise<LabsBlock | undefined> {
+    const [item] = await db.select().from(labsBlocks).where(eq(labsBlocks.id, id));
+    return item;
+  }
+
+  async createLabsBlock(data: InsertLabsBlock): Promise<LabsBlock> {
+    const [item] = await db.insert(labsBlocks).values(data).returning();
+    return item;
+  }
+
+  async updateLabsBlock(id: string, data: Partial<InsertLabsBlock>): Promise<LabsBlock | undefined> {
+    const [item] = await db.update(labsBlocks).set(data).where(eq(labsBlocks.id, id)).returning();
+    return item;
+  }
+
+  async deleteLabsBlock(id: string): Promise<boolean> {
+    const result = await db.delete(labsBlocks).where(eq(labsBlocks.id, id)).returning();
     return result.length > 0;
   }
 }

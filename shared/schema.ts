@@ -698,3 +698,28 @@ export const insertMagazineSchema = createInsertSchema(magazines).omit({
 
 export type InsertMagazine = z.infer<typeof insertMagazineSchema>;
 export type Magazine = typeof magazines.$inferSelect;
+
+export const labsBlocks = pgTable("labs_blocks", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  blockType: text("block_type").notNull(),
+  title: text("title"),
+  subtitle: text("subtitle"),
+  content: text("content"),
+  imageUrl: text("image_url"),
+  overlayTitle: text("overlay_title"),
+  overlaySubtitle: text("overlay_subtitle"),
+  textAlign: text("text_align").default("center"),
+  bgColor: text("bg_color").default("#000000"),
+  textColor: text("text_color").default("#ffffff"),
+  sortOrder: integer("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertLabsBlockSchema = createInsertSchema(labsBlocks).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertLabsBlock = z.infer<typeof insertLabsBlockSchema>;
+export type LabsBlock = typeof labsBlocks.$inferSelect;

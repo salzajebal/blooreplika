@@ -81,6 +81,7 @@ Preferred communication style: Simple, everyday language.
 - FAQs: Frequently asked questions organized by category
 - Magazines: Admin-managed magazine/gallery articles with categories, images, and overlay text
 - Content Sections: Dynamic homepage sections with banner images, product filtering, and tab-based benefits page
+- Labs Blocks: Admin-managed content blocks for Labs/branding page (hero, text, image, image_text types)
 
 **Validation:**
 - Zod schemas derived from Drizzle schemas using drizzle-zod

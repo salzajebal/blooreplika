@@ -74,7 +74,7 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff" | "inspection" | "contentSections" | "magazines">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff" | "inspection" | "contentSections" | "magazines" | "labs">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [visitorStats, setVisitorStats] = useState<{ realtime: number; today: number; pageViews: number; recentPages: { page: string; count: number }[] } | null>(null);
   
@@ -2494,6 +2494,15 @@ export default function Admin() {
               >
                 <FileText className="w-4 h-4 md:mr-2" />
                 <span className="hidden md:inline">매거진 관리</span>
+              </Button>
+              <Button
+                data-testid="tab-labs"
+                variant={activeTab === "labs" ? "default" : "outline"}
+                onClick={() => setActiveTab("labs")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "labs" ? "bg-cyan-500 hover:bg-cyan-600" : ""}`}
+              >
+                <Globe className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">LABS 관리</span>
               </Button>
               <Button
                 data-testid="tab-settings"
@@ -6167,6 +6176,10 @@ export default function Admin() {
           <MagazinesTab authToken={authToken} />
         )}
 
+        {activeTab === "labs" && adminRole === "super_admin" && (
+          <LabsTab authToken={authToken} />
+        )}
+
         {activeTab === "staff" && adminRole === "super_admin" && (
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -7633,6 +7646,300 @@ function MagazinesTab({ authToken }: { authToken: string }) {
                       <span className="text-xs text-gray-400">순서: {item.sortOrder}</span>
                     </div>
                     <div className="flex gap-2 mt-3">
+                      <Button size="sm" variant="outline" onClick={() => handleEdit(item)}>
+                        <Pencil className="w-3 h-3 mr-1" /> 수정
+                      </Button>
+                      <Button size="sm" variant="outline" className="text-red-500 hover:text-red-700" onClick={() => handleDelete(item.id)}>
+                        <Trash2 className="w-3 h-3 mr-1" /> 삭제
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const LABS_BLOCK_TYPES = [
+  { value: "hero", label: "히어로 (전체 화면 이미지)" },
+  { value: "text", label: "텍스트 섹션" },
+  { value: "image", label: "이미지 (오버레이 텍스트)" },
+  { value: "image_text", label: "텍스트 + 이미지 조합" },
+];
+
+function LabsTab({ authToken }: { authToken: string }) {
+  const { toast } = useToast();
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    blockType: "hero",
+    title: "",
+    subtitle: "",
+    content: "",
+    imageUrl: "",
+    overlayTitle: "",
+    overlaySubtitle: "",
+    textAlign: "center",
+    bgColor: "#000000",
+    textColor: "#ffffff",
+    sortOrder: 0,
+    isActive: true,
+  });
+
+  const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+    return fetch(url, {
+      ...options,
+      headers: { "Content-Type": "application/json", ...options.headers, Authorization: `Bearer ${authToken}` },
+    });
+  };
+
+  const fetchItems = async () => {
+    setLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/labs-blocks");
+      const data = await res.json();
+      setItems(Array.isArray(data) ? data : data.data || []);
+    } catch {
+      toast({ title: "오류", description: "Labs 블록 목록을 불러올 수 없습니다.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchItems(); }, []);
+
+  const resetForm = () => {
+    setForm({
+      blockType: "hero", title: "", subtitle: "", content: "", imageUrl: "",
+      overlayTitle: "", overlaySubtitle: "", textAlign: "center",
+      bgColor: "#000000", textColor: "#ffffff", sortOrder: 0, isActive: true,
+    });
+    setEditingId(null);
+  };
+
+  const handleSubmit = async () => {
+    try {
+      if (editingId) {
+        const res = await fetchWithAuth(`/api/admin/labs-blocks/${editingId}`, { method: "PUT", body: JSON.stringify(form) });
+        if (res.ok) {
+          toast({ title: "수정 완료" });
+          resetForm(); setShowForm(false); fetchItems();
+        } else {
+          toast({ title: "오류", description: "수정 실패", variant: "destructive" });
+        }
+      } else {
+        const res = await fetchWithAuth("/api/admin/labs-blocks", { method: "POST", body: JSON.stringify(form) });
+        if (res.ok) {
+          toast({ title: "등록 완료" });
+          resetForm(); setShowForm(false); fetchItems();
+        } else {
+          toast({ title: "오류", description: "등록 실패", variant: "destructive" });
+        }
+      }
+    } catch {
+      toast({ title: "오류", description: "요청 중 오류", variant: "destructive" });
+    }
+  };
+
+  const handleEdit = (item: any) => {
+    setForm({
+      blockType: item.blockType || "hero",
+      title: item.title || "",
+      subtitle: item.subtitle || "",
+      content: item.content || "",
+      imageUrl: item.imageUrl || "",
+      overlayTitle: item.overlayTitle || "",
+      overlaySubtitle: item.overlaySubtitle || "",
+      textAlign: item.textAlign || "center",
+      bgColor: item.bgColor || "#000000",
+      textColor: item.textColor || "#ffffff",
+      sortOrder: item.sortOrder || 0,
+      isActive: item.isActive !== false,
+    });
+    setEditingId(item.id);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("이 블록을 삭제하시겠습니까?")) return;
+    try {
+      const res = await fetchWithAuth(`/api/admin/labs-blocks/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        toast({ title: "삭제 완료" });
+        fetchItems();
+      } else {
+        toast({ title: "오류", description: "삭제 실패", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "삭제 요청 중 오류", variant: "destructive" });
+    }
+  };
+
+  const blockTypeLabel = (type: string) => LABS_BLOCK_TYPES.find(t => t.value === type)?.label || type;
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <Globe className="w-5 h-5 text-cyan-600" />
+              LIKE IT LABS 관리
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">Labs 페이지의 콘텐츠 블록을 관리합니다. 블록 유형: 히어로, 텍스트, 이미지, 텍스트+이미지</p>
+          </div>
+          <Button
+            data-testid="btn-add-labs-block"
+            onClick={() => { resetForm(); setShowForm(!showForm); }}
+            className="bg-cyan-500 hover:bg-cyan-600"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            블록 추가
+          </Button>
+        </div>
+
+        {showForm && (
+          <div className="p-6 border-b border-gray-100 bg-gray-50">
+            <h4 className="font-semibold mb-4">{editingId ? "블록 수정" : "새 블록 추가"}</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">블록 유형 *</label>
+                <select
+                  data-testid="input-labs-blockType"
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  value={form.blockType}
+                  onChange={e => setForm({ ...form, blockType: e.target.value })}
+                >
+                  {LABS_BLOCK_TYPES.map(t => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">정렬 순서</label>
+                <Input data-testid="input-labs-sortOrder" type="number" value={form.sortOrder} onChange={e => setForm({ ...form, sortOrder: parseInt(e.target.value) || 0 })} />
+              </div>
+
+              {(form.blockType === "text" || form.blockType === "image_text") && (
+                <>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-1">제목</label>
+                    <Input data-testid="input-labs-title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="제목 (강조: **텍스트**)" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-1">부제목</label>
+                    <Input data-testid="input-labs-subtitle" value={form.subtitle} onChange={e => setForm({ ...form, subtitle: e.target.value })} placeholder="부제목 (선택)" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-1">본문 내용</label>
+                    <Textarea data-testid="input-labs-content" value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="본문" rows={4} />
+                  </div>
+                </>
+              )}
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1">이미지 URL</label>
+                <Input data-testid="input-labs-imageUrl" value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder="https://..." />
+              </div>
+
+              {(form.blockType === "hero" || form.blockType === "image") && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">오버레이 제목</label>
+                    <Input data-testid="input-labs-overlayTitle" value={form.overlayTitle} onChange={e => setForm({ ...form, overlayTitle: e.target.value })} placeholder="이미지 위 표시 제목" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">오버레이 부제목</label>
+                    <Input data-testid="input-labs-overlaySubtitle" value={form.overlaySubtitle} onChange={e => setForm({ ...form, overlaySubtitle: e.target.value })} placeholder="이미지 위 표시 부제목" />
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium mb-1">텍스트 정렬</label>
+                <select
+                  data-testid="input-labs-textAlign"
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  value={form.textAlign}
+                  onChange={e => setForm({ ...form, textAlign: e.target.value })}
+                >
+                  <option value="left">왼쪽</option>
+                  <option value="center">가운데</option>
+                  <option value="right">오른쪽</option>
+                </select>
+              </div>
+
+              <div className="flex gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">배경색</label>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={form.bgColor} onChange={e => setForm({ ...form, bgColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer" />
+                    <Input value={form.bgColor} onChange={e => setForm({ ...form, bgColor: e.target.value })} className="w-24 text-xs" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">텍스트색</label>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={form.textColor} onChange={e => setForm({ ...form, textColor: e.target.value })} className="w-8 h-8 rounded cursor-pointer" />
+                    <Input value={form.textColor} onChange={e => setForm({ ...form, textColor: e.target.value })} className="w-24 text-xs" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 mt-2">
+                <input data-testid="input-labs-isActive" type="checkbox" checked={form.isActive} onChange={e => setForm({ ...form, isActive: e.target.checked })} className="w-4 h-4" />
+                <label className="text-sm">활성화</label>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button data-testid="btn-submit-labs-block" onClick={handleSubmit} className="bg-cyan-500 hover:bg-cyan-600">
+                <Check className="w-4 h-4 mr-2" /> {editingId ? "수정" : "등록"}
+              </Button>
+              <Button variant="outline" onClick={() => { setShowForm(false); resetForm(); }}>
+                <X className="w-4 h-4 mr-2" /> 취소
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <div className="p-6">
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">로딩 중...</div>
+          ) : items.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>등록된 블록이 없습니다.</p>
+              <p className="text-xs mt-1">블록을 추가하면 Labs 페이지에 순서대로 표시됩니다.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {items.map((item: any) => (
+                <div key={item.id} data-testid={`labs-block-item-${item.id}`} className="border rounded-lg p-4 bg-white flex gap-4 items-start">
+                  {item.imageUrl && (
+                    <div className="w-24 h-16 rounded overflow-hidden flex-shrink-0 bg-gray-100">
+                      <img src={item.imageUrl} alt={item.title || ""} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-700 font-medium">{blockTypeLabel(item.blockType)}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${item.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                        {item.isActive ? "활성" : "비활성"}
+                      </span>
+                      <span className="text-xs text-gray-400">순서: {item.sortOrder}</span>
+                    </div>
+                    {(item.title || item.overlayTitle) && (
+                      <h4 className="font-semibold text-sm truncate">{item.title || item.overlayTitle}</h4>
+                    )}
+                    {(item.subtitle || item.overlaySubtitle || item.content) && (
+                      <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{item.subtitle || item.overlaySubtitle || item.content}</p>
+                    )}
+                    <div className="flex gap-2 mt-2">
                       <Button size="sm" variant="outline" onClick={() => handleEdit(item)}>
                         <Pencil className="w-3 h-3 mr-1" /> 수정
                       </Button>

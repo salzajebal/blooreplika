@@ -27,7 +27,8 @@ import {
   insertInspectionSchema,
   insertShippingPhotoSchema,
   insertContentSectionSchema,
-  insertMagazineSchema
+  insertMagazineSchema,
+  insertLabsBlockSchema
 } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
@@ -5842,6 +5843,63 @@ export async function registerRoutes(
       res.json({ success: true, message: "Deleted" });
     } catch (error) {
       res.status(500).json({ success: false, error: "Failed to delete content section" });
+    }
+  });
+
+  // ==================== LABS BLOCKS API ====================
+
+  app.get("/api/labs-blocks", async (req: Request, res: Response) => {
+    try {
+      const items = await storage.getActiveLabsBlocks();
+      res.json({ success: true, data: items });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to fetch labs blocks" });
+    }
+  });
+
+  app.get("/api/admin/labs-blocks", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const items = await storage.getLabsBlocks();
+      res.json({ success: true, data: items });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to fetch labs blocks" });
+    }
+  });
+
+  app.post("/api/admin/labs-blocks", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const parsed = insertLabsBlockSchema.parse(req.body);
+      const item = await storage.createLabsBlock(parsed);
+      res.json({ success: true, data: item });
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ success: false, error: "Invalid data", details: error.errors });
+      }
+      res.status(500).json({ success: false, error: "Failed to create labs block" });
+    }
+  });
+
+  app.put("/api/admin/labs-blocks/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const parsed = insertLabsBlockSchema.partial().parse(req.body);
+      const item = await storage.updateLabsBlock(req.params.id, parsed);
+      if (!item) return res.status(404).json({ success: false, error: "Not found" });
+      res.json({ success: true, data: item });
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ success: false, error: "Invalid data", details: error.errors });
+      }
+      res.status(500).json({ success: false, error: "Failed to update labs block" });
+    }
+  });
+
+  app.delete("/api/admin/labs-blocks/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteLabsBlock(req.params.id);
+      if (!success) return res.status(404).json({ success: false, error: "Not found" });
+      res.json({ success: true, message: "Deleted" });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to delete labs block" });
     }
   });
 
