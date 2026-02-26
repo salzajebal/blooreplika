@@ -237,7 +237,7 @@ export default function ProductDetail() {
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
       
-      <main className="flex-1 pb-28 lg:pb-0">
+      <main className="flex-1 pb-20">
         <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-2.5 text-center">
           <p className="text-xs md:text-sm tracking-wider">라이크잇 정품보증 | 무료검수 | 전상품 무료배송 | 카카오톡 실시간 상담</p>
         </div>
@@ -430,40 +430,9 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              
-              <div className="space-y-2 pt-2">
-                <Button
-                  size="lg"
-                  className="w-full h-12 bg-gray-900 hover:bg-gray-800 text-white font-bold"
-                  onClick={handleBuyNow}
-                  disabled={!!product.isSoldOut}
-                  data-testid="button-buy-now"
-                >
-                  바로구매
-                </Button>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="h-12 border-gray-300 text-gray-700 font-medium"
-                    onClick={handleAddToCart}
-                    disabled={!!product.isSoldOut}
-                    data-testid="button-add-cart"
-                  >
-                    장바구니
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className={`h-12 border-gray-300 font-medium ${isWishlisted ? 'text-red-500 border-red-300' : 'text-gray-700'}`}
-                    onClick={handleWishlistToggle}
-                    data-testid="button-wishlist"
-                  >
-                    <Heart className={`w-4 h-4 mr-1 ${isWishlisted ? 'fill-current' : ''}`} />
-                    위시리스트
-                  </Button>
-                </div>
-                {kakaoLink && (
+
+              {kakaoLink && (
+                <div className="pt-2">
                   <a
                     href={kakaoLink}
                     target="_blank"
@@ -480,20 +449,25 @@ export default function ProductDetail() {
                       카카오톡 상담하기
                     </Button>
                   </a>
-                )}
-                
-                <a 
-                  href="/" 
-                  className="block py-3 px-6 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg text-center hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-lg"
-                >
-                  <span className="text-white font-bold text-lg tracking-wide">LIKEIT.COM</span>
-                  <span className="block text-gray-400 text-xs mt-0.5">재방문은 여기를 클릭하세요</span>
-                </a>
-              </div>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="mt-8 sm:mt-12 border-t border-gray-200">
+          <div className="mt-8 sm:mt-12">
+            <a 
+              href="/"
+              className="block mb-6 rounded-lg overflow-hidden bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 p-6 sm:p-8 relative hover:opacity-95 transition-opacity"
+              data-testid="banner-premium"
+            >
+              <p className="text-gray-400 text-xs sm:text-sm mb-1">시작부터 끝까지 프리미엄</p>
+              <p className="text-white text-xl sm:text-2xl font-bold tracking-wide" style={{ fontFamily: "'Playfair Display', serif" }}>
+                LIKE IT Premium
+              </p>
+              <p className="text-gray-400 text-xs mt-2">정품보증 · 무료검수 · 전상품 무료배송</p>
+            </a>
+
+            <div className="border-t border-gray-200">
             <div className="flex border-b border-gray-200">
               <button
                 onClick={() => setActiveTab("detail")}
@@ -517,6 +491,7 @@ export default function ProductDetail() {
                 배송/교환
               </button>
             </div>
+          </div>
           </div>
 
           {activeTab === "detail" && (
@@ -699,59 +674,24 @@ export default function ProductDetail() {
             </div>
           )}
 
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 lg:hidden z-40" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-            <div className="flex flex-col gap-2 max-w-lg mx-auto p-3 sm:p-4">
-              <div className="flex gap-2 sm:gap-3">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className={`h-11 sm:h-12 w-11 sm:w-12 ${isWishlisted ? 'text-red-500 border-red-200' : ''}`}
-                  onClick={handleWishlistToggle}
-                >
-                  <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-11 sm:h-12 text-sm"
-                  onClick={handleAddToCart}
-                  disabled={!!product.isSoldOut}
-                >
-                  <ShoppingCart className="w-4 h-4 mr-1" />
-                  장바구니
-                </Button>
-                <Button
-                  className="flex-1 h-11 sm:h-12 text-sm bg-primary hover:bg-primary/90"
-                  onClick={handleBuyNow}
-                  disabled={!!product.isSoldOut}
-                >
-                  <ShoppingBag className="w-4 h-4 mr-1.5 sm:mr-2" />
-                  바로 구매
-                </Button>
-              </div>
-              {kakaoLink && (
-                <a
-                  href={kakaoLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full"
-                >
-                  <Button
-                    variant="outline"
-                    className="w-full h-10 bg-[#FEE500] hover:bg-[#FDD800] border-[#FEE500] text-[#3C1E1E] font-bold text-sm"
-                  >
-                    <MessageCircle className="w-4 h-4 mr-1.5" />
-                    카카오톡 상담하기
-                  </Button>
-                </a>
-              )}
-              
-              <a 
-                href="/" 
-                className="block py-2.5 px-4 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-lg text-center hover:from-gray-800 hover:to-gray-700 transition-all duration-300 shadow-lg"
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+            <div className="flex gap-0 max-w-7xl mx-auto">
+              <button
+                onClick={handleAddToCart}
+                disabled={!!product.isSoldOut}
+                className="flex-1 h-14 sm:h-16 text-base sm:text-lg font-bold text-white bg-[#F97066] hover:bg-[#E8605A] active:bg-[#D5524D] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                data-testid="button-add-cart-bottom"
               >
-                <span className="text-white font-bold text-sm tracking-wide">LIKEIT.COM</span>
-                <span className="block text-gray-400 text-[10px] mt-0.5">재방문은 여기를 클릭하세요</span>
-              </a>
+                장바구니
+              </button>
+              <button
+                onClick={handleBuyNow}
+                disabled={!!product.isSoldOut}
+                className="flex-1 h-14 sm:h-16 text-base sm:text-lg font-bold text-white bg-[#EF4444] hover:bg-[#DC2626] active:bg-[#C22020] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                data-testid="button-buy-now-bottom"
+              >
+                구매하기
+              </button>
             </div>
           </div>
         </div>
