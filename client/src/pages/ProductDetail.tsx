@@ -36,6 +36,8 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [selectedColor, setSelectedColor] = useState<string>("");
+  const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedOption, setSelectedOption] = useState<string>("");
   const [kakaoLink, setKakaoLink] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"detail" | "review" | "shipping">("detail");
@@ -96,15 +98,43 @@ export default function ProductDetail() {
     fetchKakaoLink();
   }, []);
 
-  const parseOptions = (optionsString?: string | null): string[] => {
-    if (!optionsString) return [];
+  const parseProductOptions = (optionsString?: string | null): { colors: string[]; sizes: string[] } => {
+    if (!optionsString) return { colors: [], sizes: [] };
     try {
       const parsed = JSON.parse(optionsString);
-      if (Array.isArray(parsed)) return parsed;
-      return [];
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return {
+          colors: Array.isArray(parsed.colors) ? parsed.colors : [],
+          sizes: Array.isArray(parsed.sizes) ? parsed.sizes : [],
+        };
+      }
+      if (Array.isArray(parsed)) {
+        return { colors: [], sizes: parsed };
+      }
+      return { colors: [], sizes: [] };
     } catch {
-      return optionsString.split(",").map(o => o.trim()).filter(Boolean);
+      const items = optionsString.split(",").map(o => o.trim()).filter(Boolean);
+      return { colors: [], sizes: items };
     }
+  };
+
+  const getSelectedOptionDesc = (): string => {
+    const parts = [selectedColor, selectedSize].filter(Boolean);
+    if (parts.length > 0) return parts.join(' / ');
+    return selectedOption || '기본';
+  };
+
+  const validateOptionSelection = (): boolean => {
+    const { colors, sizes } = parseProductOptions(product?.options);
+    if (colors.length > 0 && !selectedColor) {
+      toast({ title: "컬러를 선택해주세요.", variant: "destructive" });
+      return false;
+    }
+    if (sizes.length > 0 && !selectedSize) {
+      toast({ title: "사이즈를 선택해주세요.", variant: "destructive" });
+      return false;
+    }
+    return true;
   };
 
   const handleAddToCart = () => {
@@ -117,6 +147,7 @@ export default function ProductDetail() {
       });
       return;
     }
+    if (!validateOptionSelection()) return;
     let finalPrice = Number(product.price);
     if (product.discountPercent && product.discountPercent > 0) {
       finalPrice = Math.round(finalPrice * (100 - product.discountPercent) / 100 / 1000) * 1000;
@@ -131,7 +162,7 @@ export default function ProductDetail() {
     });
     toast({
       title: "장바구니에 담았습니다",
-      description: `${product.name} > ${selectedOption || '기본'} ${quantity}개가 장바구니에 추가되었습니다.`,
+      description: `${product.name} > ${getSelectedOptionDesc()} ${quantity}개가 장바구니에 추가되었습니다.`,
     });
   };
 
@@ -144,7 +175,13 @@ export default function ProductDetail() {
       });
       return;
     }
-    setLocation(`/order/${id}?quantity=${quantity}${selectedOption ? `&option=${encodeURIComponent(selectedOption)}` : ''}`);
+    if (!validateOptionSelection()) return;
+    const optionParts: string[] = [];
+    if (selectedColor) optionParts.push(`컬러:${selectedColor}`);
+    if (selectedSize) optionParts.push(`사이즈:${selectedSize}`);
+    if (!selectedColor && !selectedSize && selectedOption) optionParts.push(selectedOption);
+    const optionStr = optionParts.join(' / ');
+    setLocation(`/order/${id}?quantity=${quantity}${optionStr ? `&option=${encodeURIComponent(optionStr)}` : ''}`);
   };
 
   const handleWishlistToggle = () => {
@@ -196,7 +233,7 @@ export default function ProductDetail() {
     );
   }
 
-  const options = parseOptions(product.options);
+  const { colors: productColors, sizes: productSizes } = parseProductOptions(product.options);
   const isWishlisted = isInWishlist(String(product.id));
   const discountPercent = (product.discountPercent && product.discountPercent > 0)
     ? product.discountPercent
@@ -207,33 +244,9 @@ export default function ProductDetail() {
     ? Math.round(product.price * (100 - discountPercent) / 100 / 1000) * 1000
     : product.price;
 
-  const getOptionLabelAndDefaults = () => {
-    const category = product.categoryId?.toLowerCase() || "";
-    const name = product.name?.toLowerCase() || "";
-    
-    if (category.includes("bag") || category.includes("가방") || name.includes("백") || name.includes("가방")) {
-      return { label: "색상", defaults: [] };
-    }
-    if (category.includes("wallet") || category.includes("지갑") || name.includes("지갑")) {
-      return { label: "색상", defaults: [] };
-    }
-    if (category.includes("shoe") || category.includes("신발") || name.includes("신발") || name.includes("스니커즈") || name.includes("슬리퍼") || name.includes("부츠") || name.includes("로퍼")) {
-      return { label: "사이즈", defaults: ["220", "225", "230", "235", "240", "245", "250", "255", "260", "265", "270", "275", "280"] };
-    }
-    if (category.includes("watch") || category.includes("시계") || name.includes("시계")) {
-      return { label: "옵션", defaults: [] };
-    }
-    if (category.includes("accessory") || category.includes("악세") || name.includes("귀걸이") || name.includes("목걸이") || name.includes("반지") || name.includes("팔찌") || name.includes("브로치")) {
-      return { label: "옵션", defaults: [] };
-    }
-    if (category.includes("clothing") || category.includes("의류") || name.includes("자켓") || name.includes("코트") || name.includes("패딩") || name.includes("니트") || name.includes("셔츠") || name.includes("티셔츠") || name.includes("바지") || name.includes("스커트")) {
-      return { label: "사이즈", defaults: ["XS", "S", "M", "L", "XL", "XXL"] };
-    }
-    return { label: "옵션", defaults: [] };
-  };
-
-  const { label: optionLabel, defaults: defaultOptions } = getOptionLabelAndDefaults();
-  const hasOptions = options.length > 0 || defaultOptions.length > 0;
+  const hasColorOptions = productColors.length > 0;
+  const hasSizeOptions = productSizes.length > 0;
+  const hasAnyOptions = hasColorOptions || hasSizeOptions;
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -389,6 +402,57 @@ export default function ProductDetail() {
                   <span className="text-gray-700">3 개</span>
                 </div>
               </div>
+
+              {hasAnyOptions && (
+                <div className="border-t border-gray-200 pt-4">
+                  <h3 className="text-xs text-gray-500 mb-3">선택옵션</h3>
+
+                  {hasColorOptions && (
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">컬러</label>
+                      <select
+                        value={selectedColor}
+                        onChange={(e) => setSelectedColor(e.target.value)}
+                        className="w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-black"
+                        data-testid="select-color"
+                      >
+                        <option value="">- 선택 -</option>
+                        {productColors.map((color) => (
+                          <option key={color} value={color}>{color}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {hasSizeOptions && (
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">사이즈</label>
+                      <select
+                        value={selectedSize}
+                        onChange={(e) => setSelectedSize(e.target.value)}
+                        className="w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-black"
+                        data-testid="select-size"
+                      >
+                        <option value="">- 선택 -</option>
+                        {productSizes.map((size) => (
+                          <option key={size} value={size}>{size}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {(selectedColor || selectedSize) && (
+                    <div className="bg-gray-50 rounded p-3 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span className="text-gray-600">
+                          {[selectedColor && `컬러:${selectedColor}`, selectedSize && `사이즈:${selectedSize}`].filter(Boolean).join(' / ')}
+                        </span>
+                        <span className="font-bold">+0원</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="border-t border-gray-200 pt-4">
                 <h3 className="font-bold text-gray-900 mb-3">배송정보</h3>
