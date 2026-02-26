@@ -4,6 +4,14 @@ import * as cheerio from "cheerio";
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+function detectGender(name: string): string | null {
+  const lower = name.toLowerCase();
+  if (lower.includes('남녀공용') || lower.includes('남녀') || lower.includes('유니섹스') || lower.includes('unisex')) return '공용';
+  if (lower.includes('남성') || lower.includes('남자') || lower.includes('men') || lower.includes('mens')) return '남성';
+  if (lower.includes('여성') || lower.includes('여자') || lower.includes('women') || lower.includes('womens') || lower.includes('ladies')) return '여성';
+  return null;
+}
+
 const CATEGORIES = [
   { id: "10", name: "아우터", localId: "outer" },
   { id: "g0", name: "패딩", localId: "padding" },
@@ -288,6 +296,7 @@ async function main() {
           imageUrl: p.imageUrl,
           imageUrls: p.imageUrls.length > 0 ? p.imageUrls : [p.imageUrl],
           detailImageUrls: p.detailImageUrls,
+          gender: detectGender(p.name),
           isBest: p.isBest || (i + idx) % 10 === 0,
           isNew: (i + idx) % 8 === 0,
           isActive: true,
@@ -311,6 +320,7 @@ async function main() {
             imageUrl: p.imageUrl,
             imageUrls: p.imageUrls.length > 0 ? p.imageUrls : [p.imageUrl],
             detailImageUrls: p.detailImageUrls,
+            gender: detectGender(p.name),
             isBest: p.isBest,
             isNew: false,
             isActive: true,

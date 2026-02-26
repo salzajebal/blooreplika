@@ -99,6 +99,7 @@ export default function Admin() {
     stock: "",
     isBest: false,
     isNew: false,
+    gender: "" as string,
     description: "",
     imageUrl: "",
     imageUrls: [] as string[],
@@ -1709,7 +1710,7 @@ export default function Admin() {
       if (data.success) {
         toast({ title: "성공", description: "상품이 추가되었습니다." });
         setShowAddForm(false);
-        setFormData({ name: "", sku: "", categoryId: "new-arrivals", brandId: "", price: "", originalPrice: "", stock: "", isBest: false, isNew: false, description: "", imageUrl: "", imageUrls: [] });
+        setFormData({ name: "", sku: "", categoryId: "new-arrivals", brandId: "", price: "", originalPrice: "", stock: "", isBest: false, isNew: false, gender: "", description: "", imageUrl: "", imageUrls: [] });
         fetchProducts();
         fetchStats();
       } else {
@@ -1783,6 +1784,7 @@ export default function Admin() {
       stock: product.stock?.toString() || "",
       isBest: product.isBest || false,
       isNew: product.isNew || false,
+      gender: (product as any).gender || "",
       description: product.description || "",
       imageUrl: product.imageUrl || "",
       imageUrls: existingUrls.length > 0 ? existingUrls : (product.imageUrl ? [product.imageUrl] : []),
@@ -2854,7 +2856,7 @@ export default function Admin() {
                     )}
                   </div>
                 </div>
-                <div className="flex gap-4 mb-4">
+                <div className="flex gap-4 mb-4 items-center">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -2873,6 +2875,17 @@ export default function Admin() {
                     />
                     <span className="text-sm">New 상품</span>
                   </label>
+                  <select
+                    data-testid="select-product-gender"
+                    value={formData.gender}
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                    className="border rounded px-2 py-1 text-sm"
+                  >
+                    <option value="">성별 선택</option>
+                    <option value="남성">남성</option>
+                    <option value="여성">여성</option>
+                    <option value="공용">공용</option>
+                  </select>
                 </div>
                 <Textarea
                   data-testid="textarea-product-description"
@@ -3133,6 +3146,20 @@ export default function Admin() {
                           value={formData.stock}
                           onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
                         />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">성별</label>
+                        <select
+                          data-testid="select-edit-product-gender"
+                          className="w-full border border-gray-200 rounded-md px-3 py-2"
+                          value={formData.gender}
+                          onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                        >
+                          <option value="">성별 선택</option>
+                          <option value="남성">남성</option>
+                          <option value="여성">여성</option>
+                          <option value="공용">공용</option>
+                        </select>
                       </div>
                       <div className="flex items-center gap-6 pt-6">
                         <label className="flex items-center gap-2 cursor-pointer">

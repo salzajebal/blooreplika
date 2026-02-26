@@ -345,16 +345,11 @@ export class DatabaseStorage implements IStorage {
     if (search) conditions.push(sql`${products.name} ILIKE ${'%' + search + '%'}`);
     if (brandId) conditions.push(eq(products.brandId, brandId));
     
-    if (gender && (gender === '남성' || gender === '여성')) {
-      const genderSubcatIds = await db
-        .select({ id: subcategories.id })
-        .from(subcategories)
-        .where(sql`${subcategories.name} ILIKE ${'%' + gender + '%'}`);
-      const ids = genderSubcatIds.map(s => s.id);
-      if (ids.length > 0) {
-        conditions.push(inArray(products.subcategoryId, ids));
-      } else {
-        conditions.push(sql`${products.categoryId} = ${gender === '남성' ? 'men' : 'women'}`);
+    if (gender) {
+      if (gender === '남성' || gender === '여성') {
+        conditions.push(sql`(${products.gender} = ${gender} OR ${products.gender} = '공용')`);
+      } else if (gender === '공용') {
+        conditions.push(eq(products.gender, '공용'));
       }
     }
     
