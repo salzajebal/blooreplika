@@ -79,6 +79,8 @@ Preferred communication style: Simple, everyday language.
 - Chat Conversations: Real-time 1:1 customer support chat sessions
 - Chat Messages: Individual messages within chat conversations
 - FAQs: Frequently asked questions organized by category
+- Magazines: Admin-managed magazine/gallery articles with categories, images, and overlay text
+- Content Sections: Dynamic homepage sections with banner images, product filtering, and tab-based benefits page
 
 **Validation:**
 - Zod schemas derived from Drizzle schemas using drizzle-zod

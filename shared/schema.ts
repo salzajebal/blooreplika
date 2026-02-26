@@ -675,3 +675,26 @@ export const insertContentSectionSchema = createInsertSchema(contentSections).om
 
 export type InsertContentSection = z.infer<typeof insertContentSectionSchema>;
 export type ContentSection = typeof contentSections.$inferSelect;
+
+export const magazines = pgTable("magazines", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  title: text("title").notNull(),
+  subtitle: text("subtitle"),
+  category: text("category").notNull().default("매거진"),
+  content: text("content"),
+  imageUrl: text("image_url"),
+  linkUrl: text("link_url"),
+  sortOrder: integer("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  viewCount: integer("view_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertMagazineSchema = createInsertSchema(magazines).omit({
+  id: true,
+  createdAt: true,
+  viewCount: true,
+});
+
+export type InsertMagazine = z.infer<typeof insertMagazineSchema>;
+export type Magazine = typeof magazines.$inferSelect;

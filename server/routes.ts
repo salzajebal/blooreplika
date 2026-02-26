@@ -26,7 +26,8 @@ import {
   insertCouponPaymentSchema,
   insertInspectionSchema,
   insertShippingPhotoSchema,
-  insertContentSectionSchema
+  insertContentSectionSchema,
+  insertMagazineSchema
 } from "@shared/schema";
 import { z } from "zod";
 import multer from "multer";
@@ -5676,6 +5677,73 @@ export async function registerRoutes(
       res.status(500).json({ success: false, error: "Failed to delete shipping photo" });
     }
   });
+
+  // ==================== MAGAZINES API ====================
+
+  app.get("/api/magazines", async (req: Request, res: Response) => {
+    try {
+      const { category } = req.query;
+      const items = await storage.getActiveMagazines(category as string | undefined);
+      res.json({ success: true, data: items });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to fetch magazines" });
+    }
+  });
+
+  app.get("/api/magazines/:id", async (req: Request, res: Response) => {
+    try {
+      const item = await storage.getMagazine(req.params.id);
+      if (!item) return res.status(404).json({ success: false, error: "Not found" });
+      res.json({ success: true, data: item });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to fetch magazine" });
+    }
+  });
+
+  app.get("/api/admin/magazines", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { category } = req.query;
+      const items = await storage.getMagazines(category as string | undefined);
+      res.json({ success: true, data: items });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to fetch magazines" });
+    }
+  });
+
+  app.post("/api/admin/magazines", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const parsed = insertMagazineSchema.parse(req.body);
+      const item = await storage.createMagazine(parsed);
+      res.json({ success: true, data: item });
+    } catch (error: any) {
+      if (error.name === "ZodError") {
+        return res.status(400).json({ success: false, error: "Invalid data", details: error.errors });
+      }
+      res.status(500).json({ success: false, error: "Failed to create magazine" });
+    }
+  });
+
+  app.put("/api/admin/magazines/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const item = await storage.updateMagazine(req.params.id, req.body);
+      if (!item) return res.status(404).json({ success: false, error: "Not found" });
+      res.json({ success: true, data: item });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to update magazine" });
+    }
+  });
+
+  app.delete("/api/admin/magazines/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const success = await storage.deleteMagazine(req.params.id);
+      if (!success) return res.status(404).json({ success: false, error: "Not found" });
+      res.json({ success: true, message: "Deleted" });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to delete magazine" });
+    }
+  });
+
+  // ==================== CONTENT SECTIONS API ====================
 
   app.get("/api/content-sections", async (req: Request, res: Response) => {
     try {

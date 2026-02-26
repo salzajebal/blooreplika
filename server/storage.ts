@@ -28,7 +28,8 @@ import {
   type PageView, type InsertPageView, pageViews,
   type Inspection, type InsertInspection, inspections,
   type ShippingPhoto, type InsertShippingPhoto, shippingPhotos,
-  type ContentSection, type InsertContentSection, contentSections
+  type ContentSection, type InsertContentSection, contentSections,
+  type Magazine, type InsertMagazine, magazines
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, inArray } from "drizzle-orm";
@@ -260,6 +261,14 @@ export interface IStorage {
   createContentSection(data: InsertContentSection): Promise<ContentSection>;
   updateContentSection(id: string, data: Partial<InsertContentSection>): Promise<ContentSection | undefined>;
   deleteContentSection(id: string): Promise<boolean>;
+
+  // Magazines
+  getMagazines(category?: string): Promise<Magazine[]>;
+  getActiveMagazines(category?: string): Promise<Magazine[]>;
+  getMagazine(id: string): Promise<Magazine | undefined>;
+  createMagazine(data: InsertMagazine): Promise<Magazine>;
+  updateMagazine(id: string, data: Partial<InsertMagazine>): Promise<Magazine | undefined>;
+  deleteMagazine(id: string): Promise<boolean>;
 
   // Visitor Tracking
   trackVisitor(session: InsertVisitorSession): Promise<VisitorSession>;
@@ -1475,6 +1484,47 @@ export class DatabaseStorage implements IStorage {
 
   async deleteContentSection(id: string): Promise<boolean> {
     const result = await db.delete(contentSections).where(eq(contentSections.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getMagazines(category?: string): Promise<Magazine[]> {
+    if (category) {
+      return db.select().from(magazines)
+        .where(eq(magazines.category, category))
+        .orderBy(magazines.sortOrder, desc(magazines.createdAt));
+    }
+    return db.select().from(magazines)
+      .orderBy(magazines.sortOrder, desc(magazines.createdAt));
+  }
+
+  async getActiveMagazines(category?: string): Promise<Magazine[]> {
+    if (category) {
+      return db.select().from(magazines)
+        .where(and(eq(magazines.category, category), eq(magazines.isActive, true)))
+        .orderBy(magazines.sortOrder, desc(magazines.createdAt));
+    }
+    return db.select().from(magazines)
+      .where(eq(magazines.isActive, true))
+      .orderBy(magazines.sortOrder, desc(magazines.createdAt));
+  }
+
+  async getMagazine(id: string): Promise<Magazine | undefined> {
+    const [item] = await db.select().from(magazines).where(eq(magazines.id, id));
+    return item;
+  }
+
+  async createMagazine(data: InsertMagazine): Promise<Magazine> {
+    const [item] = await db.insert(magazines).values(data).returning();
+    return item;
+  }
+
+  async updateMagazine(id: string, data: Partial<InsertMagazine>): Promise<Magazine | undefined> {
+    const [item] = await db.update(magazines).set(data).where(eq(magazines.id, id)).returning();
+    return item;
+  }
+
+  async deleteMagazine(id: string): Promise<boolean> {
+    const result = await db.delete(magazines).where(eq(magazines.id, id)).returning();
     return result.length > 0;
   }
 }

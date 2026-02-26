@@ -74,7 +74,7 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff" | "inspection" | "contentSections">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff" | "inspection" | "contentSections" | "magazines">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [visitorStats, setVisitorStats] = useState<{ realtime: number; today: number; pageViews: number; recentPages: { page: string; count: number }[] } | null>(null);
   
@@ -2485,6 +2485,15 @@ export default function Admin() {
               >
                 <Globe className="w-4 h-4 md:mr-2" />
                 <span className="hidden md:inline">콘텐츠 관리</span>
+              </Button>
+              <Button
+                data-testid="tab-magazines"
+                variant={activeTab === "magazines" ? "default" : "outline"}
+                onClick={() => setActiveTab("magazines")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "magazines" ? "bg-purple-500 hover:bg-purple-600" : ""}`}
+              >
+                <FileText className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">매거진 관리</span>
               </Button>
               <Button
                 data-testid="tab-settings"
@@ -6154,6 +6163,10 @@ export default function Admin() {
           <ContentSectionsTab authToken={authToken} />
         )}
 
+        {activeTab === "magazines" && adminRole === "super_admin" && (
+          <MagazinesTab authToken={authToken} />
+        )}
+
         {activeTab === "staff" && adminRole === "super_admin" && (
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -7381,6 +7394,249 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
                         <Pencil className="w-3 h-3 mr-1" /> 수정
                       </Button>
                       <Button data-testid={`btn-delete-content-${item.id}`} size="sm" variant="outline" className="text-red-500 hover:text-red-700" onClick={() => handleDelete(item.id)}>
+                        <Trash2 className="w-3 h-3 mr-1" /> 삭제
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const MAGAZINE_CATEGORIES = ["매거진", "가이드 & 팁", "트렌드", "셀럽 스타일", "브랜드 스토리"];
+
+function MagazinesTab({ authToken }: { authToken: string }) {
+  const { toast } = useToast();
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [filterCat, setFilterCat] = useState("all");
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    title: "",
+    subtitle: "",
+    category: "매거진",
+    content: "",
+    imageUrl: "",
+    linkUrl: "",
+    sortOrder: 0,
+    isActive: true,
+  });
+
+  const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+    return fetch(url, {
+      ...options,
+      headers: { "Content-Type": "application/json", ...options.headers, Authorization: `Bearer ${authToken}` },
+    });
+  };
+
+  const fetchItems = async () => {
+    setLoading(true);
+    try {
+      const query = filterCat !== "all" ? `?category=${encodeURIComponent(filterCat)}` : "";
+      const res = await fetchWithAuth(`/api/admin/magazines${query}`);
+      const data = await res.json();
+      setItems(Array.isArray(data) ? data : data.data || []);
+    } catch {
+      toast({ title: "오류", description: "매거진 목록을 불러올 수 없습니다.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchItems(); }, [filterCat]);
+
+  const resetForm = () => {
+    setForm({ title: "", subtitle: "", category: "매거진", content: "", imageUrl: "", linkUrl: "", sortOrder: 0, isActive: true });
+    setEditingId(null);
+  };
+
+  const handleSubmit = async () => {
+    if (!form.title.trim()) {
+      toast({ title: "오류", description: "제목을 입력해주세요.", variant: "destructive" });
+      return;
+    }
+    try {
+      if (editingId) {
+        const res = await fetchWithAuth(`/api/admin/magazines/${editingId}`, { method: "PUT", body: JSON.stringify(form) });
+        if (res.ok) {
+          toast({ title: "수정 완료" });
+          resetForm(); setShowForm(false); fetchItems();
+        } else {
+          toast({ title: "오류", description: "수정 실패", variant: "destructive" });
+        }
+      } else {
+        const res = await fetchWithAuth("/api/admin/magazines", { method: "POST", body: JSON.stringify(form) });
+        if (res.ok) {
+          toast({ title: "등록 완료" });
+          resetForm(); setShowForm(false); fetchItems();
+        } else {
+          toast({ title: "오류", description: "등록 실패", variant: "destructive" });
+        }
+      }
+    } catch {
+      toast({ title: "오류", description: "요청 중 오류", variant: "destructive" });
+    }
+  };
+
+  const handleEdit = (item: any) => {
+    setForm({
+      title: item.title || "",
+      subtitle: item.subtitle || "",
+      category: item.category || "매거진",
+      content: item.content || "",
+      imageUrl: item.imageUrl || "",
+      linkUrl: item.linkUrl || "",
+      sortOrder: item.sortOrder || 0,
+      isActive: item.isActive !== false,
+    });
+    setEditingId(item.id);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("이 매거진을 삭제하시겠습니까?")) return;
+    try {
+      const res = await fetchWithAuth(`/api/admin/magazines/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        toast({ title: "삭제 완료" });
+        fetchItems();
+      } else {
+        toast({ title: "오류", description: "삭제 실패", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "삭제 요청 중 오류", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <div>
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <FileText className="w-5 h-5 text-purple-600" />
+              매거진 관리
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">매거진 페이지의 콘텐츠를 관리합니다</p>
+          </div>
+          <Button
+            data-testid="btn-add-magazine"
+            onClick={() => { resetForm(); setShowForm(!showForm); }}
+            className="bg-purple-500 hover:bg-purple-600"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            매거진 추가
+          </Button>
+        </div>
+
+        <div className="p-4 border-b border-gray-100 flex flex-wrap gap-2">
+          <Button variant={filterCat === "all" ? "default" : "outline"} size="sm" onClick={() => setFilterCat("all")}>전체</Button>
+          {MAGAZINE_CATEGORIES.map(cat => (
+            <Button key={cat} variant={filterCat === cat ? "default" : "outline"} size="sm" onClick={() => setFilterCat(cat)}>{cat}</Button>
+          ))}
+        </div>
+
+        {showForm && (
+          <div className="p-6 border-b border-gray-100 bg-gray-50">
+            <h4 className="font-semibold mb-4">{editingId ? "매거진 수정" : "새 매거진 추가"}</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">제목 *</label>
+                <Input data-testid="input-mag-title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} placeholder="제목 입력" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">카테고리</label>
+                <select
+                  data-testid="input-mag-category"
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                  value={form.category}
+                  onChange={e => setForm({ ...form, category: e.target.value })}
+                >
+                  {MAGAZINE_CATEGORIES.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1">부제목</label>
+                <Input data-testid="input-mag-subtitle" value={form.subtitle} onChange={e => setForm({ ...form, subtitle: e.target.value })} placeholder="부제목 입력" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">이미지 URL</label>
+                <Input data-testid="input-mag-imageUrl" value={form.imageUrl} onChange={e => setForm({ ...form, imageUrl: e.target.value })} placeholder="https://..." />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">링크 URL (선택)</label>
+                <Input data-testid="input-mag-linkUrl" value={form.linkUrl} onChange={e => setForm({ ...form, linkUrl: e.target.value })} placeholder="https://... (외부 링크 또는 비워두기)" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1">본문 내용</label>
+                <Textarea data-testid="input-mag-content" value={form.content} onChange={e => setForm({ ...form, content: e.target.value })} placeholder="매거진 본문 내용" rows={4} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">정렬 순서</label>
+                <Input data-testid="input-mag-sortOrder" type="number" value={form.sortOrder} onChange={e => setForm({ ...form, sortOrder: parseInt(e.target.value) || 0 })} />
+              </div>
+              <div className="flex items-center gap-2 mt-6">
+                <input data-testid="input-mag-isActive" type="checkbox" checked={form.isActive} onChange={e => setForm({ ...form, isActive: e.target.checked })} className="w-4 h-4" />
+                <label className="text-sm">활성화</label>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button data-testid="btn-submit-magazine" onClick={handleSubmit} className="bg-purple-500 hover:bg-purple-600">
+                <Check className="w-4 h-4 mr-2" /> {editingId ? "수정" : "등록"}
+              </Button>
+              <Button variant="outline" onClick={() => { setShowForm(false); resetForm(); }}>
+                <X className="w-4 h-4 mr-2" /> 취소
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <div className="p-6">
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">로딩 중...</div>
+          ) : items.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">등록된 매거진이 없습니다.</div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {items.map((item: any) => (
+                <div key={item.id} data-testid={`magazine-item-${item.id}`} className="border rounded-lg overflow-hidden bg-white shadow-sm">
+                  {item.imageUrl && (
+                    <div className="h-40 bg-gray-100 relative">
+                      <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                      <div className="absolute bottom-2 left-3 text-white">
+                        <p className="text-xs opacity-80">{item.category}</p>
+                        <p className="font-semibold text-sm truncate">{item.title}</p>
+                      </div>
+                    </div>
+                  )}
+                  <div className="p-4">
+                    {!item.imageUrl && (
+                      <>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">{item.category}</span>
+                        <h4 className="font-semibold text-sm truncate mt-2">{item.title}</h4>
+                      </>
+                    )}
+                    {item.subtitle && <p className="text-xs text-gray-400 mt-1 line-clamp-1">{item.subtitle}</p>}
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${item.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                        {item.isActive ? "활성" : "비활성"}
+                      </span>
+                      <span className="text-xs text-gray-400">순서: {item.sortOrder}</span>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <Button size="sm" variant="outline" onClick={() => handleEdit(item)}>
+                        <Pencil className="w-3 h-3 mr-1" /> 수정
+                      </Button>
+                      <Button size="sm" variant="outline" className="text-red-500 hover:text-red-700" onClick={() => handleDelete(item.id)}>
                         <Trash2 className="w-3 h-3 mr-1" /> 삭제
                       </Button>
                     </div>
