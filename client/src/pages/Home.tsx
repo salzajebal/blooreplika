@@ -91,18 +91,19 @@ function MainBannerSlider() {
 
   return (
     <section className="relative w-full overflow-hidden" data-testid="main-banner">
-      <div className="relative w-full aspect-[16/9] md:aspect-[2.4/1] overflow-hidden">
+      <div className="relative w-full overflow-hidden">
         <div 
-          className="flex transition-transform duration-500 ease-in-out h-full"
+          className="flex transition-transform duration-500 ease-in-out"
           style={{ transform: `translateX(-${currentSlide * 100}%)` }}
         >
           {bannerList.map((banner: any, index: number) => (
-            <div key={index} className="w-full flex-shrink-0 h-full relative">
-              <Link href={banner.linkUrl || "/products"} className="block w-full h-full">
+            <div key={index} className="w-full flex-shrink-0 relative">
+              <Link href={banner.linkUrl || "/products"} className="block w-full">
                 <img 
                   src={banner.imageUrl}
                   alt={banner.title || `배너 ${index + 1}`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-auto block"
+                  loading="eager"
                 />
                 {banner.title && (
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end">
