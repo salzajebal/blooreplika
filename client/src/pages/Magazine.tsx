@@ -3,10 +3,9 @@ import { Footer } from "@/components/layout/Footer";
 import { Link, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, ArrowLeft, Calendar, Eye } from "lucide-react";
+import { ArrowLeft, Calendar, Eye } from "lucide-react";
 
 const MAGAZINE_CATEGORIES = [
-  "전체",
   "매거진",
   "가이드 & 팁",
   "트렌드",
@@ -56,75 +55,64 @@ export default function Magazine() {
 }
 
 function MagazineList() {
-  const [selectedCategory, setSelectedCategory] = useState("전체");
-  const [showDropdown, setShowDropdown] = useState(false);
-
   const { data: articles = [] } = useQuery({
-    queryKey: ['/api/magazines', selectedCategory],
+    queryKey: ['/api/magazines'],
     queryFn: async () => {
-      const query = selectedCategory !== "전체" ? `?category=${encodeURIComponent(selectedCategory)}` : "";
-      const res = await fetch(`/api/magazines${query}`);
+      const res = await fetch('/api/magazines');
       const data = await res.json();
       return data.success ? data.data : [];
     }
   });
 
-  useEffect(() => {
-    const handleClickOutside = () => setShowDropdown(false);
-    if (showDropdown) {
-      document.addEventListener("click", handleClickOutside);
-      return () => document.removeEventListener("click", handleClickOutside);
+  const groupedByCategory: Record<string, any[]> = {};
+  for (const cat of MAGAZINE_CATEGORIES) {
+    const catArticles = articles.filter((a: any) => a.category === cat);
+    if (catArticles.length > 0) {
+      groupedByCategory[cat] = catArticles;
     }
-  }, [showDropdown]);
+  }
+
+  const uncategorized = articles.filter(
+    (a: any) => !MAGAZINE_CATEGORIES.includes(a.category)
+  );
+  if (uncategorized.length > 0) {
+    groupedByCategory["기타"] = uncategorized;
+  }
+
+  const categoryKeys = Object.keys(groupedByCategory);
 
   return (
     <div className="min-h-screen bg-white">
       <Header />
 
       <main>
-        <div className="max-w-[640px] mx-auto px-4 pt-6 pb-2">
-          <div className="relative inline-block">
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowDropdown(!showDropdown); }}
-              className="flex items-center gap-1.5 text-[15px] font-bold text-gray-900 tracking-tight"
-              data-testid="magazine-category-dropdown"
-            >
-              {selectedCategory === "전체" ? "매거진" : selectedCategory}
-              <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showDropdown ? "rotate-180" : ""}`} />
-            </button>
-            {showDropdown && (
-              <div className="absolute top-full left-0 mt-1.5 bg-white border border-gray-100 rounded-xl shadow-lg z-30 min-w-[160px] py-1 overflow-hidden">
-                {MAGAZINE_CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={(e) => { e.stopPropagation(); setSelectedCategory(cat); setShowDropdown(false); }}
-                    className={`block w-full text-left px-4 py-2.5 text-[13px] transition-colors ${
-                      selectedCategory === cat
-                        ? "text-black font-semibold bg-gray-50"
-                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
-                    data-testid={`magazine-cat-${cat}`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+        <div className="max-w-[640px] mx-auto px-4 pt-8 pb-2">
+          <h1 className="text-[20px] font-bold text-gray-900 tracking-tight">매거진</h1>
         </div>
 
         <div className="max-w-[640px] mx-auto px-4 pb-16">
-          {articles.length === 0 ? (
+          {categoryKeys.length === 0 ? (
             <div className="text-center py-24 text-gray-400">
               <p className="text-base mb-2">등록된 매거진이 없습니다.</p>
               <p className="text-xs text-gray-300">관리자가 매거진을 등록하면 여기에 표시됩니다.</p>
             </div>
           ) : (
-            <div className="space-y-3 mt-3">
-              {articles.map((article: any, index: number) => (
-                <ScrollReveal key={article.id} delay={index * 80}>
-                  <MagazineCard article={article} />
-                </ScrollReveal>
+            <div className="space-y-10 mt-4">
+              {categoryKeys.map((category) => (
+                <section key={category}>
+                  <ScrollReveal>
+                    <h2 className="text-[15px] font-bold text-gray-800 mb-3 tracking-tight border-b border-gray-100 pb-2">
+                      {category}
+                    </h2>
+                  </ScrollReveal>
+                  <div className="space-y-3">
+                    {groupedByCategory[category].map((article: any, index: number) => (
+                      <ScrollReveal key={article.id} delay={index * 80}>
+                        <MagazineCard article={article} />
+                      </ScrollReveal>
+                    ))}
+                  </div>
+                </section>
               ))}
             </div>
           )}
@@ -251,12 +239,6 @@ function MagazineCard({ article }: { article: any }) {
       )}
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-
-      <div className="absolute top-3.5 left-3.5">
-        <span className="text-[11px] text-white/70 font-medium tracking-wide">
-          {article.category}
-        </span>
-      </div>
 
       <div className="absolute bottom-0 left-0 right-0 p-4">
         <h2 className="text-white font-bold text-[18px] md:text-[20px] leading-snug mb-0.5 tracking-tight">
