@@ -767,7 +767,7 @@ export default function ProductDetail() {
               <button
                 onClick={handleBuyNow}
                 disabled={!!product.isSoldOut}
-                className="flex-1 h-14 sm:h-16 text-base sm:text-lg font-bold text-white bg-[#EF4444] hover:bg-[#DC2626] active:bg-[#C22020] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="flex-1 h-14 sm:h-16 text-base sm:text-lg font-bold text-white bg-[#16A34A] hover:bg-[#15803D] active:bg-[#166534] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 data-testid="button-buy-now-bottom"
               >
                 구매하기
