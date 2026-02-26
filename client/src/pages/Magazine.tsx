@@ -2,8 +2,8 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Link, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { ChevronDown, ArrowLeft, Calendar } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { ChevronDown, ArrowLeft, Calendar, Eye } from "lucide-react";
 
 const MAGAZINE_CATEGORIES = [
   "전체",
@@ -13,6 +13,38 @@ const MAGAZINE_CATEGORIES = [
   "셀럽 스타일",
   "브랜드 스토리",
 ];
+
+function ScrollReveal({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => setIsVisible(true), delay);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.1, rootMargin: "0px 0px -40px 0px" }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [delay]);
+
+  return (
+    <div
+      ref={ref}
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "translateY(0)" : "translateY(24px)",
+        transition: `opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms, transform 0.7s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 export default function Magazine() {
   const params = useParams<{ id?: string }>();
@@ -37,29 +69,39 @@ function MagazineList() {
     }
   });
 
+  useEffect(() => {
+    const handleClickOutside = () => setShowDropdown(false);
+    if (showDropdown) {
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
+    }
+  }, [showDropdown]);
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
 
       <main>
-        <div className="max-w-[1200px] mx-auto px-4 pt-6 pb-2">
+        <div className="max-w-[640px] mx-auto px-4 pt-6 pb-2">
           <div className="relative inline-block">
             <button
-              onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center gap-1 text-base md:text-lg font-bold text-gray-900"
+              onClick={(e) => { e.stopPropagation(); setShowDropdown(!showDropdown); }}
+              className="flex items-center gap-1.5 text-[15px] font-bold text-gray-900 tracking-tight"
               data-testid="magazine-category-dropdown"
             >
               {selectedCategory === "전체" ? "매거진" : selectedCategory}
-              <ChevronDown className={`w-4 h-4 transition-transform ${showDropdown ? "rotate-180" : ""}`} />
+              <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${showDropdown ? "rotate-180" : ""}`} />
             </button>
             {showDropdown && (
-              <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-30 min-w-[160px]">
+              <div className="absolute top-full left-0 mt-1.5 bg-white border border-gray-100 rounded-xl shadow-lg z-30 min-w-[160px] py-1 overflow-hidden">
                 {MAGAZINE_CATEGORIES.map((cat) => (
                   <button
                     key={cat}
-                    onClick={() => { setSelectedCategory(cat); setShowDropdown(false); }}
-                    className={`block w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors ${
-                      selectedCategory === cat ? "text-black font-semibold bg-gray-50" : "text-gray-600"
+                    onClick={(e) => { e.stopPropagation(); setSelectedCategory(cat); setShowDropdown(false); }}
+                    className={`block w-full text-left px-4 py-2.5 text-[13px] transition-colors ${
+                      selectedCategory === cat
+                        ? "text-black font-semibold bg-gray-50"
+                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                     }`}
                     data-testid={`magazine-cat-${cat}`}
                   >
@@ -71,16 +113,18 @@ function MagazineList() {
           </div>
         </div>
 
-        <div className="max-w-[1200px] mx-auto px-4 pb-10">
+        <div className="max-w-[640px] mx-auto px-4 pb-16">
           {articles.length === 0 ? (
-            <div className="text-center py-20 text-gray-400">
-              <p className="text-lg mb-2">등록된 매거진이 없습니다.</p>
-              <p className="text-sm">관리자가 매거진을 등록하면 여기에 표시됩니다.</p>
+            <div className="text-center py-24 text-gray-400">
+              <p className="text-base mb-2">등록된 매거진이 없습니다.</p>
+              <p className="text-xs text-gray-300">관리자가 매거진을 등록하면 여기에 표시됩니다.</p>
             </div>
           ) : (
-            <div className="space-y-4 md:space-y-5 mt-4">
+            <div className="space-y-3 mt-3">
               {articles.map((article: any, index: number) => (
-                <MagazineCard key={article.id} article={article} featured={index === 0} />
+                <ScrollReveal key={article.id} delay={index * 80}>
+                  <MagazineCard article={article} />
+                </ScrollReveal>
               ))}
             </div>
           )}
@@ -107,58 +151,76 @@ function MagazineDetail({ id }: { id: string }) {
     <div className="min-h-screen bg-white">
       <Header />
 
-      <main className="max-w-[800px] mx-auto px-4 py-6">
-        <Link href="/magazine" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 mb-6" data-testid="btn-back-magazine">
-          <ArrowLeft className="w-4 h-4" />
+      <main className="max-w-[640px] mx-auto px-4 py-6">
+        <Link href="/magazine" className="inline-flex items-center gap-1 text-[13px] text-gray-400 hover:text-gray-900 transition-colors mb-6" data-testid="btn-back-magazine">
+          <ArrowLeft className="w-3.5 h-3.5" />
           매거진 목록
         </Link>
 
         {isLoading && (
-          <div className="text-center py-20 text-gray-400">로딩 중...</div>
+          <div className="text-center py-20">
+            <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin mx-auto" />
+          </div>
         )}
 
         {error && (
           <div className="text-center py-20 text-gray-400">
-            <p className="text-lg mb-2">매거진을 찾을 수 없습니다.</p>
-            <Link href="/magazine" className="text-sm text-blue-500 hover:underline">목록으로 돌아가기</Link>
+            <p className="text-base mb-3">매거진을 찾을 수 없습니다.</p>
+            <Link href="/magazine" className="text-sm text-gray-500 underline underline-offset-4 hover:text-gray-900">목록으로 돌아가기</Link>
           </div>
         )}
 
         {article && (
-          <article data-testid={`magazine-detail-${id}`}>
+          <article data-testid={`magazine-detail-${id}`} className="animate-in fade-in duration-500">
             {article.imageUrl && (
-              <div className="w-full aspect-[16/9] rounded-lg overflow-hidden mb-6">
-                <img src={article.imageUrl} alt={article.title} className="w-full h-full object-cover" />
+              <div className="w-full rounded-lg overflow-hidden mb-5">
+                <img src={article.imageUrl} alt={article.title} className="w-full h-auto object-cover" />
               </div>
             )}
 
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-xs px-3 py-1 rounded-full bg-gray-100 text-gray-600 font-medium">
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="text-[11px] px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 font-medium">
                 {article.category}
               </span>
               {article.createdAt && (
-                <span className="flex items-center gap-1 text-xs text-gray-400">
+                <span className="flex items-center gap-1 text-[11px] text-gray-300">
                   <Calendar className="w-3 h-3" />
                   {new Date(article.createdAt).toLocaleDateString("ko-KR")}
                 </span>
               )}
+              {article.viewCount > 0 && (
+                <span className="flex items-center gap-1 text-[11px] text-gray-300">
+                  <Eye className="w-3 h-3" />
+                  {article.viewCount.toLocaleString()}
+                </span>
+              )}
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight mb-2" data-testid="text-magazine-title">
+            <h1 className="text-[22px] md:text-[26px] font-bold text-gray-900 leading-tight mb-1.5 tracking-tight" data-testid="text-magazine-title">
               {article.title}
             </h1>
 
             {article.subtitle && (
-              <p className="text-base md:text-lg text-gray-500 mb-8" data-testid="text-magazine-subtitle">
+              <p className="text-[14px] text-gray-400 mb-8 leading-relaxed" data-testid="text-magazine-subtitle">
                 {article.subtitle}
               </p>
             )}
 
             {article.content && (
-              <div className="prose prose-gray max-w-none text-gray-700 leading-relaxed whitespace-pre-wrap" data-testid="text-magazine-content">
+              <div className="text-[14px] text-gray-600 leading-[1.85] whitespace-pre-wrap" data-testid="text-magazine-content">
                 {article.content}
               </div>
             )}
+
+            <div className="mt-12 pt-6 border-t border-gray-100">
+              <Link
+                href="/magazine"
+                className="inline-flex items-center gap-1.5 text-[13px] text-gray-400 hover:text-gray-900 transition-colors"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                목록으로
+              </Link>
+            </div>
           </article>
         )}
       </main>
@@ -168,46 +230,40 @@ function MagazineDetail({ id }: { id: string }) {
   );
 }
 
-function MagazineCard({ article, featured }: { article: any; featured?: boolean }) {
+function MagazineCard({ article }: { article: any }) {
   const href = article.linkUrl || `/magazine/${article.id}`;
   const isExternal = article.linkUrl && (article.linkUrl.startsWith("http") || article.linkUrl.startsWith("//"));
 
   const cardContent = (
     <div
-      className={`relative w-full overflow-hidden rounded-lg group cursor-pointer ${
-        featured ? "aspect-[16/10] md:aspect-[16/9]" : "aspect-[16/10] md:aspect-[2/1]"
-      }`}
+      className="relative w-full overflow-hidden rounded-lg group cursor-pointer"
       data-testid={`magazine-card-${article.id}`}
     >
       {article.imageUrl ? (
         <img
           src={article.imageUrl}
           alt={article.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-          loading={featured ? "eager" : "lazy"}
+          className="w-full aspect-[4/5] object-cover group-hover:scale-[1.03] transition-transform duration-700 ease-out"
+          loading="lazy"
         />
       ) : (
-        <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-600" />
+        <div className="w-full aspect-[4/5] bg-gradient-to-br from-gray-800 to-gray-600" />
       )}
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
-      <div className="absolute top-4 left-4">
-        <span className="text-[11px] md:text-xs text-white/80 font-medium tracking-wide">
+      <div className="absolute top-3.5 left-3.5">
+        <span className="text-[11px] text-white/70 font-medium tracking-wide">
           {article.category}
         </span>
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 p-4 md:p-6">
-        <h2 className={`text-white font-bold leading-snug mb-1 ${
-          featured ? "text-xl md:text-3xl" : "text-lg md:text-2xl"
-        }`}>
+      <div className="absolute bottom-0 left-0 right-0 p-4">
+        <h2 className="text-white font-bold text-[18px] md:text-[20px] leading-snug mb-0.5 tracking-tight">
           {article.title}
         </h2>
         {article.subtitle && (
-          <p className={`text-white/70 line-clamp-2 ${
-            featured ? "text-sm md:text-base" : "text-xs md:text-sm"
-          }`}>
+          <p className="text-white/60 text-[12px] md:text-[13px] line-clamp-1">
             {article.subtitle}
           </p>
         )}
