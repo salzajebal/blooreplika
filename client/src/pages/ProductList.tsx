@@ -1,9 +1,9 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Heart, Package, Star, Grid, List, ChevronDown, Filter, X, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Heart, Package, Star, Grid, List, ChevronDown, Filter, X, ChevronLeft, ChevronRight, Search, Check } from "lucide-react";
 import { useRoute, Link, useLocation } from "wouter";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Product } from "@shared/schema";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -46,6 +46,8 @@ const CATEGORIES = [
 
 type SortOption = "newest" | "price_asc" | "price_desc" | "popular";
 
+type FilterDropdownType = "category" | "brand" | "gender" | null;
+
 export default function ProductList() {
   const [match, params] = useRoute("/products/:category");
   const [location] = useLocation();
@@ -53,18 +55,21 @@ export default function ProductList() {
   const [brands, setBrands] = useState<any[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [selectedGender, setSelectedGender] = useState<string | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [brandSearch, setBrandSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [openDropdown, setOpenDropdown] = useState<FilterDropdownType>(null);
   const { toggleItem, isInWishlist } = useWishlist();
   const { toast } = useToast();
   const { salePercent, calculateSalePrice, hasSale } = useGlobalSale();
   const isInitialMount = useRef(true);
   const isBrandInitial = useRef(true);
   const isRestoringScroll = useRef(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const categoryInfo = CATEGORIES.find(c => c.slug === categorySlug);
   
-  // Parse search params - compute synchronously using useMemo
   const { searchQuery, subcategoryId } = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     return {
@@ -72,6 +77,16 @@ export default function ProductList() {
       subcategoryId: params.get("sub")
     };
   }, [location]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleWishlistToggle = (e: React.MouseEvent, product: Product) => {
     e.preventDefault();
@@ -107,25 +122,25 @@ export default function ProductList() {
   const ITEMS_PER_PAGE = 16;
   const queryClient = useQueryClient();
 
-  const fetchProducts = async (page: number, query?: string, brandIdFilter?: string | null) => {
+  const fetchProducts = async (page: number, query?: string, brandIdFilter?: string | null, genderFilter?: string | null, subcatFilter?: string | null) => {
     const offset = (page - 1) * ITEMS_PER_PAGE;
     const categoryParam = categorySlug && categorySlug !== "all" ? `&categoryId=${categorySlug}` : "";
-    const subcategoryParam = subcategoryId ? `&subcategoryId=${subcategoryId}` : "";
+    const subcategoryParam = subcatFilter ? `&subcategoryId=${subcatFilter}` : (subcategoryId ? `&subcategoryId=${subcategoryId}` : "");
     const searchParam = query ? `&search=${encodeURIComponent(query)}` : "";
     const brandParam = brandIdFilter ? `&brandId=${encodeURIComponent(brandIdFilter)}` : "";
-    const res = await fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}${subcategoryParam}${searchParam}${brandParam}`);
+    const genderParam = genderFilter ? `&gender=${encodeURIComponent(genderFilter)}` : "";
+    const res = await fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}${subcategoryParam}${searchParam}${brandParam}${genderParam}`);
     const data = await res.json();
     return data;
   };
 
   const { data: productsData, isLoading: loading, isFetching, isPlaceholderData } = useQuery({
-    queryKey: ['products', categorySlug, subcategoryId, currentPage, searchQuery, selectedBrand],
-    queryFn: () => fetchProducts(currentPage, searchQuery || undefined, selectedBrand),
+    queryKey: ['products', categorySlug, subcategoryId, currentPage, searchQuery, selectedBrand, selectedGender, selectedSubcategory],
+    queryFn: () => fetchProducts(currentPage, searchQuery || undefined, selectedBrand, selectedGender, selectedSubcategory),
     placeholderData: (previousData) => previousData,
     staleTime: 30000,
   });
 
-  // Load brands separately with longer cache (10 minutes)
   const { data: brandsData } = useQuery({
     queryKey: ['brands', categorySlug],
     queryFn: async () => {
@@ -134,7 +149,22 @@ export default function ProductList() {
       const data = await res.json();
       return data.success ? data.data : [];
     },
-    staleTime: 600000, // 10 minutes
+    staleTime: 600000,
+  });
+
+  const { data: subcategoriesData } = useQuery({
+    queryKey: ['subcategories', categorySlug],
+    queryFn: async () => {
+      if (!categorySlug || categorySlug === "all") {
+        const res = await fetch("/api/subcategories");
+        const data = await res.json();
+        return data.success ? data.data : [];
+      }
+      const res = await fetch(`/api/subcategories?categoryId=${categorySlug}`);
+      const data = await res.json();
+      return data.success ? data.data : [];
+    },
+    staleTime: 600000,
   });
 
   const products = productsData?.success ? productsData.data : [];
@@ -151,12 +181,12 @@ export default function ProductList() {
   useEffect(() => {
     if (currentPage < totalPages) {
       queryClient.prefetchQuery({
-        queryKey: ['products', categorySlug, subcategoryId, currentPage + 1, searchQuery, selectedBrand],
-        queryFn: () => fetchProducts(currentPage + 1, searchQuery || undefined, selectedBrand),
+        queryKey: ['products', categorySlug, subcategoryId, currentPage + 1, searchQuery, selectedBrand, selectedGender, selectedSubcategory],
+        queryFn: () => fetchProducts(currentPage + 1, searchQuery || undefined, selectedBrand, selectedGender, selectedSubcategory),
         staleTime: 30000,
       });
     }
-  }, [currentPage, totalPages, categorySlug, subcategoryId, searchQuery, selectedBrand, queryClient]);
+  }, [currentPage, totalPages, categorySlug, subcategoryId, searchQuery, selectedBrand, selectedGender, selectedSubcategory, queryClient]);
 
   useEffect(() => {
     const savedScroll = sessionStorage.getItem("productListScroll");
@@ -195,6 +225,8 @@ export default function ProductList() {
     }
     setCurrentPage(1);
     setSelectedBrand(null);
+    setSelectedGender(null);
+    setSelectedSubcategory(null);
     sessionStorage.setItem("productListPage", "1");
     sessionStorage.setItem("productListScroll", "0");
     sessionStorage.setItem("productListCategory", categorySlug || "");
@@ -207,7 +239,7 @@ export default function ProductList() {
     }
     setCurrentPage(1);
     sessionStorage.setItem("productListPage", "1");
-  }, [selectedBrand]);
+  }, [selectedBrand, selectedGender, selectedSubcategory]);
 
   useEffect(() => {
     sessionStorage.setItem("productListPage", String(currentPage));
@@ -273,74 +305,193 @@ export default function ProductList() {
     return result;
   }, [products, sortBy]);
 
-  const FilterSidebar = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="font-bold text-sm mb-3">카테고리</h3>
-        <ul className="space-y-2">
-          <li>
-            <Link 
-              href="/products" 
-              className={cn("text-sm hover:text-black transition-colors", !categorySlug || categorySlug === "all" ? "font-bold text-black" : "text-gray-500")}
+  const subcategories = subcategoriesData || [];
+  const activeFiltersCount = (selectedSubcategory ? 1 : 0) + (selectedBrand ? 1 : 0) + (selectedGender ? 1 : 0);
+  const selectedBrandName = brands.find((b: any) => b.id === selectedBrand)?.name;
+  const selectedSubcatName = subcategories.find((s: any) => s.id === selectedSubcategory)?.name;
+
+  const GENDER_OPTIONS = [
+    { value: null, label: "전체" },
+    { value: "남성", label: "남성" },
+    { value: "여성", label: "여성" },
+  ];
+
+  const toggleDropdown = useCallback((type: FilterDropdownType) => {
+    setOpenDropdown(prev => prev === type ? null : type);
+    setBrandSearch("");
+  }, []);
+
+  const FilterDropdownButtons = () => (
+    <div className="flex items-center gap-2 flex-wrap" ref={dropdownRef} data-testid="filter-dropdown-buttons">
+      <div className="relative">
+        <button
+          onClick={() => toggleDropdown("category")}
+          className={cn(
+            "flex items-center gap-1.5 px-4 py-2 text-sm rounded-full border transition-colors",
+            selectedSubcategory
+              ? "bg-black text-white border-black"
+              : openDropdown === "category"
+                ? "border-black text-black"
+                : "border-gray-300 text-gray-600 hover:border-gray-500"
+          )}
+          data-testid="button-filter-category"
+        >
+          카테고리
+          {selectedSubcatName && <span className="font-medium">: {selectedSubcatName}</span>}
+          <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openDropdown === "category" && "rotate-180")} />
+        </button>
+
+        {openDropdown === "category" && (
+          <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px] max-h-[300px] overflow-y-auto">
+            <button
+              onClick={() => { setSelectedSubcategory(null); setOpenDropdown(null); }}
+              className={cn(
+                "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
+                !selectedSubcategory && "font-bold text-black"
+              )}
+              data-testid="button-subcat-all"
             >
-              전체보기
-            </Link>
-          </li>
-          {CATEGORIES.map(cat => (
-            <li key={cat.slug}>
-              <Link 
-                href={`/products/${cat.slug}`} 
-                className={cn("text-sm hover:text-black transition-colors", categorySlug === cat.slug ? "font-bold text-black" : "text-gray-500")}
+              전체
+              {!selectedSubcategory && <Check className="w-4 h-4" />}
+            </button>
+            {subcategories.map((sub: any) => (
+              <button
+                key={sub.id}
+                onClick={() => { setSelectedSubcategory(sub.id); setOpenDropdown(null); }}
+                className={cn(
+                  "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
+                  selectedSubcategory === sub.id && "font-bold text-black"
+                )}
+                data-testid={`button-subcat-${sub.id}`}
               >
-                {cat.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </div>
-      
-      {brands.length > 0 && (
-        <div>
-          <h3 className="font-bold text-sm mb-3">브랜드</h3>
-          <div className="relative mb-2">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-gray-400" />
-            <input
-              type="text"
-              placeholder="브랜드 검색..."
-              value={brandSearch}
-              onChange={(e) => setBrandSearch(e.target.value)}
-              className="w-full pl-7 pr-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-black"
-              data-testid="input-brand-search"
-            />
+                {sub.name}
+                {selectedSubcategory === sub.id && <Check className="w-4 h-4" />}
+              </button>
+            ))}
+            {subcategories.length === 0 && (
+              <div className="px-4 py-3 text-sm text-gray-400">하위 카테고리 없음</div>
+            )}
           </div>
-          <ul className="space-y-2 max-h-[400px] overflow-y-auto">
-            {!brandSearch && (
-              <li>
-                <button 
-                  onClick={() => setSelectedBrand(null)}
-                  className={cn("text-sm hover:text-black transition-colors text-left", !selectedBrand ? "font-bold text-black" : "text-gray-500")}
+        )}
+      </div>
+
+      <div className="relative">
+        <button
+          onClick={() => toggleDropdown("brand")}
+          className={cn(
+            "flex items-center gap-1.5 px-4 py-2 text-sm rounded-full border transition-colors",
+            selectedBrand
+              ? "bg-black text-white border-black"
+              : openDropdown === "brand"
+                ? "border-black text-black"
+                : "border-gray-300 text-gray-600 hover:border-gray-500"
+          )}
+          data-testid="button-filter-brand"
+        >
+          브랜드
+          {selectedBrandName && <span className="font-medium">: {selectedBrandName}</span>}
+          <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openDropdown === "brand" && "rotate-180")} />
+        </button>
+
+        {openDropdown === "brand" && (
+          <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[260px] max-h-[400px] overflow-hidden flex flex-col">
+            <div className="p-3 border-b">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="브랜드 검색..."
+                  value={brandSearch}
+                  onChange={(e) => setBrandSearch(e.target.value)}
+                  className="w-full pl-8 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-black"
+                  data-testid="input-brand-search"
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="overflow-y-auto max-h-[320px]">
+              {!brandSearch && (
+                <button
+                  onClick={() => { setSelectedBrand(null); setOpenDropdown(null); setBrandSearch(""); }}
+                  className={cn(
+                    "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
+                    !selectedBrand && "font-bold text-black"
+                  )}
                   data-testid="button-brand-all"
                 >
                   전체
+                  {!selectedBrand && <Check className="w-4 h-4" />}
                 </button>
-              </li>
-            )}
-            {brandsWithProducts.map(brand => (
-              <li key={brand.id}>
-                <button 
-                  onClick={() => { setSelectedBrand(brand.id); setBrandSearch(""); }}
-                  className={cn("text-sm hover:text-black transition-colors text-left flex items-center gap-1", selectedBrand === brand.id ? "font-bold text-black" : "text-gray-500")}
+              )}
+              {brandsWithProducts.map((brand: any) => (
+                <button
+                  key={brand.id}
+                  onClick={() => { setSelectedBrand(brand.id); setOpenDropdown(null); setBrandSearch(""); }}
+                  className={cn(
+                    "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
+                    selectedBrand === brand.id && "font-bold text-black"
+                  )}
                   data-testid={`button-brand-${brand.id}`}
                 >
-                  {brand.name}
-                  {brand.productCount > 0 && (
-                    <span className="text-xs text-gray-400">({brand.productCount})</span>
-                  )}
+                  <span className="flex items-center gap-1">
+                    {brand.name}
+                    {brand.productCount > 0 && <span className="text-xs text-gray-400">({brand.productCount})</span>}
+                  </span>
+                  {selectedBrand === brand.id && <Check className="w-4 h-4" />}
                 </button>
-              </li>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="relative">
+        <button
+          onClick={() => toggleDropdown("gender")}
+          className={cn(
+            "flex items-center gap-1.5 px-4 py-2 text-sm rounded-full border transition-colors",
+            selectedGender
+              ? "bg-black text-white border-black"
+              : openDropdown === "gender"
+                ? "border-black text-black"
+                : "border-gray-300 text-gray-600 hover:border-gray-500"
+          )}
+          data-testid="button-filter-gender"
+        >
+          성별
+          {selectedGender && <span className="font-medium">: {selectedGender}</span>}
+          <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openDropdown === "gender" && "rotate-180")} />
+        </button>
+
+        {openDropdown === "gender" && (
+          <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[140px]">
+            {GENDER_OPTIONS.map(opt => (
+              <button
+                key={opt.label}
+                onClick={() => { setSelectedGender(opt.value); setOpenDropdown(null); }}
+                className={cn(
+                  "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
+                  selectedGender === opt.value && "font-bold text-black"
+                )}
+                data-testid={`button-gender-${opt.label}`}
+              >
+                {opt.label}
+                {selectedGender === opt.value && <Check className="w-4 h-4" />}
+              </button>
             ))}
-          </ul>
-        </div>
+          </div>
+        )}
+      </div>
+
+      {activeFiltersCount > 0 && (
+        <button
+          onClick={() => { setSelectedBrand(null); setSelectedGender(null); setSelectedSubcategory(null); }}
+          className="flex items-center gap-1 px-3 py-2 text-sm text-gray-500 hover:text-black transition-colors"
+          data-testid="button-clear-filters"
+        >
+          <X className="w-3.5 h-3.5" />
+          필터 초기화
+        </button>
       )}
     </div>
   );
@@ -364,12 +515,12 @@ export default function ProductList() {
           </p>
         </div>
 
-        <div className="lg:hidden mb-4">
-          <div className="flex flex-wrap gap-1.5 border-b pb-3">
+        <div className="mb-4">
+          <div className="flex flex-wrap gap-1.5 pb-3 overflow-x-auto scrollbar-hide">
             <Link 
               href="/products"
               className={cn(
-                "px-2.5 py-1.5 text-xs rounded-full border transition-colors",
+                "px-3 py-1.5 text-sm rounded-full border transition-colors whitespace-nowrap font-medium",
                 !categorySlug || categorySlug === "all" 
                   ? "bg-black text-white border-black" 
                   : "bg-white text-gray-600 border-gray-300 hover:border-black"
@@ -382,7 +533,7 @@ export default function ProductList() {
                 key={cat.slug}
                 href={`/products/${cat.slug}`}
                 className={cn(
-                  "px-2.5 py-1.5 text-xs rounded-full border transition-colors",
+                  "px-3 py-1.5 text-sm rounded-full border transition-colors whitespace-nowrap font-medium",
                   categorySlug === cat.slug 
                     ? "bg-black text-white border-black" 
                     : "bg-white text-gray-600 border-gray-300 hover:border-black"
@@ -392,91 +543,43 @@ export default function ProductList() {
               </Link>
             ))}
           </div>
-          
-          {brands.length > 0 && (
-            <div className="mt-3">
-              <p className="text-xs text-gray-500 mb-2 font-medium">브랜드</p>
-              {brands.length > 10 && (
-                <div className="relative mb-2">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="브랜드 검색..."
-                    value={brandSearch}
-                    onChange={(e) => setBrandSearch(e.target.value)}
-                    className="w-full pl-8 pr-3 py-2 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-black"
-                    data-testid="input-brand-search-mobile"
-                  />
-                </div>
+
+          <div className="mt-3 pb-3 border-b">
+            <FilterDropdownButtons />
+          </div>
+
+          {activeFiltersCount > 0 && (
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
+              {selectedSubcatName && (
+                <span className="inline-flex items-center gap-1.5 bg-gray-100 text-sm px-3 py-1.5 rounded-full">
+                  카테고리: {selectedSubcatName}
+                  <button onClick={() => setSelectedSubcategory(null)} className="hover:text-black">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </span>
               )}
-              <div className="flex flex-wrap gap-2">
-                {!brandSearch && (
-                  <button 
-                    onClick={() => setSelectedBrand(null)}
-                    className={cn(
-                      "px-3 py-1.5 text-xs rounded-full border transition-colors",
-                      !selectedBrand 
-                        ? "bg-gray-800 text-white border-gray-800" 
-                        : "bg-white text-gray-600 border-gray-300 hover:border-gray-800"
-                    )}
-                    data-testid="button-brand-all-mobile"
-                  >
-                    전체
+              {selectedBrandName && (
+                <span className="inline-flex items-center gap-1.5 bg-gray-100 text-sm px-3 py-1.5 rounded-full">
+                  브랜드: {selectedBrandName}
+                  <button onClick={() => setSelectedBrand(null)} className="hover:text-black">
+                    <X className="w-3.5 h-3.5" />
                   </button>
-                )}
-                {brandsWithProducts.slice(0, brandSearch ? 50 : 20).map(brand => (
-                  <button 
-                    key={brand.id}
-                    onClick={() => { setSelectedBrand(brand.id); setBrandSearch(""); }}
-                    className={cn(
-                      "px-3 py-1.5 text-xs rounded-full border transition-colors",
-                      selectedBrand === brand.id 
-                        ? "bg-gray-800 text-white border-gray-800" 
-                        : "bg-white text-gray-600 border-gray-300 hover:border-gray-800"
-                    )}
-                    data-testid={`button-brand-mobile-${brand.id}`}
-                  >
-                    {brand.name}
+                </span>
+              )}
+              {selectedGender && (
+                <span className="inline-flex items-center gap-1.5 bg-gray-100 text-sm px-3 py-1.5 rounded-full">
+                  성별: {selectedGender}
+                  <button onClick={() => setSelectedGender(null)} className="hover:text-black">
+                    <X className="w-3.5 h-3.5" />
                   </button>
-                ))}
-              </div>
+                </span>
+              )}
             </div>
           )}
         </div>
 
-        <div className="flex gap-8">
-          <aside className="hidden lg:block w-48 flex-shrink-0">
-            <FilterSidebar />
-          </aside>
-
-          <div className="flex-1">
-            <div className="hidden lg:flex flex-wrap gap-1.5 mb-4">
-              <Link 
-                href="/products"
-                className={cn(
-                  "px-3 py-1.5 text-xs rounded-full border transition-colors",
-                  !categorySlug || categorySlug === "all" 
-                    ? "bg-black text-white border-black" 
-                    : "bg-white text-gray-600 border-gray-300 hover:border-black"
-                )}
-              >
-                전체
-              </Link>
-              {CATEGORIES.map(cat => (
-                <Link 
-                  key={cat.slug}
-                  href={`/products/${cat.slug}`}
-                  className={cn(
-                    "px-3 py-1.5 text-xs rounded-full border transition-colors",
-                    categorySlug === cat.slug 
-                      ? "bg-black text-white border-black" 
-                      : "bg-white text-gray-600 border-gray-300 hover:border-black"
-                  )}
-                >
-                  {cat.name}
-                </Link>
-              ))}
-            </div>
+        <div>
+          <div>
 
             <div className="flex items-center justify-between mb-6 pb-4 border-b">
               <div className="flex items-center gap-4">
@@ -520,16 +623,6 @@ export default function ProductList() {
               </div>
             </div>
 
-            {selectedBrand && (
-              <div className="mb-4">
-                <div className="inline-flex items-center gap-2 bg-gray-100 rounded-full px-3 py-1 text-sm">
-                  <span>브랜드: {brands.find(b => b.id === selectedBrand)?.name}</span>
-                  <button onClick={() => setSelectedBrand(null)}>
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
 
             {loading && !products.length ? (
               <div className={cn(

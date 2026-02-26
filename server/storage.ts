@@ -43,7 +43,7 @@ export interface IStorage {
   
   // Products
   getAllProducts(): Promise<Product[]>;
-  getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string): Promise<{ products: Product[], total: number }>;
+  getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string): Promise<{ products: Product[], total: number }>;
   getProductsFullPaginated(limit: number, offset: number, categoryId?: string): Promise<{ products: Product[], total: number }>;
   getProductsCount(categoryId?: string): Promise<number>;
   getProductsByCategory(categoryId: string): Promise<Product[]>;
@@ -302,8 +302,7 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(products).orderBy(desc(products.createdAt));
   }
   
-  async getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string): Promise<{ products: Product[], total: number }> {
-    // Lean select for listings - only essential fields for performance
+  async getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string): Promise<{ products: Product[], total: number }> {
     const leanSelect = {
       id: products.id,
       name: products.name,
@@ -321,16 +320,27 @@ export class DatabaseStorage implements IStorage {
       createdAt: products.createdAt,
     };
     
-    // Build where conditions dynamically
     const conditions: any[] = [];
     if (categoryId) conditions.push(eq(products.categoryId, categoryId));
     if (subcategoryId) conditions.push(eq(products.subcategoryId, subcategoryId));
     if (search) conditions.push(sql`${products.name} ILIKE ${'%' + search + '%'}`);
     if (brandId) conditions.push(eq(products.brandId, brandId));
     
+    if (gender && (gender === '남성' || gender === '여성')) {
+      const genderSubcatIds = await db
+        .select({ id: subcategories.id })
+        .from(subcategories)
+        .where(sql`${subcategories.name} ILIKE ${'%' + gender + '%'}`);
+      const ids = genderSubcatIds.map(s => s.id);
+      if (ids.length > 0) {
+        conditions.push(inArray(products.subcategoryId, ids));
+      } else {
+        conditions.push(sql`${products.categoryId} = ${gender === '남성' ? 'men' : 'women'}`);
+      }
+    }
+    
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     
-    // Execute count and data queries in parallel for performance
     const [countResult, productList] = await Promise.all([
       db.select({ count: sql<number>`count(*)::int` }).from(products).where(whereClause),
       db.select(leanSelect).from(products).where(whereClause).orderBy(desc(products.createdAt)).limit(limit).offset(offset)
