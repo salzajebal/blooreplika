@@ -10,7 +10,7 @@ import {
   Lock, User, Mail, Phone, CheckCircle, XCircle,
   Star, FileText, Bell, Calendar, Tag,
   Clock, Snowflake, Unlock, Settings, Link2, Upload,
-  MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2, Search, Shield, Image, Globe
+  MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2, Search, Shield, Image, Globe, Gift
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage, Order, CouponPayment } from "@shared/schema";
@@ -4927,6 +4927,7 @@ export default function Admin() {
             </div>
             
             <HomeSectionTitlesEditor />
+            <BenefitHeroSetting authToken={authToken} />
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
               <div className="p-6 border-b border-gray-100">
@@ -6314,6 +6315,84 @@ export default function Admin() {
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function BenefitHeroSetting({ authToken }: { authToken: string }) {
+  const { toast } = useToast();
+  const [heroUrl, setHeroUrl] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/settings/benefit_hero")
+      .then(r => r.json())
+      .then(d => { if (d.success && d.data?.value) setHeroUrl(d.data.value); })
+      .catch(() => {});
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/settings/benefit_hero", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ value: heroUrl || " ", description: "이달의 혜택 히어로 배너 이미지" }),
+      });
+      if (res.ok) {
+        toast({ title: "저장 완료", description: "혜택 히어로 배너가 저장되었습니다." });
+      } else {
+        toast({ title: "오류", description: "저장 실패", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "저장 실패", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="p-6 border-b border-gray-100">
+        <h3 className="text-lg font-bold flex items-center gap-2">
+          <Gift className="w-5 h-5 text-purple-600" />
+          이달의 혜택 히어로 배너
+        </h3>
+        <p className="text-sm text-gray-500 mt-1">/benefits 페이지 상단에 표시될 대형 배너 이미지를 설정합니다.</p>
+      </div>
+      <div className="p-6">
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium mb-1">배너 이미지 URL</label>
+            <div className="flex gap-3">
+              <Input
+                data-testid="input-benefit-hero-url"
+                value={heroUrl}
+                onChange={e => setHeroUrl(e.target.value)}
+                placeholder="https://... (이미지 URL 입력)"
+                className="flex-1"
+              />
+              <Button
+                data-testid="btn-save-benefit-hero"
+                onClick={save}
+                disabled={saving}
+                className="bg-purple-500 hover:bg-purple-600"
+              >
+                {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : "저장"}
+              </Button>
+            </div>
+          </div>
+          {heroUrl && (
+            <div className="mt-3">
+              <p className="text-xs text-gray-500 mb-2">미리보기:</p>
+              <div className="max-w-md rounded-lg overflow-hidden border border-gray-200">
+                <img src={heroUrl} alt="혜택 히어로 배너" className="w-full object-cover" />
+              </div>
+            </div>
+          )}
+          <p className="text-xs text-gray-400">이미지를 비워두면 기본 그라데이션 배경이 표시됩니다.</p>
+        </div>
       </div>
     </div>
   );
