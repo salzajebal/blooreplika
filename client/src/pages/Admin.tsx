@@ -5316,6 +5316,39 @@ export default function Admin() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
               <div className="p-6 border-b border-gray-100">
                 <h3 className="text-lg font-bold flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-purple-600" />
+                  상품 성별 일괄 업데이트
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">상품명에서 성별(남성/여성/공용)을 자동 감지하여 업데이트합니다.</p>
+              </div>
+              <div className="p-6">
+                <Button
+                  data-testid="button-update-genders"
+                  onClick={async () => {
+                    if (!confirm("모든 상품의 성별 정보를 상품명 기반으로 업데이트합니다. 진행하시겠습니까?")) return;
+                    try {
+                      const res = await fetchWithAuth("/api/admin/update-product-genders", { method: "POST" });
+                      const data = await res.json();
+                      if (data.success) {
+                        alert(data.message);
+                      } else {
+                        alert("오류: " + (data.error || "업데이트 실패"));
+                      }
+                    } catch (e) {
+                      alert("요청 중 오류가 발생했습니다.");
+                    }
+                  }}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  성별 정보 자동 업데이트 실행
+                </Button>
+                <p className="text-xs text-gray-500 mt-2">상품명에 '남성', '여성', 'Mens', 'Womens' 등의 키워드를 감지합니다.</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
                   <Tag className="w-5 h-5 text-red-600" />
                   전체 세일 설정
                 </h3>

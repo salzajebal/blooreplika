@@ -6097,5 +6097,42 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/admin/update-product-genders", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const batchSize = 200;
+      let offset = 0;
+      let totalUpdated = 0;
+      let totalProcessed = 0;
+
+      function detectGender(name: string): string | null {
+        const lower = name.toLowerCase();
+        if (lower.includes('남녀공용') || lower.includes('남녀') || lower.includes('유니섹스') || lower.includes('unisex')) return '공용';
+        if (lower.includes('남성') || lower.includes('남자') || lower.includes('mens') || lower.includes("men's") || /\bmen\b/.test(lower) || /\bmens\b/.test(lower)) return '남성';
+        if (lower.includes('여성') || lower.includes('여자') || lower.includes('womens') || lower.includes("women's") || /\bwomen\b/.test(lower) || /\bwomens\b/.test(lower) || lower.includes('ladies')) return '여성';
+        return null;
+      }
+
+      while (true) {
+        const { products: batch, total } = await storage.getProductsFullPaginated(batchSize, offset);
+        if (batch.length === 0) break;
+
+        for (const p of batch) {
+          const detected = detectGender(p.name);
+          if (detected && p.gender !== detected) {
+            await storage.updateProduct(p.id, { gender: detected });
+            totalUpdated++;
+          }
+        }
+        totalProcessed += batch.length;
+        offset += batchSize;
+        if (offset >= total) break;
+      }
+
+      res.json({ success: true, message: `${totalUpdated}개 상품의 성별 정보가 업데이트되었습니다. (총 ${totalProcessed}개 확인)`, updated: totalUpdated, processed: totalProcessed });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to update genders" });
+    }
+  });
+
   return httpServer;
 }
