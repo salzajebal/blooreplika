@@ -80,8 +80,8 @@ export function GHPaymentButton({
   const [sdkReady, setSdkReady] = useState(false);
   const [sdkError, setSdkError] = useState<string | null>(null);
   const [loadingSDK, setLoadingSDK] = useState(true);
+  const [showPopupGuide, setShowPopupGuide] = useState(false);
   const loadAttempted = useRef(false);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const initSDK = useCallback(() => {
     setLoadingSDK(true);
@@ -113,17 +113,6 @@ export function GHPaymentButton({
     };
   }, []);
 
-  const [showPopupGuide, setShowPopupGuide] = useState(false);
-
-  const checkPopupBlocked = (): boolean => {
-    const testPopup = window.open("about:blank", "_blank", "width=1,height=1,left=-9999,top=-9999");
-    if (!testPopup || testPopup.closed || typeof testPopup.closed === "undefined") {
-      return true;
-    }
-    testPopup.close();
-    return false;
-  };
-
   const handlePay = () => {
     if (!window.MARU || typeof window.MARU.pay !== "function") {
       setSdkError("결제 모듈이 준비되지 않았습니다. 페이지를 새로고침해주세요.");
@@ -136,11 +125,6 @@ export function GHPaymentButton({
       return;
     }
 
-    if (checkPopupBlocked()) {
-      setShowPopupGuide(true);
-      return;
-    }
-
     setShowPopupGuide(false);
     setPaying(true);
     setSdkError(null);
@@ -150,13 +134,6 @@ export function GHPaymentButton({
       setPaying(false);
       onPaymentResult(data as GHPaymentResult);
     };
-
-    if (!document.getElementById("maru_payment_container")) {
-      const div = document.createElement("div");
-      div.id = "maru_payment_container";
-      div.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;";
-      document.body.appendChild(div);
-    }
 
     const paymentParams: Record<string, any> = {
       payRoute: "3d",
@@ -177,21 +154,27 @@ export function GHPaymentButton({
       responseFunction: "maruPaymentResult",
     };
 
-    console.log("[GH Payment] Calling MARU.pay with params:", {
-      ...paymentParams,
-      publicKey: publicKey.substring(0, 8) + "...",
-    });
+    console.log("[GH Payment] Calling MARU.pay");
 
     try {
       window.MARU.pay(paymentParams);
+
+      setTimeout(() => {
+        if (paying) {
+          setPaying(false);
+          setShowPopupGuide(true);
+        }
+      }, 3000);
     } catch (err: any) {
       console.error("[GH Payment] MARU.pay error:", err);
-
-      const container = document.getElementById("maru_payment_container");
-      if (container) container.remove();
-
       setPaying(false);
-      setSdkError(`결제창 호출 중 오류: ${err?.message || "알 수 없는 오류"}. 팝업 차단을 해제하고 다시 시도해주세요.`);
+
+      if (err?.message?.includes("null") || err?.message?.includes("popup") || err?.message?.includes("blocked")) {
+        setShowPopupGuide(true);
+      } else {
+        setSdkError(`결제창 호출 중 오류: ${err?.message || "알 수 없는 오류"}`);
+        setShowPopupGuide(true);
+      }
     }
   };
 
@@ -203,10 +186,10 @@ export function GHPaymentButton({
           <h3 className="font-bold text-blue-900">신용카드 결제</h3>
         </div>
         <p className="text-sm text-blue-700">
-          아래 버튼을 클릭하면 안전한 결제창이 열립니다. 신용카드, 체크카드 모두 결제 가능합니다.
+          아래 버튼을 클릭하면 결제창이 팝업으로 열립니다.
         </p>
         <p className="text-xs text-blue-500 mt-1">
-          팝업 차단이 해제되어 있어야 결제가 가능합니다.
+          결제창이 열리지 않으면 브라우저의 팝업 차단을 해제해주세요.
         </p>
       </div>
 
@@ -215,29 +198,32 @@ export function GHPaymentButton({
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
             <div className="flex-1">
-              <h4 className="font-bold text-amber-900 text-sm mb-2">팝업 차단을 해제해주세요</h4>
+              <h4 className="font-bold text-amber-900 text-sm mb-2">결제창이 열리지 않나요?</h4>
               <p className="text-sm text-amber-800 mb-3">
-                카드결제를 진행하려면 팝업 창이 필요합니다. 아래 방법으로 팝업 차단을 해제해주세요.
+                브라우저에서 팝업이 차단되었을 수 있습니다. 아래 방법으로 팝업 차단을 해제한 후 다시 시도해주세요.
               </p>
               <div className="space-y-2 text-xs text-amber-700">
                 <div className="bg-white rounded-md p-2.5 border border-amber-200">
                   <p className="font-semibold text-amber-900 mb-1">Chrome (크롬)</p>
-                  <p>주소창 오른쪽 끝의 팝업 차단 아이콘 클릭 → "항상 허용" 선택</p>
+                  <p>주소창 오른쪽 끝에 팝업 차단 아이콘이 나타나면 클릭 → "이 사이트의 팝업 항상 허용" 선택</p>
                 </div>
                 <div className="bg-white rounded-md p-2.5 border border-amber-200">
                   <p className="font-semibold text-amber-900 mb-1">Safari (사파리)</p>
-                  <p>설정 → 웹사이트 → 팝업 창 → 이 사이트 "허용"으로 변경</p>
+                  <p>Safari → 설정 → 웹사이트 → 팝업 창 → 이 사이트를 "허용"으로 변경</p>
                 </div>
                 <div className="bg-white rounded-md p-2.5 border border-amber-200">
-                  <p className="font-semibold text-amber-900 mb-1">모바일</p>
-                  <p>브라우저 설정 → 사이트 설정 → 팝업 및 리디렉션 → 허용</p>
+                  <p className="font-semibold text-amber-900 mb-1">모바일 Chrome</p>
+                  <p>⋮ 메뉴 → 설정 → 사이트 설정 → 팝업 및 리디렉션 → 허용</p>
                 </div>
               </div>
               <Button
                 type="button"
                 size="sm"
                 className="mt-3 bg-amber-600 hover:bg-amber-700 text-white text-xs"
-                onClick={() => { setShowPopupGuide(false); handlePay(); }}
+                onClick={() => {
+                  setShowPopupGuide(false);
+                  handlePay();
+                }}
                 data-testid="button-retry-after-popup"
               >
                 <RefreshCw className="w-3 h-3 mr-1" />
@@ -248,7 +234,7 @@ export function GHPaymentButton({
         </div>
       )}
 
-      {sdkError && (
+      {sdkError && !showPopupGuide && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
           <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
           <div className="flex-1">
@@ -302,7 +288,7 @@ export function GHPaymentButton({
         </Button>
       </div>
 
-      <div ref={containerRef} id="GHPayment" style={{ display: "none" }} />
+      <div id="GHPayment" style={{ display: "none" }} />
     </div>
   );
 }
