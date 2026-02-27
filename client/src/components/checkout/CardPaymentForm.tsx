@@ -113,6 +113,17 @@ export function GHPaymentButton({
     };
   }, []);
 
+  const [showPopupGuide, setShowPopupGuide] = useState(false);
+
+  const checkPopupBlocked = (): boolean => {
+    const testPopup = window.open("about:blank", "_blank", "width=1,height=1,left=-9999,top=-9999");
+    if (!testPopup || testPopup.closed || typeof testPopup.closed === "undefined") {
+      return true;
+    }
+    testPopup.close();
+    return false;
+  };
+
   const handlePay = () => {
     if (!window.MARU || typeof window.MARU.pay !== "function") {
       setSdkError("결제 모듈이 준비되지 않았습니다. 페이지를 새로고침해주세요.");
@@ -125,6 +136,12 @@ export function GHPaymentButton({
       return;
     }
 
+    if (checkPopupBlocked()) {
+      setShowPopupGuide(true);
+      return;
+    }
+
+    setShowPopupGuide(false);
     setPaying(true);
     setSdkError(null);
 
@@ -192,6 +209,44 @@ export function GHPaymentButton({
           팝업 차단이 해제되어 있어야 결제가 가능합니다.
         </p>
       </div>
+
+      {showPopupGuide && (
+        <div className="bg-amber-50 border border-amber-300 rounded-lg p-4" data-testid="popup-block-guide">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <h4 className="font-bold text-amber-900 text-sm mb-2">팝업 차단을 해제해주세요</h4>
+              <p className="text-sm text-amber-800 mb-3">
+                카드결제를 진행하려면 팝업 창이 필요합니다. 아래 방법으로 팝업 차단을 해제해주세요.
+              </p>
+              <div className="space-y-2 text-xs text-amber-700">
+                <div className="bg-white rounded-md p-2.5 border border-amber-200">
+                  <p className="font-semibold text-amber-900 mb-1">Chrome (크롬)</p>
+                  <p>주소창 오른쪽 끝의 팝업 차단 아이콘 클릭 → "항상 허용" 선택</p>
+                </div>
+                <div className="bg-white rounded-md p-2.5 border border-amber-200">
+                  <p className="font-semibold text-amber-900 mb-1">Safari (사파리)</p>
+                  <p>설정 → 웹사이트 → 팝업 창 → 이 사이트 "허용"으로 변경</p>
+                </div>
+                <div className="bg-white rounded-md p-2.5 border border-amber-200">
+                  <p className="font-semibold text-amber-900 mb-1">모바일</p>
+                  <p>브라우저 설정 → 사이트 설정 → 팝업 및 리디렉션 → 허용</p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                className="mt-3 bg-amber-600 hover:bg-amber-700 text-white text-xs"
+                onClick={() => { setShowPopupGuide(false); handlePay(); }}
+                data-testid="button-retry-after-popup"
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                팝업 해제 후 다시 결제하기
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {sdkError && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
