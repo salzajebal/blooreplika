@@ -80,10 +80,9 @@ export function GHPaymentButton({
   const [sdkReady, setSdkReady] = useState(false);
   const [sdkError, setSdkError] = useState<string | null>(null);
   const [loadingSDK, setLoadingSDK] = useState(true);
-  const [showPopupGuide, setShowPopupGuide] = useState(false);
   const loadAttempted = useRef(false);
   const paymentResultReceived = useRef(false);
-  const popupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const initSDK = useCallback(() => {
     setLoadingSDK(true);
@@ -112,9 +111,6 @@ export function GHPaymentButton({
   useEffect(() => {
     return () => {
       delete (window as any).maruPaymentResult;
-      if (popupTimerRef.current) {
-        clearTimeout(popupTimerRef.current);
-      }
     };
   }, []);
 
@@ -130,7 +126,6 @@ export function GHPaymentButton({
       return;
     }
 
-    setShowPopupGuide(false);
     setPaying(true);
     setSdkError(null);
     paymentResultReceived.current = false;
@@ -138,13 +133,46 @@ export function GHPaymentButton({
     window.maruPaymentResult = function(data: any) {
       console.log("[GH Payment] Response received:", data);
       paymentResultReceived.current = true;
-      if (popupTimerRef.current) {
-        clearTimeout(popupTimerRef.current);
-        popupTimerRef.current = null;
-      }
       setPaying(false);
+
+      const overlay = document.getElementById("gh-payment-overlay");
+      if (overlay) overlay.style.display = "none";
+
       onPaymentResult(data as GHPaymentResult);
     };
+
+    let overlay = document.getElementById("gh-payment-overlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.id = "gh-payment-overlay";
+      overlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;";
+      document.body.appendChild(overlay);
+    } else {
+      overlay.style.display = "flex";
+    }
+
+    let container = document.getElementById("GHPayment");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "GHPayment";
+      overlay.appendChild(container);
+    }
+    container.style.cssText = "width:100%;max-width:480px;height:90vh;max-height:700px;background:white;border-radius:12px;overflow:hidden;position:relative;";
+    container.innerHTML = "";
+
+    if (!overlay.contains(container)) {
+      overlay.appendChild(container);
+    }
+
+    const closeBtn = document.createElement("button");
+    closeBtn.innerHTML = "✕";
+    closeBtn.style.cssText = "position:absolute;top:8px;right:12px;z-index:100000;background:rgba(0,0,0,0.5);color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;";
+    closeBtn.onclick = () => {
+      overlay!.style.display = "none";
+      container!.innerHTML = "";
+      setPaying(false);
+    };
+    container.appendChild(closeBtn);
 
     const paymentParams: Record<string, any> = {
       payRoute: "3d",
@@ -160,32 +188,21 @@ export function GHPaymentButton({
       directUse: "0000",
       cardType: "0000",
       installment: "0",
-      mode: "popup",
+      mode: "layer",
       debugMode: "live",
       responseFunction: "maruPaymentResult",
     };
 
-    console.log("[GH Payment] Calling MARU.pay");
+    console.log("[GH Payment] Calling MARU.pay with layer mode");
 
     try {
       window.MARU.pay(paymentParams);
-
-      popupTimerRef.current = setTimeout(() => {
-        if (!paymentResultReceived.current) {
-          console.log("[GH Payment] No response after 3s, showing popup guide");
-          setPaying(false);
-          setShowPopupGuide(true);
-        }
-      }, 3000);
     } catch (err: any) {
       console.error("[GH Payment] MARU.pay error:", err);
-      if (popupTimerRef.current) {
-        clearTimeout(popupTimerRef.current);
-        popupTimerRef.current = null;
-      }
+      overlay.style.display = "none";
+      container.innerHTML = "";
       setPaying(false);
-      setShowPopupGuide(true);
-      setSdkError(`결제창 호출 중 오류가 발생했습니다. 팝업 차단을 해제하고 다시 시도해주세요.`);
+      setSdkError(`결제창 호출 중 오류: ${err?.message || "알 수 없는 오류"}. 페이지를 새로고침 후 다시 시도해주세요.`);
     }
   };
 
@@ -197,55 +214,14 @@ export function GHPaymentButton({
           <h3 className="font-bold text-blue-900">신용카드 결제</h3>
         </div>
         <p className="text-sm text-blue-700">
-          아래 버튼을 클릭하면 결제창이 팝업으로 열립니다.
+          아래 버튼을 클릭하면 안전한 결제창이 열립니다.
         </p>
         <p className="text-xs text-blue-500 mt-1">
-          결제창이 열리지 않으면 브라우저의 팝업 차단을 해제해주세요.
+          신용카드, 체크카드 모두 결제 가능합니다.
         </p>
       </div>
 
-      {showPopupGuide && (
-        <div className="bg-amber-50 border border-amber-300 rounded-lg p-4" data-testid="popup-block-guide">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
-            <div className="flex-1">
-              <h4 className="font-bold text-amber-900 text-sm mb-2">결제창이 열리지 않나요?</h4>
-              <p className="text-sm text-amber-800 mb-3">
-                브라우저에서 팝업이 차단되었을 수 있습니다. 아래 방법으로 팝업 차단을 해제한 후 다시 시도해주세요.
-              </p>
-              <div className="space-y-2 text-xs text-amber-700">
-                <div className="bg-white rounded-md p-2.5 border border-amber-200">
-                  <p className="font-semibold text-amber-900 mb-1">Chrome (크롬)</p>
-                  <p>주소창 오른쪽 끝에 팝업 차단 아이콘이 나타나면 클릭 → "이 사이트의 팝업 항상 허용" 선택</p>
-                </div>
-                <div className="bg-white rounded-md p-2.5 border border-amber-200">
-                  <p className="font-semibold text-amber-900 mb-1">Safari (사파리)</p>
-                  <p>Safari → 설정 → 웹사이트 → 팝업 창 → 이 사이트를 "허용"으로 변경</p>
-                </div>
-                <div className="bg-white rounded-md p-2.5 border border-amber-200">
-                  <p className="font-semibold text-amber-900 mb-1">모바일 Chrome</p>
-                  <p>⋮ 메뉴 → 설정 → 사이트 설정 → 팝업 및 리디렉션 → 허용</p>
-                </div>
-              </div>
-              <Button
-                type="button"
-                size="sm"
-                className="mt-3 bg-amber-600 hover:bg-amber-700 text-white text-xs"
-                onClick={() => {
-                  setShowPopupGuide(false);
-                  handlePay();
-                }}
-                data-testid="button-retry-after-popup"
-              >
-                <RefreshCw className="w-3 h-3 mr-1" />
-                팝업 해제 후 다시 결제하기
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {sdkError && !showPopupGuide && (
+      {sdkError && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
           <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
           <div className="flex-1">
@@ -299,7 +275,7 @@ export function GHPaymentButton({
         </Button>
       </div>
 
-      <div id="GHPayment" style={{ display: "none" }} />
+      <div ref={containerRef} />
     </div>
   );
 }
