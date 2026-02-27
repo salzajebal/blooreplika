@@ -3864,7 +3864,12 @@ export default function Admin() {
                         </div>
                         <div className="text-sm text-gray-600">
                           <p><strong>상품:</strong> {order.productName}</p>
-                          <p><strong>수량:</strong> {order.quantity}개 | <strong>총액:</strong> {Number(order.totalAmount).toLocaleString()}원</p>
+                          <p>
+                            <strong>수량:</strong> {order.quantity}개 | <strong>총액:</strong> {Number(order.totalAmount).toLocaleString()}원
+                            {(order as any).paymentMethod && (
+                              <> | <strong>결제:</strong> {(order as any).paymentMethod === "card" ? "카드결제" : (order as any).paymentMethod === "bank" ? "계좌이체" : (order as any).paymentMethod}</>
+                            )}
+                          </p>
                           {(order.selectedSize || order.selectedColor) && (
                             <p>
                               {order.selectedSize && <><strong>사이즈:</strong> {order.selectedSize}</>}

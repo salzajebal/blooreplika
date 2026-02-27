@@ -115,10 +115,15 @@ Preferred communication style: Simple, everyday language.
   - `@replit/vite-plugin-runtime-error-modal` for error overlay
 
 **Payment:**
-- Currently only bank transfer (계좌이체/무통장입금) is supported
-- Card payment (건흥페이먼츠/MARU SDK) was removed from frontend due to SDK loading issues
-- Server-side payment-confirm and webhook endpoints remain for future re-integration
-- Cart page goes directly to order page (no payment method selection step)
+- Two payment methods supported: card payment (카드결제) and bank transfer (계좌이체/무통장입금)
+- Card payment uses 건흥페이먼츠 (GH Payments) MARU SDK
+  - SDK loaded from `https://api.ghpayments.kr/js/clientsideV2.js`
+  - Client: `GHPaymentButton` component in `client/src/components/checkout/CardPaymentForm.tsx`
+  - Public key in `VITE_GH_PAYMENT_PUBLIC_KEY` env var, merchant code in `GH_PAYMENT_CODE`
+  - Flow: Select card → Submit order (creates pending order) → SDK popup opens → Payment result callback → Server `/api/orders/payment-confirm` verifies and updates order
+  - Webhook: `POST /api/payments/webhook` for server-to-server confirmation
+  - Amount verification and idempotency checks on both endpoints
+- Cart page goes directly to order page where payment method is selected
 
 **Pricing Data:**
 - Simulated real-time pricing with time-based fluctuation algorithm

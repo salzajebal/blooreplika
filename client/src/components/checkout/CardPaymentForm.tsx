@@ -1,13 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Loader2 } from "lucide-react";
-
-export interface CouponPaymentData {
-  couponNumber: string;
-  couponExpiry: string;
-  couponBirthDate: string;
-  couponPassword: string;
-}
+import { CreditCard, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 
 declare global {
   interface Window {
@@ -24,8 +17,6 @@ interface GHPaymentFormProps {
   userName: string;
   userEmail: string;
   userTel: string;
-  webhookUrl: string;
-  redirectUrl: string;
   onPaymentResult: (data: GHPaymentResult) => void;
 }
 
@@ -48,41 +39,31 @@ function loadGHPaymentSDK(): Promise<void> {
       resolve();
       return;
     }
+
     const existing = document.querySelector(`script[src="${GH_SDK_URL}"]`) as HTMLScriptElement | null;
-    if (existing) {
-      if (window.MARU) {
-        resolve();
-        return;
-      }
-      const checkInterval = setInterval(() => {
+
+    const waitForMARU = (timeoutMs: number) => {
+      const start = Date.now();
+      const check = setInterval(() => {
         if (window.MARU) {
-          clearInterval(checkInterval);
+          clearInterval(check);
           resolve();
+        } else if (Date.now() - start > timeoutMs) {
+          clearInterval(check);
+          reject(new Error("SDK init timeout"));
         }
-      }, 100);
-      setTimeout(() => {
-        clearInterval(checkInterval);
-        if (window.MARU) resolve();
-        else reject(new Error("SDK load timeout"));
-      }, 10000);
+      }, 200);
+    };
+
+    if (existing) {
+      waitForMARU(15000);
       return;
     }
+
     const script = document.createElement("script");
     script.src = GH_SDK_URL;
     script.async = true;
-    script.onload = () => {
-      const checkInterval = setInterval(() => {
-        if (window.MARU) {
-          clearInterval(checkInterval);
-          resolve();
-        }
-      }, 100);
-      setTimeout(() => {
-        clearInterval(checkInterval);
-        if (window.MARU) resolve();
-        else reject(new Error("SDK init timeout"));
-      }, 10000);
-    };
+    script.onload = () => waitForMARU(15000);
     script.onerror = () => reject(new Error("SDK load failed"));
     document.head.appendChild(script);
   });
@@ -95,74 +76,108 @@ export function GHPaymentButton({
   userName,
   userEmail,
   userTel,
-  webhookUrl,
-  redirectUrl,
   onPaymentResult,
 }: GHPaymentFormProps) {
   const [paying, setPaying] = useState(false);
-  const [sdkReady, setSdkReady] = useState(!!window.MARU);
-  const [sdkError, setSdkError] = useState(false);
+  const [sdkReady, setSdkReady] = useState(false);
+  const [sdkError, setSdkError] = useState<string | null>(null);
+  const [loadingSDK, setLoadingSDK] = useState(true);
   const loadAttempted = useRef(false);
+
+  const initSDK = useCallback(() => {
+    setLoadingSDK(true);
+    setSdkError(null);
+    setSdkReady(false);
+
+    loadGHPaymentSDK()
+      .then(() => {
+        setSdkReady(true);
+        setLoadingSDK(false);
+      })
+      .catch((err) => {
+        setSdkError(err.message || "결제 모듈 로드 실패");
+        setLoadingSDK(false);
+      });
+  }, []);
 
   useEffect(() => {
     if (loadAttempted.current) return;
     loadAttempted.current = true;
-    loadGHPaymentSDK()
-      .then(() => setSdkReady(true))
-      .catch(() => setSdkError(true));
-  }, []);
+    initSDK();
+  }, [initSDK]);
 
   const handlePay = () => {
     if (!window.MARU) {
-      alert("결제 모듈을 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+      setSdkError("결제 모듈이 준비되지 않았습니다.");
       return;
     }
 
     setPaying(true);
 
     const publicKey = import.meta.env.VITE_GH_PAYMENT_PUBLIC_KEY || "";
+    if (!publicKey) {
+      setPaying(false);
+      setSdkError("결제 설정이 완료되지 않았습니다. 관리자에게 문의해주세요.");
+      return;
+    }
 
-    window.MARU.pay({
-      payRoute: "3d",
-      responseFunction: (data: GHPaymentResult) => {
-        setPaying(false);
-        onPaymentResult(data);
-      },
-      publicKey,
-      trackId: orderNumber,
-      amount: String(totalAmount),
-      redirectUrl,
-      webhookUrl,
-      itemName: itemName.length > 50 ? itemName.substring(0, 47) + "..." : itemName,
-      userName: userName || "구매자",
-      userEmail: userEmail || "",
-      userTel: userTel || "",
-      directUse: "0000",
-      cardType: "0000",
-      installment: "0",
-      mode: "layer",
-      debugMode: "live",
-    });
+    try {
+      window.MARU.pay({
+        payRoute: "3d",
+        responseFunction: (data: GHPaymentResult) => {
+          setPaying(false);
+          onPaymentResult(data);
+        },
+        publicKey,
+        trackId: orderNumber,
+        amount: String(totalAmount),
+        redirectUrl: `${window.location.origin}/order-complete/${orderNumber}`,
+        webhookUrl: `${window.location.origin}/api/payments/webhook`,
+        itemName: itemName.length > 50 ? itemName.substring(0, 47) + "..." : itemName,
+        userName: userName || "구매자",
+        userEmail: userEmail || "",
+        userTel: userTel || "",
+        directUse: "0000",
+        cardType: "0000",
+        installment: "0",
+        mode: "layer",
+        debugMode: "live",
+      });
+    } catch (err) {
+      setPaying(false);
+      setSdkError("결제창 호출 중 오류가 발생했습니다. 다시 시도해주세요.");
+    }
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="card-payment-section">
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-center gap-2 mb-2">
           <CreditCard className="w-5 h-5 text-blue-600" />
           <h3 className="font-bold text-blue-900">신용카드 결제</h3>
         </div>
-        <p className="text-sm text-blue-700 mb-1">
-          아래 버튼을 클릭하면 안전한 결제창이 열립니다.
-        </p>
-        <p className="text-xs text-blue-600">
-          신용카드, 체크카드 모두 결제 가능합니다.
+        <p className="text-sm text-blue-700">
+          아래 버튼을 클릭하면 안전한 결제창이 열립니다. 신용카드, 체크카드 모두 결제 가능합니다.
         </p>
       </div>
 
       {sdkError && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-700">
-          결제 모듈을 불러오지 못했습니다. 페이지를 새로고침 후 다시 시도해주세요.
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm text-red-700">{sdkError}</p>
+            <button
+              type="button"
+              onClick={() => {
+                loadAttempted.current = false;
+                initSDK();
+              }}
+              className="text-xs text-red-600 underline mt-1 flex items-center gap-1"
+            >
+              <RefreshCw className="w-3 h-3" />
+              다시 시도
+            </button>
+          </div>
         </div>
       )}
 
@@ -177,11 +192,11 @@ export function GHPaymentButton({
         <Button
           type="button"
           onClick={handlePay}
-          disabled={paying || totalAmount <= 0 || !sdkReady || sdkError}
+          disabled={paying || totalAmount <= 0 || !sdkReady || loadingSDK}
           className="w-full h-14 text-lg font-bold bg-blue-600 hover:bg-blue-700 text-white"
           data-testid="button-gh-payment"
         >
-          {!sdkReady && !sdkError ? (
+          {loadingSDK ? (
             <span className="flex items-center gap-2">
               <Loader2 className="w-5 h-5 animate-spin" />
               결제 모듈 로딩 중...
@@ -194,7 +209,7 @@ export function GHPaymentButton({
           ) : (
             <span className="flex items-center gap-2">
               <CreditCard className="w-5 h-5" />
-              {totalAmount.toLocaleString()}원 결제하기
+              {totalAmount.toLocaleString()}원 카드결제
             </span>
           )}
         </Button>
@@ -202,5 +217,3 @@ export function GHPaymentButton({
     </div>
   );
 }
-
-export { GHPaymentButton as CardPaymentForm };
