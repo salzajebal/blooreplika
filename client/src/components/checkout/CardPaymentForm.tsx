@@ -82,6 +82,8 @@ export function GHPaymentButton({
   const [loadingSDK, setLoadingSDK] = useState(true);
   const [showPopupGuide, setShowPopupGuide] = useState(false);
   const loadAttempted = useRef(false);
+  const paymentResultReceived = useRef(false);
+  const popupTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const initSDK = useCallback(() => {
     setLoadingSDK(true);
@@ -110,6 +112,9 @@ export function GHPaymentButton({
   useEffect(() => {
     return () => {
       delete (window as any).maruPaymentResult;
+      if (popupTimerRef.current) {
+        clearTimeout(popupTimerRef.current);
+      }
     };
   }, []);
 
@@ -128,9 +133,15 @@ export function GHPaymentButton({
     setShowPopupGuide(false);
     setPaying(true);
     setSdkError(null);
+    paymentResultReceived.current = false;
 
     window.maruPaymentResult = function(data: any) {
       console.log("[GH Payment] Response received:", data);
+      paymentResultReceived.current = true;
+      if (popupTimerRef.current) {
+        clearTimeout(popupTimerRef.current);
+        popupTimerRef.current = null;
+      }
       setPaying(false);
       onPaymentResult(data as GHPaymentResult);
     };
@@ -159,22 +170,22 @@ export function GHPaymentButton({
     try {
       window.MARU.pay(paymentParams);
 
-      setTimeout(() => {
-        if (paying) {
+      popupTimerRef.current = setTimeout(() => {
+        if (!paymentResultReceived.current) {
+          console.log("[GH Payment] No response after 3s, showing popup guide");
           setPaying(false);
           setShowPopupGuide(true);
         }
       }, 3000);
     } catch (err: any) {
       console.error("[GH Payment] MARU.pay error:", err);
-      setPaying(false);
-
-      if (err?.message?.includes("null") || err?.message?.includes("popup") || err?.message?.includes("blocked")) {
-        setShowPopupGuide(true);
-      } else {
-        setSdkError(`결제창 호출 중 오류: ${err?.message || "알 수 없는 오류"}`);
-        setShowPopupGuide(true);
+      if (popupTimerRef.current) {
+        clearTimeout(popupTimerRef.current);
+        popupTimerRef.current = null;
       }
+      setPaying(false);
+      setShowPopupGuide(true);
+      setSdkError(`결제창 호출 중 오류가 발생했습니다. 팝업 차단을 해제하고 다시 시도해주세요.`);
     }
   };
 
