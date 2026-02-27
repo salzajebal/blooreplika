@@ -352,7 +352,8 @@ export class DatabaseStorage implements IStorage {
           ${products.gender} = '남성' OR ${products.gender} = '공용'
           OR (${products.gender} IS NULL AND (
             ${products.name} ILIKE '%남성%' OR ${products.name} ILIKE '%[남성]%'
-            OR ${products.name} ILIKE '%Mens%' OR ${products.name} ILIKE '%Men''s%'
+            OR (${products.name} ~* '\\mMens?\\M' AND ${products.name} !~* '\\mWomens?\\M')
+            OR (${products.name} ~* '\\mMen''s\\M' AND ${products.name} !~* '\\mWomen''s\\M')
             OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
             OR ${products.name} ILIKE '%Unisex%'
           ))
@@ -362,7 +363,8 @@ export class DatabaseStorage implements IStorage {
           ${products.gender} = '여성' OR ${products.gender} = '공용'
           OR (${products.gender} IS NULL AND (
             ${products.name} ILIKE '%여성%' OR ${products.name} ILIKE '%[여성]%'
-            OR ${products.name} ILIKE '%Womens%' OR ${products.name} ILIKE '%Women''s%'
+            OR ${products.name} ~* '\\mWomens?\\M' OR ${products.name} ~* '\\mWomen''s\\M'
+            OR ${products.name} ILIKE '%ladies%'
             OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
             OR ${products.name} ILIKE '%Unisex%'
           ))
@@ -381,7 +383,8 @@ export class DatabaseStorage implements IStorage {
           ${products.gender} = '남성' OR ${products.gender} = '공용'
           OR (${products.gender} IS NULL AND (
             ${products.name} ILIKE '%남성%' OR ${products.name} ILIKE '%[남성]%'
-            OR ${products.name} ILIKE '%Mens%' OR ${products.name} ILIKE '%Men''s%'
+            OR (${products.name} ~* '\\mMens?\\M' AND ${products.name} !~* '\\mWomens?\\M')
+            OR (${products.name} ~* '\\mMen''s\\M' AND ${products.name} !~* '\\mWomen''s\\M')
             OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
             OR ${products.name} ILIKE '%Unisex%'
           ))
@@ -391,7 +394,8 @@ export class DatabaseStorage implements IStorage {
           ${products.gender} = '여성' OR ${products.gender} = '공용'
           OR (${products.gender} IS NULL AND (
             ${products.name} ILIKE '%여성%' OR ${products.name} ILIKE '%[여성]%'
-            OR ${products.name} ILIKE '%Womens%' OR ${products.name} ILIKE '%Women''s%'
+            OR ${products.name} ~* '\\mWomens?\\M' OR ${products.name} ~* '\\mWomen''s\\M'
+            OR ${products.name} ILIKE '%ladies%'
             OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
             OR ${products.name} ILIKE '%Unisex%'
           ))
@@ -447,10 +451,12 @@ export class DatabaseStorage implements IStorage {
     const lower = name.toLowerCase();
     const hasUnisex = lower.includes('남녀공용') || lower.includes('남녀') || lower.includes('유니섹스') || lower.includes('unisex') || /\[공용\]/.test(name) || lower.includes('공용');
     if (hasUnisex) return '공용';
-    const hasWomen = lower.includes('여성') || lower.includes('여자') || /\bwomens?\b/.test(lower) || /women'?s?/.test(lower) || lower.includes('ladies') || /\[여성\]/.test(name);
-    const hasMen = lower.includes('남성') || lower.includes('남자') || /\bmens?\b/.test(lower) || /men'?s?/.test(lower) || /\[남성\]/.test(name);
+    const hasWomen = lower.includes('여성') || lower.includes('여자') || /\bwomens?\b/.test(lower) || /\bwomen'?s?\b/.test(lower) || lower.includes('ladies') || /\[여성\]/.test(name);
+    const nameWithoutWomen = lower.replace(/women'?s?/g, '').replace(/womens?/g, '');
+    const hasMen = lower.includes('남성') || lower.includes('남자') || /\bmens?\b/.test(nameWithoutWomen) || /\bmen'?s?\b/.test(nameWithoutWomen) || /\[남성\]/.test(name);
     if (hasWomen && !hasMen) return '여성';
     if (hasMen && !hasWomen) return '남성';
+    if (hasWomen && hasMen) return '공용';
     return null;
   }
 
