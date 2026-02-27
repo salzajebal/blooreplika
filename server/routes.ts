@@ -2849,6 +2849,19 @@ export async function registerRoutes(
 
   // ==================== CARD PAYMENT (GH PAYMENTS) API ====================
 
+  app.get("/api/orders/status/:orderNumber", async (req: Request, res: Response) => {
+    try {
+      const order = await storage.getOrderByNumber(req.params.orderNumber);
+      if (!order) {
+        return res.status(404).json({ success: false, error: "주문을 찾을 수 없습니다." });
+      }
+      res.json({ success: true, data: { paymentStatus: order.paymentStatus, status: order.status } });
+    } catch (error) {
+      console.error("Error fetching order status:", error);
+      res.status(500).json({ success: false, error: "주문 상태 확인 중 오류가 발생했습니다." });
+    }
+  });
+
   app.post("/api/orders/payment-confirm", async (req: Request, res: Response) => {
     try {
       const { orderNumber, paymentData } = req.body;

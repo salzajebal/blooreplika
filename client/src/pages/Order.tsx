@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
-import { CheckCircle, Package, User, MapPin, MessageCircle, CreditCard, Building2, Wallet, LogIn, Search } from "lucide-react";
+import { CheckCircle, XCircle, Package, User, MapPin, MessageCircle, CreditCard, Building2, Wallet, LogIn, Search, RefreshCw } from "lucide-react";
 import { GHPaymentButton, type GHPaymentResult } from "@/components/checkout/CardPaymentForm";
 import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
@@ -60,6 +60,10 @@ export default function Order() {
   const [orderNumber, setOrderNumber] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [pendingOrderNumber, setPendingOrderNumber] = useState("");
+  const [paymentFailed, setPaymentFailed] = useState(false);
+  const [paymentFailMessage, setPaymentFailMessage] = useState("");
+  const [completedPaymentMethod, setCompletedPaymentMethod] = useState<PaymentMethod>(null);
+  const [cardPaymentInfo, setCardPaymentInfo] = useState<{cardNo?: string; authNo?: string; tranDate?: string} | null>(null);
   const [memberPointBalance, setMemberPointBalance] = useState(0);
   const [pointsToUse, setPointsToUse] = useState(0);
   const [pointInputValue, setPointInputValue] = useState("");
@@ -452,9 +456,12 @@ export default function Order() {
 
         if (paymentMethod === "card") {
           setPendingOrderNumber(createdOrderNumber);
+          setPaymentFailed(false);
+          setPaymentFailMessage("");
           setSubmitting(false);
         } else {
           setOrderNumber(createdOrderNumber);
+          setCompletedPaymentMethod("bank");
           setOrderComplete(true);
         }
       } else {
@@ -472,6 +479,9 @@ export default function Order() {
   };
 
   const handlePaymentResult = async (result: GHPaymentResult) => {
+    setPaymentFailed(false);
+    setPaymentFailMessage("");
+
     if (result.resultCode === "0000") {
       try {
         const confirmRes = await fetch("/api/orders/payment-confirm", {
@@ -485,28 +495,30 @@ export default function Order() {
         const confirmData = await confirmRes.json();
         if (confirmData.success) {
           setOrderNumber(pendingOrderNumber);
+          setCompletedPaymentMethod("card");
+          setCardPaymentInfo({
+            cardNo: result.cardNo,
+            authNo: result.authNo,
+            tranDate: result.tranDate,
+          });
           setOrderComplete(true);
           toast({ title: "결제가 완료되었습니다." });
         } else {
-          toast({
-            title: "결제 확인 오류",
-            description: confirmData.error || "결제 확인 중 문제가 발생했습니다. 고객센터에 문의해주세요.",
-            variant: "destructive",
-          });
+          setPaymentFailed(true);
+          setPaymentFailMessage(confirmData.error || "결제 확인 중 문제가 발생했습니다. 고객센터에 문의해주세요.");
         }
       } catch {
+        setOrderNumber(pendingOrderNumber);
+        setCompletedPaymentMethod("card");
+        setOrderComplete(true);
         toast({
-          title: "결제 확인 오류",
-          description: "결제는 완료되었으나 서버 확인 중 문제가 발생했습니다. 고객센터에 문의해주세요.",
-          variant: "destructive",
+          title: "결제 확인 중",
+          description: "결제는 완료되었으나 서버 확인이 지연되고 있습니다. 주문 내역에서 상태를 확인해주세요.",
         });
       }
     } else {
-      toast({
-        title: "결제 실패",
-        description: result.resultMsg || "결제 처리 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
+      setPaymentFailed(true);
+      setPaymentFailMessage(result.resultMsg || "결제 처리 중 오류가 발생했습니다.");
     }
   };
 
@@ -596,66 +608,108 @@ export default function Order() {
                 주문번호: <span className="font-bold text-primary">{orderNumber}</span>
               </p>
 
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 sm:p-6 mb-6">
-                <h2 className="font-bold text-amber-900 mb-3 flex items-center justify-center gap-2">
-                  <Building2 className="w-5 h-5" />
-                  결제계좌 안내
-                </h2>
-                
-                {depositAccount ? (
-                  <div className="space-y-4">
-                    <div className="bg-white rounded-lg p-4 border border-amber-300">
-                      <div className="grid gap-2 text-left">
+              {completedPaymentMethod === "card" ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 sm:p-6 mb-6">
+                  <h2 className="font-bold text-blue-900 mb-3 flex items-center justify-center gap-2">
+                    <CreditCard className="w-5 h-5" />
+                    카드결제 완료
+                  </h2>
+                  <div className="bg-white rounded-lg p-4 border border-blue-200">
+                    <div className="grid gap-2 text-left">
+                      <div className="flex justify-between items-center py-1 border-b border-gray-100">
+                        <span className="text-gray-600 text-sm">결제수단</span>
+                        <span className="font-bold text-gray-900">신용카드</span>
+                      </div>
+                      <div className="flex justify-between items-center py-1 border-b border-gray-100">
+                        <span className="text-gray-600 text-sm">결제금액</span>
+                        <span className="font-bold text-blue-700">{calculateTotal()}원</span>
+                      </div>
+                      {cardPaymentInfo?.cardNo && (
                         <div className="flex justify-between items-center py-1 border-b border-gray-100">
-                          <span className="text-gray-600 text-sm">은행</span>
-                          <span className="font-bold text-gray-900">{depositAccount.bankName}</span>
+                          <span className="text-gray-600 text-sm">카드번호</span>
+                          <span className="font-bold text-gray-900 font-mono">{cardPaymentInfo.cardNo}</span>
                         </div>
+                      )}
+                      {cardPaymentInfo?.authNo && (
                         <div className="flex justify-between items-center py-1 border-b border-gray-100">
-                          <span className="text-gray-600 text-sm">계좌번호</span>
-                          <span className="font-bold text-gray-900 font-mono">{depositAccount.accountNumber}</span>
+                          <span className="text-gray-600 text-sm">승인번호</span>
+                          <span className="font-bold text-gray-900 font-mono">{cardPaymentInfo.authNo}</span>
                         </div>
+                      )}
+                      {cardPaymentInfo?.tranDate && (
                         <div className="flex justify-between items-center py-1">
-                          <span className="text-gray-600 text-sm">예금주</span>
-                          <span className="font-bold text-gray-900">{depositAccount.accountHolder}</span>
+                          <span className="text-gray-600 text-sm">결제일시</span>
+                          <span className="font-bold text-gray-900">{cardPaymentInfo.tranDate}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-blue-800 text-sm mt-3">
+                    카드결제가 정상적으로 완료되었습니다.
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 sm:p-6 mb-6">
+                  <h2 className="font-bold text-amber-900 mb-3 flex items-center justify-center gap-2">
+                    <Building2 className="w-5 h-5" />
+                    결제계좌 안내
+                  </h2>
+                  
+                  {depositAccount ? (
+                    <div className="space-y-4">
+                      <div className="bg-white rounded-lg p-4 border border-amber-300">
+                        <div className="grid gap-2 text-left">
+                          <div className="flex justify-between items-center py-1 border-b border-gray-100">
+                            <span className="text-gray-600 text-sm">은행</span>
+                            <span className="font-bold text-gray-900">{depositAccount.bankName}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-1 border-b border-gray-100">
+                            <span className="text-gray-600 text-sm">계좌번호</span>
+                            <span className="font-bold text-gray-900 font-mono">{depositAccount.accountNumber}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-1">
+                            <span className="text-gray-600 text-sm">예금주</span>
+                            <span className="font-bold text-gray-900">{depositAccount.accountHolder}</span>
+                          </div>
                         </div>
                       </div>
+                      <p className="text-amber-800 text-sm">
+                        위 계좌로 <strong>{calculateTotal()}원</strong>을 입금해 주세요.
+                        <br />
+                        입금 확인 후 상품이 발송됩니다.
+                      </p>
+                      <a
+                        href={kakaoLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-bold py-3 px-6 rounded-lg transition-colors"
+                        data-testid="link-kakao-inquiry"
+                      >
+                        <KakaoIcon className="w-5 h-5" />
+                        카카오톡 문의하기
+                      </a>
                     </div>
-                    <p className="text-amber-800 text-sm">
-                      위 계좌로 <strong>{calculateTotal()}원</strong>을 입금해 주세요.
-                      <br />
-                      입금 확인 후 상품이 발송됩니다.
-                    </p>
-                    <a
-                      href={kakaoLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-bold py-3 px-6 rounded-lg transition-colors"
-                      data-testid="link-kakao-inquiry"
-                    >
-                      <KakaoIcon className="w-5 h-5" />
-                      카카오톡 문의하기
-                    </a>
-                  </div>
-                ) : (
-                  <>
-                    <p className="text-amber-800 mb-4">
-                      결제계좌 정보는 <strong>카카오톡 상담</strong>을 통해 안내받으실 수 있습니다.
-                      <br />
-                      아래 버튼을 눌러 카카오톡으로 이동해주세요.
-                    </p>
-                    <a
-                      href={kakaoLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-bold py-4 px-8 rounded-lg text-lg transition-colors"
-                      data-testid="link-kakao-payment"
-                    >
-                      <KakaoIcon className="w-6 h-6" />
-                      카카오톡으로 결제계좌 안내받기
-                    </a>
-                  </>
-                )}
-              </div>
+                  ) : (
+                    <>
+                      <p className="text-amber-800 mb-4">
+                        결제계좌 정보는 <strong>카카오톡 상담</strong>을 통해 안내받으실 수 있습니다.
+                        <br />
+                        아래 버튼을 눌러 카카오톡으로 이동해주세요.
+                      </p>
+                      <a
+                        href={kakaoLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-bold py-4 px-8 rounded-lg text-lg transition-colors"
+                        data-testid="link-kakao-payment"
+                      >
+                        <KakaoIcon className="w-6 h-6" />
+                        카카오톡으로 결제계좌 안내받기
+                      </a>
+                    </>
+                  )}
+                </div>
+              )}
 
               <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
                 <h3 className="font-bold text-gray-900 mb-3">주문 상품 정보</h3>
@@ -1110,7 +1164,7 @@ export default function Order() {
                 </button>
               </div>
 
-              {paymentMethod === "card" && pendingOrderNumber && (
+              {paymentMethod === "card" && pendingOrderNumber && !paymentFailed && (
                 <GHPaymentButton
                   orderNumber={pendingOrderNumber}
                   totalAmount={isCartOrder ? calculateSubtotal() - pointsToUse : (product ? getEffectivePrice() * quantity - pointsToUse : 0)}
@@ -1122,7 +1176,47 @@ export default function Order() {
                 />
               )}
 
-              {paymentMethod === "card" && !pendingOrderNumber && (
+              {paymentMethod === "card" && paymentFailed && (
+                <div className="bg-red-50 border border-red-300 rounded-lg p-5" data-testid="payment-failed-notice">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mb-3">
+                      <XCircle className="w-8 h-8 text-red-500" />
+                    </div>
+                    <h3 className="font-bold text-red-900 text-lg mb-1">결제에 실패하였습니다</h3>
+                    <p className="text-red-700 text-sm mb-4">{paymentFailMessage}</p>
+                    <div className="flex flex-col sm:flex-row gap-2 w-full">
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          setPaymentFailed(false);
+                          setPaymentFailMessage("");
+                        }}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                        data-testid="button-retry-payment"
+                      >
+                        <RefreshCw className="w-4 h-4 mr-2" />
+                        다시 결제하기
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setPaymentFailed(false);
+                          setPaymentFailMessage("");
+                          setPendingOrderNumber("");
+                          setPaymentMethod(null);
+                        }}
+                        className="flex-1"
+                        data-testid="button-change-payment"
+                      >
+                        다른 결제수단 선택
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {paymentMethod === "card" && !pendingOrderNumber && !paymentFailed && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
                   <CreditCard className="w-5 h-5 inline mr-1" />
                   아래 <strong>주문 후 결제하기</strong> 버튼을 누르면 주문이 생성되고, 카드결제 창이 열립니다.
@@ -1180,7 +1274,7 @@ export default function Order() {
               </div>
             </div>
 
-            {!(paymentMethod === "card" && pendingOrderNumber) && (
+            {!(paymentMethod === "card" && (pendingOrderNumber || paymentFailed)) && (
               <Button
                 type="submit"
                 disabled={submitting || !paymentMethod}
