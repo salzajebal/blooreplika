@@ -13,7 +13,8 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import ProductList from "@/pages/ProductList";
 import ProductDetail from "@/pages/ProductDetail";
-import Admin from "@/pages/Admin";
+import { lazy, Suspense } from "react";
+const Admin = lazy(() => import("@/pages/Admin"));
 import Signup from "@/pages/Signup";
 import Login from "@/pages/Login";
 import Support from "@/pages/Support";
@@ -49,7 +50,7 @@ function Router() {
       <Route path="/product/:id" component={ProductDetail} />
       <Route path="/products/:category" component={ProductList} />
       <Route path="/products" component={ProductList} />
-      <Route path="/admin" component={Admin} />
+      <Route path="/admin">{() => <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin w-8 h-8 border-4 border-gray-300 border-t-black rounded-full" /></div>}><Admin /></Suspense>}</Route>
       <Route path="/signup" component={Signup} />
       <Route path="/login" component={Login} />
       <Route path="/support" component={Support} />
