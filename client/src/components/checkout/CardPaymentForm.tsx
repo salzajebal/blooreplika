@@ -48,16 +48,41 @@ function loadGHPaymentSDK(): Promise<void> {
       resolve();
       return;
     }
-    const existing = document.querySelector(`script[src="${GH_SDK_URL}"]`);
+    const existing = document.querySelector(`script[src="${GH_SDK_URL}"]`) as HTMLScriptElement | null;
     if (existing) {
-      existing.addEventListener("load", () => resolve());
-      existing.addEventListener("error", () => reject(new Error("SDK load failed")));
+      if (window.MARU) {
+        resolve();
+        return;
+      }
+      const checkInterval = setInterval(() => {
+        if (window.MARU) {
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 100);
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        if (window.MARU) resolve();
+        else reject(new Error("SDK load timeout"));
+      }, 10000);
       return;
     }
     const script = document.createElement("script");
     script.src = GH_SDK_URL;
     script.async = true;
-    script.onload = () => resolve();
+    script.onload = () => {
+      const checkInterval = setInterval(() => {
+        if (window.MARU) {
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 100);
+      setTimeout(() => {
+        clearInterval(checkInterval);
+        if (window.MARU) resolve();
+        else reject(new Error("SDK init timeout"));
+      }, 10000);
+    };
     script.onerror = () => reject(new Error("SDK load failed"));
     document.head.appendChild(script);
   });

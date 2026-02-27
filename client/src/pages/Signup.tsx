@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { User, Mail, Lock, Phone, Check, MapPin, Building2, CreditCard } from "lucide-react";
+import { User, Mail, Lock, Phone, Check, MapPin, Building2, CreditCard, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const BANKS = [
@@ -40,13 +40,47 @@ export default function Signup() {
     password: "",
     passwordConfirm: "",
     phone: "",
+    zipcode: "",
     address: "",
+    addressDetail: "",
     bank: "",
     accountNumber: "",
     agreeTerms: false,
     agreePrivacy: false,
     agreeMarketing: false,
   });
+
+  const handleAddressSearch = () => {
+    if (!window.daum?.Postcode) {
+      toast({
+        title: "오류",
+        description: "주소 검색 서비스를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+    new window.daum.Postcode({
+      oncomplete: (data: any) => {
+        let fullAddress = data.userSelectedType === "R" ? data.roadAddress : data.jibunAddress;
+        let extraAddress = "";
+        if (data.userSelectedType === "R") {
+          if (data.bname) extraAddress += data.bname;
+          if (data.buildingName) {
+            extraAddress += extraAddress ? `, ${data.buildingName}` : data.buildingName;
+          }
+          if (extraAddress) fullAddress += ` (${extraAddress})`;
+        }
+        setFormData(prev => ({
+          ...prev,
+          zipcode: data.zonecode,
+          address: fullAddress,
+        }));
+        setTimeout(() => {
+          document.getElementById("signup-address-detail")?.focus();
+        }, 100);
+      },
+    }).open();
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,7 +124,7 @@ export default function Signup() {
           email: formData.email || null,
           password: formData.password,
           phone: formData.phone,
-          address: formData.address,
+          address: formData.zipcode ? `(${formData.zipcode}) ${formData.address} ${formData.addressDetail}`.trim() : formData.address,
           bank: formData.bank || null,
           accountNumber: formData.accountNumber || null,
         }),
@@ -202,18 +236,49 @@ export default function Signup() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">주소 <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    type="text"
-                    placeholder="주소를 입력해주세요"
-                    className="pl-10 h-12 rounded-none"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    data-testid="input-address"
-                    required
-                  />
+                <div className="flex gap-2 mb-2">
+                  <div className="relative flex-1">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="우편번호"
+                      className="pl-10 h-12 rounded-none bg-gray-50 cursor-pointer"
+                      value={formData.zipcode}
+                      readOnly
+                      onClick={handleAddressSearch}
+                      data-testid="input-zipcode"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddressSearch}
+                    className="h-12 rounded-none shrink-0 gap-1.5"
+                    data-testid="button-address-search"
+                  >
+                    <Search className="w-4 h-4" />
+                    주소 검색
+                  </Button>
                 </div>
+                <Input
+                  type="text"
+                  placeholder="주소 검색 버튼을 눌러주세요"
+                  className="h-12 rounded-none bg-gray-50 cursor-pointer mb-2"
+                  value={formData.address}
+                  readOnly
+                  onClick={handleAddressSearch}
+                  data-testid="input-address"
+                  required
+                />
+                <Input
+                  id="signup-address-detail"
+                  type="text"
+                  placeholder="상세주소를 입력해주세요 (동/호수)"
+                  className="h-12 rounded-none"
+                  value={formData.addressDetail}
+                  onChange={(e) => setFormData({ ...formData, addressDetail: e.target.value })}
+                  data-testid="input-address-detail"
+                />
               </div>
 
               <div className="border-t border-gray-100 pt-5">
