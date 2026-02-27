@@ -362,6 +362,18 @@ export default function Order() {
       return;
     }
 
+    if (!isCartOrder && product) {
+      const opts = parseProductOptions(product.options);
+      if (opts.colors.length > 0 && !formData.selectedColor) {
+        toast({ title: "입력 오류", description: "컬러를 선택해주세요.", variant: "destructive" });
+        return;
+      }
+      if (opts.sizes.length > 0 && !formData.selectedSize) {
+        toast({ title: "입력 오류", description: "사이즈를 선택해주세요.", variant: "destructive" });
+        return;
+      }
+    }
+
     const memberToken = localStorage.getItem("memberToken");
     if (!memberToken) {
       setIsLoggedIn(false);

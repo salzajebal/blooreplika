@@ -2744,6 +2744,13 @@ export async function registerRoutes(
         const firstItem = cartItems[0];
         const productNames = cartItems.map((item: any) => item.productName).join(", ");
         
+        const optionSummary = cartItems.map((item: any) => {
+          const parts: string[] = [];
+          if (item.selectedColor) parts.push(`컬러:${item.selectedColor}`);
+          if (item.selectedSize) parts.push(`사이즈:${item.selectedSize}`);
+          return parts.length > 0 ? `${item.productName}(${parts.join('/')})` : item.productName;
+        }).join(', ');
+
         const order = await storage.createOrder({
           memberId: memberSession.memberId,
           memberName: orderData.memberName,
@@ -2759,6 +2766,8 @@ export async function registerRoutes(
           productName: productNames.length > 50 ? `${cartItems[0].productName} 외 ${cartItems.length - 1}건` : productNames,
           productPrice: firstItem.productPrice,
           quantity: cartItems.length,
+          selectedSize: firstItem.selectedSize || null,
+          selectedColor: firstItem.selectedColor || null,
           totalAmount: orderData.totalAmount,
           pointsUsed: orderData.pointsUsed || 0,
           paymentMethod: orderData.paymentMethod || null,
@@ -6164,7 +6173,17 @@ export async function registerRoutes(
         if (batch.length === 0) break;
 
         for (const p of batch) {
-          if (p.options && p.options.trim()) continue;
+          if (p.options && p.options.trim()) {
+            try {
+              const existing = JSON.parse(p.options);
+              if (existing && (
+                (Array.isArray(existing.colors) && existing.colors.length > 0) ||
+                (Array.isArray(existing.sizes) && existing.sizes.length > 0)
+              )) continue;
+            } catch {
+              continue;
+            }
+          }
           const detected = detectOptions(p.name, p.description);
           if (detected.colors.length > 0 || detected.sizes.length > 0) {
             await storage.updateProduct(p.id, {

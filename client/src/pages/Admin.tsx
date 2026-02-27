@@ -1738,7 +1738,7 @@ export default function Admin() {
       const sizes = formData.optionSizes ? formData.optionSizes.split(",").map(s => s.trim()).filter(Boolean) : [];
       const colors = formData.optionColors ? formData.optionColors.split(",").map(s => s.trim()).filter(Boolean) : [];
       const { optionSizes: _os, optionColors: _oc, ...productData } = formData;
-      const submitData = { ...productData, options: (sizes.length > 0 || colors.length > 0) ? JSON.stringify({ sizes, colors, extras: [] }) : null };
+      const submitData = { ...productData, options: (sizes.length > 0 || colors.length > 0) ? JSON.stringify({ sizes, colors, extras: [] }) : "" };
       const res = await fetchWithAuth(`/api/products/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

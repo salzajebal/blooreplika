@@ -14,6 +14,27 @@ import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 type PaymentMethod = "card" | "bank" | null;
 type CheckoutStep = "cart" | "payment" | "complete";
 
+interface ProductOptions {
+  colors: string[];
+  sizes: string[];
+}
+
+const parseProductOptions = (optionsString?: string | null): ProductOptions => {
+  if (!optionsString) return { colors: [], sizes: [] };
+  try {
+    const parsed = JSON.parse(optionsString);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return {
+        colors: Array.isArray(parsed.colors) ? parsed.colors : [],
+        sizes: Array.isArray(parsed.sizes) ? parsed.sizes : [],
+      };
+    }
+    return { colors: [], sizes: [] };
+  } catch {
+    return { colors: [], sizes: [] };
+  }
+};
+
 export default function Cart() {
   const { items, removeItem, clearWishlist } = useWishlist();
   const { toast } = useToast();
@@ -21,11 +42,37 @@ export default function Cart() {
   const [step, setStep] = useState<CheckoutStep>("cart");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [itemOptions, setItemOptions] = useState<Record<string, { size: string; color: string }>>({});
+  const [productOptionsMap, setProductOptionsMap] = useState<Record<string, ProductOptions>>({});
+
+  useEffect(() => {
+    const fetchAllProductOptions = async () => {
+      const map: Record<string, ProductOptions> = {};
+      for (const item of items) {
+        try {
+          const res = await fetch(`/api/products/${item.id}`);
+          const data = await res.json();
+          if (data.success && data.data?.options) {
+            map[item.id] = parseProductOptions(data.data.options);
+          }
+        } catch {}
+      }
+      setProductOptionsMap(map);
+    };
+    if (items.length > 0) fetchAllProductOptions();
+  }, [items.length]);
 
   const updateItemOption = (itemId: string, field: "size" | "color", value: string) => {
     setItemOptions(prev => ({
       ...prev,
       [itemId]: { ...prev[itemId] || { size: "", color: "" }, [field]: value },
+    }));
+  };
+
+  const prepareCartSessionItems = () => {
+    return items.map(item => ({
+      ...item,
+      selectedSize: itemOptions[item.id]?.size || "",
+      selectedColor: itemOptions[item.id]?.color || "",
     }));
   };
 
@@ -150,22 +197,50 @@ export default function Cart() {
                         <span className="text-sm text-gray-500">원</span>
                       </div>
                       <div className="mt-2 grid grid-cols-2 gap-2">
-                        <input
-                          type="text"
-                          placeholder="사이즈"
-                          value={itemOptions[item.id]?.size || ""}
-                          onChange={(e) => updateItemOption(item.id, "size", e.target.value)}
-                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-primary"
-                          data-testid={`input-size-${item.id}`}
-                        />
-                        <input
-                          type="text"
-                          placeholder="색상"
-                          value={itemOptions[item.id]?.color || ""}
-                          onChange={(e) => updateItemOption(item.id, "color", e.target.value)}
-                          className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-primary"
-                          data-testid={`input-color-${item.id}`}
-                        />
+                        {(productOptionsMap[item.id]?.sizes?.length ?? 0) > 0 ? (
+                          <select
+                            value={itemOptions[item.id]?.size || ""}
+                            onChange={(e) => updateItemOption(item.id, "size", e.target.value)}
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-primary bg-white"
+                            data-testid={`select-size-${item.id}`}
+                          >
+                            <option value="">사이즈 선택</option>
+                            {productOptionsMap[item.id].sizes.map((s) => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            placeholder="사이즈"
+                            value={itemOptions[item.id]?.size || ""}
+                            onChange={(e) => updateItemOption(item.id, "size", e.target.value)}
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-primary"
+                            data-testid={`input-size-${item.id}`}
+                          />
+                        )}
+                        {(productOptionsMap[item.id]?.colors?.length ?? 0) > 0 ? (
+                          <select
+                            value={itemOptions[item.id]?.color || ""}
+                            onChange={(e) => updateItemOption(item.id, "color", e.target.value)}
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-primary bg-white"
+                            data-testid={`select-color-${item.id}`}
+                          >
+                            <option value="">색상 선택</option>
+                            {productOptionsMap[item.id].colors.map((c) => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            placeholder="색상"
+                            value={itemOptions[item.id]?.color || ""}
+                            onChange={(e) => updateItemOption(item.id, "color", e.target.value)}
+                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:border-primary"
+                            data-testid={`input-color-${item.id}`}
+                          />
+                        )}
                       </div>
                     </div>
                   </div>
@@ -301,12 +376,7 @@ export default function Cart() {
                         <Button
                           className="w-full h-12 text-lg"
                           onClick={() => {
-                            const itemsWithOptions = items.map(item => ({
-                              ...item,
-                              selectedSize: itemOptions[item.id]?.size || "",
-                              selectedColor: itemOptions[item.id]?.color || "",
-                            }));
-                            sessionStorage.setItem("cartOrderItems", JSON.stringify(itemsWithOptions));
+                            sessionStorage.setItem("cartOrderItems", JSON.stringify(prepareCartSessionItems()));
                             sessionStorage.setItem("cartPaymentMethod", "bank");
                             setLocation("/order/cart");
                           }}
