@@ -32,9 +32,44 @@ export interface GHPaymentResult {
 
 const GH_SDK_URL = "https://api.ghpayments.kr/js/clientsideV2.js";
 
+function ensureLayerElements() {
+  if (document.getElementById("c3_pop_iframe")) return;
+
+  const popOverlay = document.createElement("div");
+  popOverlay.id = "c3_pop_overlay";
+  popOverlay.setAttribute("style", "position:fixed;top:0;bottom:0;left:0;right:0;background:rgb(255,255,255);width:100%;height:100%;overflow:hidden!important;touch-action:none;display:none;");
+
+  const popOverlayWrap = document.createElement("div");
+  popOverlayWrap.id = "c3pop_pop_overlay_wrap";
+  popOverlayWrap.setAttribute("style", "z-index:2147483600;position:absolute;top:0;bottom:0;left:0;right:0;overflow:hidden!important;touch-action:none;display:none;");
+
+  const contentFixed = document.createElement("div");
+  contentFixed.id = "c3pop_content_fixed";
+  contentFixed.setAttribute("style", "z-index:2147483601;position:fixed;top:0;left:0;width:100%;height:100%;background-color:transparent;display:none;");
+
+  const popIframe = document.createElement("iframe");
+  popIframe.id = "c3_pop_iframe";
+  popIframe.setAttribute("frameborder", "0");
+  popIframe.setAttribute("allowTransparency", "true");
+  popIframe.setAttribute("style", "position:fixed;top:0;left:0;width:100%;height:100%;");
+
+  popOverlayWrap.appendChild(popOverlay);
+  contentFixed.appendChild(popIframe);
+  document.body.appendChild(popOverlay);
+  document.body.appendChild(popOverlayWrap);
+  document.body.appendChild(contentFixed);
+
+  window.addEventListener("keydown", function(e) {
+    if (e.keyCode === 27 && window.MARU) {
+      window.MARU.removec3pop();
+    }
+  });
+}
+
 function loadGHPaymentSDK(): Promise<void> {
   return new Promise((resolve, reject) => {
     if (window.MARU && typeof window.MARU.pay === "function") {
+      ensureLayerElements();
       resolve();
       return;
     }
@@ -44,6 +79,7 @@ function loadGHPaymentSDK(): Promise<void> {
       const check = setInterval(() => {
         if (window.MARU && typeof window.MARU.pay === "function") {
           clearInterval(check);
+          ensureLayerElements();
           resolve();
         } else if (Date.now() - start > timeoutMs) {
           clearInterval(check);
@@ -82,7 +118,6 @@ export function GHPaymentButton({
   const [loadingSDK, setLoadingSDK] = useState(true);
   const loadAttempted = useRef(false);
   const paymentResultReceived = useRef(false);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const initSDK = useCallback(() => {
     setLoadingSDK(true);
@@ -93,7 +128,7 @@ export function GHPaymentButton({
       .then(() => {
         setSdkReady(true);
         setLoadingSDK(false);
-        console.log("[GH Payment] SDK loaded successfully");
+        console.log("[GH Payment] SDK loaded and layer elements ready");
       })
       .catch((err) => {
         console.error("[GH Payment] SDK load error:", err);
@@ -126,6 +161,8 @@ export function GHPaymentButton({
       return;
     }
 
+    ensureLayerElements();
+
     setPaying(true);
     setSdkError(null);
     paymentResultReceived.current = false;
@@ -134,45 +171,8 @@ export function GHPaymentButton({
       console.log("[GH Payment] Response received:", data);
       paymentResultReceived.current = true;
       setPaying(false);
-
-      const overlay = document.getElementById("gh-payment-overlay");
-      if (overlay) overlay.style.display = "none";
-
       onPaymentResult(data as GHPaymentResult);
     };
-
-    let overlay = document.getElementById("gh-payment-overlay");
-    if (!overlay) {
-      overlay = document.createElement("div");
-      overlay.id = "gh-payment-overlay";
-      overlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;";
-      document.body.appendChild(overlay);
-    } else {
-      overlay.style.display = "flex";
-    }
-
-    let container = document.getElementById("GHPayment");
-    if (!container) {
-      container = document.createElement("div");
-      container.id = "GHPayment";
-      overlay.appendChild(container);
-    }
-    container.style.cssText = "width:100%;max-width:480px;height:90vh;max-height:700px;background:white;border-radius:12px;overflow:hidden;position:relative;";
-    container.innerHTML = "";
-
-    if (!overlay.contains(container)) {
-      overlay.appendChild(container);
-    }
-
-    const closeBtn = document.createElement("button");
-    closeBtn.innerHTML = "✕";
-    closeBtn.style.cssText = "position:absolute;top:8px;right:12px;z-index:100000;background:rgba(0,0,0,0.5);color:white;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;";
-    closeBtn.onclick = () => {
-      overlay!.style.display = "none";
-      container!.innerHTML = "";
-      setPaying(false);
-    };
-    container.appendChild(closeBtn);
 
     const paymentParams: Record<string, any> = {
       payRoute: "3d",
@@ -199,8 +199,6 @@ export function GHPaymentButton({
       window.MARU.pay(paymentParams);
     } catch (err: any) {
       console.error("[GH Payment] MARU.pay error:", err);
-      overlay.style.display = "none";
-      container.innerHTML = "";
       setPaying(false);
       setSdkError(`결제창 호출 중 오류: ${err?.message || "알 수 없는 오류"}. 페이지를 새로고침 후 다시 시도해주세요.`);
     }
@@ -274,8 +272,6 @@ export function GHPaymentButton({
           )}
         </Button>
       </div>
-
-      <div ref={containerRef} />
     </div>
   );
 }
