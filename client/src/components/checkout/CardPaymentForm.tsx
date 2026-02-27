@@ -30,76 +30,22 @@ export interface GHPaymentResult {
   [key: string]: unknown;
 }
 
-const GH_SDK_URL = "https://api.ghpayments.kr/js/clientsideV2.js";
-
-function ensureLayerElements() {
-  if (document.getElementById("c3_pop_iframe")) return;
-
-  const popOverlay = document.createElement("div");
-  popOverlay.id = "c3_pop_overlay";
-  popOverlay.setAttribute("style", "position:fixed;top:0;bottom:0;left:0;right:0;background:rgb(255,255,255);width:100%;height:100%;overflow:hidden!important;touch-action:none;display:none;");
-
-  const popOverlayWrap = document.createElement("div");
-  popOverlayWrap.id = "c3pop_pop_overlay_wrap";
-  popOverlayWrap.setAttribute("style", "z-index:2147483600;position:absolute;top:0;bottom:0;left:0;right:0;overflow:hidden!important;touch-action:none;display:none;");
-
-  const contentFixed = document.createElement("div");
-  contentFixed.id = "c3pop_content_fixed";
-  contentFixed.setAttribute("style", "z-index:2147483601;position:fixed;top:0;left:0;width:100%;height:100%;background-color:transparent;display:none;");
-
-  const popIframe = document.createElement("iframe");
-  popIframe.id = "c3_pop_iframe";
-  popIframe.setAttribute("frameborder", "0");
-  popIframe.setAttribute("allowTransparency", "true");
-  popIframe.setAttribute("style", "position:fixed;top:0;left:0;width:100%;height:100%;");
-
-  popOverlayWrap.appendChild(popOverlay);
-  contentFixed.appendChild(popIframe);
-  document.body.appendChild(popOverlay);
-  document.body.appendChild(popOverlayWrap);
-  document.body.appendChild(contentFixed);
-
-  window.addEventListener("keydown", function(e) {
-    if (e.keyCode === 27 && window.MARU) {
-      window.MARU.removec3pop();
-    }
-  });
-}
-
-function loadGHPaymentSDK(): Promise<void> {
+function waitForMARU(timeoutMs: number): Promise<void> {
   return new Promise((resolve, reject) => {
     if (window.MARU && typeof window.MARU.pay === "function") {
-      ensureLayerElements();
       resolve();
       return;
     }
-
-    const waitForMARU = (timeoutMs: number) => {
-      const start = Date.now();
-      const check = setInterval(() => {
-        if (window.MARU && typeof window.MARU.pay === "function") {
-          clearInterval(check);
-          ensureLayerElements();
-          resolve();
-        } else if (Date.now() - start > timeoutMs) {
-          clearInterval(check);
-          reject(new Error("SDK init timeout"));
-        }
-      }, 300);
-    };
-
-    const existing = document.querySelector(`script[src="${GH_SDK_URL}"]`) as HTMLScriptElement | null;
-    if (existing) {
-      waitForMARU(15000);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = GH_SDK_URL;
-    script.async = true;
-    script.onload = () => waitForMARU(15000);
-    script.onerror = () => reject(new Error("SDK load failed"));
-    document.head.appendChild(script);
+    const start = Date.now();
+    const check = setInterval(() => {
+      if (window.MARU && typeof window.MARU.pay === "function") {
+        clearInterval(check);
+        resolve();
+      } else if (Date.now() - start > timeoutMs) {
+        clearInterval(check);
+        reject(new Error("SDK init timeout"));
+      }
+    }, 300);
   });
 }
 
@@ -124,11 +70,11 @@ export function GHPaymentButton({
     setSdkError(null);
     setSdkReady(false);
 
-    loadGHPaymentSDK()
+    waitForMARU(15000)
       .then(() => {
         setSdkReady(true);
         setLoadingSDK(false);
-        console.log("[GH Payment] SDK loaded and layer elements ready");
+        console.log("[GH Payment] SDK ready");
       })
       .catch((err) => {
         console.error("[GH Payment] SDK load error:", err);
@@ -160,8 +106,6 @@ export function GHPaymentButton({
       setSdkError("결제 설정이 완료되지 않았습니다. 관리자에게 문의해주세요.");
       return;
     }
-
-    ensureLayerElements();
 
     setPaying(true);
     setSdkError(null);
