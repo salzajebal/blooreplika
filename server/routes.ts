@@ -6106,6 +6106,85 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/admin/update-product-options", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const KNOWN_COLORS = [
+        "블랙","화이트","레드","블루","네이비","그레이","그린","핑크","브라운","베이지",
+        "옐로우","옐로","오렌지","퍼플","아이보리","카키","골드","실버","와인","버건디",
+        "크림","카멜","탄","올리브","민트","라벤더","코랄","터콰이즈","마룬","차콜",
+        "Black","White","Red","Blue","Navy","Gray","Grey","Green","Pink","Brown","Beige",
+        "Yellow","Orange","Purple","Ivory","Khaki","Gold","Silver","Wine","Burgundy",
+        "Cream","Camel","Tan","Olive","Mint","Lavender","Coral","Turquoise","Maroon","Charcoal",
+        "블랙/화이트","블랙/레드"
+      ];
+      const SIZE_PATTERNS = [
+        /\b(XXS|XS|S|M|L|XL|XXL|XXXL|2XL|3XL|4XL|5XL)\b/g,
+        /\b(\d{2,3})\b/g,
+        /\b(FREE|프리|원사이즈|One Size)\b/gi,
+      ];
+
+      function detectOptions(name: string, description?: string | null): { colors: string[]; sizes: string[] } {
+        const text = `${name} ${description || ''}`;
+        const colors: string[] = [];
+        for (const color of KNOWN_COLORS) {
+          if (text.includes(color)) {
+            if (!colors.includes(color)) colors.push(color);
+          }
+        }
+        const sizes: string[] = [];
+        const sizeLetters = text.match(/\b(XXS|XS|S|M|L|XL|XXL|XXXL|2XL|3XL|4XL|5XL)\b/g);
+        if (sizeLetters) {
+          for (const s of sizeLetters) {
+            if (!sizes.includes(s)) sizes.push(s);
+          }
+        }
+        const freeMatch = text.match(/\b(FREE|프리|원사이즈)\b/gi);
+        if (freeMatch) {
+          if (!sizes.includes("FREE")) sizes.push("FREE");
+        }
+        const shoeMatch = text.match(/\b(2[2-9]\d|3[0-3]\d)\b/g);
+        if (shoeMatch) {
+          for (const s of shoeMatch) {
+            const n = parseInt(s);
+            if (n >= 220 && n <= 310 && n % 5 === 0 && !sizes.includes(s)) {
+              sizes.push(s);
+            }
+          }
+        }
+        return { colors, sizes };
+      }
+
+      const batchSize = 200;
+      let offset = 0;
+      let totalUpdated = 0;
+      let totalProcessed = 0;
+
+      while (true) {
+        const { products: batch, total } = await storage.getProductsFullPaginated(batchSize, offset);
+        if (batch.length === 0) break;
+
+        for (const p of batch) {
+          if (p.options && p.options.trim()) continue;
+          const detected = detectOptions(p.name, p.description);
+          if (detected.colors.length > 0 || detected.sizes.length > 0) {
+            await storage.updateProduct(p.id, {
+              options: JSON.stringify({ colors: detected.colors, sizes: detected.sizes, extras: [] })
+            });
+            totalUpdated++;
+          }
+        }
+        totalProcessed += batch.length;
+        offset += batchSize;
+        if (offset >= total) break;
+      }
+
+      res.json({ success: true, message: `${totalUpdated}개 상품의 옵션이 자동 감지되었습니다. (총 ${totalProcessed}개 확인)`, updated: totalUpdated, processed: totalProcessed });
+    } catch (error) {
+      console.error("Error updating product options:", error);
+      res.status(500).json({ success: false, error: "Failed to update product options" });
+    }
+  });
+
   app.post("/api/admin/update-product-genders", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const batchSize = 200;

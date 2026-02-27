@@ -128,6 +128,15 @@ Preferred communication style: Simple, everyday language.
 - Future integration point for real metals API (metals-api.com or similar)
 - Base prices in KRW per 3.75g (1돈 - traditional Korean gold measurement)
 
+**Product Options:**
+- Products store size/color/extras in `options` text field as JSON: `{ colors: string[], sizes: string[], extras: { label, values }[] }`
+- ProductDetail and Order pages parse options and render dropdowns (not text inputs)
+- Admin can manually set sizes/colors per product (comma-separated input)
+- Admin bulk auto-detect API (`/api/admin/update-product-options`) scans product names for known colors and size patterns
+- ProductDetail passes selected options to Order page via URL query param `option=컬러:블랙 / 사이즈:XL`
+- Daum Postcode API integrated for Korean address search on Order and Signup pages
+- Orders require member login (401 if no valid member token)
+
 **Deployment:**
 - Replit deployment with automatic domain detection for OpenGraph images
 - Environment-specific meta tag updates via custom Vite plugin

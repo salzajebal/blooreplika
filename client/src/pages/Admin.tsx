@@ -104,6 +104,8 @@ export default function Admin() {
     description: "",
     imageUrl: "",
     imageUrls: [] as string[],
+    optionSizes: "",
+    optionColors: "",
   });
 
   const [memberFormData, setMemberFormData] = useState({
@@ -1707,16 +1709,20 @@ export default function Admin() {
 
   const handleCreate = async () => {
     try {
+      const sizes = formData.optionSizes ? formData.optionSizes.split(",").map(s => s.trim()).filter(Boolean) : [];
+      const colors = formData.optionColors ? formData.optionColors.split(",").map(s => s.trim()).filter(Boolean) : [];
+      const { optionSizes: _os, optionColors: _oc, ...productData } = formData;
+      const submitData = { ...productData, options: (sizes.length > 0 || colors.length > 0) ? JSON.stringify({ sizes, colors, extras: [] }) : undefined };
       const res = await fetchWithAuth("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       });
       const data = await res.json();
       if (data.success) {
         toast({ title: "성공", description: "상품이 추가되었습니다." });
         setShowAddForm(false);
-        setFormData({ name: "", sku: "", categoryId: "new-arrivals", brandId: "", price: "", originalPrice: "", stock: "", isBest: false, isNew: false, gender: "", description: "", imageUrl: "", imageUrls: [] });
+        setFormData({ name: "", sku: "", categoryId: "new-arrivals", brandId: "", price: "", originalPrice: "", stock: "", isBest: false, isNew: false, gender: "", description: "", imageUrl: "", imageUrls: [], optionSizes: "", optionColors: "" });
         fetchProducts();
         fetchStats();
       } else {
@@ -1729,10 +1735,14 @@ export default function Admin() {
 
   const handleUpdate = async (id: string) => {
     try {
+      const sizes = formData.optionSizes ? formData.optionSizes.split(",").map(s => s.trim()).filter(Boolean) : [];
+      const colors = formData.optionColors ? formData.optionColors.split(",").map(s => s.trim()).filter(Boolean) : [];
+      const { optionSizes: _os, optionColors: _oc, ...productData } = formData;
+      const submitData = { ...productData, options: (sizes.length > 0 || colors.length > 0) ? JSON.stringify({ sizes, colors, extras: [] }) : null };
       const res = await fetchWithAuth(`/api/products/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(submitData),
       });
       const data = await res.json();
       if (data.success) {
@@ -1780,6 +1790,17 @@ export default function Admin() {
   const startEdit = (product: Product) => {
     setEditingId(product.id);
     const existingUrls = product.imageUrls || [];
+    let optSizes = "";
+    let optColors = "";
+    if (product.options) {
+      try {
+        const parsed = JSON.parse(product.options);
+        if (parsed && typeof parsed === 'object') {
+          optSizes = Array.isArray(parsed.sizes) ? parsed.sizes.join(", ") : "";
+          optColors = Array.isArray(parsed.colors) ? parsed.colors.join(", ") : "";
+        }
+      } catch {}
+    }
     setFormData({
       name: product.name,
       sku: product.sku || "",
@@ -1794,6 +1815,8 @@ export default function Admin() {
       description: product.description || "",
       imageUrl: product.imageUrl || "",
       imageUrls: existingUrls.length > 0 ? existingUrls : (product.imageUrl ? [product.imageUrl] : []),
+      optionSizes: optSizes,
+      optionColors: optColors,
     });
     setShowEditProductModal(true);
   };
@@ -2900,6 +2923,26 @@ export default function Admin() {
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   className="mb-4"
                 />
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">사이즈 옵션 (쉼표로 구분)</label>
+                    <Input
+                      placeholder="예: S, M, L, XL 또는 250, 255, 260"
+                      value={formData.optionSizes}
+                      onChange={(e) => setFormData({ ...formData, optionSizes: e.target.value })}
+                      data-testid="input-option-sizes"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">색상 옵션 (쉼표로 구분)</label>
+                    <Input
+                      placeholder="예: 블랙, 화이트, 네이비"
+                      value={formData.optionColors}
+                      onChange={(e) => setFormData({ ...formData, optionColors: e.target.value })}
+                      data-testid="input-option-colors"
+                    />
+                  </div>
+                </div>
                 <div className="flex gap-2">
                   <Button data-testid="button-save-product" onClick={handleCreate} className="bg-yellow-500 hover:bg-yellow-600">저장</Button>
                   <Button variant="outline" onClick={() => setShowAddForm(false)}>취소</Button>
@@ -3197,6 +3240,25 @@ export default function Admin() {
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         rows={3}
                       />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">사이즈 옵션 (쉼표로 구분)</label>
+                        <Input
+                          placeholder="예: S, M, L, XL 또는 250, 255, 260"
+                          value={formData.optionSizes}
+                          onChange={(e) => setFormData({ ...formData, optionSizes: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">색상 옵션 (쉼표로 구분)</label>
+                        <Input
+                          placeholder="예: 블랙, 화이트, 네이비"
+                          value={formData.optionColors}
+                          onChange={(e) => setFormData({ ...formData, optionColors: e.target.value })}
+                        />
+                      </div>
                     </div>
 
                     <div className="mb-6">
@@ -5343,6 +5405,40 @@ export default function Admin() {
                   성별 정보 자동 업데이트 실행
                 </Button>
                 <p className="text-xs text-gray-500 mt-2">상품명에 '남성', '여성', 'Mens', 'Womens' 등의 키워드를 감지합니다.</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-blue-600" />
+                  상품 옵션(사이즈/색상) 자동 감지
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">상품명에서 사이즈와 색상을 자동으로 감지하여 옵션을 설정합니다.</p>
+              </div>
+              <div className="p-6">
+                <Button
+                  data-testid="button-update-options"
+                  onClick={async () => {
+                    if (!confirm("옵션이 비어있는 상품들의 사이즈/색상을 상품명에서 자동 감지합니다. 진행하시겠습니까?")) return;
+                    try {
+                      const res = await fetchWithAuth("/api/admin/update-product-options", { method: "POST" });
+                      const data = await res.json();
+                      if (data.success) {
+                        alert(data.message);
+                        fetchProducts();
+                      } else {
+                        alert("오류: " + (data.error || "업데이트 실패"));
+                      }
+                    } catch (e) {
+                      alert("요청 중 오류가 발생했습니다.");
+                    }
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  사이즈/색상 자동 감지 실행
+                </Button>
+                <p className="text-xs text-gray-500 mt-2">이미 옵션이 설정된 상품은 건너뜁니다. S, M, L, XL, 250~310 등의 사이즈와 블랙, 화이트 등의 색상을 감지합니다.</p>
               </div>
             </div>
 

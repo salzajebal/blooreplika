@@ -68,7 +68,43 @@ export default function Order() {
   
   const searchParams = new URLSearchParams(window.location.search);
   const quantityParam = parseInt(searchParams.get("quantity") || "1");
+  const optionParam = searchParams.get("option") || "";
   const [quantity] = useState(quantityParam);
+
+  const parseProductOptions = (optionsString?: string | null): { colors: string[]; sizes: string[]; extras: { label: string; values: string[] }[] } => {
+    if (!optionsString) return { colors: [], sizes: [], extras: [] };
+    try {
+      const parsed = JSON.parse(optionsString);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return {
+          colors: Array.isArray(parsed.colors) ? parsed.colors : [],
+          sizes: Array.isArray(parsed.sizes) ? parsed.sizes : [],
+          extras: Array.isArray(parsed.extras) ? parsed.extras : [],
+        };
+      }
+      if (Array.isArray(parsed)) {
+        return { colors: [], sizes: parsed, extras: [] };
+      }
+      return { colors: [], sizes: [], extras: [] };
+    } catch {
+      const items = optionsString.split(",").map(o => o.trim()).filter(Boolean);
+      return { colors: [], sizes: items, extras: [] };
+    }
+  };
+
+  const parseOptionParam = (param: string): { color: string; size: string } => {
+    let color = "";
+    let size = "";
+    if (!param) return { color, size };
+    const parts = param.split(" / ");
+    for (const part of parts) {
+      if (part.startsWith("컬러:")) color = part.replace("컬러:", "");
+      else if (part.startsWith("사이즈:")) size = part.replace("사이즈:", "");
+    }
+    return { color, size };
+  };
+
+  const initialOption = parseOptionParam(optionParam);
 
   const [formData, setFormData] = useState({
     memberName: "",
@@ -81,8 +117,8 @@ export default function Order() {
     shippingAddressDetail: "",
     shippingMemo: "",
     sameAsOrderer: true,
-    selectedSize: "",
-    selectedColor: "",
+    selectedSize: initialOption.size,
+    selectedColor: initialOption.color,
   });
 
   const [depositAccount, setDepositAccount] = useState<{
@@ -752,32 +788,80 @@ export default function Order() {
                 </div>
               )}
               
-              {!isCartOrder && (
-                <div className="grid gap-4 sm:grid-cols-2 mt-4 pt-4 border-t">
-                  <div>
-                    <Label htmlFor="selectedSize">사이즈 (선택)</Label>
-                    <Input
-                      id="selectedSize"
-                      name="selectedSize"
-                      value={formData.selectedSize}
-                      onChange={handleInputChange}
-                      placeholder="예: M, L, XL, 260, 270 등"
-                      data-testid="input-selected-size"
-                    />
+              {!isCartOrder && product && (() => {
+                const opts = parseProductOptions(product.options);
+                const hasColors = opts.colors.length > 0;
+                const hasSizes = opts.sizes.length > 0;
+                const hasExtras = opts.extras.length > 0;
+                if (!hasColors && !hasSizes && !hasExtras) return null;
+                return (
+                  <div className="mt-4 pt-4 border-t">
+                    <h3 className="text-sm font-medium text-gray-500 mb-3">선택옵션</h3>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {hasColors && (
+                        <div>
+                          <Label htmlFor="selectedColor">컬러</Label>
+                          <select
+                            id="selectedColor"
+                            value={formData.selectedColor}
+                            onChange={(e) => setFormData(prev => ({ ...prev, selectedColor: e.target.value }))}
+                            className="w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-black mt-1"
+                            data-testid="select-order-color"
+                          >
+                            <option value="">컬러 선택</option>
+                            {opts.colors.map((c) => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      {hasSizes && (
+                        <div>
+                          <Label htmlFor="selectedSize">사이즈</Label>
+                          <select
+                            id="selectedSize"
+                            value={formData.selectedSize}
+                            onChange={(e) => setFormData(prev => ({ ...prev, selectedSize: e.target.value }))}
+                            className="w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-black mt-1"
+                            data-testid="select-order-size"
+                          >
+                            <option value="">사이즈 선택</option>
+                            {opts.sizes.map((s) => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                      {opts.extras.map((extra) => (
+                        <div key={extra.label}>
+                          <Label>{extra.label}</Label>
+                          <select
+                            value=""
+                            onChange={() => {}}
+                            className="w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-black mt-1"
+                            data-testid={`select-order-extra-${extra.label}`}
+                          >
+                            <option value="">{extra.label} 선택</option>
+                            {extra.values.map((v) => (
+                              <option key={v} value={v}>{v}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                    {(formData.selectedColor || formData.selectedSize) && (
+                      <div className="bg-gray-50 rounded p-3 text-sm mt-3">
+                        <span className="text-gray-600">
+                          {[
+                            formData.selectedColor && `컬러: ${formData.selectedColor}`,
+                            formData.selectedSize && `사이즈: ${formData.selectedSize}`,
+                          ].filter(Boolean).join(' / ')}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <Label htmlFor="selectedColor">색상 (선택)</Label>
-                    <Input
-                      id="selectedColor"
-                      name="selectedColor"
-                      value={formData.selectedColor}
-                      onChange={handleInputChange}
-                      placeholder="예: 블랙, 화이트, 네이비 등"
-                      data-testid="input-selected-color"
-                    />
-                  </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
