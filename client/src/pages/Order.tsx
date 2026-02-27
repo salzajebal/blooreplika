@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
-import { CheckCircle, Package, User, MapPin, MessageCircle, CreditCard, Building2, Wallet } from "lucide-react";
+import { CheckCircle, Package, User, MapPin, MessageCircle, CreditCard, Building2, Wallet, LogIn } from "lucide-react";
 import { GHPaymentButton, type GHPaymentResult } from "@/components/checkout/CardPaymentForm";
 import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
@@ -44,6 +44,7 @@ export default function Order() {
   const [pointsToUse, setPointsToUse] = useState(0);
   const [pointInputValue, setPointInputValue] = useState("");
   const [kakaoLink, setKakaoLink] = useState("");
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
   
   const searchParams = new URLSearchParams(window.location.search);
   const quantityParam = parseInt(searchParams.get("quantity") || "1");
@@ -71,15 +72,34 @@ export default function Order() {
   } | null>(null);
 
   useEffect(() => {
-    const memberName = localStorage.getItem("memberName") || "";
-    const memberEmail = localStorage.getItem("memberEmail") || "";
-    
-    setFormData(prev => ({
-      ...prev,
-      memberName,
-      memberEmail,
-      shippingName: memberName,
-    }));
+    const memberToken = localStorage.getItem("memberToken");
+    if (!memberToken) {
+      setIsLoggedIn(false);
+      return;
+    }
+    fetch("/api/members/me", {
+      headers: { Authorization: `Bearer ${memberToken}` },
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data) {
+          setIsLoggedIn(true);
+          const name = data.data.name || "";
+          const email = data.data.email || "";
+          const phone = data.data.phone || "";
+          setFormData(prev => ({
+            ...prev,
+            memberName: name,
+            memberEmail: email,
+            memberPhone: phone,
+            shippingName: name,
+            shippingPhone: phone,
+          }));
+        } else {
+          setIsLoggedIn(false);
+        }
+      })
+      .catch(() => setIsLoggedIn(false));
   }, []);
 
   useEffect(() => {
@@ -254,14 +274,16 @@ export default function Order() {
       return;
     }
 
+    const memberToken = localStorage.getItem("memberToken");
+    if (!memberToken) {
+      setIsLoggedIn(false);
+      return;
+    }
+    
     setSubmitting(true);
     
     try {
-      const memberId = localStorage.getItem("memberId");
-      const memberToken = localStorage.getItem("memberToken");
-      
       const orderBody = isCartOrder ? {
-        memberId: memberId || null,
         memberName: formData.memberName,
         memberEmail: formData.memberEmail,
         memberPhone: formData.memberPhone,
@@ -284,7 +306,6 @@ export default function Order() {
         pointsUsed: pointsToUse,
         paymentMethod: paymentMethod || undefined,
       } : {
-        memberId: memberId || null,
         memberName: formData.memberName,
         memberEmail: formData.memberEmail,
         memberPhone: formData.memberPhone,
@@ -309,12 +330,22 @@ export default function Order() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(memberToken ? { "Authorization": `Bearer ${memberToken}` } : {}),
+          "Authorization": `Bearer ${memberToken}`,
         },
         body: JSON.stringify(orderBody),
       });
 
       const data = await res.json();
+      
+      if (res.status === 401) {
+        setIsLoggedIn(false);
+        toast({
+          title: "로그인 필요",
+          description: "로그인 세션이 만료되었습니다. 다시 로그인해주세요.",
+          variant: "destructive",
+        });
+        return;
+      }
       
       if (data.success) {
         const createdOrderNumber = data.data.orderNumber;
@@ -379,12 +410,52 @@ export default function Order() {
     }
   };
 
-  if (loading) {
+  if (loading || isLoggedIn === null) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-gray-500">상품 정보를 불러오는 중...</div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (isLoggedIn === false) {
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <Header />
+        <main className="flex-1 flex items-center justify-center py-12">
+          <div className="max-w-md w-full mx-auto px-4">
+            <div className="bg-white rounded-xl shadow-lg p-8 sm:p-10 text-center" data-testid="login-required-notice">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <LogIn className="w-8 h-8 text-gray-400" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">로그인이 필요합니다</h2>
+              <p className="text-gray-500 mb-6 text-sm leading-relaxed">
+                주문하시려면 회원 로그인이 필요합니다.<br />
+                아직 회원이 아니시라면 회원가입 후 이용해주세요.
+              </p>
+              <div className="flex flex-col gap-3">
+                <Button
+                  data-testid="button-go-login"
+                  className="w-full bg-black text-white hover:bg-gray-800"
+                  onClick={() => setLocation("/login")}
+                >
+                  로그인하기
+                </Button>
+                <Button
+                  data-testid="button-go-signup"
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setLocation("/signup")}
+                >
+                  회원가입
+                </Button>
+              </div>
+            </div>
+          </div>
         </main>
         <Footer />
       </div>
