@@ -2,7 +2,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Heart, Package, Star, Grid, List, ChevronDown, Filter, X, ChevronLeft, ChevronRight, Search, Check } from "lucide-react";
-import { useRoute, Link, useLocation } from "wouter";
+import { useRoute, Link, useLocation, useSearch } from "wouter";
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Product } from "@shared/schema";
@@ -50,7 +50,7 @@ type FilterDropdownType = "category" | "brand" | "gender" | null;
 
 export default function ProductList() {
   const [match, params] = useRoute("/products/:category");
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const categorySlug = match ? params.category : "all";
   const [brands, setBrands] = useState<any[]>([]);
   const [sortBy, setSortBy] = useState<SortOption>("newest");
@@ -70,24 +70,16 @@ export default function ProductList() {
 
   const categoryInfo = CATEGORIES.find(c => c.slug === categorySlug);
   
-  const [searchStr, setSearchStr] = useState(window.location.search);
-  useEffect(() => {
-    setSearchStr(window.location.search);
-  }, [location]);
-  useEffect(() => {
-    const onPop = () => setSearchStr(window.location.search);
-    window.addEventListener("popstate", onPop);
-    return () => window.removeEventListener("popstate", onPop);
-  }, []);
+  const searchString = useSearch();
 
   const { searchQuery, subcategoryId, urlBrand } = useMemo(() => {
-    const params = new URLSearchParams(searchStr);
+    const params = new URLSearchParams(searchString);
     return {
       searchQuery: params.get("q"),
       subcategoryId: params.get("sub"),
       urlBrand: params.get("brand"),
     };
-  }, [searchStr]);
+  }, [searchString]);
 
   const isGenderCategory = categorySlug === "men" || categorySlug === "women";
   const genderFromCategory = categorySlug === "men" ? "남성" : categorySlug === "women" ? "여성" : null;
@@ -234,9 +226,7 @@ export default function ProductList() {
   }, [loading]);
 
   useEffect(() => {
-    if (urlBrand) {
-      setSelectedBrand(urlBrand);
-    }
+    setSelectedBrand(urlBrand || null);
   }, [urlBrand]);
 
   useEffect(() => {
@@ -249,7 +239,6 @@ export default function ProductList() {
     if (!isGenderCategory) {
       setSelectedGender(null);
     }
-    setSelectedBrand(urlBrand || null);
     setSelectedSubcategory(null);
     sessionStorage.setItem("productListPage", "1");
     sessionStorage.setItem("productListScroll", "0");
@@ -495,7 +484,14 @@ export default function ProductList() {
               return (
                 <button
                   key={opt.label}
-                  onClick={() => { setSelectedGender(opt.value); setOpenDropdown(null); }}
+                  onClick={() => {
+                    if (opt.value === null && isGenderCategory) {
+                      navigate("/products");
+                    } else {
+                      setSelectedGender(opt.value);
+                    }
+                    setOpenDropdown(null);
+                  }}
                   className={cn(
                     "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
                     isActive && "font-bold text-black"
@@ -513,7 +509,14 @@ export default function ProductList() {
 
       {activeFiltersCount > 0 && (
         <button
-          onClick={() => { setSelectedBrand(null); setSelectedGender(null); setSelectedSubcategory(null); }}
+          onClick={() => {
+            setSelectedBrand(null);
+            setSelectedGender(null);
+            setSelectedSubcategory(null);
+            if (isGenderCategory) {
+              navigate("/products");
+            }
+          }}
           className="flex items-center gap-1 px-3 py-2 text-sm text-gray-500 hover:text-black transition-colors"
           data-testid="button-clear-filters"
         >
