@@ -149,10 +149,11 @@ export default function ProductList() {
     staleTime: 30000,
   });
 
+  const brandsCategoryParam = isGenderCategory ? categorySlug : effectiveCategorySlug;
   const { data: brandsData } = useQuery({
-    queryKey: ['brands', effectiveCategorySlug],
+    queryKey: ['brands', brandsCategoryParam],
     queryFn: async () => {
-      const categoryParam = effectiveCategorySlug && effectiveCategorySlug !== "all" ? `?categoryId=${effectiveCategorySlug}` : "";
+      const categoryParam = brandsCategoryParam && brandsCategoryParam !== "all" ? `?categoryId=${brandsCategoryParam}` : "";
       const res = await fetch(`/api/brands${categoryParam}`);
       const data = await res.json();
       return data.success ? data.data : [];

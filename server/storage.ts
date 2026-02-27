@@ -553,26 +553,47 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBrandsWithProductCount(categoryId?: string): Promise<{ brand: Brand; productCount: number }[]> {
-    // Use single aggregated query instead of N+1 queries
-    let countQuery;
+    const conditions: any[] = [];
     if (categoryId) {
-      countQuery = db.select({
-        brandId: products.brandId,
-        count: sql<number>`count(*)::int`
-      })
-        .from(products)
-        .where(eq(products.categoryId, categoryId))
-        .groupBy(products.brandId);
-    } else {
-      countQuery = db.select({
-        brandId: products.brandId,
-        count: sql<number>`count(*)::int`
-      })
-        .from(products)
-        .groupBy(products.brandId);
+      if (categoryId === 'new-arrivals') {
+        conditions.push(eq(products.isNew, true));
+      } else if (categoryId === 'best') {
+        conditions.push(eq(products.isBest, true));
+      } else if (categoryId === 'sale') {
+        conditions.push(sql`${products.discountPercent} > 0`);
+      } else if (categoryId === 'men') {
+        conditions.push(sql`(
+          ${products.gender} = '남성' OR ${products.gender} = '공용'
+          OR (${products.gender} IS NULL AND (
+            ${products.name} ILIKE '%남성%' OR ${products.name} ILIKE '%[남성]%'
+            OR ${products.name} ILIKE '%Mens%' OR ${products.name} ILIKE '%Men''s%'
+            OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%Unisex%'
+          ))
+        )`);
+      } else if (categoryId === 'women') {
+        conditions.push(sql`(
+          ${products.gender} = '여성' OR ${products.gender} = '공용'
+          OR (${products.gender} IS NULL AND (
+            ${products.name} ILIKE '%여성%' OR ${products.name} ILIKE '%[여성]%'
+            OR ${products.name} ILIKE '%Womens%' OR ${products.name} ILIKE '%Women''s%'
+            OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%Unisex%'
+          ))
+        )`);
+      } else {
+        conditions.push(eq(products.categoryId, categoryId));
+      }
     }
-    
-    const productCounts = await countQuery;
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    const productCounts = await db.select({
+      brandId: products.brandId,
+      count: sql<number>`count(*)::int`
+    })
+      .from(products)
+      .where(whereClause)
+      .groupBy(products.brandId);
+
     const countMap = new Map<string, number>();
     for (const row of productCounts) {
       if (row.brandId) {
@@ -585,6 +606,7 @@ export class DatabaseStorage implements IStorage {
     const results: { brand: Brand; productCount: number }[] = [];
     for (const brand of allBrands) {
       const productCount = countMap.get(brand.id) || 0;
+      if (categoryId && productCount === 0) continue;
       results.push({ brand, productCount });
     }
     
