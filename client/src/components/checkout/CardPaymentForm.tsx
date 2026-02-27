@@ -4,9 +4,7 @@ import { CreditCard, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 
 declare global {
   interface Window {
-    MARU: {
-      pay: (options: Record<string, unknown>) => void;
-    };
+    MARU: any;
   }
 }
 
@@ -35,26 +33,25 @@ const GH_SDK_URL = "https://api.ghpayments.kr/js/clientsideV2.js";
 
 function loadGHPaymentSDK(): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (window.MARU) {
+    if (window.MARU && typeof window.MARU.pay === "function") {
       resolve();
       return;
     }
 
-    const existing = document.querySelector(`script[src="${GH_SDK_URL}"]`) as HTMLScriptElement | null;
-
     const waitForMARU = (timeoutMs: number) => {
       const start = Date.now();
       const check = setInterval(() => {
-        if (window.MARU) {
+        if (window.MARU && typeof window.MARU.pay === "function") {
           clearInterval(check);
           resolve();
         } else if (Date.now() - start > timeoutMs) {
           clearInterval(check);
           reject(new Error("SDK init timeout"));
         }
-      }, 200);
+      }, 300);
     };
 
+    const existing = document.querySelector(`script[src="${GH_SDK_URL}"]`) as HTMLScriptElement | null;
     if (existing) {
       waitForMARU(15000);
       return;
@@ -93,9 +90,11 @@ export function GHPaymentButton({
       .then(() => {
         setSdkReady(true);
         setLoadingSDK(false);
+        console.log("[GH Payment] SDK loaded successfully, MARU.pay available:", typeof window.MARU?.pay);
       })
       .catch((err) => {
-        setSdkError(err.message || "결제 모듈 로드 실패");
+        console.error("[GH Payment] SDK load error:", err);
+        setSdkError("결제 모듈을 불러오지 못했습니다. 페이지를 새로고침 후 다시 시도해주세요.");
         setLoadingSDK(false);
       });
   }, []);
@@ -107,45 +106,55 @@ export function GHPaymentButton({
   }, [initSDK]);
 
   const handlePay = () => {
-    if (!window.MARU) {
-      setSdkError("결제 모듈이 준비되지 않았습니다.");
+    if (!window.MARU || typeof window.MARU.pay !== "function") {
+      setSdkError("결제 모듈이 준비되지 않았습니다. 페이지를 새로고침해주세요.");
       return;
     }
 
-    setPaying(true);
-
     const publicKey = import.meta.env.VITE_GH_PAYMENT_PUBLIC_KEY || "";
     if (!publicKey) {
-      setPaying(false);
       setSdkError("결제 설정이 완료되지 않았습니다. 관리자에게 문의해주세요.");
       return;
     }
 
+    setPaying(true);
+    setSdkError(null);
+
+    const paymentParams = {
+      payRoute: "3d",
+      publicKey,
+      trackId: orderNumber,
+      amount: String(totalAmount),
+      redirectUrl: `${window.location.origin}/order-complete/${orderNumber}`,
+      webhookUrl: `${window.location.origin}/api/payments/webhook`,
+      itemName: itemName.length > 50 ? itemName.substring(0, 47) + "..." : itemName,
+      userName: userName || "구매자",
+      userEmail: userEmail || "",
+      userTel: userTel || "",
+      directUse: "0000",
+      cardType: "0000",
+      installment: "0",
+      mode: "layer",
+      debugMode: "live",
+      responseFunction: function(data: any) {
+        console.log("[GH Payment] Response received:", data);
+        setPaying(false);
+        onPaymentResult(data as GHPaymentResult);
+      },
+    };
+
+    console.log("[GH Payment] Calling MARU.pay with params:", {
+      ...paymentParams,
+      publicKey: publicKey.substring(0, 8) + "...",
+      responseFunction: "[function]",
+    });
+
     try {
-      window.MARU.pay({
-        payRoute: "3d",
-        responseFunction: (data: GHPaymentResult) => {
-          setPaying(false);
-          onPaymentResult(data);
-        },
-        publicKey,
-        trackId: orderNumber,
-        amount: String(totalAmount),
-        redirectUrl: `${window.location.origin}/order-complete/${orderNumber}`,
-        webhookUrl: `${window.location.origin}/api/payments/webhook`,
-        itemName: itemName.length > 50 ? itemName.substring(0, 47) + "..." : itemName,
-        userName: userName || "구매자",
-        userEmail: userEmail || "",
-        userTel: userTel || "",
-        directUse: "0000",
-        cardType: "0000",
-        installment: "0",
-        mode: "layer",
-        debugMode: "live",
-      });
-    } catch (err) {
+      window.MARU.pay(paymentParams);
+    } catch (err: any) {
+      console.error("[GH Payment] MARU.pay error:", err);
       setPaying(false);
-      setSdkError("결제창 호출 중 오류가 발생했습니다. 다시 시도해주세요.");
+      setSdkError(`결제창 호출 중 오류: ${err?.message || "알 수 없는 오류"}. 페이지를 새로고침 후 다시 시도해주세요.`);
     }
   };
 
