@@ -8,11 +8,31 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
-import { CheckCircle, Package, User, MapPin, MessageCircle, CreditCard, Building2, Wallet, LogIn } from "lucide-react";
+import { CheckCircle, Package, User, MapPin, MessageCircle, CreditCard, Building2, Wallet, LogIn, Search } from "lucide-react";
 import { GHPaymentButton, type GHPaymentResult } from "@/components/checkout/CardPaymentForm";
 import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import type { Product } from "@shared/schema";
+
+declare global {
+  interface Window {
+    daum: {
+      Postcode: new (config: {
+        oncomplete: (data: {
+          zonecode: string;
+          roadAddress: string;
+          jibunAddress: string;
+          userSelectedType: string;
+          bname: string;
+          buildingName: string;
+          apartment: string;
+        }) => void;
+        width?: string | number;
+        height?: string | number;
+      }) => { open: () => void };
+    };
+  }
+}
 
 type PaymentMethod = "card" | "bank" | null;
 
@@ -205,6 +225,38 @@ export default function Order() {
       }));
     }
   }, [formData.memberName, formData.memberPhone, formData.sameAsOrderer]);
+
+  const handleAddressSearch = () => {
+    if (!window.daum?.Postcode) {
+      toast({
+        title: "오류",
+        description: "주소 검색 서비스를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+    new window.daum.Postcode({
+      oncomplete: (data) => {
+        let fullAddress = data.userSelectedType === "R" ? data.roadAddress : data.jibunAddress;
+        let extraAddress = "";
+        if (data.userSelectedType === "R") {
+          if (data.bname) extraAddress += data.bname;
+          if (data.buildingName) {
+            extraAddress += extraAddress ? `, ${data.buildingName}` : data.buildingName;
+          }
+          if (extraAddress) fullAddress += ` (${extraAddress})`;
+        }
+        setFormData(prev => ({
+          ...prev,
+          shippingZipcode: data.zonecode,
+          shippingAddress: fullAddress,
+        }));
+        setTimeout(() => {
+          document.getElementById("shippingAddressDetail")?.focus();
+        }, 100);
+      },
+    }).open();
+  };
 
   const getEffectivePrice = () => {
     if (!product) return 0;
@@ -817,25 +869,41 @@ export default function Order() {
                     data-testid="input-shipping-phone"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="shippingZipcode">우편번호</Label>
-                  <Input
-                    id="shippingZipcode"
-                    name="shippingZipcode"
-                    value={formData.shippingZipcode}
-                    onChange={handleInputChange}
-                    placeholder="12345"
-                    data-testid="input-shipping-zipcode"
-                  />
+                <div className="sm:col-span-2">
+                  <Label>우편번호 *</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      id="shippingZipcode"
+                      name="shippingZipcode"
+                      value={formData.shippingZipcode}
+                      readOnly
+                      placeholder="우편번호"
+                      className="flex-1 bg-gray-50 cursor-pointer"
+                      onClick={handleAddressSearch}
+                      data-testid="input-shipping-zipcode"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleAddressSearch}
+                      className="shrink-0 gap-1.5"
+                      data-testid="button-address-search"
+                    >
+                      <Search className="w-4 h-4" />
+                      주소 검색
+                    </Button>
+                  </div>
                 </div>
-                <div>
+                <div className="sm:col-span-2">
                   <Label htmlFor="shippingAddress">주소 *</Label>
                   <Input
                     id="shippingAddress"
                     name="shippingAddress"
                     value={formData.shippingAddress}
-                    onChange={handleInputChange}
-                    placeholder="서울시 강남구 테헤란로 123"
+                    readOnly
+                    placeholder="주소 검색 버튼을 눌러주세요"
+                    className="bg-gray-50 cursor-pointer"
+                    onClick={handleAddressSearch}
                     required
                     data-testid="input-shipping-address"
                   />
