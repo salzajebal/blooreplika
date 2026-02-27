@@ -348,9 +348,25 @@ export class DatabaseStorage implements IStorage {
       } else if (categoryId === 'sale') {
         conditions.push(sql`${products.discountPercent} > 0`);
       } else if (categoryId === 'men') {
-        conditions.push(sql`(${products.gender} = '남성' OR ${products.gender} = '공용')`);
+        conditions.push(sql`(
+          ${products.gender} = '남성' OR ${products.gender} = '공용'
+          OR (${products.gender} IS NULL AND (
+            ${products.name} ILIKE '%남성%' OR ${products.name} ILIKE '%[남성]%'
+            OR ${products.name} ILIKE '%Mens%' OR ${products.name} ILIKE '%Men''s%'
+            OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
+            OR ${products.name} ILIKE '%Unisex%'
+          ))
+        )`);
       } else if (categoryId === 'women') {
-        conditions.push(sql`(${products.gender} = '여성' OR ${products.gender} = '공용')`);
+        conditions.push(sql`(
+          ${products.gender} = '여성' OR ${products.gender} = '공용'
+          OR (${products.gender} IS NULL AND (
+            ${products.name} ILIKE '%여성%' OR ${products.name} ILIKE '%[여성]%'
+            OR ${products.name} ILIKE '%Womens%' OR ${products.name} ILIKE '%Women''s%'
+            OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
+            OR ${products.name} ILIKE '%Unisex%'
+          ))
+        )`);
       } else {
         conditions.push(eq(products.categoryId, categoryId));
       }
@@ -360,10 +376,34 @@ export class DatabaseStorage implements IStorage {
     if (brandId) conditions.push(eq(products.brandId, brandId));
     
     if (gender) {
-      if (gender === '남성' || gender === '여성') {
-        conditions.push(sql`(${products.gender} = ${gender} OR ${products.gender} = '공용')`);
+      if (gender === '남성') {
+        conditions.push(sql`(
+          ${products.gender} = '남성' OR ${products.gender} = '공용'
+          OR (${products.gender} IS NULL AND (
+            ${products.name} ILIKE '%남성%' OR ${products.name} ILIKE '%[남성]%'
+            OR ${products.name} ILIKE '%Mens%' OR ${products.name} ILIKE '%Men''s%'
+            OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
+            OR ${products.name} ILIKE '%Unisex%'
+          ))
+        )`);
+      } else if (gender === '여성') {
+        conditions.push(sql`(
+          ${products.gender} = '여성' OR ${products.gender} = '공용'
+          OR (${products.gender} IS NULL AND (
+            ${products.name} ILIKE '%여성%' OR ${products.name} ILIKE '%[여성]%'
+            OR ${products.name} ILIKE '%Womens%' OR ${products.name} ILIKE '%Women''s%'
+            OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
+            OR ${products.name} ILIKE '%Unisex%'
+          ))
+        )`);
       } else if (gender === '공용') {
-        conditions.push(eq(products.gender, '공용'));
+        conditions.push(sql`(
+          ${products.gender} = '공용'
+          OR (${products.gender} IS NULL AND (
+            ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
+            OR ${products.name} ILIKE '%Unisex%'
+          ))
+        )`);
       }
     }
     
@@ -402,12 +442,32 @@ export class DatabaseStorage implements IStorage {
     return product;
   }
 
+  private detectGenderFromName(name: string): string | null {
+    if (!name) return null;
+    const lower = name.toLowerCase();
+    const hasUnisex = lower.includes('남녀공용') || lower.includes('남녀') || lower.includes('유니섹스') || lower.includes('unisex') || /\[공용\]/.test(name) || lower.includes('공용');
+    if (hasUnisex) return '공용';
+    const hasWomen = lower.includes('여성') || lower.includes('여자') || /\bwomens?\b/.test(lower) || /women'?s?/.test(lower) || lower.includes('ladies') || /\[여성\]/.test(name);
+    const hasMen = lower.includes('남성') || lower.includes('남자') || /\bmens?\b/.test(lower) || /men'?s?/.test(lower) || /\[남성\]/.test(name);
+    if (hasWomen && !hasMen) return '여성';
+    if (hasMen && !hasWomen) return '남성';
+    return null;
+  }
+
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
+    if (!insertProduct.gender && insertProduct.name) {
+      const detected = this.detectGenderFromName(insertProduct.name);
+      if (detected) insertProduct.gender = detected;
+    }
     const [product] = await db.insert(products).values(insertProduct).returning();
     return product;
   }
 
   async updateProduct(id: string, updateData: Partial<InsertProduct>): Promise<Product | undefined> {
+    if (updateData.name && !updateData.gender) {
+      const detected = this.detectGenderFromName(updateData.name);
+      if (detected) updateData.gender = detected;
+    }
     const [product] = await db.update(products)
       .set({ ...updateData, updatedAt: new Date() })
       .where(eq(products.id, id))
