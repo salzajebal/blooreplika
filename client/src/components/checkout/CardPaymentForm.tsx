@@ -5,6 +5,7 @@ import { CreditCard, Loader2, AlertCircle, RefreshCw } from "lucide-react";
 declare global {
   interface Window {
     MARU: any;
+    maruPaymentResult: (data: any) => void;
   }
 }
 
@@ -80,6 +81,7 @@ export function GHPaymentButton({
   const [sdkError, setSdkError] = useState<string | null>(null);
   const [loadingSDK, setLoadingSDK] = useState(true);
   const loadAttempted = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const initSDK = useCallback(() => {
     setLoadingSDK(true);
@@ -90,7 +92,7 @@ export function GHPaymentButton({
       .then(() => {
         setSdkReady(true);
         setLoadingSDK(false);
-        console.log("[GH Payment] SDK loaded successfully, MARU.pay available:", typeof window.MARU?.pay);
+        console.log("[GH Payment] SDK loaded successfully");
       })
       .catch((err) => {
         console.error("[GH Payment] SDK load error:", err);
@@ -104,6 +106,12 @@ export function GHPaymentButton({
     loadAttempted.current = true;
     initSDK();
   }, [initSDK]);
+
+  useEffect(() => {
+    return () => {
+      delete (window as any).maruPaymentResult;
+    };
+  }, []);
 
   const handlePay = () => {
     if (!window.MARU || typeof window.MARU.pay !== "function") {
@@ -120,7 +128,20 @@ export function GHPaymentButton({
     setPaying(true);
     setSdkError(null);
 
-    const paymentParams = {
+    window.maruPaymentResult = function(data: any) {
+      console.log("[GH Payment] Response received:", data);
+      setPaying(false);
+      onPaymentResult(data as GHPaymentResult);
+    };
+
+    if (!document.getElementById("maru_payment_container")) {
+      const div = document.createElement("div");
+      div.id = "maru_payment_container";
+      div.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;z-index:99999;";
+      document.body.appendChild(div);
+    }
+
+    const paymentParams: Record<string, any> = {
       payRoute: "3d",
       publicKey,
       trackId: orderNumber,
@@ -134,27 +155,26 @@ export function GHPaymentButton({
       directUse: "0000",
       cardType: "0000",
       installment: "0",
-      mode: "layer",
+      mode: "popup",
       debugMode: "live",
-      responseFunction: function(data: any) {
-        console.log("[GH Payment] Response received:", data);
-        setPaying(false);
-        onPaymentResult(data as GHPaymentResult);
-      },
+      responseFunction: "maruPaymentResult",
     };
 
     console.log("[GH Payment] Calling MARU.pay with params:", {
       ...paymentParams,
       publicKey: publicKey.substring(0, 8) + "...",
-      responseFunction: "[function]",
     });
 
     try {
       window.MARU.pay(paymentParams);
     } catch (err: any) {
       console.error("[GH Payment] MARU.pay error:", err);
+
+      const container = document.getElementById("maru_payment_container");
+      if (container) container.remove();
+
       setPaying(false);
-      setSdkError(`결제창 호출 중 오류: ${err?.message || "알 수 없는 오류"}. 페이지를 새로고침 후 다시 시도해주세요.`);
+      setSdkError(`결제창 호출 중 오류: ${err?.message || "알 수 없는 오류"}. 팝업 차단을 해제하고 다시 시도해주세요.`);
     }
   };
 
@@ -167,6 +187,9 @@ export function GHPaymentButton({
         </div>
         <p className="text-sm text-blue-700">
           아래 버튼을 클릭하면 안전한 결제창이 열립니다. 신용카드, 체크카드 모두 결제 가능합니다.
+        </p>
+        <p className="text-xs text-blue-500 mt-1">
+          팝업 차단이 해제되어 있어야 결제가 가능합니다.
         </p>
       </div>
 
@@ -223,6 +246,8 @@ export function GHPaymentButton({
           )}
         </Button>
       </div>
+
+      <div ref={containerRef} id="GHPayment" style={{ display: "none" }} />
     </div>
   );
 }
