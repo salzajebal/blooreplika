@@ -30,6 +30,22 @@ export interface GHPaymentResult {
   [key: string]: unknown;
 }
 
+function truncateToBytes(str: string, maxBytes: number): string {
+  const encoder = new TextEncoder();
+  const encoded = encoder.encode(str);
+  if (encoded.length <= maxBytes) return str;
+  let truncated = encoded.slice(0, maxBytes - 3);
+  while (truncated.length > 0) {
+    try {
+      const decoded = new TextDecoder("utf-8", { fatal: true }).decode(truncated);
+      return decoded + "...";
+    } catch {
+      truncated = truncated.slice(0, -1);
+    }
+  }
+  return "...";
+}
+
 function waitForMARU(timeoutMs: number): Promise<void> {
   return new Promise((resolve, reject) => {
     if (window.MARU && typeof window.MARU.pay === "function") {
@@ -125,7 +141,7 @@ export function GHPaymentButton({
       amount: String(totalAmount),
       redirectUrl: `${window.location.origin}/order-complete/${orderNumber}`,
       webhookUrl: `${window.location.origin}/api/payments/webhook`,
-      itemName: itemName.length > 50 ? itemName.substring(0, 47) + "..." : itemName,
+      itemName: truncateToBytes(itemName, 40),
       userName: userName || "구매자",
       userEmail: userEmail || "",
       userTel: userTel || "",
