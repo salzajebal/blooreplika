@@ -87,6 +87,7 @@ function Router() {
       <Route path="/comparison/:id" component={Comparison} />
       <Route path="/comparison" component={Comparison} />
       <Route path="/product/:id" component={ProductDetail} />
+      <Route path="/brands" component={ProductList} />
       <Route path="/products/:category" component={ProductList} />
       <Route path="/products" component={ProductList} />
       <Route path="/admin">{() => <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin w-8 h-8 border-4 border-gray-300 border-t-black rounded-full" /></div>}><Admin /></Suspense>}</Route>
