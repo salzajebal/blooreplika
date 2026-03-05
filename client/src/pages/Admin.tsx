@@ -4378,6 +4378,7 @@ export default function Admin() {
                   <tr>
                     <th className="px-4 py-3 text-left font-medium">작성자</th>
                     <th className="px-4 py-3 text-left font-medium">제목</th>
+                    <th className="px-4 py-3 text-left font-medium">내용</th>
                     <th className="px-4 py-3 text-left font-medium">별점</th>
                     <th className="px-4 py-3 text-left font-medium">작성일</th>
                     <th className="px-4 py-3 text-left font-medium">공개</th>
@@ -4401,6 +4402,15 @@ export default function Admin() {
                               value={reviewFormData.title}
                               onChange={(e) => setReviewFormData({ ...reviewFormData, title: e.target.value })}
                               className="h-8"
+                              placeholder="제목"
+                            />
+                          </td>
+                          <td className="px-4 py-3">
+                            <textarea
+                              value={reviewFormData.content}
+                              onChange={(e) => setReviewFormData({ ...reviewFormData, content: e.target.value })}
+                              className="w-full px-2 py-1 text-sm border rounded min-h-[60px] resize-y focus:outline-none focus:border-primary"
+                              placeholder="내용"
                             />
                           </td>
                           <td className="px-4 py-3">
@@ -4456,6 +4466,9 @@ export default function Admin() {
                         <>
                           <td className="px-4 py-3 font-medium">{review.authorName}</td>
                           <td className="px-4 py-3">{review.title}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600 max-w-xs">
+                            <p className="line-clamp-3 whitespace-pre-line">{review.content}</p>
+                          </td>
                           <td className="px-4 py-3">
                             <div className="flex text-yellow-400">
                               {[...Array(review.rating || 5)].map((_, i) => (
