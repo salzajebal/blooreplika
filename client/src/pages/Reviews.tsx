@@ -241,9 +241,17 @@ export default function Reviews() {
                           {review.productName}
                         </p>
                       )}
-                      <p className="text-sm text-gray-800 line-clamp-2 leading-relaxed mb-1">
+                      {review.title && (
+                        <p className="text-sm font-semibold text-gray-900 mb-0.5">
+                          {review.title}
+                          {isNew && (
+                            <span className="inline-block ml-1 text-[10px] bg-green-500 text-white px-1 py-0.5 rounded font-bold align-middle">N</span>
+                          )}
+                        </p>
+                      )}
+                      <p className="text-sm text-gray-800 leading-relaxed mb-1 whitespace-pre-line">
                         {review.content}
-                        {isNew && (
+                        {!review.title && isNew && (
                           <span className="inline-block ml-1 text-[10px] bg-green-500 text-white px-1 py-0.5 rounded font-bold align-middle">N</span>
                         )}
                       </p>
