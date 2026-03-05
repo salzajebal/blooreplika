@@ -292,7 +292,13 @@ export default function ProductDetail() {
           <div className="grid lg:grid-cols-2 gap-6 lg:gap-12">
             <div className="space-y-3 sm:space-y-4">
               {(() => {
-                const images = product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls : [product.imageUrl];
+                const BLOOSTORE_COMMON_IMAGES = [
+                  '91dc0b3052412', 'e4211aabdece9', '362326a168295', 'cfe01887db836', '939f0df3a3d23'
+                ];
+                const rawImages = product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls : [product.imageUrl];
+                const images = product.categoryId === 'watches'
+                  ? rawImages.filter(url => !BLOOSTORE_COMMON_IMAGES.some(id => url.includes(id)))
+                  : rawImages;
                 return (
                   <>
                     <div
@@ -701,7 +707,12 @@ export default function ProductDetail() {
                         '국내배송', '교환', '환불', '검수', '운송장', '배송안내',
                         'cdamdong.co.kr/data/file/sj_note'
                       ];
-                      return !excludePatterns.some(pattern => lowerUrl.includes(pattern));
+                      if (excludePatterns.some(pattern => lowerUrl.includes(pattern))) return false;
+                      if (product.categoryId === 'watches') {
+                        const BLOOSTORE_COMMON = ['91dc0b3052412', 'e4211aabdece9', '362326a168295', 'cfe01887db836', '939f0df3a3d23'];
+                        if (BLOOSTORE_COMMON.some(id => lowerUrl.includes(id))) return false;
+                      }
+                      return true;
                     })
                     .map((imgUrl, index) => (
                     <div key={index} className="flex justify-center">
@@ -724,7 +735,15 @@ export default function ProductDetail() {
                 </div>
               ) : product.imageUrls && product.imageUrls.length > 1 ? (
                 <div className="space-y-4 mb-8 sm:mb-12">
-                  {product.imageUrls.slice(1).map((imgUrl, index) => (
+                  {product.imageUrls.slice(1)
+                    .filter(imgUrl => {
+                      if (product.categoryId === 'watches') {
+                        const BLOOSTORE_COMMON = ['91dc0b3052412', 'e4211aabdece9', '362326a168295', 'cfe01887db836', '939f0df3a3d23'];
+                        return !BLOOSTORE_COMMON.some(id => imgUrl.includes(id));
+                      }
+                      return true;
+                    })
+                    .map((imgUrl, index) => (
                     <div key={index} className="flex justify-center">
                       <img
                         src={getProxiedImageUrl(imgUrl, "large")}

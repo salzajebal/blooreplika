@@ -4422,6 +4422,9 @@ export async function registerRoutes(
                     console.error(`[bloostore] Error fetching detail for ${prod.name}:`, detailErr);
                   }
 
+                  const BLOOSTORE_COMMON_IDS = ['91dc0b3052412', 'e4211aabdece9', '362326a168295', 'cfe01887db836', '939f0df3a3d23'];
+                  detailImages = detailImages.filter(url => !BLOOSTORE_COMMON_IDS.some(id => url.includes(id)));
+
                   const listingImg = prod.imageUrl;
                   const finalImages: string[] = [];
                   if (listingImg) finalImages.push(listingImg);
@@ -4485,6 +4488,28 @@ export async function registerRoutes(
         console.error('[bloostore] Crawl error:', error);
       }
     })();
+  });
+
+  app.post("/api/admin/crawl/bloostore/clean-common-images", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const BLOOSTORE_COMMON_IDS = ['91dc0b3052412', 'e4211aabdece9', '362326a168295', 'cfe01887db836', '939f0df3a3d23'];
+      const allProducts = await storage.getAllProducts();
+      const watchProducts = allProducts.filter(p => p.categoryId === 'watches');
+      let updated = 0;
+
+      for (const product of watchProducts) {
+        const urls = product.imageUrls || [];
+        const filtered = urls.filter(url => !BLOOSTORE_COMMON_IDS.some(id => url.includes(id)));
+        if (filtered.length < urls.length) {
+          await storage.updateProduct(product.id, { imageUrls: filtered.length > 0 ? filtered : [product.imageUrl] });
+          updated++;
+        }
+      }
+
+      res.json({ success: true, message: `${updated}개 시계 상품에서 블루스토어 공통 이미지를 제거했습니다.`, updated });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
   });
 
   // ============= BLOOSTORE SOURCE IDX BACKFILL =============
