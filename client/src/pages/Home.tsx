@@ -127,16 +127,6 @@ function MainBannerSlider() {
                     />
                   </div>
                 </div>
-                {banner.title && (
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end">
-                    <div className="p-5 md:p-10 text-white">
-                      <h2 className="text-lg md:text-3xl font-bold mb-1 md:mb-2 drop-shadow-lg">{banner.title}</h2>
-                      {banner.subtitle && (
-                        <p className="text-xs md:text-base text-white/80 drop-shadow">{banner.subtitle}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
               </Link>
             </div>
           ))}
