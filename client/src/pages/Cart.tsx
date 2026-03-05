@@ -12,6 +12,7 @@ import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 interface ProductOptions {
   colors: string[];
   sizes: string[];
+  categoryId?: string;
 }
 
 const parseProductOptions = (optionsString?: string | null): ProductOptions => {
@@ -44,8 +45,10 @@ export default function Cart() {
         try {
           const res = await fetch(`/api/products/${item.id}`);
           const data = await res.json();
-          if (data.success && data.data?.options) {
-            map[item.id] = parseProductOptions(data.data.options);
+          if (data.success) {
+            const opts = parseProductOptions(data.data?.options);
+            opts.categoryId = data.data?.categoryId;
+            map[item.id] = opts;
           }
         } catch {}
       }
@@ -168,6 +171,7 @@ export default function Cart() {
                         <span className="text-lg font-bold text-primary">{item.price.toLocaleString()}</span>
                         <span className="text-sm text-gray-500">원</span>
                       </div>
+                      {productOptionsMap[item.id]?.categoryId !== 'watches' && (
                       <div className="mt-2 grid grid-cols-2 gap-2">
                         {(productOptionsMap[item.id]?.sizes?.length ?? 0) > 0 ? (
                           <select
@@ -214,6 +218,7 @@ export default function Cart() {
                           />
                         )}
                       </div>
+                      )}
                       <div className="mt-3">
                         <Button
                           size="sm"
