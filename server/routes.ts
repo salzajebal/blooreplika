@@ -1986,20 +1986,24 @@ export async function registerRoutes(
   
   app.get("/api/admin/stats", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      const products = await storage.getAllProducts();
-      const members = await storage.getAllMembers();
-      const categories = await storage.getAllCategories();
+      const [productCounts, membersList, categoryList] = await Promise.all([
+        storage.getProductCountWithCategories(),
+        storage.getAllMembers(),
+        storage.getAllCategories(),
+      ]);
+      
+      const countMap = new Map(productCounts.byCategory.map(c => [c.categoryId, c.count]));
       
       res.json({
         success: true,
         data: {
-          totalProducts: products.length,
-          totalMembers: members.length,
-          totalCategories: categories.length,
-          productsByCategory: categories.map(cat => ({
+          totalProducts: productCounts.total,
+          totalMembers: membersList.length,
+          totalCategories: categoryList.length,
+          productsByCategory: categoryList.map(cat => ({
             id: cat.id,
             name: cat.name,
-            count: products.filter(p => p.categoryId === cat.id).length
+            count: countMap.get(cat.id) || 0
           }))
         }
       });
@@ -3055,8 +3059,8 @@ export async function registerRoutes(
   // Get product count
   app.get("/api/admin/products/count", requireAdminAuth, async (_req: Request, res: Response) => {
     try {
-      const products = await storage.getAllProducts();
-      res.json({ success: true, count: products.length });
+      const count = await storage.getProductsCount();
+      res.json({ success: true, count });
     } catch (error) {
       res.status(500).json({ success: false, error: "Failed to get count" });
     }

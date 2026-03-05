@@ -280,6 +280,8 @@ export interface IStorage {
   updateLabsBlock(id: string, data: Partial<InsertLabsBlock>): Promise<LabsBlock | undefined>;
   deleteLabsBlock(id: string): Promise<boolean>;
 
+  getProductCountWithCategories(): Promise<{ total: number; byCategory: { categoryId: string; count: number }[] }>;
+
   // Visitor Tracking
   trackVisitor(session: InsertVisitorSession): Promise<VisitorSession>;
   updateVisitorActivity(sessionId: string, page?: string): Promise<void>;
@@ -489,6 +491,17 @@ export class DatabaseStorage implements IStorage {
   async deleteProductsByCategory(categoryId: string): Promise<number> {
     const result = await db.delete(products).where(eq(products.categoryId, categoryId)).returning();
     return result.length;
+  }
+
+  async getProductCountWithCategories(): Promise<{ total: number; byCategory: { categoryId: string; count: number }[] }> {
+    const [totalResult, categoryResult] = await Promise.all([
+      db.select({ count: sql<number>`count(*)::int` }).from(products),
+      db.select({ categoryId: products.categoryId, count: sql<number>`count(*)::int` }).from(products).groupBy(products.categoryId)
+    ]);
+    return {
+      total: totalResult[0]?.count || 0,
+      byCategory: categoryResult.filter(r => r.categoryId != null).map(r => ({ categoryId: r.categoryId!, count: r.count }))
+    };
   }
 
   // Categories

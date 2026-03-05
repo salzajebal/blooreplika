@@ -6,8 +6,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { WishlistProvider } from "@/contexts/WishlistContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import { VisitorStats } from "@/components/VisitorStats";
-import { VisitorTracker } from "@/components/VisitorTracker";
 import { MarketingPixels } from "@/components/MarketingPixels";
 import { BottomNav } from "@/components/layout/BottomNav";
 import NotFound from "@/pages/not-found";
@@ -132,8 +130,6 @@ function App() {
         <WishlistProvider>
           <TooltipProvider>
             <Toaster />
-            <VisitorStats />
-            <VisitorTracker />
             <MarketingPixels />
             <Router />
             <BottomNav />

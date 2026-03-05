@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart, ChevronRight, Truck, Shield, ShoppingBag, Star, Package, AlertTriangle, MessageCircle, RefreshCw, Smartphone, Pencil, Image } from "lucide-react";
+import { ShoppingCart, Heart, ChevronLeft, ChevronRight, Truck, Shield, ShoppingBag, Star, Package, AlertTriangle, MessageCircle, RefreshCw, Smartphone, Pencil, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -43,6 +43,7 @@ export default function ProductDetail() {
   const [kakaoLink, setKakaoLink] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"detail" | "review" | "shipping">("detail");
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const touchStartX = useRef<number>(0);
 
   const fetchProductReviews = async () => {
     try {
@@ -290,44 +291,81 @@ export default function ProductDetail() {
 
           <div className="grid lg:grid-cols-2 gap-6 lg:gap-12">
             <div className="space-y-3 sm:space-y-4">
-              <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden border border-gray-100 max-w-md mx-auto lg:max-w-none relative">
-                {product.isSoldOut && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
-                    <span className="text-white text-2xl font-bold">SOLD OUT</span>
-                  </div>
-                )}
-                <img
-                  src={getProxiedImageUrl(
-                    product.imageUrls && product.imageUrls.length > 0
-                      ? product.imageUrls[selectedImageIndex] || product.imageUrls[0]
-                      : product.imageUrl,
-                    "large"
-                  )}
-                  alt={product.name}
-                  className="w-full h-full object-contain p-4 sm:p-8"
-                  data-testid="img-product-main"
-                  onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-                />
-              </div>
-              <div className="flex gap-2 justify-center flex-wrap px-2">
-                {(product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls : [product.imageUrl]).map((url, index) => (
-                  <div 
-                    key={index} 
-                    className={`w-16 h-16 sm:w-20 sm:h-20 bg-gray-50 rounded border overflow-hidden cursor-pointer transition-colors shrink-0 ${
-                      selectedImageIndex === index ? 'border-primary border-2' : 'border-gray-200 hover:border-primary'
-                    }`}
-                    onClick={() => setSelectedImageIndex(index)}
-                    data-testid={`img-thumbnail-${index}`}
-                  >
-                    <img
-                      src={getProxiedImageUrl(url)}
-                      alt={`${product.name} ${index + 1}`}
-                      className="w-full h-full object-contain p-1 sm:p-2"
-                      onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-                    />
-                  </div>
-                ))}
-              </div>
+              {(() => {
+                const images = product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls : [product.imageUrl];
+                return (
+                  <>
+                    <div
+                      className="relative overflow-hidden rounded-lg border border-gray-100 max-w-md mx-auto lg:max-w-none"
+                      onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+                      onTouchEnd={(e) => {
+                        const delta = touchStartX.current - e.changedTouches[0].clientX;
+                        if (delta > 50 && selectedImageIndex < images.length - 1) {
+                          setSelectedImageIndex(selectedImageIndex + 1);
+                        } else if (delta < -50 && selectedImageIndex > 0) {
+                          setSelectedImageIndex(selectedImageIndex - 1);
+                        }
+                      }}
+                    >
+                      {product.isSoldOut && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                          <span className="text-white text-2xl font-bold">SOLD OUT</span>
+                        </div>
+                      )}
+                      <div
+                        className="flex transition-transform duration-300 ease-in-out"
+                        style={{ transform: `translateX(-${selectedImageIndex * 100}%)` }}
+                      >
+                        {images.map((url, index) => (
+                          <div key={index} className="w-full flex-shrink-0 aspect-square bg-gray-50">
+                            <img
+                              src={getProxiedImageUrl(url, "large")}
+                              alt={`${product.name} ${index + 1}`}
+                              className="w-full h-full object-contain p-4 sm:p-8"
+                              data-testid={index === 0 ? "img-product-main" : `img-product-${index}`}
+                              onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      {images.length > 1 && (
+                        <>
+                          <button
+                            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 bg-black/30 hover:bg-black/50 rounded-full items-center justify-center text-white hidden sm:flex"
+                            onClick={() => setSelectedImageIndex(Math.max(0, selectedImageIndex - 1))}
+                            disabled={selectedImageIndex === 0}
+                            data-testid="btn-carousel-prev"
+                          >
+                            <ChevronLeft className="w-5 h-5" />
+                          </button>
+                          <button
+                            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 bg-black/30 hover:bg-black/50 rounded-full items-center justify-center text-white hidden sm:flex"
+                            onClick={() => setSelectedImageIndex(Math.min(images.length - 1, selectedImageIndex + 1))}
+                            disabled={selectedImageIndex === images.length - 1}
+                            data-testid="btn-carousel-next"
+                          >
+                            <ChevronRight className="w-5 h-5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                    {images.length > 1 && (
+                      <div className="flex justify-center gap-1.5" data-testid="carousel-dots">
+                        {images.map((_, index) => (
+                          <button
+                            key={index}
+                            className={`w-2 h-2 rounded-full transition-colors ${
+                              selectedImageIndex === index ? 'bg-gray-900' : 'bg-gray-300'
+                            }`}
+                            onClick={() => setSelectedImageIndex(index)}
+                            data-testid={`dot-indicator-${index}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             <div className="space-y-4 px-1">

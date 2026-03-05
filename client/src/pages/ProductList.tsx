@@ -356,7 +356,7 @@ export default function ProductList() {
         </button>
 
         {openDropdown === "category" && (
-          <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px] max-h-[300px] overflow-y-auto">
+          <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px] max-h-[300px] overflow-y-auto scroll-smooth" style={{ overscrollBehaviorY: "contain", WebkitOverflowScrolling: "touch" }}>
             <button
               onClick={() => { setSelectedSubcategory(null); setOpenDropdown(null); }}
               className={cn(
@@ -423,7 +423,7 @@ export default function ProductList() {
                 />
               </div>
             </div>
-            <div className="overflow-y-auto max-h-[320px]">
+            <div className="overflow-y-auto max-h-[320px] scroll-smooth" style={{ overscrollBehaviorY: "contain", WebkitOverflowScrolling: "touch" }}>
               {!brandSearch && (
                 <button
                   onClick={() => { setSelectedBrand(null); setOpenDropdown(null); setBrandSearch(""); }}

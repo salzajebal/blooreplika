@@ -123,7 +123,9 @@ Preferred communication style: Simple, everyday language.
   - Flow: Select card → Submit order (creates pending order) → SDK popup opens → Payment result callback → Server `/api/orders/payment-confirm` verifies and updates order
   - Webhook: `POST /api/payments/webhook` for server-to-server confirmation
   - Amount verification and idempotency checks on both endpoints
-- Cart page goes directly to order page where payment method is selected
+- Cart page has individual "구매하기" buttons per item + "전체 구매하기" for bulk checkout
+- Card payment success shows card info (card number, auth number, date); bank transfer shows deposit account info
+- Payment failure shows prominent red error UI with retry/change-payment options
 
 **Pricing Data:**
 - Simulated real-time pricing with time-based fluctuation algorithm
@@ -132,6 +134,7 @@ Preferred communication style: Simple, everyday language.
 
 **Product Options:**
 - Products store size/color/extras in `options` text field as JSON: `{ colors: string[], sizes: string[], extras: { label, values }[] }`
+- ProductDetail uses horizontal swipeable carousel for product images (touch swipe + arrow buttons + dot indicators)
 - ProductDetail and Order pages parse options and render dropdowns (not text inputs)
 - Admin can manually set sizes/colors per product (comma-separated input)
 - Admin bulk auto-detect API (`/api/admin/update-product-options`) scans product names for known colors and size patterns

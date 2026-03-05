@@ -1,7 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { Trash2, ShoppingBag, Heart, ArrowRight } from "lucide-react";
+import { Trash2, ShoppingBag, Heart, ArrowRight, ShoppingCart } from "lucide-react";
 import { Link } from "wouter";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
@@ -214,6 +214,23 @@ export default function Cart() {
                           />
                         )}
                       </div>
+                      <div className="mt-3">
+                        <Button
+                          size="sm"
+                          className="bg-primary hover:bg-primary/90 text-white"
+                          onClick={() => {
+                            const params = new URLSearchParams();
+                            if (itemOptions[item.id]?.size) params.append("size", itemOptions[item.id].size);
+                            if (itemOptions[item.id]?.color) params.append("color", itemOptions[item.id].color);
+                            const queryString = params.toString();
+                            setLocation(`/order/${item.id}${queryString ? "?" + queryString : ""}`);
+                          }}
+                          data-testid={`button-buy-${item.id}`}
+                        >
+                          <ShoppingCart className="w-4 h-4 mr-2" />
+                          구매하기
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -231,7 +248,7 @@ export default function Cart() {
                   onClick={handleCheckout}
                   data-testid="button-checkout"
                 >
-                  주문하기
+                  전체 구매하기
                 </Button>
               </div>
             </>
