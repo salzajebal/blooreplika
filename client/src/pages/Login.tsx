@@ -40,7 +40,9 @@ export default function Login() {
           title: "로그인 성공",
           description: `${data.member.name}님, 환영합니다!`,
         });
-        setLocation("/");
+        const params = new URLSearchParams(window.location.search);
+        const redirectPath = params.get("redirect");
+        setLocation(redirectPath ? decodeURIComponent(redirectPath) : "/");
       } else {
         toast({
           title: "로그인 실패",
@@ -115,7 +117,7 @@ export default function Login() {
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 아직 회원이 아니신가요?{" "}
-                <Link href="/signup" className="text-primary hover:underline font-medium">
+                <Link href={`/signup${window.location.search}`} className="text-primary hover:underline font-medium">
                   회원가입
                 </Link>
               </p>

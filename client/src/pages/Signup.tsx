@@ -137,7 +137,9 @@ export default function Signup() {
           title: "회원가입 완료",
           description: "회원가입이 완료되었습니다. 로그인해주세요.",
         });
-        setLocation("/login");
+        const params = new URLSearchParams(window.location.search);
+        const redirect = params.get("redirect");
+        setLocation(redirect ? `/login?redirect=${redirect}` : "/login");
       } else {
         toast({
           title: "회원가입 실패",
