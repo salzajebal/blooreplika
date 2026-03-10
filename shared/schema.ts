@@ -725,3 +725,21 @@ export const insertLabsBlockSchema = createInsertSchema(labsBlocks).omit({
 
 export type InsertLabsBlock = z.infer<typeof insertLabsBlockSchema>;
 export type LabsBlock = typeof labsBlocks.$inferSelect;
+
+export const quickMenuItems = pgTable("quick_menu_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  imageUrl: text("image_url").notNull(),
+  linkUrl: text("link_url").notNull(),
+  sortOrder: integer("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertQuickMenuItemSchema = createInsertSchema(quickMenuItems).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertQuickMenuItem = z.infer<typeof insertQuickMenuItemSchema>;
+export type QuickMenuItem = typeof quickMenuItems.$inferSelect;

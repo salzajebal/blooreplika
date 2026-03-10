@@ -154,6 +154,14 @@ export interface IStorage {
   updateBanner(id: string, banner: Partial<InsertBanner>): Promise<Banner | undefined>;
   deleteBanner(id: string): Promise<boolean>;
   
+  // Quick Menu Items
+  getAllQuickMenuItems(): Promise<QuickMenuItem[]>;
+  getActiveQuickMenuItems(): Promise<QuickMenuItem[]>;
+  getQuickMenuItem(id: string): Promise<QuickMenuItem | undefined>;
+  createQuickMenuItem(item: InsertQuickMenuItem): Promise<QuickMenuItem>;
+  updateQuickMenuItem(id: string, item: Partial<InsertQuickMenuItem>): Promise<QuickMenuItem | undefined>;
+  deleteQuickMenuItem(id: string): Promise<boolean>;
+
   // Popups
   getAllPopups(): Promise<Popup[]>;
   getActivePopups(): Promise<Popup[]>;
