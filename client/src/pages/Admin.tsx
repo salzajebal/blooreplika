@@ -75,7 +75,7 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff" | "inspection" | "contentSections" | "magazines" | "labs">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff" | "inspection" | "contentSections" | "magazines" | "labs" | "quickMenu">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [visitorStats, setVisitorStats] = useState<{ realtime: number; today: number; pageViews: number; recentPages: { page: string; count: number }[] } | null>(null);
   
@@ -2534,6 +2534,15 @@ export default function Admin() {
               >
                 <Globe className="w-4 h-4 md:mr-2" />
                 <span className="hidden md:inline">LABS 관리</span>
+              </Button>
+              <Button
+                data-testid="tab-quickMenu"
+                variant={activeTab === "quickMenu" ? "default" : "outline"}
+                onClick={() => setActiveTab("quickMenu")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "quickMenu" ? "bg-teal-500 hover:bg-teal-600" : ""}`}
+              >
+                <Circle className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">퀵메뉴 관리</span>
               </Button>
               <Button
                 data-testid="tab-settings"
@@ -6463,6 +6472,10 @@ export default function Admin() {
           <LabsTab authToken={authToken} />
         )}
 
+        {activeTab === "quickMenu" && adminRole === "super_admin" && (
+          <QuickMenuTab authToken={authToken} />
+        )}
+
         {activeTab === "staff" && adminRole === "super_admin" && (
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
@@ -8833,6 +8846,255 @@ function LabsTab({ authToken }: { authToken: string }) {
                         <Trash2 className="w-3 h-3 mr-1" /> 삭제
                       </Button>
                     </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuickMenuTab({ authToken }: { authToken: string }) {
+  const { toast } = useToast();
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<any | null>(null);
+  const [formName, setFormName] = useState("");
+  const [formLinkUrl, setFormLinkUrl] = useState("");
+  const [formSortOrder, setFormSortOrder] = useState("0");
+  const [formIsActive, setFormIsActive] = useState(true);
+  const [formImageFile, setFormImageFile] = useState<File | null>(null);
+  const [formImagePreview, setFormImagePreview] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchItems = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await fetch("/api/admin/quick-menu", {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      const data = await res.json();
+      if (data.success) setItems(data.data);
+    } catch (error) {
+      toast({ title: "오류", description: "퀵메뉴 목록을 불러올 수 없습니다.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  }, [authToken]);
+
+  useEffect(() => { fetchItems(); }, [fetchItems]);
+
+  const resetForm = () => {
+    setFormName("");
+    setFormLinkUrl("");
+    setFormSortOrder("0");
+    setFormIsActive(true);
+    setFormImageFile(null);
+    setFormImagePreview("");
+    setEditingItem(null);
+    setShowForm(false);
+  };
+
+  const handleEdit = (item: any) => {
+    setEditingItem(item);
+    setFormName(item.name);
+    setFormLinkUrl(item.linkUrl);
+    setFormSortOrder(String(item.sortOrder || 0));
+    setFormIsActive(item.isActive);
+    setFormImageFile(null);
+    setFormImagePreview(item.imageUrl);
+    setShowForm(true);
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFormImageFile(file);
+      const reader = new FileReader();
+      reader.onload = (ev) => setFormImagePreview(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!formName || !formLinkUrl) {
+      toast({ title: "오류", description: "이름과 링크 URL은 필수입니다.", variant: "destructive" });
+      return;
+    }
+    if (!editingItem && !formImageFile && !formImagePreview) {
+      toast({ title: "오류", description: "아이콘 이미지를 선택해주세요.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("name", formName);
+      formData.append("linkUrl", formLinkUrl);
+      formData.append("sortOrder", formSortOrder);
+      formData.append("isActive", String(formIsActive));
+      if (formImageFile) {
+        formData.append("image", formImageFile);
+      }
+
+      const url = editingItem
+        ? `/api/admin/quick-menu/${editingItem.id}`
+        : "/api/admin/quick-menu";
+      const method = editingItem ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: { Authorization: `Bearer ${authToken}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: editingItem ? "수정되었습니다." : "추가되었습니다." });
+        resetForm();
+        fetchItems();
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "저장에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("이 퀵메뉴 항목을 삭제하시겠습니까?")) return;
+    try {
+      const res = await fetch(`/api/admin/quick-menu/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: "삭제되었습니다." });
+        fetchItems();
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "삭제에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  const handleToggleActive = async (item: any) => {
+    try {
+      const formData = new FormData();
+      formData.append("isActive", String(!item.isActive));
+      const res = await fetch(`/api/admin/quick-menu/${item.id}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${authToken}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성공", description: item.isActive ? "비활성화되었습니다." : "활성화되었습니다." });
+        fetchItems();
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "상태 변경에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-bold">퀵메뉴 관리</h2>
+            <p className="text-sm text-gray-500 mt-1">메인페이지 원형 아이콘 바로가기 메뉴를 관리합니다. (권장 이미지: 200x200px, 원형으로 잘려서 표시됩니다)</p>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={fetchItems} data-testid="btn-qm-refresh">
+              <RefreshCw className="w-4 h-4 mr-1" /> 새로고침
+            </Button>
+            <Button size="sm" onClick={() => { resetForm(); setShowForm(true); }} data-testid="btn-qm-add">
+              <Plus className="w-4 h-4 mr-1" /> 추가
+            </Button>
+          </div>
+        </div>
+
+        {showForm && (
+          <div className="p-6 border-b border-gray-100 bg-gray-50">
+            <h3 className="font-semibold mb-4">{editingItem ? "퀵메뉴 수정" : "퀵메뉴 추가"}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">이름 *</label>
+                <Input value={formName} onChange={(e) => setFormName(e.target.value)} placeholder="예: VIP 명품관" data-testid="input-qm-name" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">링크 URL *</label>
+                <Input value={formLinkUrl} onChange={(e) => setFormLinkUrl(e.target.value)} placeholder="예: /products/best 또는 https://..." data-testid="input-qm-link" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">정렬 순서</label>
+                <Input type="number" value={formSortOrder} onChange={(e) => setFormSortOrder(e.target.value)} data-testid="input-qm-sort" />
+              </div>
+              <div className="flex items-center gap-2 mt-6">
+                <input type="checkbox" checked={formIsActive} onChange={(e) => setFormIsActive(e.target.checked)} id="qm-active" data-testid="input-qm-active" />
+                <label htmlFor="qm-active" className="text-sm">활성화</label>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-1">아이콘 이미지 *</label>
+                <div className="flex items-center gap-4">
+                  {formImagePreview && (
+                    <div className="w-16 h-16 rounded-full overflow-hidden border border-gray-200 bg-white flex-shrink-0">
+                      <img src={formImagePreview} alt="미리보기" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div>
+                    <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" data-testid="input-qm-image" />
+                    <Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()} data-testid="btn-qm-upload">
+                      <Upload className="w-4 h-4 mr-1" /> 이미지 선택
+                    </Button>
+                    <p className="text-xs text-gray-400 mt-1">JPG, PNG, GIF, WebP (최대 5MB)</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button size="sm" onClick={handleSubmit} data-testid="btn-qm-submit">
+                <Check className="w-4 h-4 mr-1" /> {editingItem ? "수정" : "추가"}
+              </Button>
+              <Button size="sm" variant="outline" onClick={resetForm} data-testid="btn-qm-cancel">
+                <X className="w-4 h-4 mr-1" /> 취소
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <div className="p-6">
+          {loading ? (
+            <div className="text-center py-8 text-gray-400">로딩 중...</div>
+          ) : items.length === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              <Circle className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+              <p>등록된 퀵메뉴가 없습니다.</p>
+              <p className="text-xs mt-1">상단의 "추가" 버튼으로 퀵메뉴를 등록하세요.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {items.map((item) => (
+                <div key={item.id} className={`border rounded-lg p-4 text-center ${!item.isActive ? "opacity-50 bg-gray-50" : "bg-white"}`} data-testid={`qm-item-${item.id}`}>
+                  <div className="w-16 h-16 rounded-full overflow-hidden mx-auto mb-2 border border-gray-200 bg-gray-50">
+                    <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                  </div>
+                  <p className="text-sm font-medium truncate">{item.name}</p>
+                  <p className="text-xs text-gray-400 truncate">{item.linkUrl}</p>
+                  <p className="text-xs text-gray-400">순서: {item.sortOrder}</p>
+                  <div className="flex gap-1 mt-2 justify-center">
+                    <Button size="sm" variant="outline" className="h-7 text-xs px-2" onClick={() => handleToggleActive(item)} data-testid={`btn-qm-toggle-${item.id}`}>
+                      {item.isActive ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-7 text-xs px-2" onClick={() => handleEdit(item)} data-testid={`btn-qm-edit-${item.id}`}>
+                      <Pencil className="w-3 h-3" />
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-7 text-xs px-2 text-red-500 hover:text-red-700" onClick={() => handleDelete(item.id)} data-testid={`btn-qm-delete-${item.id}`}>
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
                   </div>
                 </div>
               ))}

@@ -106,6 +106,32 @@ const bannerImageUpload = multer({
   },
 });
 
+const quickMenuImageUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      const dir = path.join(process.cwd(), "uploads", "quickmenu");
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      cb(null, dir);
+    },
+    filename: (_req, file, cb) => {
+      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `qm-${uniqueSuffix}${ext}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req: any, file: any, cb: any) => {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      cb(null, true);
+    } else {
+      cb(new Error("이미지 파일만 업로드 가능합니다. (jpg, png, gif, webp)"));
+    }
+  },
+});
+
 const inspectionMediaUpload = multer({
   storage: multer.diskStorage({
     destination: (_req, _file, cb) => {
@@ -6154,6 +6180,101 @@ export async function registerRoutes(
       res.json({ success: true, message: "Deleted" });
     } catch (error) {
       res.status(500).json({ success: false, error: "Failed to delete labs block" });
+    }
+  });
+
+  app.get("/api/quick-menu", async (req: Request, res: Response) => {
+    try {
+      const items = await storage.getActiveQuickMenuItems();
+      res.json({ success: true, data: items });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to fetch quick menu items" });
+    }
+  });
+
+  app.get("/api/admin/quick-menu", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      if ((req as any).adminRole !== "super_admin") return res.status(403).json({ success: false, error: "권한이 없습니다." });
+      const items = await storage.getAllQuickMenuItems();
+      res.json({ success: true, data: items });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "Failed to fetch quick menu items" });
+    }
+  });
+
+  app.post("/api/admin/quick-menu", requireAdminAuth, quickMenuImageUpload.single("image"), async (req: Request, res: Response) => {
+    try {
+      if ((req as any).adminRole !== "super_admin") return res.status(403).json({ success: false, error: "권한이 없습니다." });
+      const { name, linkUrl, sortOrder, isActive } = req.body;
+      if (!name || !linkUrl) {
+        return res.status(400).json({ success: false, error: "이름과 링크 URL은 필수입니다." });
+      }
+      let imageUrl = req.body.imageUrl || "";
+      if (req.file) {
+        imageUrl = `/uploads/quickmenu/${req.file.filename}`;
+      }
+      if (!imageUrl) {
+        return res.status(400).json({ success: false, error: "아이콘 이미지가 필요합니다." });
+      }
+      const item = await storage.createQuickMenuItem({
+        name,
+        imageUrl,
+        linkUrl,
+        sortOrder: sortOrder ? parseInt(sortOrder) : 0,
+        isActive: isActive === "false" ? false : true,
+      });
+      res.json({ success: true, data: item });
+    } catch (error) {
+      console.error("Error creating quick menu item:", error);
+      res.status(500).json({ success: false, error: "퀵 메뉴 항목 생성에 실패했습니다." });
+    }
+  });
+
+  app.put("/api/admin/quick-menu/:id", requireAdminAuth, quickMenuImageUpload.single("image"), async (req: Request, res: Response) => {
+    try {
+      if ((req as any).adminRole !== "super_admin") return res.status(403).json({ success: false, error: "권한이 없습니다." });
+      const { name, linkUrl, sortOrder, isActive } = req.body;
+      const updateData: any = {};
+      if (name !== undefined) updateData.name = name;
+      if (linkUrl !== undefined) updateData.linkUrl = linkUrl;
+      if (sortOrder !== undefined) updateData.sortOrder = parseInt(sortOrder);
+      if (isActive !== undefined) updateData.isActive = isActive === "true" || isActive === true;
+      if (req.file) {
+        updateData.imageUrl = `/uploads/quickmenu/${req.file.filename}`;
+      } else if (req.body.imageUrl !== undefined) {
+        updateData.imageUrl = req.body.imageUrl;
+      }
+      const item = await storage.updateQuickMenuItem(req.params.id, updateData);
+      if (!item) return res.status(404).json({ success: false, error: "항목을 찾을 수 없습니다." });
+      res.json({ success: true, data: item });
+    } catch (error) {
+      console.error("Error updating quick menu item:", error);
+      res.status(500).json({ success: false, error: "퀵 메뉴 항목 수정에 실패했습니다." });
+    }
+  });
+
+  app.delete("/api/admin/quick-menu/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      if ((req as any).adminRole !== "super_admin") return res.status(403).json({ success: false, error: "권한이 없습니다." });
+      const success = await storage.deleteQuickMenuItem(req.params.id);
+      if (!success) return res.status(404).json({ success: false, error: "항목을 찾을 수 없습니다." });
+      res.json({ success: true, message: "삭제되었습니다." });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "퀵 메뉴 항목 삭제에 실패했습니다." });
+    }
+  });
+
+  app.post("/api/admin/upload/quickmenu-image", requireAdminAuth, quickMenuImageUpload.single("image"), async (req: Request, res: Response) => {
+    try {
+      if ((req as any).adminRole !== "super_admin") return res.status(403).json({ success: false, error: "권한이 없습니다." });
+      const file = req.file as Express.Multer.File;
+      if (!file) {
+        return res.status(400).json({ success: false, error: "이미지 파일이 필요합니다." });
+      }
+      const fileUrl = `/uploads/quickmenu/${file.filename}`;
+      res.json({ success: true, data: { imageUrl: fileUrl } });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "이미지 업로드에 실패했습니다." });
     }
   });
 

@@ -30,7 +30,8 @@ import {
   type ShippingPhoto, type InsertShippingPhoto, shippingPhotos,
   type ContentSection, type InsertContentSection, contentSections,
   type Magazine, type InsertMagazine, magazines,
-  type LabsBlock, type InsertLabsBlock, labsBlocks
+  type LabsBlock, type InsertLabsBlock, labsBlocks,
+  type QuickMenuItem, type InsertQuickMenuItem, quickMenuItems
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, inArray } from "drizzle-orm";
@@ -1689,6 +1690,34 @@ export class DatabaseStorage implements IStorage {
 
   async deleteLabsBlock(id: string): Promise<boolean> {
     const result = await db.delete(labsBlocks).where(eq(labsBlocks.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getAllQuickMenuItems(): Promise<QuickMenuItem[]> {
+    return db.select().from(quickMenuItems).orderBy(quickMenuItems.sortOrder);
+  }
+
+  async getActiveQuickMenuItems(): Promise<QuickMenuItem[]> {
+    return db.select().from(quickMenuItems).where(eq(quickMenuItems.isActive, true)).orderBy(quickMenuItems.sortOrder);
+  }
+
+  async getQuickMenuItem(id: string): Promise<QuickMenuItem | undefined> {
+    const [item] = await db.select().from(quickMenuItems).where(eq(quickMenuItems.id, id));
+    return item;
+  }
+
+  async createQuickMenuItem(item: InsertQuickMenuItem): Promise<QuickMenuItem> {
+    const [created] = await db.insert(quickMenuItems).values(item).returning();
+    return created;
+  }
+
+  async updateQuickMenuItem(id: string, item: Partial<InsertQuickMenuItem>): Promise<QuickMenuItem | undefined> {
+    const [updated] = await db.update(quickMenuItems).set(item).where(eq(quickMenuItems.id, id)).returning();
+    return updated;
+  }
+
+  async deleteQuickMenuItem(id: string): Promise<boolean> {
+    const result = await db.delete(quickMenuItems).where(eq(quickMenuItems.id, id)).returning();
     return result.length > 0;
   }
 }

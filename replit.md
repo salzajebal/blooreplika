@@ -82,6 +82,7 @@ Preferred communication style: Simple, everyday language.
 - Magazines: Admin-managed magazine/gallery articles with categories, images, and overlay text
 - Content Sections: Dynamic homepage sections with banner images, product filtering, and tab-based benefits page. Monthly benefit sections support rich contentBlocks JSON (banner, text, buttons, coupon, divider block types) with pliki6.com-style rendering including scroll-reveal animations and admin visual block editor
 - Labs Blocks: Admin-managed content blocks for Labs/branding page (hero, text, image, image_text types)
+- Quick Menu Items: Admin-managed circular icon shortcuts on homepage (name, image upload, link URL, sort order, active toggle). Images stored in uploads/quickmenu/. Falls back to default hardcoded items when DB is empty.
 - Reviews: Customer purchase reviews with star ratings, photo attachments, product association. List-style display matching rixxrixx.com design with thumbnails, masked usernames, time-ago display. ReviewWriteForm component shared between Reviews page (no product selection) and ProductDetail page (with product context).
 
 **Validation:**
