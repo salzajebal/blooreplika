@@ -640,7 +640,7 @@ function DynamicHomeSections() {
                 </Link>
               </div>
 
-              <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4">
+              <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory" style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
                 {section.products.map((product: any) => {
                   const hasDiscount = product.discountPercent && product.discountPercent > 0;
                   const discountedPrice = hasDiscount
@@ -651,7 +651,7 @@ function DynamicHomeSections() {
                     <Link
                       key={product.id}
                       href={`/product/${product.id}`}
-                      className="block group"
+                      className="block group flex-shrink-0 w-[140px] md:w-[180px] lg:w-[200px] snap-start"
                       data-testid={`section-product-${product.id}`}
                     >
                       <div className="aspect-square bg-gray-50 overflow-hidden mb-2 rounded-lg">
