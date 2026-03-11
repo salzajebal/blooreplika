@@ -233,8 +233,7 @@ export default function Cart() {
                       )}
                       <div className="mt-3">
                         <Button
-                          size="sm"
-                          className="bg-primary hover:bg-primary/90 text-white"
+                          className="bg-yellow-500 hover:bg-yellow-600 text-white font-bold px-6 py-2 h-10 text-sm rounded-lg shadow-sm"
                           onClick={() => {
                             const params = new URLSearchParams();
                             if (itemOptions[item.id]?.size) params.append("size", itemOptions[item.id].size);
@@ -263,11 +262,12 @@ export default function Cart() {
                   </span>
                 </div>
                 <Button 
-                  className="w-full bg-primary hover:bg-primary/90 h-12 text-lg"
+                  className="w-full bg-gray-900 hover:bg-gray-800 h-14 text-lg font-bold shadow-lg rounded-lg"
                   onClick={handleCheckout}
                   data-testid="button-checkout"
                 >
-                  전체 구매하기
+                  <ShoppingBag className="w-5 h-5 mr-2" />
+                  전체 구매하기 ({items.length}개)
                 </Button>
               </div>
             </>

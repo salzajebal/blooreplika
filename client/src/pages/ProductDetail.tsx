@@ -344,7 +344,7 @@ export default function ProductDetail() {
                       {images.length > 1 && (
                         <>
                           <button
-                            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 bg-black/30 hover:bg-black/50 rounded-full items-center justify-center text-white hidden sm:flex"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 bg-white/80 hover:bg-white shadow-md rounded-full flex items-center justify-center text-gray-700 border border-gray-200 disabled:opacity-30"
                             onClick={() => setSelectedImageIndex(Math.max(0, selectedImageIndex - 1))}
                             disabled={selectedImageIndex === 0}
                             data-testid="btn-carousel-prev"
@@ -352,7 +352,7 @@ export default function ProductDetail() {
                             <ChevronLeft className="w-5 h-5" />
                           </button>
                           <button
-                            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-8 h-8 bg-black/30 hover:bg-black/50 rounded-full items-center justify-center text-white hidden sm:flex"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 bg-white/80 hover:bg-white shadow-md rounded-full flex items-center justify-center text-gray-700 border border-gray-200 disabled:opacity-30"
                             onClick={() => setSelectedImageIndex(Math.min(images.length - 1, selectedImageIndex + 1))}
                             disabled={selectedImageIndex === images.length - 1}
                             data-testid="btn-carousel-next"
@@ -363,17 +363,20 @@ export default function ProductDetail() {
                       )}
                     </div>
                     {images.length > 1 && (
-                      <div className="flex justify-center gap-1.5" data-testid="carousel-dots">
-                        {images.map((_, index) => (
-                          <button
-                            key={index}
-                            className={`w-2 h-2 rounded-full transition-colors ${
-                              selectedImageIndex === index ? 'bg-gray-900' : 'bg-gray-300'
-                            }`}
-                            onClick={() => setSelectedImageIndex(index)}
-                            data-testid={`dot-indicator-${index}`}
-                          />
-                        ))}
+                      <div className="flex flex-col items-center gap-2" data-testid="carousel-dots">
+                        <div className="flex justify-center gap-2">
+                          {images.map((_, index) => (
+                            <button
+                              key={index}
+                              className={`rounded-full transition-all duration-200 ${
+                                selectedImageIndex === index ? 'bg-gray-900 w-6 h-2.5' : 'bg-gray-300 w-2.5 h-2.5'
+                              }`}
+                              onClick={() => setSelectedImageIndex(index)}
+                              data-testid={`dot-indicator-${index}`}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-xs text-gray-400">{selectedImageIndex + 1} / {images.length}</p>
                       </div>
                     )}
                   </>
