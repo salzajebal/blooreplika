@@ -3872,7 +3872,17 @@ export default function Admin() {
                           </span>
                         </div>
                         <div className="text-sm text-gray-600">
-                          <p><strong>상품:</strong> {order.productName}</p>
+                          <p><strong>상품:</strong> {order.productId ? (
+                            <a
+                              href={`/product/${order.productId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-800 underline underline-offset-2 font-medium"
+                              data-testid={`link-order-product-${order.id}`}
+                            >
+                              {order.productName}
+                            </a>
+                          ) : order.productName}</p>
                           <p>
                             <strong>수량:</strong> {order.quantity}개 | <strong>총액:</strong> {Number(order.totalAmount).toLocaleString()}원
                             {(order as any).paymentMethod && (
