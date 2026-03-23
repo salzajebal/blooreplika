@@ -6729,7 +6729,7 @@ export async function registerRoutes(
             const reviewData: any = {
               authorName,
               title,
-              content: '블루스토어 구매 후기입니다.',
+              content: '',
               imageUrl: finalImageUrls[0] || null,
               imageUrls: finalImageUrls,
               rating: 5,
