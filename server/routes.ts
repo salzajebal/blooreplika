@@ -6404,5 +6404,226 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== BLOOSTORE REVIEW CRAWL ====================
+
+  let bloostoreReviewProgress: {
+    status: 'idle' | 'running' | 'done' | 'error';
+    total: number;
+    current: number;
+    message: string;
+    inserted: number;
+    skipped: number;
+    startedAt?: Date;
+  } = { status: 'idle', total: 0, current: 0, message: '', inserted: 0, skipped: 0 };
+
+  app.get("/api/admin/crawl/bloostore-reviews/progress", requireAdminAuth, async (_req: Request, res: Response) => {
+    res.json({ success: true, ...bloostoreReviewProgress });
+  });
+
+  app.post("/api/admin/crawl/bloostore-reviews/start", requireAdminAuth, async (req: Request, res: Response) => {
+    if (bloostoreReviewProgress.status === 'running') {
+      return res.status(400).json({ success: false, error: "이미 블루스토어 후기 크롤링이 진행 중입니다." });
+    }
+
+    const { maxPages = 10, clearExisting = false } = req.body;
+
+    bloostoreReviewProgress = { status: 'running', total: 0, current: 0, message: '블루스토어 후기 크롤링 준비 중...', inserted: 0, skipped: 0, startedAt: new Date() };
+
+    res.json({ success: true, message: "블루스토어 후기 크롤링이 시작되었습니다." });
+
+    (async () => {
+      try {
+        const headers = {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+          "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+          "Referer": "https://www.bloostore.co.kr/",
+        };
+        const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+        const BASE_URL = "https://www.bloostore.co.kr";
+        const BOARD_ID = "330";
+
+        if (clearExisting) {
+          bloostoreReviewProgress.message = '기존 크롤링 후기 삭제 중...';
+          let offset = 0;
+          while (true) {
+            const { reviews: batch, total } = await storage.getReviewsPaginated(100, offset);
+            for (const r of batch) {
+              if ((r.authorName && r.title && r.title.includes('블루스토어')) || 
+                  (r.content && r.content.includes('블루스토어 구매 후기'))) {
+                await storage.deleteReview(r.id);
+              }
+            }
+            if (offset + batch.length >= total) break;
+            offset += batch.length;
+          }
+        }
+
+        // Collect all post links from list pages
+        const postLinks: { url: string; title: string; author: string; thumbnail: string | null }[] = [];
+
+        for (let page = 1; page <= maxPages; page++) {
+          bloostoreReviewProgress.message = `목록 페이지 ${page}/${maxPages} 수집 중...`;
+          try {
+            const listUrl = `${BASE_URL}/${BOARD_ID}/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&page=${page}&only_photo=Y`;
+            const resp = await fetch(listUrl, { headers });
+            if (!resp.ok) break;
+            const html = await resp.text();
+            const $ = cheerio.load(html);
+
+            let foundOnPage = 0;
+
+            // Try multiple XE board selectors
+            const selectors = [
+              'ul.result-list > li',
+              'ul.board_list > li',
+              'ul.list_thumb > li',
+              'ul.post-list > li',
+              '.board-list li',
+              'table.board_list tbody tr',
+              'ul.xe_board_list li',
+            ];
+
+            let $items: any = null;
+            for (const sel of selectors) {
+              const found = $(sel);
+              if (found.length > 0) { $items = found; break; }
+            }
+
+            if (!$items || $items.length === 0) {
+              // Fallback: look for any article links with thumbnails
+              $('a').each((_i: number, el: any) => {
+                const href = $(el).attr('href') || '';
+                const hasImg = $(el).find('img').length > 0;
+                if (hasImg && href.includes(`/${BOARD_ID}/`) && href.includes('document_srl')) {
+                  const title = $(el).find('img').attr('alt') || $(el).text().trim() || '후기';
+                  const imgSrc = $(el).find('img').attr('src') || null;
+                  const fullUrl = href.startsWith('http') ? href : `${BASE_URL}${href}`;
+                  if (!postLinks.some(p => p.url === fullUrl)) {
+                    postLinks.push({ url: fullUrl, title, author: '블루스토어', thumbnail: imgSrc });
+                    foundOnPage++;
+                  }
+                }
+              });
+            } else {
+              $items.each((_i: number, el: any) => {
+                const $el = $(el);
+                // Get link
+                const link = $el.find('a').first();
+                let href = link.attr('href') || '';
+                if (!href) return;
+                const fullUrl = href.startsWith('http') ? href : `${BASE_URL}${href}`;
+
+                // Title
+                const title = $el.find('.title, .subject, h3, h4, .tit').first().text().trim()
+                  || link.attr('title') || link.text().trim() || '블루스토어 후기';
+
+                // Author  
+                const author = $el.find('.nick, .member_info, .writer, .author, .user_name').first().text().trim() || '블루스토어';
+
+                // Thumbnail
+                const img = $el.find('img').first();
+                let thumbnail: string | null = img.attr('src') || img.attr('data-src') || null;
+                if (thumbnail && thumbnail.startsWith('//')) thumbnail = 'https:' + thumbnail;
+                if (thumbnail && !thumbnail.startsWith('http')) thumbnail = BASE_URL + thumbnail;
+
+                if (fullUrl && !postLinks.some(p => p.url === fullUrl)) {
+                  postLinks.push({ url: fullUrl, title, author, thumbnail });
+                  foundOnPage++;
+                }
+              });
+            }
+
+            console.log(`[bloostore-review] Page ${page}: found ${foundOnPage} posts`);
+            if (foundOnPage === 0) break;
+            await delay(800);
+          } catch (err) {
+            console.error(`[bloostore-review] Error on page ${page}:`, err);
+            break;
+          }
+        }
+
+        bloostoreReviewProgress.total = postLinks.length;
+        bloostoreReviewProgress.message = `총 ${postLinks.length}개 후기 발견. 상세 내용 수집 중...`;
+        console.log(`[bloostore-review] Total posts found: ${postLinks.length}`);
+
+        // Crawl each post detail
+        for (let i = 0; i < postLinks.length; i++) {
+          const post = postLinks[i];
+          bloostoreReviewProgress.current = i + 1;
+          bloostoreReviewProgress.message = `(${i + 1}/${postLinks.length}) 후기 상세 수집 중: ${post.title.slice(0, 30)}`;
+
+          try {
+            const detailResp = await fetch(post.url, { headers });
+            if (!detailResp.ok) {
+              bloostoreReviewProgress.skipped++;
+              continue;
+            }
+            const detailHtml = await detailResp.text();
+            const $d = cheerio.load(detailHtml);
+
+            // Extract real title
+            const realTitle = $d('.document_title, .xe_content .title, h1.title, .view_title, h2').first().text().trim()
+              || post.title;
+
+            // Extract author
+            const realAuthor = $d('.member_info .nick, .view_info .nick, .nick, .author, .user_name').first().text().trim()
+              || post.author;
+
+            // Extract content text
+            const contentEl = $d('.xe_content, .rd_content, .view_content, #content, .content').first();
+            const contentText = contentEl.text().trim().slice(0, 500) || '블루스토어 구매 후기';
+
+            // Extract all images from content
+            const imageUrls: string[] = [];
+            
+            // Main content images
+            contentEl.find('img').each((_ii: number, imgEl: any) => {
+              let src = $d(imgEl).attr('src') || $d(imgEl).attr('data-src') || '';
+              if (!src || src.includes('icon') || src.includes('emoji') || src.length < 10) return;
+              if (src.startsWith('//')) src = 'https:' + src;
+              if (!src.startsWith('http')) src = BASE_URL + src;
+              if (!imageUrls.includes(src)) imageUrls.push(src);
+            });
+
+            // If no content images, try thumbnail
+            if (imageUrls.length === 0 && post.thumbnail) {
+              imageUrls.push(post.thumbnail);
+            }
+
+            // Save as review
+            const reviewData: any = {
+              authorName: realAuthor || '블루스토어 고객',
+              title: realTitle || '블루스토어 구매 후기',
+              content: contentText || '블루스토어 구매 후기입니다.',
+              imageUrl: imageUrls[0] || null,
+              imageUrls: imageUrls,
+              rating: 5,
+              isVisible: true,
+              isBest: false,
+              displayDate: new Date(),
+            };
+
+            await storage.createReview(reviewData);
+            bloostoreReviewProgress.inserted++;
+          } catch (err) {
+            console.error(`[bloostore-review] Error on post ${post.url}:`, err);
+            bloostoreReviewProgress.skipped++;
+          }
+
+          await delay(600);
+        }
+
+        bloostoreReviewProgress.status = 'done';
+        bloostoreReviewProgress.message = `완료! ${bloostoreReviewProgress.inserted}개 후기 저장, ${bloostoreReviewProgress.skipped}개 건너뜀`;
+        console.log(`[bloostore-review] Crawl complete: ${bloostoreReviewProgress.inserted} inserted`);
+      } catch (error: any) {
+        bloostoreReviewProgress.status = 'error';
+        bloostoreReviewProgress.message = `오류 발생: ${error.message || '알 수 없는 오류'}`;
+        console.error('[bloostore-review] Fatal error:', error);
+      }
+    })();
+  });
+
   return httpServer;
 }

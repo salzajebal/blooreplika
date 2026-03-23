@@ -139,6 +139,12 @@ export default function Admin() {
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [showAddReviewForm, setShowAddReviewForm] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [bloostoreReviewCrawl, setBloostoreReviewCrawl] = useState<{
+    status: 'idle' | 'running' | 'done' | 'error';
+    total: number; current: number; message: string; inserted: number; skipped: number;
+  }>({ status: 'idle', total: 0, current: 0, message: '', inserted: 0, skipped: 0 });
+  const [bloostoreReviewMaxPages, setBloostoreReviewMaxPages] = useState(5);
+  const [bloostoreReviewClearExisting, setBloostoreReviewClearExisting] = useState(false);
 
   const [notices, setNotices] = useState<Notice[]>([]);
   const [noticeFormData, setNoticeFormData] = useState({
@@ -1233,6 +1239,47 @@ export default function Admin() {
       }
     } catch (error) {
       console.error("Error fetching reviews:", error);
+    }
+  };
+
+  const startBloostoreReviewCrawl = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bloostore-reviews/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ maxPages: bloostoreReviewMaxPages, clearExisting: bloostoreReviewClearExisting }),
+      });
+      const data = await res.json();
+      if (!data.success) {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+        return;
+      }
+      setBloostoreReviewCrawl(prev => ({ ...prev, status: 'running', message: '크롤링 시작 중...' }));
+      const poll = setInterval(async () => {
+        try {
+          const prog = await fetchWithAuth("/api/admin/crawl/bloostore-reviews/progress");
+          const pdata = await prog.json();
+          if (pdata.success) {
+            setBloostoreReviewCrawl({
+              status: pdata.status,
+              total: pdata.total,
+              current: pdata.current,
+              message: pdata.message,
+              inserted: pdata.inserted,
+              skipped: pdata.skipped,
+            });
+            if (pdata.status === 'done' || pdata.status === 'error') {
+              clearInterval(poll);
+              if (pdata.status === 'done') {
+                toast({ title: "크롤링 완료", description: `${pdata.inserted}개 후기가 저장되었습니다.` });
+                fetchReviews();
+              }
+            }
+          }
+        } catch {}
+      }, 2000);
+    } catch (err) {
+      toast({ title: "오류 발생", variant: "destructive" });
     }
   };
 
@@ -4245,6 +4292,94 @@ export default function Admin() {
         )}
 
         {activeTab === "reviews" && (
+          <div className="space-y-6">
+          {/* 블루스토어 후기 크롤링 섹션 */}
+          <div className="bg-white rounded-xl shadow-sm border border-blue-100 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <RefreshCw className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">블루스토어 후기 크롤링</h3>
+                <p className="text-sm text-gray-500">bloostore.co.kr 사진후기 게시판에서 제목·이름·사진을 자동 수집합니다</p>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 rounded-lg p-3 mb-4 text-xs text-blue-700 flex items-start gap-2">
+              <span>📋</span>
+              <span>수집 URL: <code className="bg-blue-100 px-1 rounded">bloostore.co.kr/330/?only_photo=Y</code> (사진 후기만 필터)</span>
+            </div>
+
+            <div className="flex flex-wrap gap-4 items-end mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">수집 페이지 수</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={bloostoreReviewMaxPages}
+                  onChange={(e) => setBloostoreReviewMaxPages(Number(e.target.value))}
+                  className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  data-testid="input-review-crawl-pages"
+                />
+                <p className="text-xs text-gray-400 mt-1">페이지당 약 12~20개</p>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer pb-2">
+                <input
+                  type="checkbox"
+                  checked={bloostoreReviewClearExisting}
+                  onChange={(e) => setBloostoreReviewClearExisting(e.target.checked)}
+                  className="w-4 h-4 rounded"
+                  data-testid="checkbox-review-clear"
+                />
+                <span className="text-sm text-gray-600">기존 크롤링 후기 삭제 후 시작</span>
+              </label>
+              <Button
+                onClick={startBloostoreReviewCrawl}
+                disabled={bloostoreReviewCrawl.status === 'running'}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                data-testid="button-start-review-crawl"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${bloostoreReviewCrawl.status === 'running' ? 'animate-spin' : ''}`} />
+                {bloostoreReviewCrawl.status === 'running' ? '크롤링 중...' : '후기 크롤링 시작'}
+              </Button>
+            </div>
+
+            {bloostoreReviewCrawl.status !== 'idle' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">{bloostoreReviewCrawl.message}</span>
+                  {bloostoreReviewCrawl.total > 0 && (
+                    <span className="font-medium text-gray-800">{bloostoreReviewCrawl.current}/{bloostoreReviewCrawl.total}</span>
+                  )}
+                </div>
+                {bloostoreReviewCrawl.total > 0 && (
+                  <div className="w-full bg-gray-100 rounded-full h-3">
+                    <div
+                      className={`h-3 rounded-full transition-all duration-500 ${
+                        bloostoreReviewCrawl.status === 'error' ? 'bg-red-500' :
+                        bloostoreReviewCrawl.status === 'done' ? 'bg-green-500' : 'bg-blue-500'
+                      }`}
+                      style={{ width: `${Math.round((bloostoreReviewCrawl.current / bloostoreReviewCrawl.total) * 100)}%` }}
+                    />
+                  </div>
+                )}
+                <div className="flex gap-4 text-sm">
+                  <span className="text-green-600 font-medium">✓ 저장됨: {bloostoreReviewCrawl.inserted}개</span>
+                  {bloostoreReviewCrawl.skipped > 0 && (
+                    <span className="text-gray-500">건너뜀: {bloostoreReviewCrawl.skipped}개</span>
+                  )}
+                  {bloostoreReviewCrawl.status === 'done' && (
+                    <span className="text-green-700 font-bold">🎉 완료!</span>
+                  )}
+                  {bloostoreReviewCrawl.status === 'error' && (
+                    <span className="text-red-600 font-bold">⚠ 오류 발생</span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -4558,6 +4693,7 @@ export default function Admin() {
                 </Button>
               </div>
             )}
+          </div>
           </div>
         )}
 
