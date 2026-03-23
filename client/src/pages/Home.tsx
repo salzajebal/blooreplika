@@ -719,8 +719,8 @@ export default function Home() {
       <main>
         <MainBannerSlider />
         <QuickMenu />
-        <DynamicHomeSections />
         <InspectionSection />
+        <DynamicHomeSections />
         <TopBrandSection />
         <ForYouSection products={products} brands={brands} />
       </main>
