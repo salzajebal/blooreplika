@@ -6214,6 +6214,17 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/admin/content-sections/reorder", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { orders } = req.body as { orders: { id: string; sortOrder: number }[] };
+      if (!Array.isArray(orders)) return res.status(400).json({ success: false, error: "orders 배열이 필요합니다." });
+      await storage.reorderContentSections(orders);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "순서 저장 실패" });
+    }
+  });
+
   // ==================== LABS BLOCKS API ====================
 
   app.get("/api/labs-blocks", async (req: Request, res: Response) => {

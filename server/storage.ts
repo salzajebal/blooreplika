@@ -273,6 +273,7 @@ export interface IStorage {
   createContentSection(data: InsertContentSection): Promise<ContentSection>;
   updateContentSection(id: string, data: Partial<InsertContentSection>): Promise<ContentSection | undefined>;
   deleteContentSection(id: string): Promise<boolean>;
+  reorderContentSections(orders: { id: string; sortOrder: number }[]): Promise<void>;
 
   // Magazines
   getMagazines(category?: string): Promise<Magazine[]>;
@@ -1630,6 +1631,14 @@ export class DatabaseStorage implements IStorage {
   async deleteContentSection(id: string): Promise<boolean> {
     const result = await db.delete(contentSections).where(eq(contentSections.id, id)).returning();
     return result.length > 0;
+  }
+
+  async reorderContentSections(orders: { id: string; sortOrder: number }[]): Promise<void> {
+    await Promise.all(
+      orders.map(({ id, sortOrder }) =>
+        db.update(contentSections).set({ sortOrder }).where(eq(contentSections.id, id))
+      )
+    );
   }
 
   async getMagazines(category?: string): Promise<Magazine[]> {

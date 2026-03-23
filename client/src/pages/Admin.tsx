@@ -11,12 +11,27 @@ import {
   Star, FileText, Bell, Calendar, Tag,
   Clock, Snowflake, Unlock, Settings, Link2, Upload,
   MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2, Search, Shield, Image, Globe, Gift,
-  ChevronUp, ChevronDown, Type, Minus, MousePointer, Palette
+  ChevronUp, ChevronDown, Type, Minus, MousePointer, Palette, GripVertical
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage, Order, CouponPayment } from "@shared/schema";
 import { ShoppingCart } from "lucide-react";
 import { useRef, useCallback } from "react";
+import {
+  DndContext,
+  closestCenter,
+  type DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  rectSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const playNotificationSound = () => {
   try {
@@ -8048,6 +8063,76 @@ function ContentBlockEditor({ blocks, onChange, authToken }: { blocks: ContentBl
   );
 }
 
+function SortableContentCard({
+  item,
+  getSectionLabel,
+  getBlockCount,
+  onEdit,
+  onDelete,
+}: {
+  item: any;
+  getSectionLabel: (t: string) => string;
+  getBlockCount: (item: any) => number;
+  onEdit: (item: any) => void;
+  onDelete: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 999 : undefined,
+  };
+  return (
+    <div ref={setNodeRef} style={style} data-testid={`content-item-${item.id}`} className="border rounded-lg overflow-hidden bg-white shadow-sm">
+      {item.imageUrl && (
+        <div className="h-40 bg-gray-100">
+          <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+        </div>
+      )}
+      <div className="p-4">
+        <div className="flex items-start gap-2 mb-2">
+          <button
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 mt-0.5 flex-shrink-0 touch-none"
+            title="드래그하여 순서 변경"
+          >
+            <GripVertical className="w-4 h-4" />
+          </button>
+          <div className="flex flex-wrap items-center gap-2 flex-1">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-pink-100 text-pink-700">{getSectionLabel(item.sectionType)}</span>
+            <span className={`text-xs px-2 py-0.5 rounded-full ${item.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+              {item.isActive ? "활성" : "비활성"}
+            </span>
+            {item.sectionType === "monthly_benefit" && getBlockCount(item) > 0 && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">블록 {getBlockCount(item)}개</span>
+            )}
+          </div>
+        </div>
+        <h4 className="font-semibold text-sm truncate ml-6" data-testid={`content-title-${item.id}`}>{item.title}</h4>
+        {item.celebrity && <p className="text-xs text-gray-500 mt-1 ml-6">셀럽: {item.celebrity}</p>}
+        {item.sectionType === "homepage_product" && (
+          <div className="text-xs text-gray-500 mt-1 ml-6 space-y-0.5">
+            {item.categorySlug && <p>카테고리: {item.categorySlug}</p>}
+            {item.brandName && <p>브랜드: {item.brandName}</p>}
+            <p>최대 상품: {item.maxProducts || 6}개</p>
+          </div>
+        )}
+        {item.description && <p className="text-xs text-gray-400 mt-1 ml-6 line-clamp-2">{item.description}</p>}
+        <div className="flex gap-2 mt-3 ml-6">
+          <Button data-testid={`btn-edit-content-${item.id}`} size="sm" variant="outline" onClick={() => onEdit(item)}>
+            <Pencil className="w-3 h-3 mr-1" /> 수정
+          </Button>
+          <Button data-testid={`btn-delete-content-${item.id}`} size="sm" variant="outline" className="text-red-500 hover:text-red-700" onClick={() => onDelete(item.id)}>
+            <Trash2 className="w-3 h-3 mr-1" /> 삭제
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ContentSectionsTab({ authToken }: { authToken: string }) {
   const { toast } = useToast();
   const [items, setItems] = useState<any[]>([]);
@@ -8259,6 +8344,28 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
       const parsed = typeof item.contentBlocks === "string" ? JSON.parse(item.contentBlocks) : item.contentBlocks;
       return Array.isArray(parsed) ? parsed.length : 0;
     } catch { return 0; }
+  };
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = items.findIndex(i => i.id === active.id);
+    const newIndex = items.findIndex(i => i.id === over.id);
+    const reordered = arrayMove(items, oldIndex, newIndex);
+    setItems(reordered);
+    const orders = reordered.map((item, idx) => ({ id: item.id, sortOrder: idx }));
+    try {
+      await fetchWithAuth("/api/admin/content-sections/reorder", {
+        method: "POST",
+        body: JSON.stringify({ orders }),
+      });
+      toast({ title: "순서가 저장되었습니다." });
+    } catch {
+      toast({ title: "오류", description: "순서 저장 실패", variant: "destructive" });
+      fetchItems();
+    }
   };
 
   return (
@@ -8537,48 +8644,27 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
           ) : items.length === 0 ? (
             <div className="text-center py-8 text-gray-500">등록된 콘텐츠가 없습니다.</div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {items.map(item => (
-                <div key={item.id} data-testid={`content-item-${item.id}`} className="border rounded-lg overflow-hidden bg-white shadow-sm">
-                  {item.imageUrl && (
-                    <div className="h-40 bg-gray-100">
-                      <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                  <div className="p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-pink-100 text-pink-700">{getSectionLabel(item.sectionType)}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${item.isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
-                        {item.isActive ? "활성" : "비활성"}
-                      </span>
-                      {item.sectionType === "monthly_benefit" && getBlockCount(item) > 0 && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-                          블록 {getBlockCount(item)}개
-                        </span>
-                      )}
-                    </div>
-                    <h4 className="font-semibold text-sm truncate" data-testid={`content-title-${item.id}`}>{item.title}</h4>
-                    {item.celebrity && <p className="text-xs text-gray-500 mt-1">셀럽: {item.celebrity}</p>}
-                    {item.sectionType === "homepage_product" && (
-                      <div className="text-xs text-gray-500 mt-1 space-y-0.5">
-                        {item.categorySlug && <p>카테고리: {item.categorySlug}</p>}
-                        {item.brandName && <p>브랜드: {item.brandName}</p>}
-                        <p>최대 상품: {item.maxProducts || 6}개</p>
-                      </div>
-                    )}
-                    {item.description && <p className="text-xs text-gray-400 mt-1 line-clamp-2">{item.description}</p>}
-                    <div className="flex gap-2 mt-3">
-                      <Button data-testid={`btn-edit-content-${item.id}`} size="sm" variant="outline" onClick={() => handleEdit(item)}>
-                        <Pencil className="w-3 h-3 mr-1" /> 수정
-                      </Button>
-                      <Button data-testid={`btn-delete-content-${item.id}`} size="sm" variant="outline" className="text-red-500 hover:text-red-700" onClick={() => handleDelete(item.id)}>
-                        <Trash2 className="w-3 h-3 mr-1" /> 삭제
-                      </Button>
-                    </div>
+            <>
+              <p className="text-xs text-gray-400 mb-3 flex items-center gap-1">
+                <GripVertical className="w-3 h-3" /> 왼쪽 핸들을 드래그해서 순서를 변경할 수 있습니다
+              </p>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {items.map(item => (
+                      <SortableContentCard
+                        key={item.id}
+                        item={item}
+                        getSectionLabel={getSectionLabel}
+                        getBlockCount={getBlockCount}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                      />
+                    ))}
                   </div>
-                </div>
-              ))}
-            </div>
+                </SortableContext>
+              </DndContext>
+            </>
           )}
         </div>
       </div>
