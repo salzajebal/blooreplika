@@ -6,7 +6,7 @@ export function Footer() {
       <div className="max-w-[1200px] mx-auto px-4 py-12 md:py-16">
         <div className="mb-10 flex flex-col md:flex-row md:justify-between md:items-start gap-8">
           <div>
-            <h3 className="text-white text-2xl font-black tracking-[0.15em] mb-6" style={{ fontFamily: "'Playfair Display', serif" }}>LIKE IT</h3>
+            <img src="/logo.jpg" alt="LIKE IT" className="h-8 w-auto object-contain mb-6" style={{ filter: "invert(1)" }} />
             <div className="text-sm leading-loose text-gray-500">
               <p>상호명: 라이크잇 | 대표: 홍길동</p>
               <p>사업자등록번호: 123-45-67890 | 통신판매업신고: 제2024-서울강남-12345호</p>

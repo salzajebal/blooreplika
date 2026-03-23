@@ -235,7 +235,9 @@ export function Header() {
 
                   <SheetContent side="left" className="w-[320px] overflow-y-auto p-0" hideCloseButton>
                     <div className="bg-black text-white p-4 flex items-center justify-between">
-                      <Link href="/" className="text-lg font-bold tracking-wider" onClick={() => setMobileMenuOpen(false)} style={{ fontFamily: "'Playfair Display', serif" }}>LIKE IT</Link>
+                      <Link href="/" onClick={() => setMobileMenuOpen(false)}>
+                        <img src="/logo.jpg" alt="LIKE IT" className="h-7 w-auto object-contain" style={{ filter: "invert(1)" }} />
+                      </Link>
                       <SheetClose asChild>
                         <Button variant="ghost" size="icon" className="text-white hover:text-gray-300 p-0">
                           <X className="w-5 h-5" />
@@ -355,7 +357,7 @@ export function Header() {
                   </SheetContent>
                 </Sheet>
                 <Link href="/" className="flex items-center" data-testid="link-home">
-                  <span className="text-2xl md:text-3xl font-black tracking-[0.2em] text-black" style={{ fontFamily: "'Playfair Display', serif" }}>LIKE IT</span>
+                  <img src="/logo.jpg" alt="LIKE IT" className="h-7 md:h-9 w-auto object-contain" />
                 </Link>
               </div>
 
