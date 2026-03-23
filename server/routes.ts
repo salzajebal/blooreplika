@@ -34,6 +34,7 @@ import { z } from "zod";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
 
 // In-memory cache for product listings (TTL: 30 seconds)
 interface CacheEntry<T> {
@@ -6404,6 +6405,64 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== BLOOSTORE REVIEW DEBUG ====================
+  app.get("/api/admin/crawl/bloostore-reviews/debug", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const page = Number(req.query.page) || 1;
+      const headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "ko-KR,ko;q=0.9",
+        "Referer": "https://www.bloostore.co.kr/",
+      };
+      const url = `https://www.bloostore.co.kr/330/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&page=${page}&only_photo=Y`;
+      const resp = await fetch(url, { headers });
+      const html = await resp.text();
+      const $ = cheerio.load(html);
+
+      // Detect all list-like elements
+      const detected: any = {
+        url,
+        status: resp.status,
+        htmlLength: html.length,
+        title: $('title').text(),
+        // Try various selectors
+        selectors: {} as any,
+        allLinks: [] as string[],
+        sampleHtml: html.slice(0, 3000),
+      };
+
+      const testSelectors = [
+        'ul.xe_list', 'ul.board_list', 'ul.result-list', 'ul.list_thumb',
+        '.xe_board_list li', '.bd_lst li', '.board-list li',
+        'table.board_list tr', '.document_list li', 'article',
+        '.post-list li', '.thumb_list li', '.photo_list li',
+        'ul li[class]', '.content_area li',
+      ];
+      for (const sel of testSelectors) {
+        const count = $(sel).length;
+        if (count > 0) {
+          detected.selectors[sel] = count;
+          const first = $(sel).first();
+          detected[`sample_${sel.replace(/[^a-z0-9]/gi, '_')}`] = first.html()?.slice(0, 500);
+        }
+      }
+
+      // Get all links that look like board posts
+      $('a[href*="/330/"]').each((_i: number, el: any) => {
+        const href = $(el).attr('href');
+        if (href && href !== '/330/' && !detected.allLinks.includes(href)) {
+          detected.allLinks.push(href);
+        }
+      });
+      detected.allLinks = detected.allLinks.slice(0, 20);
+
+      res.json({ success: true, data: detected });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   // ==================== BLOOSTORE REVIEW CRAWL ====================
 
   let bloostoreReviewProgress: {
@@ -6436,168 +6495,174 @@ export async function registerRoutes(
         const headers = {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-          "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+          "Accept-Language": "ko-KR,ko;q=0.9",
           "Referer": "https://www.bloostore.co.kr/",
         };
         const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
         const BASE_URL = "https://www.bloostore.co.kr";
         const BOARD_ID = "330";
+        // imweb q param (base64 encoded board keyword config)
+        const Q_PARAM = "YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9";
+
+        // Helper: download image to local uploads/reviews/
+        const reviewsDir = path.join(process.cwd(), 'uploads', 'reviews');
+        if (!fs.existsSync(reviewsDir)) fs.mkdirSync(reviewsDir, { recursive: true });
+
+        const downloadImage = async (srcUrl: string): Promise<string | null> => {
+          try {
+            const imgResp = await fetch(srcUrl, { headers: { ...headers, "Referer": BASE_URL + "/" } });
+            if (!imgResp.ok) return null;
+            const contentType = imgResp.headers.get('content-type') || 'image/jpeg';
+            const ext = contentType.includes('png') ? 'png' : contentType.includes('gif') ? 'gif' : contentType.includes('webp') ? 'webp' : 'jpg';
+            const hash = crypto.createHash('md5').update(srcUrl).digest('hex').slice(0, 12);
+            const fileName = `bloo_${hash}.${ext}`;
+            const filePath = path.join(reviewsDir, fileName);
+            if (!fs.existsSync(filePath)) {
+              const buf = Buffer.from(await imgResp.arrayBuffer());
+              fs.writeFileSync(filePath, buf);
+            }
+            return `/uploads/reviews/${fileName}`;
+          } catch {
+            return null;
+          }
+        };
 
         if (clearExisting) {
           bloostoreReviewProgress.message = '기존 크롤링 후기 삭제 중...';
           let offset = 0;
           while (true) {
             const { reviews: batch, total } = await storage.getReviewsPaginated(100, offset);
+            if (batch.length === 0) break;
             for (const r of batch) {
-              if ((r.authorName && r.title && r.title.includes('블루스토어')) || 
-                  (r.content && r.content.includes('블루스토어 구매 후기'))) {
-                await storage.deleteReview(r.id);
-              }
+              await storage.deleteReview(r.id);
             }
             if (offset + batch.length >= total) break;
             offset += batch.length;
           }
         }
 
-        // Collect all post links from list pages
-        const postLinks: { url: string; title: string; author: string; thumbnail: string | null }[] = [];
+        // === STEP 1: Collect idx values from list pages ===
+        // imweb board uses: /330/?q=...&bmode=view&interlock=shop_review&idx=XXXXX&t=board
+        const seenIdx = new Set<string>();
+        const postIdxList: { idx: string; thumbnail: string | null }[] = [];
 
         for (let page = 1; page <= maxPages; page++) {
           bloostoreReviewProgress.message = `목록 페이지 ${page}/${maxPages} 수집 중...`;
           try {
-            const listUrl = `${BASE_URL}/${BOARD_ID}/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&page=${page}&only_photo=Y`;
+            const listUrl = `${BASE_URL}/${BOARD_ID}/?q=${Q_PARAM}&page=${page}&only_photo=Y`;
             const resp = await fetch(listUrl, { headers });
-            if (!resp.ok) break;
+            if (!resp.ok) { console.log(`[bloostore-review] Page ${page} HTTP ${resp.status}`); break; }
             const html = await resp.text();
             const $ = cheerio.load(html);
 
             let foundOnPage = 0;
 
-            // Try multiple XE board selectors
-            const selectors = [
-              'ul.result-list > li',
-              'ul.board_list > li',
-              'ul.list_thumb > li',
-              'ul.post-list > li',
-              '.board-list li',
-              'table.board_list tbody tr',
-              'ul.xe_board_list li',
-            ];
+            // Extract all links with bmode=view&interlock=shop_review&idx=
+            $('a[href*="bmode=view"][href*="idx="]').each((_i: number, el: any) => {
+              const href = $(el).attr('href') || '';
+              const idxMatch = href.match(/[?&]idx=(\d+)/);
+              if (!idxMatch) return;
+              const idx = idxMatch[1];
+              if (seenIdx.has(idx)) return;
+              seenIdx.add(idx);
 
-            let $items: any = null;
-            for (const sel of selectors) {
-              const found = $(sel);
-              if (found.length > 0) { $items = found; break; }
-            }
+              // Try to get thumbnail image near this link
+              let thumbnail: string | null = null;
+              const $parent = $(el).closest('li, div.list_item, div.item, tr');
+              if ($parent.length > 0) {
+                let src = $parent.find('img').first().attr('src') || $parent.find('img').first().attr('data-src') || null;
+                if (src && src.includes('cdn.imweb.me')) thumbnail = src;
+              }
+              if (!thumbnail) {
+                // Try sibling img
+                let src = $(el).find('img').first().attr('src') || null;
+                if (src && src.includes('cdn.imweb.me')) thumbnail = src;
+              }
 
-            if (!$items || $items.length === 0) {
-              // Fallback: look for any article links with thumbnails
-              $('a').each((_i: number, el: any) => {
-                const href = $(el).attr('href') || '';
-                const hasImg = $(el).find('img').length > 0;
-                if (hasImg && href.includes(`/${BOARD_ID}/`) && href.includes('document_srl')) {
-                  const title = $(el).find('img').attr('alt') || $(el).text().trim() || '후기';
-                  const imgSrc = $(el).find('img').attr('src') || null;
-                  const fullUrl = href.startsWith('http') ? href : `${BASE_URL}${href}`;
-                  if (!postLinks.some(p => p.url === fullUrl)) {
-                    postLinks.push({ url: fullUrl, title, author: '블루스토어', thumbnail: imgSrc });
-                    foundOnPage++;
-                  }
-                }
-              });
-            } else {
-              $items.each((_i: number, el: any) => {
-                const $el = $(el);
-                // Get link
-                const link = $el.find('a').first();
-                let href = link.attr('href') || '';
-                if (!href) return;
-                const fullUrl = href.startsWith('http') ? href : `${BASE_URL}${href}`;
+              postIdxList.push({ idx, thumbnail });
+              foundOnPage++;
+            });
 
-                // Title
-                const title = $el.find('.title, .subject, h3, h4, .tit').first().text().trim()
-                  || link.attr('title') || link.text().trim() || '블루스토어 후기';
-
-                // Author  
-                const author = $el.find('.nick, .member_info, .writer, .author, .user_name').first().text().trim() || '블루스토어';
-
-                // Thumbnail
-                const img = $el.find('img').first();
-                let thumbnail: string | null = img.attr('src') || img.attr('data-src') || null;
-                if (thumbnail && thumbnail.startsWith('//')) thumbnail = 'https:' + thumbnail;
-                if (thumbnail && !thumbnail.startsWith('http')) thumbnail = BASE_URL + thumbnail;
-
-                if (fullUrl && !postLinks.some(p => p.url === fullUrl)) {
-                  postLinks.push({ url: fullUrl, title, author, thumbnail });
-                  foundOnPage++;
-                }
-              });
-            }
-
-            console.log(`[bloostore-review] Page ${page}: found ${foundOnPage} posts`);
+            console.log(`[bloostore-review] Page ${page}: found ${foundOnPage} posts (total: ${postIdxList.length})`);
             if (foundOnPage === 0) break;
-            await delay(800);
+            await delay(600);
           } catch (err) {
-            console.error(`[bloostore-review] Error on page ${page}:`, err);
+            console.error(`[bloostore-review] Error on list page ${page}:`, err);
             break;
           }
         }
 
-        bloostoreReviewProgress.total = postLinks.length;
-        bloostoreReviewProgress.message = `총 ${postLinks.length}개 후기 발견. 상세 내용 수집 중...`;
-        console.log(`[bloostore-review] Total posts found: ${postLinks.length}`);
+        bloostoreReviewProgress.total = postIdxList.length;
+        bloostoreReviewProgress.message = `총 ${postIdxList.length}개 후기 발견. 상세 내용 수집 중...`;
+        console.log(`[bloostore-review] Total posts found: ${postIdxList.length}`);
 
-        // Crawl each post detail
-        for (let i = 0; i < postLinks.length; i++) {
-          const post = postLinks[i];
+        if (postIdxList.length === 0) {
+          bloostoreReviewProgress.status = 'done';
+          bloostoreReviewProgress.message = '후기를 찾을 수 없었습니다. 사이트 구조가 변경되었을 수 있습니다.';
+          return;
+        }
+
+        // === STEP 2: Crawl each detail page ===
+        // Detail URL: /330/?q=...&bmode=view&interlock=shop_review&idx=XXXXX&t=board
+        const Q_DETAIL = "YToyOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjtzOjQ6InBhZ2UiO2k6MTt9";
+
+        for (let i = 0; i < postIdxList.length; i++) {
+          const { idx, thumbnail: listThumbnail } = postIdxList[i];
           bloostoreReviewProgress.current = i + 1;
-          bloostoreReviewProgress.message = `(${i + 1}/${postLinks.length}) 후기 상세 수집 중: ${post.title.slice(0, 30)}`;
+          bloostoreReviewProgress.message = `(${i + 1}/${postIdxList.length}) 후기 상세 수집 중... (idx: ${idx})`;
 
           try {
-            const detailResp = await fetch(post.url, { headers });
+            const detailUrl = `${BASE_URL}/${BOARD_ID}/?q=${Q_DETAIL}&bmode=view&interlock=shop_review&idx=${idx}&t=board`;
+            const detailResp = await fetch(detailUrl, { headers });
             if (!detailResp.ok) {
+              console.log(`[bloostore-review] Detail HTTP ${detailResp.status} for idx=${idx}`);
               bloostoreReviewProgress.skipped++;
               continue;
             }
             const detailHtml = await detailResp.text();
             const $d = cheerio.load(detailHtml);
 
-            // Extract real title
-            const realTitle = $d('.document_title, .xe_content .title, h1.title, .view_title, h2').first().text().trim()
-              || post.title;
+            // Title: h1.view_tit
+            const title = $d('h1.view_tit').first().text().trim() || '블루스토어 구매 후기';
 
-            // Extract author
-            const realAuthor = $d('.member_info .nick, .view_info .nick, .nick, .author, .user_name').first().text().trim()
-              || post.author;
+            // Author: .write (shows masked name like "이호****")
+            const authorName = $d('.write').first().text().trim() || '고객';
 
-            // Extract content text
-            const contentEl = $d('.xe_content, .rd_content, .view_content, #content, .content').first();
-            const contentText = contentEl.text().trim().slice(0, 500) || '블루스토어 구매 후기';
-
-            // Extract all images from content
-            const imageUrls: string[] = [];
-            
-            // Main content images
-            contentEl.find('img').each((_ii: number, imgEl: any) => {
+            // Content images: img tags inside .board_txt_area
+            const contentImgUrls: string[] = [];
+            $d('.board_txt_area img, .board_contents img').each((_ii: number, imgEl: any) => {
               let src = $d(imgEl).attr('src') || $d(imgEl).attr('data-src') || '';
-              if (!src || src.includes('icon') || src.includes('emoji') || src.length < 10) return;
+              if (!src) return;
               if (src.startsWith('//')) src = 'https:' + src;
               if (!src.startsWith('http')) src = BASE_URL + src;
-              if (!imageUrls.includes(src)) imageUrls.push(src);
+              // Only include content images (from imweb CDN with upload paths)
+              if (!src.includes('cdn.imweb.me/upload') && !src.includes('cdn.imweb.me/thumbnail')) return;
+              // Exclude site logo/icon thumbnails (very small dates or known non-review images)
+              if (src.includes('/20230925/') || src.includes('/20231201/2a1271661af63') || src.includes('/20240119/9e771eb0812b7')) return;
+              if (!contentImgUrls.includes(src)) contentImgUrls.push(src);
             });
 
-            // If no content images, try thumbnail
-            if (imageUrls.length === 0 && post.thumbnail) {
-              imageUrls.push(post.thumbnail);
+            // Fallback to list thumbnail if no content images
+            const rawImageUrls = contentImgUrls.length > 0 ? contentImgUrls : (listThumbnail ? [listThumbnail] : []);
+
+            console.log(`[bloostore-review] idx=${idx} title="${title}" author="${authorName}" images=${rawImageUrls.length}`);
+
+            // Download images to local server
+            const localImageUrls: string[] = [];
+            for (const imgUrl of rawImageUrls.slice(0, 5)) { // max 5 images per review
+              const localPath = await downloadImage(imgUrl);
+              if (localPath) localImageUrls.push(localPath);
+              await delay(200);
             }
 
-            // Save as review
+            const finalImageUrls = localImageUrls.length > 0 ? localImageUrls : rawImageUrls;
+
             const reviewData: any = {
-              authorName: realAuthor || '블루스토어 고객',
-              title: realTitle || '블루스토어 구매 후기',
-              content: contentText || '블루스토어 구매 후기입니다.',
-              imageUrl: imageUrls[0] || null,
-              imageUrls: imageUrls,
+              authorName,
+              title,
+              content: '블루스토어 구매 후기입니다.',
+              imageUrl: finalImageUrls[0] || null,
+              imageUrls: finalImageUrls,
               rating: 5,
               isVisible: true,
               isBest: false,
@@ -6607,11 +6672,11 @@ export async function registerRoutes(
             await storage.createReview(reviewData);
             bloostoreReviewProgress.inserted++;
           } catch (err) {
-            console.error(`[bloostore-review] Error on post ${post.url}:`, err);
+            console.error(`[bloostore-review] Error on detail idx=${idx}:`, err);
             bloostoreReviewProgress.skipped++;
           }
 
-          await delay(600);
+          await delay(500);
         }
 
         bloostoreReviewProgress.status = 'done';
