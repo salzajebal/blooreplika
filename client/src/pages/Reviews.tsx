@@ -223,7 +223,7 @@ export default function Reviews() {
                     <div className="w-16 h-16 md:w-20 md:h-20 flex-shrink-0 rounded overflow-hidden bg-gray-100">
                       {thumbUrl ? (
                         <img
-                          src={thumbUrl.startsWith("/api/") ? thumbUrl : getProxiedImageUrl(thumbUrl, "thumbnail")}
+                          src={thumbUrl.startsWith("/uploads/") || thumbUrl.startsWith("/api/") ? thumbUrl : getProxiedImageUrl(thumbUrl, "thumb")}
                           alt=""
                           className="w-full h-full object-cover"
                           onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}

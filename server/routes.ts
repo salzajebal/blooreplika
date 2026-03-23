@@ -240,6 +240,14 @@ export async function registerRoutes(
         await db.delete(shippingPhotos).where(inArray(shippingPhotos.id, orphanedShip.map(r => r.id)));
         console.log(`Cleaned ${orphanedShip.length} orphaned shipping photo records`);
       }
+
+      const { sql: sqlTag } = await import("drizzle-orm");
+      const fixResult = await db.execute(
+        sqlTag`UPDATE reviews SET content = '' WHERE content LIKE '%블루스토어 구매 후기입니다%'`
+      );
+      if ((fixResult.rowCount ?? 0) > 0) {
+        console.log(`Cleared bloostore text from ${fixResult.rowCount} reviews`);
+      }
     } catch (e) {
       console.error("Orphan cleanup error:", e);
     }
@@ -2444,6 +2452,16 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching reviews:", error);
       res.status(500).json({ success: false, error: "리뷰를 불러올 수 없습니다." });
+    }
+  });
+
+  app.post("/api/admin/reviews/fix-content", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const rowsAffected = await storage.clearBluestoreReviewContent();
+      res.json({ success: true, message: "블루스토어 텍스트 제거 완료", rowsAffected });
+    } catch (error) {
+      console.error("Error fixing review content:", error);
+      res.status(500).json({ success: false, error: "수정 실패" });
     }
   });
 

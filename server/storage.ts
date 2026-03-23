@@ -121,6 +121,7 @@ export interface IStorage {
   // Reviews
   getAllReviews(): Promise<Review[]>;
   getReviewsPaginated(limit: number, offset: number): Promise<{ reviews: Review[]; total: number }>;
+  clearBluestoreReviewContent(): Promise<number>;
   getVisibleReviews(): Promise<Review[]>;
   getReview(id: string): Promise<Review | undefined>;
   createReview(review: InsertReview): Promise<Review>;
@@ -900,6 +901,13 @@ export class DatabaseStorage implements IStorage {
   async deleteReview(id: string): Promise<boolean> {
     const result = await db.delete(reviews).where(eq(reviews.id, id)).returning();
     return result.length > 0;
+  }
+
+  async clearBluestoreReviewContent(): Promise<number> {
+    const result = await db.execute(
+      sql`UPDATE reviews SET content = '' WHERE content LIKE '%블루스토어 구매 후기입니다%'`
+    );
+    return result.rowCount ?? 0;
   }
 
   // Review Images
