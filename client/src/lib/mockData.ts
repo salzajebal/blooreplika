@@ -9,7 +9,6 @@ export const CATEGORIES = [
   { id: "watches", name: "시계", count: 0, description: "타임리스 럭셔리 워치 컬렉션" },
   { id: "golf", name: "골프", count: 0, description: "프리미엄 골프 컬렉션" },
   { id: "jewelry", name: "쥬얼리/잡화", count: 0, description: "쥬얼리 및 잡화 컬렉션" },
-  { id: "sameday", name: "당일배송", count: 0, description: "당일배송 가능 상품" },
   { id: "sale", name: "할인상품", count: 0, description: "특별 할인 상품" },
   { id: "best", name: "베스트상품", count: 0, description: "인기 베스트 상품" },
 ];

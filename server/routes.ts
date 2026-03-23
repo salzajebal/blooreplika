@@ -3303,7 +3303,6 @@ export async function registerRoutes(
         { caId: "g0", name: "신발", localId: "shoes" },
         { caId: "70", name: "골프", localId: "golf" },
         { caId: "f0", name: "쥬얼리/잡화", localId: "jewelry" },
-        { caId: "a0", name: "당일배송", localId: "sameday" },
         { caId: "80", name: "할인상품", localId: "sale" },
         { caId: "d0", name: "베스트상품", localId: "best" },
       ];

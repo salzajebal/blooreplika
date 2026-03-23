@@ -65,7 +65,6 @@ const categoryMenuItems: CategoryMenuItem[] = [
   },
   { name: '베스트상품', path: '/products/best' },
   { name: '할인상품', path: '/products/sale' },
-  { name: '당일배송', path: '/products/sameday' },
 ];
 
 const topNavItems = [
@@ -81,7 +80,6 @@ const topNavItems = [
   { name: '쥬얼리', path: '/products/jewelry' },
   { name: '골프', path: '/products/golf' },
   { name: '베스트', path: '/products/best' },
-  { name: '당일배송', path: '/products/sameday' },
 ];
 
 const sideMenuLinks = [

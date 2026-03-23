@@ -51,7 +51,6 @@ const CATEGORY_OPTIONS = [
   { id: "shoes", name: "신발" },
   { id: "golf", name: "골프" },
   { id: "jewelry", name: "쥬얼리/잡화" },
-  { id: "sameday", name: "당일배송" },
   { id: "sale", name: "할인상품" },
   { id: "best", name: "베스트상품" },
 ];
@@ -240,7 +239,6 @@ export default function Admin() {
     { localId: "shoes", name: "신발" },
     { localId: "golf", name: "골프" },
     { localId: "jewelry", name: "쥬얼리/잡화" },
-    { localId: "sameday", name: "당일배송" },
     { localId: "sale", name: "할인상품" },
     { localId: "best", name: "베스트상품" },
   ];
