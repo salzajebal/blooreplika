@@ -529,6 +529,76 @@ export async function registerRoutes(
     }
   });
 
+  // 상품 일괄 업데이트 (카테고리 변경 등)
+  app.post("/api/admin/products/bulk-update", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { productIds, updates } = req.body;
+      if (!Array.isArray(productIds) || productIds.length === 0) {
+        return res.status(400).json({ success: false, error: "productIds 배열이 필요합니다." });
+      }
+      if (!updates || typeof updates !== "object") {
+        return res.status(400).json({ success: false, error: "updates 객체가 필요합니다." });
+      }
+      let updated = 0;
+      for (const id of productIds) {
+        try {
+          await storage.updateProduct(String(id), updates);
+          updated++;
+        } catch (e) {
+          console.error(`[bulk-update] Failed to update product ${id}:`, e);
+        }
+      }
+      invalidateProductCache();
+      res.json({ success: true, updated });
+    } catch (error) {
+      console.error("Error bulk updating products:", error);
+      res.status(500).json({ success: false, error: "일괄 업데이트 실패" });
+    }
+  });
+
+  // 상품 일괄 섹션 추가
+  app.post("/api/admin/products/bulk-add-to-section", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { productIds, sectionId } = req.body;
+      if (!sectionId || !Array.isArray(productIds) || productIds.length === 0) {
+        return res.status(400).json({ success: false, error: "sectionId와 productIds가 필요합니다." });
+      }
+      const section = await storage.getContentSection(sectionId);
+      if (!section) return res.status(404).json({ success: false, error: "섹션을 찾을 수 없습니다." });
+      const existingIds: string[] = section.productIds || [];
+      const newIds = [...new Set([...existingIds, ...productIds.map(String)])];
+      await storage.updateContentSection(sectionId, { productIds: newIds });
+      res.json({ success: true, addedCount: newIds.length - existingIds.length });
+    } catch (error) {
+      console.error("Error bulk adding to section:", error);
+      res.status(500).json({ success: false, error: "섹션 추가 실패" });
+    }
+  });
+
+  // 상품 일괄 삭제
+  app.post("/api/admin/products/bulk-delete", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { productIds } = req.body;
+      if (!Array.isArray(productIds) || productIds.length === 0) {
+        return res.status(400).json({ success: false, error: "productIds 배열이 필요합니다." });
+      }
+      let deleted = 0;
+      for (const id of productIds) {
+        try {
+          await storage.deleteProduct(String(id));
+          deleted++;
+        } catch (e) {
+          console.error(`[bulk-delete] Failed to delete product ${id}:`, e);
+        }
+      }
+      invalidateProductCache();
+      res.json({ success: true, deleted });
+    } catch (error) {
+      console.error("Error bulk deleting products:", error);
+      res.status(500).json({ success: false, error: "일괄 삭제 실패" });
+    }
+  });
+
   app.post("/api/admin/bulk-price-increase", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const { db } = await import("./db");

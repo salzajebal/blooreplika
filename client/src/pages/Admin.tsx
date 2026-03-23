@@ -88,7 +88,15 @@ export default function Admin() {
   const [productSearch, setProductSearch] = useState("");
   const [productPage, setProductPage] = useState(1);
   const [productPagination, setProductPagination] = useState({ total: 0, totalPages: 1 });
-  
+
+  // 일괄 선택
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<number>>(new Set());
+  const [bulkActionType, setBulkActionType] = useState<"category" | "section">("category");
+  const [bulkCategoryValue, setBulkCategoryValue] = useState<string>("");
+  const [bulkSectionId, setBulkSectionId] = useState<string>("");
+  const [adminSections, setAdminSections] = useState<{ id: string; title: string; sectionType: string }[]>([]);
+  const [bulkLoading, setBulkLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     name: "",
     sku: "",
@@ -930,6 +938,78 @@ export default function Admin() {
     }
   };
 
+  const fetchAdminSections = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/content-sections");
+      const data = await res.json();
+      if (data.success) {
+        setAdminSections(data.data.filter((s: any) => s.sectionType !== "monthly_benefit"));
+      }
+    } catch {}
+  };
+
+  const handleBulkApply = async () => {
+    if (selectedProductIds.size === 0) return;
+    setBulkLoading(true);
+    try {
+      const ids = Array.from(selectedProductIds);
+      if (bulkActionType === "category") {
+        if (!bulkCategoryValue) { toast({ title: "카테고리를 선택해주세요.", variant: "destructive" }); return; }
+        const res = await fetchWithAuth("/api/admin/products/bulk-update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productIds: ids, updates: { categoryId: bulkCategoryValue } }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast({ title: `${data.updated}개 상품 카테고리 변경 완료` });
+          setSelectedProductIds(new Set());
+          fetchProducts(productPage, productSearch, productFilter);
+        }
+      } else if (bulkActionType === "section") {
+        if (!bulkSectionId) { toast({ title: "섹션을 선택해주세요.", variant: "destructive" }); return; }
+        const res = await fetchWithAuth("/api/admin/products/bulk-add-to-section", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ productIds: ids, sectionId: bulkSectionId }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          toast({ title: `${data.addedCount}개 상품 섹션 추가 완료` });
+          setSelectedProductIds(new Set());
+        }
+      }
+    } catch {
+      toast({ title: "오류 발생", variant: "destructive" });
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedProductIds.size === 0) return;
+    if (!confirm(`선택한 ${selectedProductIds.size}개 상품을 삭제하시겠습니까?`)) return;
+    setBulkLoading(true);
+    try {
+      const ids = Array.from(selectedProductIds);
+      const res = await fetchWithAuth("/api/admin/products/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productIds: ids }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: `${data.deleted}개 상품 삭제 완료` });
+        setSelectedProductIds(new Set());
+        fetchProducts(1, productSearch, productFilter);
+      }
+    } catch {
+      toast({ title: "삭제 오류", variant: "destructive" });
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   const fetchMembers = async () => {
     try {
       const res = await fetchWithAuth("/api/admin/members");
@@ -1304,8 +1384,14 @@ export default function Admin() {
       fetchNotices();
       fetchSiteSettings();
       fetchProductCount();
+      fetchAdminSections();
     }
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    // 탭 전환 시 선택 초기화
+    setSelectedProductIds(new Set());
+  }, [activeTab]);
 
   useEffect(() => {
     if (isAuthenticated && activeTab === "dashboard") {
@@ -3004,6 +3090,72 @@ export default function Admin() {
               </div>
             )}
 
+            {/* 일괄 작업 바 */}
+            {selectedProductIds.size > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 flex flex-wrap items-center gap-3">
+                <span className="text-blue-700 font-semibold text-sm">{selectedProductIds.size}개 선택됨</span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <select
+                    value={bulkActionType}
+                    onChange={(e) => setBulkActionType(e.target.value as "category" | "section")}
+                    className="border border-blue-300 rounded px-2 py-1 text-sm bg-white"
+                  >
+                    <option value="category">카테고리 변경</option>
+                    <option value="section">섹션에 추가</option>
+                  </select>
+                  {bulkActionType === "category" && (
+                    <select
+                      value={bulkCategoryValue}
+                      onChange={(e) => setBulkCategoryValue(e.target.value)}
+                      className="border border-blue-300 rounded px-2 py-1 text-sm bg-white"
+                    >
+                      <option value="">카테고리 선택...</option>
+                      {CATEGORY_OPTIONS.map((cat) => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
+                  )}
+                  {bulkActionType === "section" && (
+                    <select
+                      value={bulkSectionId}
+                      onChange={(e) => setBulkSectionId(e.target.value)}
+                      className="border border-blue-300 rounded px-2 py-1 text-sm bg-white"
+                    >
+                      <option value="">섹션 선택...</option>
+                      {adminSections.map((s) => (
+                        <option key={s.id} value={s.id}>{s.title}</option>
+                      ))}
+                    </select>
+                  )}
+                  <Button
+                    size="sm"
+                    onClick={handleBulkApply}
+                    disabled={bulkLoading}
+                    className="bg-blue-600 hover:bg-blue-700 text-white h-7 text-xs"
+                  >
+                    {bulkLoading ? "처리 중..." : "적용"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleBulkDelete}
+                    disabled={bulkLoading}
+                    className="border-red-300 text-red-600 hover:bg-red-50 h-7 text-xs"
+                  >
+                    삭제
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setSelectedProductIds(new Set())}
+                    className="text-gray-500 h-7 text-xs"
+                  >
+                    선택 해제
+                  </Button>
+                </div>
+              </div>
+            )}
+
             {loading ? (
               <div className="text-center py-12 text-gray-500">로딩 중...</div>
             ) : filteredProducts.length === 0 ? (
@@ -3016,6 +3168,29 @@ export default function Admin() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-100 text-gray-600">
                     <tr>
+                      <th className="px-3 py-3 w-8">
+                        <input
+                          type="checkbox"
+                          data-testid="checkbox-select-all-products"
+                          checked={filteredProducts.length > 0 && filteredProducts.every(p => selectedProductIds.has(p.id))}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedProductIds(prev => {
+                                const next = new Set(prev);
+                                filteredProducts.forEach(p => next.add(p.id));
+                                return next;
+                              });
+                            } else {
+                              setSelectedProductIds(prev => {
+                                const next = new Set(prev);
+                                filteredProducts.forEach(p => next.delete(p.id));
+                                return next;
+                              });
+                            }
+                          }}
+                          className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                        />
+                      </th>
                       <th className="px-4 py-3 text-left font-medium">상품명</th>
                       <th className="px-4 py-3 text-left font-medium">브랜드</th>
                       <th className="px-4 py-3 text-left font-medium">카테고리</th>
@@ -3027,7 +3202,26 @@ export default function Admin() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {filteredProducts.map((product) => (
-                      <tr key={product.id} className="hover:bg-gray-50">
+                      <tr
+                        key={product.id}
+                        className={`hover:bg-gray-50 ${selectedProductIds.has(product.id) ? "bg-blue-50" : ""}`}
+                      >
+                        <td className="px-3 py-3">
+                          <input
+                            type="checkbox"
+                            data-testid={`checkbox-product-${product.id}`}
+                            checked={selectedProductIds.has(product.id)}
+                            onChange={(e) => {
+                              setSelectedProductIds(prev => {
+                                const next = new Set(prev);
+                                if (e.target.checked) next.add(product.id);
+                                else next.delete(product.id);
+                                return next;
+                              });
+                            }}
+                            className="w-4 h-4 rounded border-gray-300 cursor-pointer"
+                          />
+                        </td>
                         <td className="px-4 py-3 font-medium text-gray-900">
                           <div className="flex items-center gap-3">
                             {product.imageUrl && (
