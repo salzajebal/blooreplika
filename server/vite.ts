@@ -11,7 +11,11 @@ const viteLogger = createLogger();
 export async function setupVite(server: Server, app: Express) {
   const serverOptions = {
     middlewareMode: true,
-    hmr: { server, path: "/vite-hmr" },
+    hmr: {
+      server,
+      path: "/vite-hmr",
+      clientPort: process.env.REPL_ID ? 443 : undefined,
+    },
     allowedHosts: true as const,
   };
 
@@ -22,11 +26,13 @@ export async function setupVite(server: Server, app: Express) {
       ...viteLogger,
       error: (msg, options) => {
         viteLogger.error(msg, options);
-        process.exit(1);
+        if (msg.includes("Cannot find module") || msg.includes("Failed to resolve")) {
+          process.exit(1);
+        }
       },
     },
     server: serverOptions,
-    appType: "custom",
+    appType: "spa",
   });
 
   app.use(vite.middlewares);
