@@ -6360,7 +6360,17 @@ export async function registerRoutes(
       }
       let imageUrl = req.body.imageUrl || "";
       if (req.file) {
-        imageUrl = `/uploads/quickmenu/${req.file.filename}`;
+        try {
+          const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+          const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+          const fileBuffer = fs.readFileSync(req.file.path);
+          const uploadRes = await fetch(uploadURL, { method: "PUT", body: fileBuffer, headers: { "Content-Type": req.file.mimetype } });
+          if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`);
+          fs.unlinkSync(req.file.path);
+          imageUrl = objectPath;
+        } catch {
+          imageUrl = `/uploads/quickmenu/${req.file.filename}`;
+        }
       }
       if (!imageUrl) {
         return res.status(400).json({ success: false, error: "아이콘 이미지가 필요합니다." });
@@ -6389,7 +6399,17 @@ export async function registerRoutes(
       if (sortOrder !== undefined) updateData.sortOrder = parseInt(sortOrder);
       if (isActive !== undefined) updateData.isActive = isActive === "true" || isActive === true;
       if (req.file) {
-        updateData.imageUrl = `/uploads/quickmenu/${req.file.filename}`;
+        try {
+          const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+          const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
+          const fileBuffer = fs.readFileSync(req.file.path);
+          const uploadRes = await fetch(uploadURL, { method: "PUT", body: fileBuffer, headers: { "Content-Type": req.file.mimetype } });
+          if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`);
+          fs.unlinkSync(req.file.path);
+          updateData.imageUrl = objectPath;
+        } catch {
+          updateData.imageUrl = `/uploads/quickmenu/${req.file.filename}`;
+        }
       } else if (req.body.imageUrl !== undefined) {
         updateData.imageUrl = req.body.imageUrl;
       }
