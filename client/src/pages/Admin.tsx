@@ -466,6 +466,97 @@ export default function Admin() {
     }
   };
 
+  // ── 카테고리 재분류 ─────────────────────────────────────────────────────
+  const [reclassifyAnalysis, setReclassifyAnalysis] = useState<{
+    totalProducts: number;
+    byCategory: { cat_name: string; category_id: string; cnt: number }[];
+    wrongCategoryCount: number;
+    noBrandCount: number;
+    hasUrlAndWrong: number;
+    estimatedRuleFixed: number;
+  } | null>(null);
+  const [reclassifyAnalyzing, setReclassifyAnalyzing] = useState(false);
+  const [reclassifyRulesRunning, setReclassifyRulesRunning] = useState(false);
+  const [reclassifyRulesResult, setReclassifyRulesResult] = useState<{ changed: number; skipped: number; total: number } | null>(null);
+  const [rematchBrandsRunning, setRematchBrandsRunning] = useState(false);
+  const [rematchBrandsResult, setRematchBrandsResult] = useState<{ matched: number; unmatched: number; total: number } | null>(null);
+  const [reclassifyUrlProgress, setReclassifyUrlProgress] = useState<{
+    status: 'idle' | 'running' | 'done' | 'error';
+    total: number; current: number; changed: number; skipped: number; failed: number; message: string;
+  }>({ status: 'idle', total: 0, current: 0, changed: 0, skipped: 0, failed: 0, message: '' });
+  const reclassifyUrlIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const runReclassifyAnalyze = async () => {
+    setReclassifyAnalyzing(true);
+    setReclassifyRulesResult(null);
+    setRematchBrandsResult(null);
+    try {
+      const res = await fetchWithAuth("/api/admin/products/reclassify-analyze", { method: "POST" });
+      const data = await res.json();
+      if (data.success) setReclassifyAnalysis(data.data);
+      else toast({ title: "분석 실패", description: data.error, variant: "destructive" });
+    } catch { toast({ title: "오류", description: "서버 연결 오류", variant: "destructive" }); }
+    finally { setReclassifyAnalyzing(false); }
+  };
+
+  const runReclassifyRules = async () => {
+    if (!window.confirm("상품명 키워드로 잘못 분류된 상품을 자동 재분류합니다.\n계속하시겠습니까?")) return;
+    setReclassifyRulesRunning(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/products/reclassify-rules", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setReclassifyRulesResult(data.data);
+        setReclassifyAnalysis(null);
+        toast({ title: "완료", description: `${data.data.changed}개 재분류, ${data.data.skipped}개 건너뜀` });
+      } else toast({ title: "실패", description: data.error, variant: "destructive" });
+    } catch { toast({ title: "오류", description: "서버 연결 오류", variant: "destructive" }); }
+    finally { setReclassifyRulesRunning(false); }
+  };
+
+  const startReclassifyUrl = async () => {
+    if (!window.confirm("source_url을 재방문해 카테고리를 정밀 재분류합니다.\n상품 수에 따라 시간이 걸릴 수 있습니다. 계속하시겠습니까?")) return;
+    const startRes = await fetchWithAuth("/api/admin/products/reclassify-url/start", { method: "POST" });
+    const startData = await startRes.json();
+    if (!startData.success) { toast({ title: "실패", description: startData.error, variant: "destructive" }); return; }
+    if (reclassifyUrlIntervalRef.current) clearInterval(reclassifyUrlIntervalRef.current);
+    reclassifyUrlIntervalRef.current = setInterval(async () => {
+      try {
+        const r = await fetchWithAuth("/api/admin/products/reclassify-url/progress");
+        const d = await r.json();
+        if (d.success) {
+          setReclassifyUrlProgress(d.data);
+          if (d.data.status === 'done' || d.data.status === 'error') {
+            clearInterval(reclassifyUrlIntervalRef.current!);
+            reclassifyUrlIntervalRef.current = null;
+            if (d.data.status === 'done') toast({ title: "URL 재분류 완료", description: `변경: ${d.data.changed}개` });
+          }
+        }
+      } catch {}
+    }, 1500);
+  };
+
+  const resetReclassifyUrl = async () => {
+    if (reclassifyUrlIntervalRef.current) { clearInterval(reclassifyUrlIntervalRef.current); reclassifyUrlIntervalRef.current = null; }
+    await fetchWithAuth("/api/admin/products/reclassify-url/reset", { method: "POST" });
+    setReclassifyUrlProgress({ status: 'idle', total: 0, current: 0, changed: 0, skipped: 0, failed: 0, message: '' });
+  };
+
+  const runRematchBrands = async () => {
+    if (!window.confirm("브랜드가 없는 상품에 이름 키워드로 브랜드를 자동 매칭합니다.\n계속하시겠습니까?")) return;
+    setRematchBrandsRunning(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/products/rematch-brands", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setRematchBrandsResult(data.data);
+        setReclassifyAnalysis(null);
+        toast({ title: "완료", description: `${data.data.matched}개 브랜드 매칭 완료` });
+      } else toast({ title: "실패", description: data.error, variant: "destructive" });
+    } catch { toast({ title: "오류", description: "서버 연결 오류", variant: "destructive" }); }
+    finally { setRematchBrandsRunning(false); }
+  };
+
   // ── 중복 상품 정리 ──────────────────────────────────────────────────────
   const [dedupAnalysis, setDedupAnalysis] = useState<{
     totalProducts: number;
@@ -3664,6 +3755,184 @@ export default function Admin() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* 카테고리 재분류 패널 */}
+          <div className="bg-white rounded-xl shadow-sm border border-blue-100 mt-6">
+            <div className="p-5 border-b border-blue-100 flex items-center gap-3">
+              <div className="w-8 h-8 bg-blue-50 rounded-full flex items-center justify-center">
+                <RefreshCw className="w-4 h-4 text-blue-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">카테고리 재분류 &amp; 브랜드 재매칭</h3>
+                <p className="text-xs text-gray-500">잘못 분류된 상품을 올바른 카테고리로 이동하고 브랜드를 자동 매칭합니다</p>
+              </div>
+            </div>
+            <div className="p-5 space-y-4">
+
+              {/* 분석 결과 */}
+              {reclassifyAnalysis && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-4">
+                  <p className="font-medium text-blue-800">분석 결과</p>
+
+                  {/* 카테고리별 분포 */}
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 mb-2">현재 카테고리별 상품수</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {reclassifyAnalysis.byCategory.map((c, i) => (
+                        <span key={i} className={`text-xs rounded px-2 py-0.5 border ${
+                          c.category_id === 'men' || c.category_id === 'women'
+                            ? 'bg-red-50 border-red-300 text-red-700 font-medium'
+                            : 'bg-white border-blue-200'
+                        }`}>
+                          {c.cat_name || c.category_id || '미분류'}: {c.cnt.toLocaleString()}
+                          {(c.category_id === 'men' || c.category_id === 'women') && ' ⚠️'}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 주요 지표 */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                    <div className="bg-white rounded p-2 text-center border border-red-200">
+                      <div className="font-bold text-red-600">{reclassifyAnalysis.wrongCategoryCount.toLocaleString()}</div>
+                      <div className="text-gray-500 text-xs">잘못된 카테고리 (남/여)</div>
+                    </div>
+                    <div className="bg-white rounded p-2 text-center border border-blue-200">
+                      <div className="font-bold text-blue-600">{reclassifyAnalysis.estimatedRuleFixed.toLocaleString()}</div>
+                      <div className="text-gray-500 text-xs">규칙으로 즉시 수정 가능</div>
+                    </div>
+                    <div className="bg-white rounded p-2 text-center border border-blue-200">
+                      <div className="font-bold text-blue-600">{reclassifyAnalysis.hasUrlAndWrong.toLocaleString()}</div>
+                      <div className="text-gray-500 text-xs">URL 재방문 대상</div>
+                    </div>
+                    <div className="bg-white rounded p-2 text-center border border-orange-200">
+                      <div className="font-bold text-orange-600">{reclassifyAnalysis.noBrandCount.toLocaleString()}</div>
+                      <div className="text-gray-500 text-xs">브랜드 없는 상품</div>
+                    </div>
+                  </div>
+
+                  {/* 액션 버튼들 */}
+                  <div className="space-y-2">
+                    {reclassifyAnalysis.wrongCategoryCount > 0 && (
+                      <>
+                        <p className="text-xs font-medium text-gray-700">① 규칙 기반 재분류 (빠름 — 이름 키워드로 즉시 수정)</p>
+                        <Button
+                          data-testid="button-reclassify-rules"
+                          onClick={runReclassifyRules}
+                          disabled={reclassifyRulesRunning}
+                          className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                        >
+                          {reclassifyRulesRunning
+                            ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />재분류 중...</>
+                            : <><RefreshCw className="w-4 h-4 mr-2" />규칙 기반 재분류 실행 ({reclassifyAnalysis.estimatedRuleFixed.toLocaleString()}개 예상)</>
+                          }
+                        </Button>
+                        {reclassifyAnalysis.hasUrlAndWrong > 0 && (
+                          <>
+                            <p className="text-xs font-medium text-gray-700 mt-2">② URL 정밀 재분류 (느림 — 각 상품 페이지 재방문)</p>
+                            <Button
+                              data-testid="button-reclassify-url"
+                              onClick={startReclassifyUrl}
+                              disabled={reclassifyUrlProgress.status === 'running'}
+                              variant="outline"
+                              className="w-full border-blue-400 text-blue-700 hover:bg-blue-50"
+                            >
+                              {reclassifyUrlProgress.status === 'running'
+                                ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />진행 중...</>
+                                : <><RefreshCw className="w-4 h-4 mr-2" />URL 정밀 재분류 시작 ({reclassifyAnalysis.hasUrlAndWrong.toLocaleString()}개)</>
+                              }
+                            </Button>
+                          </>
+                        )}
+                      </>
+                    )}
+                    {reclassifyAnalysis.noBrandCount > 0 && (
+                      <>
+                        <p className="text-xs font-medium text-gray-700 mt-2">③ 브랜드 자동 매칭 (이름에서 브랜드 추출)</p>
+                        <Button
+                          data-testid="button-rematch-brands"
+                          onClick={runRematchBrands}
+                          disabled={rematchBrandsRunning}
+                          variant="outline"
+                          className="w-full border-orange-400 text-orange-700 hover:bg-orange-50"
+                        >
+                          {rematchBrandsRunning
+                            ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />매칭 중...</>
+                            : <><RefreshCw className="w-4 h-4 mr-2" />브랜드 재매칭 ({reclassifyAnalysis.noBrandCount.toLocaleString()}개)</>
+                          }
+                        </Button>
+                      </>
+                    )}
+                    {reclassifyAnalysis.wrongCategoryCount === 0 && reclassifyAnalysis.noBrandCount === 0 && (
+                      <p className="text-green-700 text-sm font-medium">✓ 모든 상품이 올바르게 분류되어 있습니다.</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* URL 재분류 진행 상태 */}
+              {reclassifyUrlProgress.status !== 'idle' && (
+                <div className={`p-4 rounded-lg border ${
+                  reclassifyUrlProgress.status === 'running' ? 'bg-blue-50 border-blue-200' :
+                  reclassifyUrlProgress.status === 'done' ? 'bg-green-50 border-green-200' :
+                  'bg-red-50 border-red-200'
+                }`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    {reclassifyUrlProgress.status === 'running' && <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />}
+                    {reclassifyUrlProgress.status === 'done' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                    {reclassifyUrlProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                    <span className="text-sm font-medium">{reclassifyUrlProgress.message}</span>
+                  </div>
+                  {reclassifyUrlProgress.total > 0 && (
+                    <>
+                      <div className="w-full bg-blue-100 rounded-full h-2 mb-2">
+                        <div
+                          className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(100, Math.round((reclassifyUrlProgress.current / reclassifyUrlProgress.total) * 100))}%` }}
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 gap-1 text-xs text-center">
+                        <div><span className="font-bold">{reclassifyUrlProgress.current}</span><div className="text-gray-500">처리</div></div>
+                        <div><span className="font-bold text-green-600">{reclassifyUrlProgress.changed}</span><div className="text-gray-500">변경</div></div>
+                        <div><span className="font-bold text-gray-500">{reclassifyUrlProgress.skipped}</span><div className="text-gray-500">건너뜀</div></div>
+                        <div><span className="font-bold text-red-500">{reclassifyUrlProgress.failed}</span><div className="text-gray-500">실패</div></div>
+                      </div>
+                    </>
+                  )}
+                  {reclassifyUrlProgress.status !== 'running' && (
+                    <Button size="sm" variant="outline" onClick={resetReclassifyUrl} className="mt-2 text-xs">초기화</Button>
+                  )}
+                </div>
+              )}
+
+              {/* 완료 결과들 */}
+              {reclassifyRulesResult && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="font-medium text-green-800 text-sm">✓ 규칙 기반 재분류 완료</p>
+                  <p className="text-xs text-gray-600">변경: {reclassifyRulesResult.changed.toLocaleString()}개 / 건너뜀(키워드 없음): {reclassifyRulesResult.skipped.toLocaleString()}개</p>
+                </div>
+              )}
+              {rematchBrandsResult && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="font-medium text-green-800 text-sm">✓ 브랜드 재매칭 완료</p>
+                  <p className="text-xs text-gray-600">매칭 성공: {rematchBrandsResult.matched.toLocaleString()}개 / 매칭 불가: {rematchBrandsResult.unmatched.toLocaleString()}개</p>
+                </div>
+              )}
+
+              <Button
+                data-testid="button-reclassify-analyze"
+                onClick={runReclassifyAnalyze}
+                disabled={reclassifyAnalyzing || reclassifyRulesRunning || rematchBrandsRunning}
+                variant="outline"
+                className="border-blue-300 text-blue-600 hover:bg-blue-50"
+              >
+                {reclassifyAnalyzing
+                  ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />분석 중...</>
+                  : <><RefreshCw className="w-4 h-4 mr-2" />현황 분석 시작</>
+                }
+              </Button>
+            </div>
           </div>
 
           {/* 중복 상품 정리 패널 */}

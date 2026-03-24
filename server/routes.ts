@@ -6831,6 +6831,327 @@ export async function registerRoutes(
     })();
   });
 
+  // ══════════════════════════════════════════════════════════════════════
+  // 카테고리 재분류 (Re-classify) 기능
+  // ══════════════════════════════════════════════════════════════════════
+
+  // 카테고리 키워드 규칙 (우선순위 높은 것부터)
+  const CATEGORY_KEYWORDS_RULES: Array<{ keywords: string[]; categoryId: string; priority: number }> = [
+    { keywords: ['선글라스', '안경테', '아이웨어'], categoryId: 'sunglasses', priority: 10 },
+    { keywords: ['벨트'], categoryId: 'belts', priority: 9 },
+    { keywords: ['시계', '워치', 'watch'], categoryId: 'watches', priority: 8 },
+    { keywords: ['지갑', '카드지갑', '카드케이스', '장지갑', '반지갑', '동전지갑', '카드홀더'], categoryId: 'wallets', priority: 7 },
+    { keywords: ['목걸이', '귀걸이', '이어링', '반지', '팔찌', '브로치', '주얼리', '쥬얼리', '헤어핀', '헤어밴드', '스카프', '머플러'], categoryId: 'accessories', priority: 6 },
+    { keywords: ['스니커즈', '운동화', '부츠', '샌들', '슬리퍼', '로퍼', '플랫슈즈', '힐', '뮬', '신발', '슈즈', '펌프스', '웨지'], categoryId: 'shoes', priority: 5 },
+    { keywords: ['백팩', '핸드백', '숄더백', '토트백', '클러치', '크로스백', '보스턴백', '에코백', '쇼퍼백', '미니백', '버킷백', '사첼', '호보백'], categoryId: 'bags', priority: 4 },
+    { keywords: ['코트', '재킷', '자켓', '니트', '스웨터', '셔츠', '티셔츠', '팬츠', '바지', '스커트', '원피스', '후드', '패딩', '점퍼', '블라우스', '가디건', '블레이저', '수트', '트레이닝', '조거', '탑', '베스트', '카디건'], categoryId: 'clothing', priority: 3 },
+  ];
+
+  // bagstyle ca_id → 우리 카테고리 localId 매핑
+  const CA_ID_TO_CATEGORY: Record<string, string> = {
+    'b010': 'clothing',    'c010': 'clothing',
+    'b020': 'bags',        'c020': 'bags',
+    'b040': 'wallets',
+    'b0b0': 'shoes',       'c050': 'shoes',
+    'c040': 'watches',
+    'b0a0': 'sunglasses',  'c070': 'sunglasses',
+    'b070': 'belts',       'c060': 'belts',
+    'b080': 'accessories', 'c0a0': 'accessories',
+    // 가방 전용 페이지 소분류
+    'e0a0': 'bags', 'e0b0': 'bags', 'e0c0': 'bags', 'e0d0': 'bags', 'e0e0': 'bags',
+  };
+
+  // 상품명에서 카테고리 추론
+  function inferCategoryFromName(name: string): string | null {
+    const lower = name.toLowerCase();
+    let best: { categoryId: string; priority: number } | null = null;
+    for (const rule of CATEGORY_KEYWORDS_RULES) {
+      for (const kw of rule.keywords) {
+        if (lower.includes(kw.toLowerCase())) {
+          if (!best || rule.priority > best.priority) {
+            best = { categoryId: rule.categoryId, priority: rule.priority };
+          }
+          break;
+        }
+      }
+    }
+    return best ? best.categoryId : null;
+  }
+
+  // URL 재분류 진행 상태
+  let reclassifyUrlProgress: {
+    status: 'idle' | 'running' | 'done' | 'error';
+    total: number;
+    current: number;
+    changed: number;
+    skipped: number;
+    failed: number;
+    message: string;
+  } = { status: 'idle', total: 0, current: 0, changed: 0, skipped: 0, failed: 0, message: '' };
+
+  // ── 분석 (분류 현황 리포트) ────────────────────────────────────────────
+  app.post("/api/admin/products/reclassify-analyze", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const client = await pool.connect();
+      try {
+        const totalRows = await client.query(`SELECT COUNT(*)::int as cnt FROM products`);
+
+        const byCategoryRows = await client.query(`
+          SELECT c.name as cat_name, p.category_id, COUNT(*)::int as cnt
+          FROM products p
+          LEFT JOIN categories c ON p.category_id = c.id
+          GROUP BY p.category_id, c.name
+          ORDER BY cnt DESC
+        `);
+
+        const wrongCatRows = await client.query(`
+          SELECT COUNT(*)::int as cnt FROM products
+          WHERE category_id IN ('men', 'women')
+        `);
+
+        const noBrandRows = await client.query(`
+          SELECT COUNT(*)::int as cnt FROM products
+          WHERE brand_id IS NULL
+        `);
+
+        const hasUrlWrongRows = await client.query(`
+          SELECT COUNT(*)::int as cnt FROM products
+          WHERE category_id IN ('men', 'women')
+            AND source_url IS NOT NULL AND source_url != ''
+        `);
+
+        // 규칙 기반으로 분류 가능한 것 미리 예측
+        const sampleWrong = await client.query(`
+          SELECT id, name, category_id FROM products
+          WHERE category_id IN ('men', 'women')
+          LIMIT 500
+        `);
+        let predictRuleFixed = 0;
+        let predictNeedUrl = 0;
+        for (const row of sampleWrong.rows) {
+          if (inferCategoryFromName(row.name)) predictRuleFixed++;
+          else predictNeedUrl++;
+        }
+        const wrongTotal = wrongCatRows.rows[0].cnt;
+        const sampleRatio = sampleWrong.rows.length > 0 ? sampleWrong.rows.length / wrongTotal : 1;
+        const estimatedRuleFixed = sampleRatio < 1 ? Math.round(predictRuleFixed / sampleRatio) : predictRuleFixed;
+
+        res.json({
+          success: true,
+          data: {
+            totalProducts: totalRows.rows[0].cnt,
+            byCategory: byCategoryRows.rows,
+            wrongCategoryCount: wrongTotal,
+            noBrandCount: noBrandRows.rows[0].cnt,
+            hasUrlAndWrong: hasUrlWrongRows.rows[0].cnt,
+            estimatedRuleFixed,
+          }
+        });
+      } finally {
+        client.release();
+      }
+    } catch (error: any) {
+      console.error('[reclassify-analyze] Error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // ── 규칙 기반 재분류 (빠름 — DB만 사용) ──────────────────────────────
+  app.post("/api/admin/products/reclassify-rules", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const client = await pool.connect();
+      try {
+        // category_id가 'men' 또는 'women'인 상품 전체 가져오기
+        const wrongRows = await client.query(`
+          SELECT id, name, category_id, gender FROM products
+          WHERE category_id IN ('men', 'women')
+        `);
+
+        let changed = 0;
+        let skipped = 0;
+
+        await client.query('BEGIN');
+        try {
+          for (const row of wrongRows.rows) {
+            const inferred = inferCategoryFromName(row.name);
+            if (inferred) {
+              await client.query(
+                `UPDATE products SET category_id = $1, updated_at = NOW() WHERE id = $2`,
+                [inferred, row.id]
+              );
+              changed++;
+            } else {
+              skipped++;
+            }
+          }
+          await client.query('COMMIT');
+        } catch (err) {
+          await client.query('ROLLBACK');
+          throw err;
+        }
+
+        console.log(`[reclassify-rules] changed=${changed}, skipped=${skipped}`);
+        res.json({ success: true, data: { changed, skipped, total: wrongRows.rows.length } });
+      } finally {
+        client.release();
+      }
+    } catch (error: any) {
+      console.error('[reclassify-rules] Error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // ── URL 재방문 재분류 진행 상태 조회 ─────────────────────────────────
+  app.get("/api/admin/products/reclassify-url/progress", requireAdminAuth, (_req: Request, res: Response) => {
+    res.json({ success: true, data: reclassifyUrlProgress });
+  });
+
+  // ── URL 재방문 재분류 초기화 ─────────────────────────────────────────
+  app.post("/api/admin/products/reclassify-url/reset", requireAdminAuth, (_req: Request, res: Response) => {
+    if (reclassifyUrlProgress.status === 'running') {
+      return res.status(400).json({ success: false, error: '진행 중에는 초기화할 수 없습니다.' });
+    }
+    reclassifyUrlProgress = { status: 'idle', total: 0, current: 0, changed: 0, skipped: 0, failed: 0, message: '' };
+    res.json({ success: true });
+  });
+
+  // ── URL 재방문 재분류 시작 (비동기) ──────────────────────────────────
+  app.post("/api/admin/products/reclassify-url/start", requireAdminAuth, async (_req: Request, res: Response) => {
+    if (reclassifyUrlProgress.status === 'running') {
+      return res.status(400).json({ success: false, error: '이미 실행 중입니다.' });
+    }
+
+    reclassifyUrlProgress = { status: 'running', total: 0, current: 0, changed: 0, skipped: 0, failed: 0, message: '준비 중...' };
+    res.json({ success: true, message: '재분류 시작' });
+
+    // 비동기 실행
+    (async () => {
+      const client = await pool.connect();
+      try {
+        // category_id가 'men'/'women'이면서 source_url이 bagstyle인 상품
+        const rows = await client.query(`
+          SELECT id, name, source_url, category_id, gender
+          FROM products
+          WHERE category_id IN ('men', 'women')
+            AND source_url IS NOT NULL AND source_url != ''
+            AND source_url LIKE '%bagstyle.site%'
+          ORDER BY id
+        `);
+
+        reclassifyUrlProgress.total = rows.rows.length;
+        reclassifyUrlProgress.message = `${rows.rows.length}개 상품 URL 재방문 시작`;
+
+        const headers = {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept-Language': 'ko-KR,ko;q=0.9',
+        };
+
+        for (const row of rows.rows) {
+          reclassifyUrlProgress.current++;
+          reclassifyUrlProgress.message = `[${reclassifyUrlProgress.current}/${reclassifyUrlProgress.total}] ${row.name.slice(0, 30)} 분석 중...`;
+
+          try {
+            const resp = await fetch(row.source_url, { headers, signal: AbortSignal.timeout(8000) });
+            if (!resp.ok) { reclassifyUrlProgress.skipped++; continue; }
+
+            const html = await resp.text();
+
+            // breadcrumb에서 ca_id 파싱
+            let foundCategory: string | null = null;
+            const caIdMatches = html.match(/ca_id=([a-z0-9]+)/gi) || [];
+            for (const m of caIdMatches) {
+              const caVal = m.replace(/ca_id=/i, '').toLowerCase();
+              if (CA_ID_TO_CATEGORY[caVal]) {
+                foundCategory = CA_ID_TO_CATEGORY[caVal];
+                break;
+              }
+            }
+
+            // ca_id 못 찾으면 이름으로 추론
+            if (!foundCategory) {
+              foundCategory = inferCategoryFromName(row.name);
+            }
+
+            if (foundCategory && foundCategory !== row.category_id) {
+              await client.query(
+                `UPDATE products SET category_id = $1, updated_at = NOW() WHERE id = $2`,
+                [foundCategory, row.id]
+              );
+              reclassifyUrlProgress.changed++;
+            } else {
+              reclassifyUrlProgress.skipped++;
+            }
+          } catch {
+            reclassifyUrlProgress.failed++;
+          }
+
+          await new Promise(r => setTimeout(r, 200));
+        }
+
+        reclassifyUrlProgress.status = 'done';
+        reclassifyUrlProgress.message = `완료! 변경: ${reclassifyUrlProgress.changed}개, 건너뜀: ${reclassifyUrlProgress.skipped}개, 실패: ${reclassifyUrlProgress.failed}개`;
+        console.log(`[reclassify-url] Done: changed=${reclassifyUrlProgress.changed}`);
+      } catch (error: any) {
+        reclassifyUrlProgress.status = 'error';
+        reclassifyUrlProgress.message = `오류: ${error.message}`;
+        console.error('[reclassify-url] Fatal:', error);
+      } finally {
+        client.release();
+      }
+    })();
+  });
+
+  // ── 브랜드 재매칭 ─────────────────────────────────────────────────────
+  app.post("/api/admin/products/rematch-brands", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const client = await pool.connect();
+      try {
+        const allBrands = await storage.getAllBrands();
+
+        // 브랜드가 없는 상품 전체
+        const noBrandRows = await client.query(`
+          SELECT id, name FROM products WHERE brand_id IS NULL
+        `);
+
+        let matched = 0;
+        let unmatched = 0;
+
+        await client.query('BEGIN');
+        try {
+          // 배치 처리 (500개 단위)
+          const batchSize = 500;
+          for (let i = 0; i < noBrandRows.rows.length; i += batchSize) {
+            const batch = noBrandRows.rows.slice(i, i + batchSize);
+            for (const row of batch) {
+              const brandId = matchBrandFromText(row.name, allBrands);
+              if (brandId) {
+                await client.query(
+                  `UPDATE products SET brand_id = $1, updated_at = NOW() WHERE id = $2`,
+                  [brandId, row.id]
+                );
+                matched++;
+              } else {
+                unmatched++;
+              }
+            }
+          }
+          await client.query('COMMIT');
+        } catch (err) {
+          await client.query('ROLLBACK');
+          throw err;
+        }
+
+        console.log(`[rematch-brands] matched=${matched}, unmatched=${unmatched}`);
+        res.json({ success: true, data: { matched, unmatched, total: noBrandRows.rows.length } });
+      } finally {
+        client.release();
+      }
+    } catch (error: any) {
+      console.error('[rematch-brands] Error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   // ── 중복 상품 분석 (dry-run) ──────────────────────────────────────────
   app.post("/api/admin/products/dedup-analyze", requireAdminAuth, async (_req: Request, res: Response) => {
     try {
