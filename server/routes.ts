@@ -3831,8 +3831,8 @@ export async function registerRoutes(
 
         for (const category of CATEGORIES) {
           bagstyleProgress.category = category.name;
-          // Only the "all" overview tabs are limited to 100 items from page 1
-          const isGenderPage = category.caId === "mens-all" || category.caId === "womens-all";
+          // Gender-specific pages (mens.php / women.php) are capped at 100 items
+          const isGenderPage = category.pageBase === "mens" || category.pageBase === "women";
           const subcats = isGenderPage ? [] : (SUBCATEGORY_MAP[category.caId] || []);
           
           if (subcats.length > 0) {
@@ -3906,11 +3906,20 @@ export async function registerRoutes(
             const allIds = new Set<string>();
 
             if (isGenderPage) {
-              // Gender pages show fixed 100 best-sellers on page 1 only (no pagination)
-              // Each tab stores its own 100 products independently (no cross-tab dedup)
-              const ids = await fetchProductList(category.caId, 1, category.pageBase);
-              // Limit to exactly 100 to match bagstyle.site's display
-              ids.slice(0, 100).forEach(id => allIds.add(id));
+              // Fetch up to 100 items — continue to next page if page 1 has fewer than 100
+              let page = 1;
+              while (allIds.size < 100) {
+                const ids = await fetchProductList(category.caId, page, category.pageBase);
+                if (ids.length === 0) break;
+                ids.forEach(id => allIds.add(id));
+                if (allIds.size >= 100) break;
+                page++;
+                await delay(50);
+              }
+              // Trim to exactly 100
+              const trimmed = Array.from(allIds).slice(0, 100);
+              allIds.clear();
+              trimmed.forEach(id => allIds.add(id));
               bagstyleProgress.message = `[${category.name}] ${allIds.size}개 상품 발견`;
             } else {
               let page = 1;
