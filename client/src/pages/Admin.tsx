@@ -248,7 +248,6 @@ export default function Admin() {
     message: string;
     category: string;
   }>({ status: 'idle', total: 0, current: 0, message: '', category: '' });
-  const [clearBeforeBagstyle, setClearBeforeBagstyle] = useState(false);
   const bagstyleIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [bagstyleBannerLoading, setBagstyleBannerLoading] = useState(false);
 
@@ -289,7 +288,6 @@ export default function Admin() {
     { id: "e0e0", name: "기타", count: 387 },
   ];
   const [selectedBagSubcategories, setSelectedBagSubcategories] = useState<string[]>([]);
-  const [clearBeforeBags, setClearBeforeBags] = useState(false);
   const [bagCrawlProgress, setBagCrawlProgress] = useState<{
     status: 'idle' | 'running' | 'completed' | 'error';
     total: number;
@@ -306,7 +304,6 @@ export default function Admin() {
     message: string;
     brand: string;
   }>({ status: 'idle', total: 0, current: 0, message: '', brand: '' });
-  const [clearBeforeBloostore, setClearBeforeBloostore] = useState(false);
   const bloostoreIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const BLOOSTORE_BRANDS = [
@@ -469,41 +466,12 @@ export default function Admin() {
     }
   };
 
-  const [deletingCategories, setDeletingCategories] = useState(false);
-  const deleteSelectedCategories = async () => {
-    if (selectedBagstyleCategories.length === 0) {
-      toast({ title: "카테고리 선택 필요", description: "삭제할 카테고리를 먼저 선택해주세요.", variant: "destructive" });
-      return;
-    }
-    const names = selectedBagstyleCategories.map(id => BAGSTYLE_CATEGORIES.find(c => c.localId === id)?.name || id).join(', ');
-    if (!window.confirm(`선택한 카테고리의 상품을 삭제합니다:\n${names}\n\n계속 하시겠습니까?`)) return;
-    setDeletingCategories(true);
-    try {
-      const res = await fetchWithAuth("/api/admin/crawl/bagstyle/delete-categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ categories: selectedBagstyleCategories }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast({ title: "삭제 완료", description: `총 ${data.totalDeleted}개 상품이 삭제되었습니다.` });
-      } else {
-        toast({ title: "삭제 실패", description: data.error || "삭제 중 오류가 발생했습니다.", variant: "destructive" });
-      }
-    } catch {
-      toast({ title: "오류", description: "삭제 요청 중 오류가 발생했습니다.", variant: "destructive" });
-    } finally {
-      setDeletingCategories(false);
-    }
-  };
-
   const startBagstyleCrawl = async () => {
     try {
       const res = await fetchWithAuth("/api/admin/crawl/bagstyle/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clearExisting: clearBeforeBagstyle,
           selectedCategories: selectedBagstyleCategories.length > 0 ? selectedBagstyleCategories : undefined,
         }),
       });
@@ -589,7 +557,6 @@ export default function Admin() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clearExistingBags: clearBeforeBags,
           selectedSubcategories: selectedBagSubcategories.length > 0 ? selectedBagSubcategories : undefined,
         }),
       });
@@ -653,7 +620,6 @@ export default function Admin() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          clearExistingWatches: clearBeforeBloostore,
           selectedBrands: selectedBloostoreBrands.length > 0 ? selectedBloostoreBrands : undefined,
         }),
       });
@@ -6104,19 +6070,6 @@ export default function Admin() {
 
                 <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        id="clearBeforeBagstyle"
-                        checked={clearBeforeBagstyle}
-                        onChange={(e) => setClearBeforeBagstyle(e.target.checked)}
-                        className="w-4 h-4 text-teal-600 rounded"
-                      />
-                      <label htmlFor="clearBeforeBagstyle" className="text-sm text-gray-700">
-                        크롤링 전 기존 상품 모두 삭제
-                      </label>
-                    </div>
-
                     <div className="border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h5 className="font-medium text-gray-800">카테고리 선택 (선택안하면 전체)</h5>
@@ -6188,21 +6141,6 @@ export default function Admin() {
                       </div>
                     )}
 
-                    {selectedBagstyleCategories.length > 0 && bagstyleProgress.status !== 'running' && (
-                      <Button
-                        data-testid="button-delete-selected-categories"
-                        onClick={deleteSelectedCategories}
-                        disabled={deletingCategories}
-                        variant="outline"
-                        className="w-full mb-2 border-red-400 text-red-600 hover:bg-red-50"
-                      >
-                        {deletingCategories ? (
-                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />삭제 중...</>
-                        ) : (
-                          <><Trash2 className="w-4 h-4 mr-2" />선택 카테고리 상품만 삭제 ({selectedBagstyleCategories.length}개 카테고리)</>
-                        )}
-                      </Button>
-                    )}
                     <div className="flex gap-3">
                       <Button
                         data-testid="button-start-bagstyle-crawl"
@@ -6270,20 +6208,6 @@ export default function Admin() {
               <div className="p-6 space-y-6">
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <input
-                        data-testid="checkbox-clear-before-bags"
-                        type="checkbox"
-                        id="clearBeforeBags"
-                        checked={clearBeforeBags}
-                        onChange={(e) => setClearBeforeBags(e.target.checked)}
-                        className="w-4 h-4 text-purple-600 rounded"
-                      />
-                      <label htmlFor="clearBeforeBags" className="text-sm text-gray-700">
-                        크롤링 전 기존 가방 상품 모두 삭제
-                      </label>
-                    </div>
-
                     <div className="border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h5 className="font-medium text-gray-800">소분류 선택 (선택안하면 전체)</h5>
@@ -6415,19 +6339,6 @@ export default function Admin() {
               <div className="p-6 space-y-6">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        id="clearBeforeBloostore"
-                        checked={clearBeforeBloostore}
-                        onChange={(e) => setClearBeforeBloostore(e.target.checked)}
-                        className="w-4 h-4 text-blue-600 rounded"
-                      />
-                      <label htmlFor="clearBeforeBloostore" className="text-sm text-gray-700">
-                        크롤링 전 기존 시계 상품 모두 삭제
-                      </label>
-                    </div>
-
                     <div className="border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h5 className="font-medium text-gray-800">브랜드 선택 (선택안하면 전체)</h5>
