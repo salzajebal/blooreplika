@@ -3898,8 +3898,9 @@ export async function registerRoutes(
 
             if (isGenderPage) {
               // Gender pages show fixed 100 best-sellers on page 1 only (no pagination)
+              // Each tab stores its own 100 products independently (no cross-tab dedup)
               const ids = await fetchProductList(category.caId, 1, category.pageBase);
-              ids.forEach(id => { if (!globalSeenIds.has(id)) allIds.add(id); });
+              ids.forEach(id => allIds.add(id));
               bagstyleProgress.message = `[${category.name}] ${allIds.size}개 상품 발견`;
             } else {
               let page = 1;
@@ -3953,7 +3954,8 @@ export async function registerRoutes(
                       gender: category.gender || undefined,
                     });
                     totalInserted++;
-                    globalSeenIds.add(p.sourceId);
+                    // Gender pages: don't add to globalSeenIds so each tab stores independently
+                    if (!isGenderPage) globalSeenIds.add(p.sourceId);
                   } catch {}
                 }
               }
