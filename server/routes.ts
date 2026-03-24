@@ -3389,6 +3389,7 @@ export async function registerRoutes(
         gender?: string;
       }[] = [
         // 남성 탭 (shop/mens.php)
+        { caId: "mens-all", name: "남성전체보기", localId: "men",   pageBase: "mens", gender: "남성" },
         { caId: "b010", name: "남성의류",    localId: "clothing",  pageBase: "mens", gender: "남성" },
         { caId: "b020", name: "남성가방",    localId: "bags",      pageBase: "mens", gender: "남성" },
         { caId: "b040", name: "지갑",        localId: "wallets",   pageBase: "mens", gender: "남성" },
@@ -3397,6 +3398,7 @@ export async function registerRoutes(
         { caId: "b070", name: "남성벨트",    localId: "jewelry",   pageBase: "mens", gender: "남성" },
         { caId: "b080", name: "남성쥬얼리",  localId: "jewelry",   pageBase: "mens", gender: "남성" },
         // 여성 탭 (shop/women.php)
+        { caId: "womens-all", name: "여성전체보기", localId: "women", pageBase: "women", gender: "여성" },
         { caId: "c010", name: "여성의류",    localId: "clothing",  pageBase: "women", gender: "여성" },
         { caId: "c020", name: "여성가방",    localId: "bags",      pageBase: "women", gender: "여성" },
         { caId: "c050", name: "여성신발",    localId: "shoes",     pageBase: "women", gender: "여성" },
@@ -3517,10 +3519,16 @@ export async function registerRoutes(
       const fetchProductList = async (caId: string, page: number, pageBase?: "mens" | "women" | "list"): Promise<string[]> => {
         try {
           let url: string;
+          const isAll = !caId || caId === "mens-all" || caId === "womens-all";
           if (pageBase === "mens") {
-            url = `https://bagstyle.site/shop/mens.php?ca_id=${caId}&pg_no=${page}`;
+            // 전체보기(mens-all)는 ca_id 파라미터 없이 기본 URL 사용
+            url = isAll
+              ? `https://bagstyle.site/shop/mens.php?pg_no=${page}`
+              : `https://bagstyle.site/shop/mens.php?ca_id=${caId}&pg_no=${page}`;
           } else if (pageBase === "women") {
-            url = `https://bagstyle.site/shop/women.php?ca_id=${caId}&pg_no=${page}`;
+            url = isAll
+              ? `https://bagstyle.site/shop/women.php?pg_no=${page}`
+              : `https://bagstyle.site/shop/women.php?ca_id=${caId}&pg_no=${page}`;
           } else {
             url = `https://bagstyle.site/shop/list.php?ca_id=${caId}&page=${page}`;
           }
