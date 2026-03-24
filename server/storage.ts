@@ -362,27 +362,9 @@ export class DatabaseStorage implements IStorage {
       } else if (categoryId === 'sale') {
         conditions.push(sql`${products.discountPercent} > 0`);
       } else if (categoryId === 'men') {
-        conditions.push(sql`(
-          ${products.gender} = '남성' OR ${products.gender} = '공용'
-          OR (${products.gender} IS NULL AND (
-            ${products.name} ILIKE '%남성%' OR ${products.name} ILIKE '%[남성]%'
-            OR (${products.name} ~* '\\mMens?\\M' AND ${products.name} !~* '\\mWomens?\\M')
-            OR (${products.name} ~* '\\mMen''s\\M' AND ${products.name} !~* '\\mWomen''s\\M')
-            OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
-            OR ${products.name} ILIKE '%Unisex%'
-          ))
-        )`);
+        conditions.push(eq(products.categoryId, 'men'));
       } else if (categoryId === 'women') {
-        conditions.push(sql`(
-          ${products.gender} = '여성' OR ${products.gender} = '공용'
-          OR (${products.gender} IS NULL AND (
-            ${products.name} ILIKE '%여성%' OR ${products.name} ILIKE '%[여성]%'
-            OR ${products.name} ~* '\\mWomens?\\M' OR ${products.name} ~* '\\mWomen''s\\M'
-            OR ${products.name} ILIKE '%ladies%'
-            OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
-            OR ${products.name} ILIKE '%Unisex%'
-          ))
-        )`);
+        conditions.push(eq(products.categoryId, 'women'));
       } else {
         conditions.push(eq(products.categoryId, categoryId));
       }
