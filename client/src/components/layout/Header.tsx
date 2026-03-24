@@ -399,6 +399,33 @@ export function Header() {
           </div>
         </div>
 
+        <div className="md:hidden bg-[#f8f8f8] border-b border-gray-100">
+          <div className="flex items-center justify-center divide-x divide-gray-300 text-[12px] text-gray-600 py-1.5">
+            {memberName ? (
+              <Link href="/profile" className="px-4 py-0.5 hover:text-black font-medium" data-testid="mobile-link-profile">
+                마이페이지
+              </Link>
+            ) : (
+              <>
+                <Link href="/login" className="px-4 py-0.5 hover:text-black" data-testid="mobile-link-login">
+                  로그인
+                </Link>
+                <Link href="/signup" className="px-4 py-0.5 hover:text-black" data-testid="mobile-link-signup">
+                  회원가입
+                </Link>
+              </>
+            )}
+            <Link href="/cart" className="px-4 py-0.5 hover:text-black flex items-center gap-1" data-testid="mobile-link-cart">
+              장바구니
+              {count > 0 && (
+                <span className="bg-black text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
+                  {count > 9 ? "9+" : count}
+                </span>
+              )}
+            </Link>
+          </div>
+        </div>
+
         <nav className="hidden md:block bg-white border-b border-gray-200">
           <div className="max-w-[1200px] mx-auto px-4">
             <ul className="flex items-center justify-center gap-0">

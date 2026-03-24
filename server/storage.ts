@@ -81,6 +81,7 @@ export interface IStorage {
   
   // Members
   getAllMembers(): Promise<Member[]>;
+  getMembersCount(): Promise<number>;
   getMember(id: string): Promise<Member | undefined>;
   getMemberByEmail(email: string): Promise<Member | undefined>;
   getMemberByUsername(username: string): Promise<Member | undefined>;
@@ -652,6 +653,11 @@ export class DatabaseStorage implements IStorage {
   // Members
   async getAllMembers(): Promise<Member[]> {
     return db.select().from(members).orderBy(desc(members.createdAt));
+  }
+
+  async getMembersCount(): Promise<number> {
+    const [result] = await db.select({ count: sql<number>`count(*)::int` }).from(members);
+    return Number(result?.count || 0);
   }
 
   async getMember(id: string): Promise<Member | undefined> {

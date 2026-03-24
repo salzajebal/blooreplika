@@ -2091,9 +2091,9 @@ export async function registerRoutes(
   
   app.get("/api/admin/stats", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      const [productCounts, membersList, categoryList] = await Promise.all([
+      const [productCounts, membersCount, categoryList] = await Promise.all([
         storage.getProductCountWithCategories(),
-        storage.getAllMembers(),
+        storage.getMembersCount(),
         storage.getAllCategories(),
       ]);
       
@@ -2103,7 +2103,7 @@ export async function registerRoutes(
         success: true,
         data: {
           totalProducts: productCounts.total,
-          totalMembers: membersList.length,
+          totalMembers: membersCount,
           totalCategories: categoryList.length,
           productsByCategory: categoryList.map(cat => ({
             id: cat.id,

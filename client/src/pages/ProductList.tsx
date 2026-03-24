@@ -116,13 +116,13 @@ export default function ProductList() {
     : categorySlug;
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: PointerEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setOpenDropdown(null);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => document.removeEventListener("pointerdown", handleClickOutside);
   }, []);
 
   const handleWishlistToggle = (e: React.MouseEvent, product: Product) => {
@@ -391,7 +391,7 @@ export default function ProductList() {
         </button>
 
         {openDropdown === "category" && (
-          <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px] max-h-[300px] overflow-y-auto scroll-smooth" style={{ overscrollBehaviorY: "contain", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin", scrollbarColor: "#ccc transparent" }}>
+          <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px] max-h-[300px] overflow-y-auto scroll-smooth" style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin", scrollbarColor: "#ccc transparent", touchAction: "pan-y" }}>
             <button
               onClick={() => { setSelectedSubcategory(null); setOpenDropdown(null); }}
               className={cn(
@@ -458,7 +458,7 @@ export default function ProductList() {
                 />
               </div>
             </div>
-            <div className="overflow-y-auto max-h-[320px] scroll-smooth" style={{ overscrollBehaviorY: "contain", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin", scrollbarColor: "#ccc transparent" }}>
+            <div className="overflow-y-auto max-h-[320px] scroll-smooth" style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin", scrollbarColor: "#ccc transparent", touchAction: "pan-y" }}>
               {!brandSearch && (
                 <button
                   onClick={() => { setSelectedBrand(null); setOpenDropdown(null); setBrandSearch(""); }}
