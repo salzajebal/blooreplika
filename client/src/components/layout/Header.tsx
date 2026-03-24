@@ -12,11 +12,22 @@ interface CategoryMenuItem {
   subcategories?: { name: string; path: string }[];
 }
 
+interface TopNavItem {
+  name: string;
+  path: string;
+  dropdown?: { name: string; path: string }[];
+}
+
 const categoryMenuItems: CategoryMenuItem[] = [
   { name: '신상품', path: '/products/new-arrivals' },
   { name: '브랜드', path: '/brands' },
-  { name: '남성명품관', path: '/products/men' },
-  { name: '여성명품관', path: '/products/women' },
+  {
+    name: '성별', path: '/products/men',
+    subcategories: [
+      { name: '남성', path: '/products/men' },
+      { name: '여성', path: '/products/women' },
+    ]
+  },
   {
     name: '의류', path: '/products/clothing',
     subcategories: [
@@ -67,11 +78,13 @@ const categoryMenuItems: CategoryMenuItem[] = [
   { name: '할인상품', path: '/products/sale' },
 ];
 
-const topNavItems = [
+const topNavItems: TopNavItem[] = [
   { name: '신상품', path: '/products/new-arrivals' },
   { name: '브랜드', path: '/brands' },
-  { name: '남성', path: '/products/men' },
-  { name: '여성', path: '/products/women' },
+  { name: '성별', path: '/products/men', dropdown: [
+    { name: '남성', path: '/products/men' },
+    { name: '여성', path: '/products/women' },
+  ]},
   { name: '의류', path: '/products/clothing' },
   { name: '가방', path: '/products/bags' },
   { name: '시계', path: '/products/watches' },
@@ -106,6 +119,7 @@ export function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [announcementVisible, setAnnouncementVisible] = useState(true);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [navDropdownOpen, setNavDropdownOpen] = useState<string | null>(null);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -389,14 +403,34 @@ export function Header() {
           <div className="max-w-[1200px] mx-auto px-4">
             <ul className="flex items-center justify-center gap-0">
               {topNavItems.map((item, index) => (
-                <li key={`${item.name}-${index}`}>
+                <li
+                  key={`${item.name}-${index}`}
+                  className="relative"
+                  onMouseEnter={() => item.dropdown ? setNavDropdownOpen(item.name) : undefined}
+                  onMouseLeave={() => item.dropdown ? setNavDropdownOpen(null) : undefined}
+                >
                   <Link 
                     href={item.path} 
-                    className={`block px-4 lg:px-5 py-3.5 text-sm text-gray-600 hover:text-black hover:font-medium transition-colors whitespace-nowrap ${location === item.path ? 'text-black font-semibold' : ''}`}
+                    className={`flex items-center gap-0.5 px-4 lg:px-5 py-3.5 text-sm text-gray-600 hover:text-black hover:font-medium transition-colors whitespace-nowrap ${(location === item.path || (item.dropdown && item.dropdown.some(d => location === d.path))) ? 'text-black font-semibold' : ''}`}
                     data-testid={`nav-${item.name}`}
                   >
                     {item.name}
+                    {item.dropdown && <ChevronDown className="w-3 h-3 ml-0.5 opacity-50" />}
                   </Link>
+                  {item.dropdown && navDropdownOpen === item.name && (
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 bg-white border border-gray-200 shadow-lg z-50 min-w-[100px] rounded-b-md">
+                      {item.dropdown.map(sub => (
+                        <Link
+                          key={sub.name}
+                          href={sub.path}
+                          className="block px-5 py-2.5 text-sm text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap text-center"
+                          onClick={() => setNavDropdownOpen(null)}
+                        >
+                          {sub.name}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -406,14 +440,29 @@ export function Header() {
         <div className="md:hidden bg-white border-b border-gray-100 overflow-x-auto scrollbar-hide">
           <div className="flex items-center px-3 py-2.5 gap-0 min-w-max">
             {topNavItems.map((item, index) => (
-              <Link 
-                key={`${item.name}-m-${index}`}
-                href={item.path} 
-                className={`px-3 py-1.5 text-[13px] text-gray-600 hover:text-black whitespace-nowrap ${location === item.path ? 'text-black font-semibold' : ''}`}
-                data-testid={`nav-mobile-${item.name}`}
-              >
-                {item.name}
-              </Link>
+              item.dropdown ? (
+                <div key={`${item.name}-m-${index}`} className="flex">
+                  {item.dropdown.map(sub => (
+                    <Link
+                      key={sub.name}
+                      href={sub.path}
+                      className={`px-3 py-1.5 text-[13px] text-gray-600 hover:text-black whitespace-nowrap ${location === sub.path ? 'text-black font-semibold' : ''}`}
+                      data-testid={`nav-mobile-${sub.name}`}
+                    >
+                      {sub.name}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <Link 
+                  key={`${item.name}-m-${index}`}
+                  href={item.path} 
+                  className={`px-3 py-1.5 text-[13px] text-gray-600 hover:text-black whitespace-nowrap ${location === item.path ? 'text-black font-semibold' : ''}`}
+                  data-testid={`nav-mobile-${item.name}`}
+                >
+                  {item.name}
+                </Link>
+              )
             ))}
           </div>
         </div>

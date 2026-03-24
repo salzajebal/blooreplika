@@ -71,18 +71,36 @@ export default function ProductList() {
   
   const searchString = useSearch();
 
-  const { searchQuery, subcategoryId, urlBrand } = useMemo(() => {
+  const { searchQuery, subcategoryId, urlBrand, activeTab } = useMemo(() => {
     const params = new URLSearchParams(searchString);
     return {
       searchQuery: params.get("q"),
       subcategoryId: params.get("sub"),
       urlBrand: params.get("brand"),
+      activeTab: params.get("tab") || "all",
     };
   }, [searchString]);
 
   const isGenderCategory = categorySlug === "men" || categorySlug === "women";
   const genderFromCategory = categorySlug === "men" ? "남성" : categorySlug === "women" ? "여성" : null;
-  const effectiveCategorySlug = isGenderCategory ? "all" : categorySlug;
+
+  const GENDER_TABS = [
+    { id: "all",        name: "전체보기",   categorySlug: null },
+    { id: "clothing",   name: categorySlug === "men" ? "남성의류" : "여성의류", categorySlug: "clothing" },
+    { id: "bags",       name: categorySlug === "men" ? "남성가방" : "여성가방", categorySlug: "bags" },
+    { id: "wallets",    name: "지갑",       categorySlug: "wallets" },
+    { id: "shoes",      name: "신발",       categorySlug: "shoes" },
+    { id: "sunglasses", name: "선글라스",   categorySlug: "jewelry" },
+    { id: "belt",       name: "벨트",       categorySlug: "jewelry" },
+    { id: "jewelry",    name: "쥬얼리/잡화", categorySlug: "jewelry" },
+  ];
+
+  const tabCategorySlug = isGenderCategory
+    ? (GENDER_TABS.find(t => t.id === activeTab)?.categorySlug ?? null)
+    : null;
+  const effectiveCategorySlug = isGenderCategory
+    ? (tabCategorySlug || "all")
+    : categorySlug;
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -532,19 +550,47 @@ export default function ProductList() {
       <Header />
       
       <main className="container mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold" data-testid="text-category-title">
-            {searchQuery ? `"${searchQuery}" 검색 결과` : categoryInfo?.name || "전체 상품"}
-          </h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {searchQuery 
-              ? `${filteredProducts.length}개의 상품을 찾았습니다.` 
-              : categoryInfo 
-                ? `${categoryInfo.name} 카테고리의 최신 상품을 만나보세요.` 
-                : "모든 카테고리의 상품을 둘러보세요."
-            }
-          </p>
-        </div>
+        {isGenderCategory ? (
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-center" data-testid="text-category-title">
+              {categorySlug === "men" ? "남성/베스트" : "여성/베스트"}
+            </h1>
+            <p className="text-gray-400 text-xs text-center mt-1">※ 최근 1주일간 주문한 베스트상품 랭킹순위</p>
+            <div className="mt-4 border-b border-gray-200">
+              <div className="flex overflow-x-auto scrollbar-hide -mb-px">
+                {GENDER_TABS.map(tab => (
+                  <Link
+                    key={tab.id}
+                    href={`/products/${categorySlug}${tab.id === "all" ? "" : `?tab=${tab.id}`}`}
+                    className={cn(
+                      "whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors",
+                      activeTab === tab.id
+                        ? "border-black text-black"
+                        : "border-transparent text-gray-500 hover:text-black hover:border-gray-300"
+                    )}
+                    data-testid={`tab-gender-${tab.id}`}
+                  >
+                    {tab.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold" data-testid="text-category-title">
+              {searchQuery ? `"${searchQuery}" 검색 결과` : categoryInfo?.name || "전체 상품"}
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">
+              {searchQuery 
+                ? `${filteredProducts.length}개의 상품을 찾았습니다.` 
+                : categoryInfo 
+                  ? `${categoryInfo.name} 카테고리의 최신 상품을 만나보세요.` 
+                  : "모든 카테고리의 상품을 둘러보세요."
+              }
+            </p>
+          </div>
+        )}
 
         <div className="mb-4">
           <div className="flex flex-wrap gap-1.5 pb-3 overflow-x-auto scrollbar-hide">
