@@ -3530,14 +3530,25 @@ export async function registerRoutes(
           let url: string;
           const isAll = !caId || caId === "mens-all" || caId === "womens-all";
           if (pageBase === "mens") {
-            // 전체보기(mens-all)는 ca_id 파라미터 없이 기본 URL 사용
-            url = isAll
-              ? `https://bagstyle.site/shop/mens.php?pg_no=${page}`
-              : `https://bagstyle.site/shop/mens.php?ca_id=${caId}&pg_no=${page}`;
+            if (page === 1) {
+              url = isAll
+                ? `https://bagstyle.site/shop/mens.php`
+                : `https://bagstyle.site/shop/mens.php?ca_id=${caId}`;
+            } else {
+              url = isAll
+                ? `https://bagstyle.site/shop/mens.php?pg_no=${page}`
+                : `https://bagstyle.site/shop/mens.php?ca_id=${caId}&pg_no=${page}`;
+            }
           } else if (pageBase === "women") {
-            url = isAll
-              ? `https://bagstyle.site/shop/women.php?pg_no=${page}`
-              : `https://bagstyle.site/shop/women.php?ca_id=${caId}&pg_no=${page}`;
+            if (page === 1) {
+              url = isAll
+                ? `https://bagstyle.site/shop/women.php`
+                : `https://bagstyle.site/shop/women.php?ca_id=${caId}`;
+            } else {
+              url = isAll
+                ? `https://bagstyle.site/shop/women.php?pg_no=${page}`
+                : `https://bagstyle.site/shop/women.php?ca_id=${caId}&pg_no=${page}`;
+            }
           } else {
             url = `https://bagstyle.site/shop/list.php?ca_id=${caId}&page=${page}`;
           }
