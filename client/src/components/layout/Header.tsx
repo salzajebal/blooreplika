@@ -375,54 +375,49 @@ export function Header() {
                 </Link>
               </div>
 
-              <div className="flex items-center gap-2 md:gap-4">
-                <button 
-                  onClick={() => setSearchOpen(!searchOpen)} 
-                  className="p-2 text-gray-700 hover:text-black transition-colors"
-                  data-testid="button-search-toggle"
-                >
-                  <Search className="w-5 h-5" />
-                </button>
-                <Link href="/profile" className="hidden md:block p-2 text-gray-700 hover:text-black transition-colors" data-testid="link-profile">
-                  <User className="w-5 h-5" />
-                </Link>
-                <Link href="/cart" className="relative p-2 text-gray-700 hover:text-black transition-colors" data-testid="button-cart">
-                  <ShoppingBag className="w-5 h-5" />
-                  {count > 0 && (
-                    <span className="absolute top-0 right-0 bg-red-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
-                      {count > 9 ? "9+" : count}
-                    </span>
+              <div className="flex flex-col items-end md:flex-row md:items-center gap-0 md:gap-4">
+                <div className="flex items-center gap-2">
+                  <button 
+                    onClick={() => setSearchOpen(!searchOpen)} 
+                    className="p-2 text-gray-700 hover:text-black transition-colors"
+                    data-testid="button-search-toggle"
+                  >
+                    <Search className="w-5 h-5" />
+                  </button>
+                  <Link href="/profile" className="hidden md:block p-2 text-gray-700 hover:text-black transition-colors" data-testid="link-profile">
+                    <User className="w-5 h-5" />
+                  </Link>
+                  <Link href="/cart" className="relative p-2 text-gray-700 hover:text-black transition-colors hidden md:block" data-testid="button-cart">
+                    <ShoppingBag className="w-5 h-5" />
+                    {count > 0 && (
+                      <span className="absolute top-0 right-0 bg-red-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
+                        {count > 9 ? "9+" : count}
+                      </span>
+                    )}
+                  </Link>
+                </div>
+                <div className="md:hidden flex items-center gap-1 text-[11px] text-black pb-1 pr-2">
+                  {memberName ? (
+                    <Link href="/profile" className="hover:opacity-70" data-testid="mobile-link-profile">마이페이지</Link>
+                  ) : (
+                    <>
+                      <Link href="/login" className="hover:opacity-70" data-testid="mobile-link-login">로그인</Link>
+                      <span className="text-gray-300">|</span>
+                      <Link href="/signup" className="hover:opacity-70" data-testid="mobile-link-signup">회원가입</Link>
+                      <span className="text-gray-300">|</span>
+                    </>
                   )}
-                </Link>
+                  <Link href="/cart" className="hover:opacity-70 flex items-center gap-0.5" data-testid="mobile-link-cart">
+                    장바구니
+                    {count > 0 && (
+                      <span className="bg-black text-white text-[9px] w-3.5 h-3.5 flex items-center justify-center rounded-full font-bold">
+                        {count > 9 ? "9+" : count}
+                      </span>
+                    )}
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <div className="md:hidden bg-[#f8f8f8] border-b border-gray-100">
-          <div className="flex items-center justify-center divide-x divide-gray-300 text-[12px] text-gray-600 py-1.5">
-            {memberName ? (
-              <Link href="/profile" className="px-4 py-0.5 hover:text-black font-medium" data-testid="mobile-link-profile">
-                마이페이지
-              </Link>
-            ) : (
-              <>
-                <Link href="/login" className="px-4 py-0.5 hover:text-black" data-testid="mobile-link-login">
-                  로그인
-                </Link>
-                <Link href="/signup" className="px-4 py-0.5 hover:text-black" data-testid="mobile-link-signup">
-                  회원가입
-                </Link>
-              </>
-            )}
-            <Link href="/cart" className="px-4 py-0.5 hover:text-black flex items-center gap-1" data-testid="mobile-link-cart">
-              장바구니
-              {count > 0 && (
-                <span className="bg-black text-white text-[10px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
-                  {count > 9 ? "9+" : count}
-                </span>
-              )}
-            </Link>
           </div>
         </div>
 
