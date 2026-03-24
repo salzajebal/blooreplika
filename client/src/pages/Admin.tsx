@@ -466,6 +466,62 @@ export default function Admin() {
     }
   };
 
+  // ── 중복 상품 정리 ──────────────────────────────────────────────────────
+  const [dedupAnalysis, setDedupAnalysis] = useState<{
+    totalProducts: number;
+    byCategory: { category_name: string; cnt: number }[];
+    urlDuplicates: { groupCount: number; wouldDelete: number; samples: { url: string; count: number }[] };
+    nameDuplicates: { wouldDelete: number };
+    totalWouldDelete: number;
+  } | null>(null);
+  const [dedupAnalyzing, setDedupAnalyzing] = useState(false);
+  const [dedupExecuting, setDedupExecuting] = useState(false);
+  const [dedupResult, setDedupResult] = useState<{
+    urlDuplicatesDeleted: number;
+    nameDuplicatesDeleted: number;
+    totalDeleted: number;
+    remainingProducts: number;
+  } | null>(null);
+
+  const runDedupAnalyze = async () => {
+    setDedupAnalyzing(true);
+    setDedupResult(null);
+    try {
+      const res = await fetchWithAuth("/api/admin/products/dedup-analyze", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setDedupAnalysis(data.data);
+      } else {
+        toast({ title: "분석 실패", description: data.error || "오류 발생", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "서버 연결 오류", variant: "destructive" });
+    } finally {
+      setDedupAnalyzing(false);
+    }
+  };
+
+  const runDedupExecute = async () => {
+    if (!dedupAnalysis) return;
+    if (!window.confirm(`중복 상품 ${dedupAnalysis.totalWouldDelete}개를 삭제합니다.\n\n가장 오래된 상품(최초 등록본)을 남기고 나머지를 삭제합니다.\n이 작업은 되돌릴 수 없습니다. 계속하시겠습니까?`)) return;
+    setDedupExecuting(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/products/dedup-execute", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setDedupResult(data.data);
+        setDedupAnalysis(null);
+        toast({ title: "완료", description: `총 ${data.data.totalDeleted}개 중복 상품 삭제. 남은 상품: ${data.data.remainingProducts}개` });
+      } else {
+        toast({ title: "삭제 실패", description: data.error || "오류 발생", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "서버 연결 오류", variant: "destructive" });
+    } finally {
+      setDedupExecuting(false);
+    }
+  };
+
   const startBagstyleCrawl = async () => {
     try {
       const res = await fetchWithAuth("/api/admin/crawl/bagstyle/start", {
@@ -3608,6 +3664,126 @@ export default function Admin() {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* 중복 상품 정리 패널 */}
+          <div className="bg-white rounded-xl shadow-sm border border-red-100 mt-6">
+            <div className="p-5 border-b border-red-100 flex items-center gap-3">
+              <div className="w-8 h-8 bg-red-50 rounded-full flex items-center justify-center">
+                <Trash2 className="w-4 h-4 text-red-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">중복 상품 정리</h3>
+                <p className="text-xs text-gray-500">동일한 URL 또는 동일한 이름+브랜드+카테고리 상품을 찾아 제거합니다 (최초 등록본 유지)</p>
+              </div>
+            </div>
+            <div className="p-5 space-y-4">
+              {/* 결과 표시 */}
+              {dedupResult && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
+                  <p className="font-medium text-green-800">✓ 중복 정리 완료</p>
+                  <div className="grid grid-cols-3 gap-3 text-sm">
+                    <div className="bg-white rounded p-2 text-center border border-green-200">
+                      <div className="font-bold text-green-700">{dedupResult.urlDuplicatesDeleted.toLocaleString()}</div>
+                      <div className="text-gray-500 text-xs">URL 중복 삭제</div>
+                    </div>
+                    <div className="bg-white rounded p-2 text-center border border-green-200">
+                      <div className="font-bold text-green-700">{dedupResult.nameDuplicatesDeleted.toLocaleString()}</div>
+                      <div className="text-gray-500 text-xs">이름 중복 삭제</div>
+                    </div>
+                    <div className="bg-white rounded p-2 text-center border border-green-200">
+                      <div className="font-bold text-blue-700">{dedupResult.remainingProducts.toLocaleString()}</div>
+                      <div className="text-gray-500 text-xs">남은 상품</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 분석 결과 */}
+              {dedupAnalysis && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-3">
+                  <p className="font-medium text-orange-800">분석 결과</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                    <div className="bg-white rounded p-2 text-center border border-orange-200">
+                      <div className="font-bold text-gray-800">{dedupAnalysis.totalProducts.toLocaleString()}</div>
+                      <div className="text-gray-500 text-xs">총 상품수</div>
+                    </div>
+                    <div className="bg-white rounded p-2 text-center border border-orange-200">
+                      <div className="font-bold text-red-600">{dedupAnalysis.urlDuplicates.wouldDelete.toLocaleString()}</div>
+                      <div className="text-gray-500 text-xs">URL 중복 삭제 예정</div>
+                    </div>
+                    <div className="bg-white rounded p-2 text-center border border-orange-200">
+                      <div className="font-bold text-red-600">{dedupAnalysis.nameDuplicates.wouldDelete.toLocaleString()}</div>
+                      <div className="text-gray-500 text-xs">이름 중복 삭제 예정</div>
+                    </div>
+                    <div className="bg-white rounded p-2 text-center border border-orange-200">
+                      <div className="font-bold text-blue-700">{(dedupAnalysis.totalProducts - dedupAnalysis.totalWouldDelete).toLocaleString()}</div>
+                      <div className="text-gray-500 text-xs">정리 후 남는 상품</div>
+                    </div>
+                  </div>
+
+                  {/* 카테고리별 분포 */}
+                  {dedupAnalysis.byCategory.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 mb-2">카테고리별 상품수</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {dedupAnalysis.byCategory.map((c, i) => (
+                          <span key={i} className="text-xs bg-white border border-orange-200 rounded px-2 py-0.5">
+                            {c.category_name || '미분류'}: {c.cnt.toLocaleString()}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* URL 중복 샘플 */}
+                  {dedupAnalysis.urlDuplicates.samples.length > 0 && (
+                    <div>
+                      <p className="text-xs font-medium text-gray-600 mb-1">중복 URL 샘플 (상위 {dedupAnalysis.urlDuplicates.samples.length}개)</p>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {dedupAnalysis.urlDuplicates.samples.map((s, i) => (
+                          <div key={i} className="text-xs bg-white border border-orange-200 rounded px-2 py-1 flex justify-between">
+                            <span className="text-gray-600 truncate flex-1">{s.url}</span>
+                            <span className="text-red-500 font-medium ml-2 shrink-0">{s.count}개 중복</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {dedupAnalysis.totalWouldDelete === 0 ? (
+                    <p className="text-green-700 text-sm font-medium">✓ 중복 상품 없음 — 정리가 필요하지 않습니다.</p>
+                  ) : (
+                    <Button
+                      data-testid="button-dedup-execute"
+                      onClick={runDedupExecute}
+                      disabled={dedupExecuting}
+                      className="w-full bg-red-500 hover:bg-red-600 text-white"
+                    >
+                      {dedupExecuting ? (
+                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />삭제 중... (롤백 가능)</>
+                      ) : (
+                        <><Trash2 className="w-4 h-4 mr-2" />중복 {dedupAnalysis.totalWouldDelete.toLocaleString()}개 삭제 실행</>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              <Button
+                data-testid="button-dedup-analyze"
+                onClick={runDedupAnalyze}
+                disabled={dedupAnalyzing || dedupExecuting}
+                variant="outline"
+                className="border-red-300 text-red-600 hover:bg-red-50"
+              >
+                {dedupAnalyzing ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />분석 중...</>
+                ) : (
+                  <><RefreshCw className="w-4 h-4 mr-2" />중복 분석 시작 (미리보기)</>
+                )}
+              </Button>
+            </div>
           </div>
         )}
 

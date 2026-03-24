@@ -3,6 +3,7 @@ import { type Server } from "http";
 import * as cheerio from "cheerio";
 import compression from "compression";
 import { storage } from "./storage";
+import { pool } from "./db";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 import { 
   type Product,
@@ -6828,6 +6829,153 @@ export async function registerRoutes(
         console.error('[bloostore-review] Fatal error:', error);
       }
     })();
+  });
+
+  // ── 중복 상품 분석 (dry-run) ──────────────────────────────────────────
+  app.post("/api/admin/products/dedup-analyze", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const client = await pool.connect();
+      try {
+        // 1) source_url 기준 중복
+        const urlDupGroups = await client.query(`
+          SELECT source_url, COUNT(*) as cnt, MIN(created_at) as oldest
+          FROM products
+          WHERE source_url IS NOT NULL AND source_url != ''
+          GROUP BY source_url
+          HAVING COUNT(*) > 1
+          ORDER BY cnt DESC
+          LIMIT 20
+        `);
+
+        const urlDupTotalRows = await client.query(`
+          SELECT COALESCE(SUM(sub.cnt - 1), 0)::int as extra
+          FROM (
+            SELECT COUNT(*) as cnt
+            FROM products
+            WHERE source_url IS NOT NULL AND source_url != ''
+            GROUP BY source_url
+            HAVING COUNT(*) > 1
+          ) sub
+        `);
+
+        // 2) 이름+브랜드+카테고리 기준 중복 (source_url 없는 것 포함 전체)
+        const nameDupTotalRows = await client.query(`
+          SELECT COALESCE(SUM(sub.cnt - 1), 0)::int as extra
+          FROM (
+            SELECT COUNT(*) as cnt
+            FROM products
+            GROUP BY name, brand_id, category_id
+            HAVING COUNT(*) > 1
+          ) sub
+        `);
+
+        // 3) 전체 통계
+        const totalRows = await client.query(`SELECT COUNT(*)::int as total FROM products`);
+        const byCategory = await client.query(`
+          SELECT c.name as category_name, COUNT(p.id)::int as cnt
+          FROM products p
+          LEFT JOIN categories c ON p.category_id = c.id
+          GROUP BY c.name
+          ORDER BY cnt DESC
+        `);
+
+        res.json({
+          success: true,
+          data: {
+            totalProducts: totalRows.rows[0].total,
+            byCategory: byCategory.rows,
+            urlDuplicates: {
+              groupCount: urlDupGroups.rowCount || 0,
+              wouldDelete: urlDupTotalRows.rows[0].extra,
+              samples: urlDupGroups.rows.map((r: any) => ({
+                url: r.source_url?.substring(0, 80),
+                count: parseInt(r.cnt),
+              })),
+            },
+            nameDuplicates: {
+              wouldDelete: nameDupTotalRows.rows[0].extra,
+            },
+            totalWouldDelete: urlDupTotalRows.rows[0].extra,
+          }
+        });
+      } finally {
+        client.release();
+      }
+    } catch (error: any) {
+      console.error('[dedup-analyze] Error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // ── 중복 상품 실제 제거 ───────────────────────────────────────────────
+  app.post("/api/admin/products/dedup-execute", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+
+        // 1단계: source_url 기준 중복 제거 (가장 오래된 것 보존)
+        const urlResult = await client.query(`
+          DELETE FROM products
+          WHERE id IN (
+            SELECT id FROM (
+              SELECT id,
+                ROW_NUMBER() OVER (
+                  PARTITION BY source_url
+                  ORDER BY created_at ASC
+                ) AS rn
+              FROM products
+              WHERE source_url IS NOT NULL AND source_url != ''
+            ) t
+            WHERE rn > 1
+          )
+          RETURNING id
+        `);
+        const urlDeleted = urlResult.rowCount || 0;
+
+        // 2단계: 이름+브랜드+카테고리 기준 중복 제거 (가장 오래된 것 보존)
+        const nameResult = await client.query(`
+          DELETE FROM products
+          WHERE id IN (
+            SELECT id FROM (
+              SELECT id,
+                ROW_NUMBER() OVER (
+                  PARTITION BY name, brand_id, category_id
+                  ORDER BY created_at ASC
+                ) AS rn
+              FROM products
+            ) t
+            WHERE rn > 1
+          )
+          RETURNING id
+        `);
+        const nameDeleted = nameResult.rowCount || 0;
+
+        await client.query('COMMIT');
+
+        const totalAfter = await client.query(`SELECT COUNT(*)::int as cnt FROM products`);
+
+        console.log(`[dedup-execute] URL 기준 ${urlDeleted}개, 이름 기준 ${nameDeleted}개 삭제. 남은 상품: ${totalAfter.rows[0].cnt}`);
+
+        res.json({
+          success: true,
+          data: {
+            urlDuplicatesDeleted: urlDeleted,
+            nameDuplicatesDeleted: nameDeleted,
+            totalDeleted: urlDeleted + nameDeleted,
+            remainingProducts: totalAfter.rows[0].cnt,
+          }
+        });
+      } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+      } finally {
+        client.release();
+      }
+    } catch (error: any) {
+      console.error('[dedup-execute] Error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
   });
 
   return httpServer;
