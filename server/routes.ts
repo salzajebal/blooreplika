@@ -3403,18 +3403,18 @@ export async function registerRoutes(
         { caId: "b020", name: "남성가방",    localId: "bags",      pageBase: "mens", gender: "남성" },
         { caId: "b040", name: "지갑",        localId: "wallets",   pageBase: "mens", gender: "남성" },
         { caId: "b0b0", name: "남성신발",    localId: "shoes",     pageBase: "mens", gender: "남성" },
-        { caId: "b0a0", name: "남성선글라스", localId: "jewelry",  pageBase: "mens", gender: "남성" },
-        { caId: "b070", name: "남성벨트",    localId: "jewelry",   pageBase: "mens", gender: "남성" },
-        { caId: "b080", name: "남성쥬얼리",  localId: "jewelry",   pageBase: "mens", gender: "남성" },
+        { caId: "b0a0", name: "남성선글라스", localId: "sunglasses",  pageBase: "mens", gender: "남성" },
+        { caId: "b070", name: "남성벨트",    localId: "belts",       pageBase: "mens", gender: "남성" },
+        { caId: "b080", name: "남성쥬얼리",  localId: "accessories", pageBase: "mens", gender: "남성" },
         // 여성 탭 (shop/women.php)
         { caId: "womens-all", name: "여성전체보기", localId: "women", pageBase: "women", gender: "여성" },
-        { caId: "c010", name: "여성의류",    localId: "clothing",  pageBase: "women", gender: "여성" },
-        { caId: "c020", name: "여성가방",    localId: "bags",      pageBase: "women", gender: "여성" },
-        { caId: "c050", name: "여성신발",    localId: "shoes",     pageBase: "women", gender: "여성" },
-        { caId: "c040", name: "패션시계",    localId: "watches",   pageBase: "women", gender: "여성" },
-        { caId: "c070", name: "여성선글라스", localId: "jewelry",  pageBase: "women", gender: "여성" },
-        { caId: "c060", name: "여성벨트",    localId: "jewelry",   pageBase: "women", gender: "여성" },
-        { caId: "c0a0", name: "여성쥬얼리",  localId: "jewelry",   pageBase: "women", gender: "여성" },
+        { caId: "c010", name: "여성의류",    localId: "clothing",    pageBase: "women", gender: "여성" },
+        { caId: "c020", name: "여성가방",    localId: "bags",        pageBase: "women", gender: "여성" },
+        { caId: "c050", name: "여성신발",    localId: "shoes",       pageBase: "women", gender: "여성" },
+        { caId: "c040", name: "패션시계",    localId: "watches",     pageBase: "women", gender: "여성" },
+        { caId: "c070", name: "여성선글라스", localId: "sunglasses", pageBase: "women", gender: "여성" },
+        { caId: "c060", name: "여성벨트",    localId: "belts",       pageBase: "women", gender: "여성" },
+        { caId: "c0a0", name: "여성쥬얼리",  localId: "accessories", pageBase: "women", gender: "여성" },
       ];
 
       const fetchSubcategoriesFromSite = async (hdrs: Record<string, string>): Promise<Record<string, { id: string; name: string }[]>> => {

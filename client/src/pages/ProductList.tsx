@@ -85,25 +85,25 @@ export default function ProductList() {
   const genderFromCategory = categorySlug === "men" ? "남성" : categorySlug === "women" ? "여성" : null;
 
   const MEN_TABS = [
-    { id: "all",        name: "전체보기",    categorySlug: null },
+    { id: "all",        name: "전체보기",    categorySlug: "men" },
     { id: "clothing",   name: "남성의류",    categorySlug: "clothing" },
     { id: "bags",       name: "남성가방",    categorySlug: "bags" },
     { id: "wallets",    name: "지갑",        categorySlug: "wallets" },
     { id: "shoes",      name: "신발",        categorySlug: "shoes" },
-    { id: "sunglasses", name: "선글라스",    categorySlug: "jewelry" },
-    { id: "belt",       name: "벨트",        categorySlug: "jewelry" },
-    { id: "jewelry",    name: "쥬얼리/잡화", categorySlug: "jewelry" },
+    { id: "sunglasses", name: "선글라스",    categorySlug: "sunglasses" },
+    { id: "belt",       name: "벨트",        categorySlug: "belts" },
+    { id: "jewelry",    name: "쥬얼리/잡화", categorySlug: "accessories" },
   ];
 
   const WOMEN_TABS = [
-    { id: "all",        name: "전체보기",    categorySlug: null },
+    { id: "all",        name: "전체보기",    categorySlug: "women" },
     { id: "clothing",   name: "여성의류",    categorySlug: "clothing" },
     { id: "bags",       name: "여성가방",    categorySlug: "bags" },
     { id: "shoes",      name: "신발",        categorySlug: "shoes" },
     { id: "watches",    name: "패션시계",    categorySlug: "watches" },
-    { id: "sunglasses", name: "선글라스",    categorySlug: "jewelry" },
-    { id: "belt",       name: "벨트",        categorySlug: "jewelry" },
-    { id: "jewelry",    name: "쥬얼리/잡화", categorySlug: "jewelry" },
+    { id: "sunglasses", name: "선글라스",    categorySlug: "sunglasses" },
+    { id: "belt",       name: "벨트",        categorySlug: "belts" },
+    { id: "jewelry",    name: "쥬얼리/잡화", categorySlug: "accessories" },
   ];
 
   const GENDER_TABS = categorySlug === "women" ? WOMEN_TABS : MEN_TABS;
