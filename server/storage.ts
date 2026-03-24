@@ -55,6 +55,7 @@ export interface IStorage {
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<boolean>;
   deleteProductsByCategory(categoryId: string): Promise<number>;
+  deleteProductsByCrawlCategory(categoryId: string, gender?: string | null): Promise<number>;
   
   // Categories
   getAllCategories(): Promise<Category[]>;
@@ -485,6 +486,13 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProductsByCategory(categoryId: string): Promise<number> {
     const result = await db.delete(products).where(eq(products.categoryId, categoryId)).returning();
+    return result.length;
+  }
+
+  async deleteProductsByCrawlCategory(categoryId: string, gender?: string | null): Promise<number> {
+    const conditions = [eq(products.categoryId, categoryId)];
+    if (gender) conditions.push(eq(products.gender, gender));
+    const result = await db.delete(products).where(and(...conditions)).returning();
     return result.length;
   }
 

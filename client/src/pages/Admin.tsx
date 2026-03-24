@@ -469,6 +469,34 @@ export default function Admin() {
     }
   };
 
+  const [deletingCategories, setDeletingCategories] = useState(false);
+  const deleteSelectedCategories = async () => {
+    if (selectedBagstyleCategories.length === 0) {
+      toast({ title: "카테고리 선택 필요", description: "삭제할 카테고리를 먼저 선택해주세요.", variant: "destructive" });
+      return;
+    }
+    const names = selectedBagstyleCategories.map(id => BAGSTYLE_CATEGORIES.find(c => c.localId === id)?.name || id).join(', ');
+    if (!window.confirm(`선택한 카테고리의 상품을 삭제합니다:\n${names}\n\n계속 하시겠습니까?`)) return;
+    setDeletingCategories(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bagstyle/delete-categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categories: selectedBagstyleCategories }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "삭제 완료", description: `총 ${data.totalDeleted}개 상품이 삭제되었습니다.` });
+      } else {
+        toast({ title: "삭제 실패", description: data.error || "삭제 중 오류가 발생했습니다.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "삭제 요청 중 오류가 발생했습니다.", variant: "destructive" });
+    } finally {
+      setDeletingCategories(false);
+    }
+  };
+
   const startBagstyleCrawl = async () => {
     try {
       const res = await fetchWithAuth("/api/admin/crawl/bagstyle/start", {
@@ -6160,6 +6188,21 @@ export default function Admin() {
                       </div>
                     )}
 
+                    {selectedBagstyleCategories.length > 0 && bagstyleProgress.status !== 'running' && (
+                      <Button
+                        data-testid="button-delete-selected-categories"
+                        onClick={deleteSelectedCategories}
+                        disabled={deletingCategories}
+                        variant="outline"
+                        className="w-full mb-2 border-red-400 text-red-600 hover:bg-red-50"
+                      >
+                        {deletingCategories ? (
+                          <><Loader2 className="w-4 h-4 mr-2 animate-spin" />삭제 중...</>
+                        ) : (
+                          <><Trash2 className="w-4 h-4 mr-2" />선택 카테고리 상품만 삭제 ({selectedBagstyleCategories.length}개 카테고리)</>
+                        )}
+                      </Button>
+                    )}
                     <div className="flex gap-3">
                       <Button
                         data-testid="button-start-bagstyle-crawl"

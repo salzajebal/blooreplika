@@ -3364,6 +3364,47 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/admin/crawl/bagstyle/delete-categories", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      if ((req as any).adminRole !== "super_admin") return res.status(403).json({ success: false, error: "권한이 없습니다." });
+      const { categories } = req.body; // array of caIds like ["b020", "b010"]
+      if (!Array.isArray(categories) || categories.length === 0) {
+        return res.status(400).json({ success: false, error: "삭제할 카테고리를 선택해주세요." });
+      }
+      const CAT_MAP: Record<string, { localId: string; gender?: string }> = {
+        "mens-all": { localId: "men", gender: "남성" },
+        "b010": { localId: "clothing", gender: "남성" },
+        "b020": { localId: "bags", gender: "남성" },
+        "b040": { localId: "wallets", gender: "남성" },
+        "b0b0": { localId: "shoes", gender: "남성" },
+        "b0a0": { localId: "sunglasses", gender: "남성" },
+        "b070": { localId: "belts", gender: "남성" },
+        "b080": { localId: "accessories", gender: "남성" },
+        "womens-all": { localId: "women", gender: "여성" },
+        "c010": { localId: "clothing", gender: "여성" },
+        "c020": { localId: "bags", gender: "여성" },
+        "c050": { localId: "shoes", gender: "여성" },
+        "c040": { localId: "watches", gender: "여성" },
+        "c070": { localId: "sunglasses", gender: "여성" },
+        "c060": { localId: "belts", gender: "여성" },
+        "c0a0": { localId: "accessories", gender: "여성" },
+      };
+      let totalDeleted = 0;
+      const results: { name: string; deleted: number }[] = [];
+      for (const caId of categories) {
+        const mapping = CAT_MAP[caId];
+        if (!mapping) continue;
+        const deleted = await storage.deleteProductsByCrawlCategory(mapping.localId, mapping.gender);
+        totalDeleted += deleted;
+        results.push({ name: caId, deleted });
+      }
+      res.json({ success: true, totalDeleted, results });
+    } catch (error) {
+      console.error("Error deleting categories:", error);
+      res.status(500).json({ success: false, error: "삭제 중 오류가 발생했습니다." });
+    }
+  });
+
   app.post("/api/admin/crawl/bagstyle/reset", requireAdminAuth, (_req: Request, res: Response) => {
     bagstyleProgress.status = 'idle';
     bagstyleProgress.total = 0;
