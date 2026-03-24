@@ -455,6 +455,20 @@ export default function Admin() {
     } catch {}
   };
 
+  const resetBagstyleCrawl = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bagstyle/reset", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setBagstyleProgress({ status: 'idle', total: 0, current: 0, message: '', category: '' });
+        if (bagstyleIntervalRef.current) { clearInterval(bagstyleIntervalRef.current); bagstyleIntervalRef.current = null; }
+        toast({ title: "초기화 완료", description: "크롤링 상태가 초기화되었습니다. 다시 시작할 수 있습니다." });
+      }
+    } catch {
+      toast({ title: "오류", description: "초기화에 실패했습니다.", variant: "destructive" });
+    }
+  };
+
   const startBagstyleCrawl = async () => {
     try {
       const res = await fetchWithAuth("/api/admin/crawl/bagstyle/start", {
@@ -6167,6 +6181,16 @@ export default function Admin() {
                           </>
                         )}
                       </Button>
+                      {bagstyleProgress.status === 'running' && (
+                        <Button
+                          variant="outline"
+                          onClick={resetBagstyleCrawl}
+                          className="border-red-300 text-red-600 hover:bg-red-50"
+                          data-testid="button-reset-bagstyle-crawl"
+                        >
+                          강제 초기화
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>

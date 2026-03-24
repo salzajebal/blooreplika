@@ -3364,6 +3364,15 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/admin/crawl/bagstyle/reset", requireAdminAuth, (_req: Request, res: Response) => {
+    bagstyleProgress.status = 'idle';
+    bagstyleProgress.total = 0;
+    bagstyleProgress.current = 0;
+    bagstyleProgress.message = '';
+    bagstyleProgress.category = '';
+    res.json({ success: true, message: "크롤링 상태가 초기화되었습니다." });
+  });
+
   app.post("/api/admin/crawl/bagstyle/start", requireAdminAuth, async (req: Request, res: Response) => {
     if (bagstyleProgress.status === 'running') {
       return res.status(400).json({ success: false, error: "이미 크롤링이 진행 중입니다." });
