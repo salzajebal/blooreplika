@@ -84,16 +84,29 @@ export default function ProductList() {
   const isGenderCategory = categorySlug === "men" || categorySlug === "women";
   const genderFromCategory = categorySlug === "men" ? "남성" : categorySlug === "women" ? "여성" : null;
 
-  const GENDER_TABS = [
-    { id: "all",        name: "전체보기",   categorySlug: null },
-    { id: "clothing",   name: categorySlug === "men" ? "남성의류" : "여성의류", categorySlug: "clothing" },
-    { id: "bags",       name: categorySlug === "men" ? "남성가방" : "여성가방", categorySlug: "bags" },
-    { id: "wallets",    name: "지갑",       categorySlug: "wallets" },
-    { id: "shoes",      name: "신발",       categorySlug: "shoes" },
-    { id: "sunglasses", name: "선글라스",   categorySlug: "jewelry" },
-    { id: "belt",       name: "벨트",       categorySlug: "jewelry" },
+  const MEN_TABS = [
+    { id: "all",        name: "전체보기",    categorySlug: null },
+    { id: "clothing",   name: "남성의류",    categorySlug: "clothing" },
+    { id: "bags",       name: "남성가방",    categorySlug: "bags" },
+    { id: "wallets",    name: "지갑",        categorySlug: "wallets" },
+    { id: "shoes",      name: "신발",        categorySlug: "shoes" },
+    { id: "sunglasses", name: "선글라스",    categorySlug: "jewelry" },
+    { id: "belt",       name: "벨트",        categorySlug: "jewelry" },
     { id: "jewelry",    name: "쥬얼리/잡화", categorySlug: "jewelry" },
   ];
+
+  const WOMEN_TABS = [
+    { id: "all",        name: "전체보기",    categorySlug: null },
+    { id: "clothing",   name: "여성의류",    categorySlug: "clothing" },
+    { id: "bags",       name: "여성가방",    categorySlug: "bags" },
+    { id: "shoes",      name: "신발",        categorySlug: "shoes" },
+    { id: "watches",    name: "패션시계",    categorySlug: "watches" },
+    { id: "sunglasses", name: "선글라스",    categorySlug: "jewelry" },
+    { id: "belt",       name: "벨트",        categorySlug: "jewelry" },
+    { id: "jewelry",    name: "쥬얼리/잡화", categorySlug: "jewelry" },
+  ];
+
+  const GENDER_TABS = categorySlug === "women" ? WOMEN_TABS : MEN_TABS;
 
   const tabCategorySlug = isGenderCategory
     ? (GENDER_TABS.find(t => t.id === activeTab)?.categorySlug ?? null)
