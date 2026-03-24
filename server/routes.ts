@@ -3381,18 +3381,29 @@ export async function registerRoutes(
     res.json({ success: true, message: "bagstyle.site 크롤링이 시작되었습니다." });
 
     (async () => {
-      const ALL_CATEGORIES = [
-        { caId: "j0", name: "신상품", localId: "new-arrivals" },
-        { caId: "b0", name: "남성", localId: "men" },
-        { caId: "c0", name: "여성", localId: "women" },
-        { caId: "i0", name: "의류", localId: "clothing" },
-        { caId: "e0", name: "가방", localId: "bags" },
-        { caId: "h0", name: "지갑", localId: "wallets" },
-        { caId: "g0", name: "신발", localId: "shoes" },
-        { caId: "70", name: "골프", localId: "golf" },
-        { caId: "f0", name: "쥬얼리/잡화", localId: "jewelry" },
-        { caId: "80", name: "할인상품", localId: "sale" },
-        { caId: "d0", name: "베스트상품", localId: "best" },
+      const ALL_CATEGORIES: {
+        caId: string;
+        name: string;
+        localId: string;
+        pageBase?: "mens" | "women" | "list";
+        gender?: string;
+      }[] = [
+        // 남성 탭 (shop/mens.php)
+        { caId: "b010", name: "남성의류",    localId: "clothing",  pageBase: "mens", gender: "남성" },
+        { caId: "b020", name: "남성가방",    localId: "bags",      pageBase: "mens", gender: "남성" },
+        { caId: "b040", name: "지갑",        localId: "wallets",   pageBase: "mens", gender: "남성" },
+        { caId: "b0b0", name: "남성신발",    localId: "shoes",     pageBase: "mens", gender: "남성" },
+        { caId: "b0a0", name: "남성선글라스", localId: "jewelry",  pageBase: "mens", gender: "남성" },
+        { caId: "b070", name: "남성벨트",    localId: "jewelry",   pageBase: "mens", gender: "남성" },
+        { caId: "b080", name: "남성쥬얼리",  localId: "jewelry",   pageBase: "mens", gender: "남성" },
+        // 여성 탭 (shop/women.php)
+        { caId: "c010", name: "여성의류",    localId: "clothing",  pageBase: "women", gender: "여성" },
+        { caId: "c020", name: "여성가방",    localId: "bags",      pageBase: "women", gender: "여성" },
+        { caId: "c050", name: "여성신발",    localId: "shoes",     pageBase: "women", gender: "여성" },
+        { caId: "c040", name: "패션시계",    localId: "watches",   pageBase: "women", gender: "여성" },
+        { caId: "c070", name: "여성선글라스", localId: "jewelry",  pageBase: "women", gender: "여성" },
+        { caId: "c060", name: "여성벨트",    localId: "jewelry",   pageBase: "women", gender: "여성" },
+        { caId: "c0a0", name: "여성쥬얼리",  localId: "jewelry",   pageBase: "women", gender: "여성" },
       ];
 
       const fetchSubcategoriesFromSite = async (hdrs: Record<string, string>): Promise<Record<string, { id: string; name: string }[]>> => {
@@ -3443,7 +3454,7 @@ export async function registerRoutes(
       };
 
       const CATEGORIES = selectedCategories && selectedCategories.length > 0
-        ? ALL_CATEGORIES.filter(c => selectedCategories.includes(c.localId))
+        ? ALL_CATEGORIES.filter(c => selectedCategories.includes(c.caId))
         : ALL_CATEGORIES;
 
       const headers = {
@@ -3503,9 +3514,16 @@ export async function registerRoutes(
 
       let SUBCATEGORY_MAP: Record<string, { id: string; name: string }[]> = {};
 
-      const fetchProductList = async (caId: string, page: number): Promise<string[]> => {
+      const fetchProductList = async (caId: string, page: number, pageBase?: "mens" | "women" | "list"): Promise<string[]> => {
         try {
-          const url = `https://bagstyle.site/shop/list.php?ca_id=${caId}&page=${page}`;
+          let url: string;
+          if (pageBase === "mens") {
+            url = `https://bagstyle.site/shop/mens.php?ca_id=${caId}&pg_no=${page}`;
+          } else if (pageBase === "women") {
+            url = `https://bagstyle.site/shop/women.php?ca_id=${caId}&pg_no=${page}`;
+          } else {
+            url = `https://bagstyle.site/shop/list.php?ca_id=${caId}&page=${page}`;
+          }
           const response = await fetch(url, { headers });
           if (!response.ok) return [];
           const html = await response.text();
@@ -3796,7 +3814,9 @@ export async function registerRoutes(
 
         for (const category of CATEGORIES) {
           bagstyleProgress.category = category.name;
-          const subcats = SUBCATEGORY_MAP[category.caId] || [];
+          // Gender-specific pages (mens.php / women.php) don't have sub-subcategories
+          const isGenderPage = category.pageBase === "mens" || category.pageBase === "women";
+          const subcats = isGenderPage ? [] : (SUBCATEGORY_MAP[category.caId] || []);
           
           if (subcats.length > 0) {
             for (const subcat of subcats) {
@@ -3807,7 +3827,7 @@ export async function registerRoutes(
               let emptyCount = 0;
 
               while (emptyCount < 3) {
-                const ids = await fetchProductList(subcat.id, page);
+                const ids = await fetchProductList(subcat.id, page, category.pageBase);
                 let newCount = 0;
                 ids.forEach(id => { if (!allIds.has(id) && !globalSeenIds.has(id)) { allIds.add(id); newCount++; } });
                 if (newCount === 0) emptyCount++; else emptyCount = 0;
@@ -3848,6 +3868,7 @@ export async function registerRoutes(
                         isBest: p.isBest,
                         isNew: totalInserted % 10 === 0,
                         isActive: true,
+                        gender: category.gender || undefined,
                       });
                       totalInserted++;
                       globalSeenIds.add(p.sourceId);
@@ -3866,19 +3887,25 @@ export async function registerRoutes(
             bagstyleProgress.message = `[${category.name}] 상품 목록 수집 중...`;
 
             const allIds = new Set<string>();
-            let page = 1;
-            let emptyCount = 0;
 
-            while (emptyCount < 3) {
-              const ids = await fetchProductList(category.caId, page);
-              let newCount = 0;
-              ids.forEach(id => { if (!allIds.has(id) && !globalSeenIds.has(id)) { allIds.add(id); newCount++; } });
-              if (newCount === 0) emptyCount++; else emptyCount = 0;
-              page++;
-              await delay(50);
-
-              if (page % 10 === 0) {
-                bagstyleProgress.message = `[${category.name}] 페이지 ${page} 스캔 중... (${allIds.size}개 발견)`;
+            if (isGenderPage) {
+              // Gender pages show fixed 100 best-sellers on page 1 only (no pagination)
+              const ids = await fetchProductList(category.caId, 1, category.pageBase);
+              ids.forEach(id => { if (!globalSeenIds.has(id)) allIds.add(id); });
+              bagstyleProgress.message = `[${category.name}] ${allIds.size}개 상품 발견`;
+            } else {
+              let page = 1;
+              let emptyCount = 0;
+              while (emptyCount < 3) {
+                const ids = await fetchProductList(category.caId, page, category.pageBase);
+                let newCount = 0;
+                ids.forEach(id => { if (!allIds.has(id) && !globalSeenIds.has(id)) { allIds.add(id); newCount++; } });
+                if (newCount === 0) emptyCount++; else emptyCount = 0;
+                page++;
+                await delay(50);
+                if (page % 10 === 0) {
+                  bagstyleProgress.message = `[${category.name}] 페이지 ${page} 스캔 중... (${allIds.size}개 발견)`;
+                }
               }
             }
 
@@ -3915,6 +3942,7 @@ export async function registerRoutes(
                       isBest: p.isBest,
                       isNew: totalInserted % 10 === 0,
                       isActive: true,
+                      gender: category.gender || undefined,
                     });
                     totalInserted++;
                     globalSeenIds.add(p.sourceId);

@@ -253,17 +253,22 @@ export default function Admin() {
   const [bagstyleBannerLoading, setBagstyleBannerLoading] = useState(false);
 
   const BAGSTYLE_CATEGORIES = [
-    { localId: "new-arrivals", name: "신상품" },
-    { localId: "men", name: "남성" },
-    { localId: "women", name: "여성" },
-    { localId: "clothing", name: "의류" },
-    { localId: "bags", name: "가방" },
-    { localId: "wallets", name: "지갑" },
-    { localId: "shoes", name: "신발" },
-    { localId: "golf", name: "골프" },
-    { localId: "jewelry", name: "쥬얼리/잡화" },
-    { localId: "sale", name: "할인상품" },
-    { localId: "best", name: "베스트상품" },
+    // 남성 탭
+    { localId: "b010", name: "남성의류 👔" },
+    { localId: "b020", name: "남성가방 👜" },
+    { localId: "b040", name: "지갑 👛" },
+    { localId: "b0b0", name: "남성신발 👞" },
+    { localId: "b0a0", name: "남성선글라스 🕶" },
+    { localId: "b070", name: "남성벨트 👔" },
+    { localId: "b080", name: "남성쥬얼리 💎" },
+    // 여성 탭
+    { localId: "c010", name: "여성의류 👗" },
+    { localId: "c020", name: "여성가방 👜" },
+    { localId: "c050", name: "여성신발 👠" },
+    { localId: "c040", name: "패션시계 ⌚" },
+    { localId: "c070", name: "여성선글라스 🕶" },
+    { localId: "c060", name: "여성벨트 💼" },
+    { localId: "c0a0", name: "여성쥬얼리 💎" },
   ];
   const [selectedBagstyleCategories, setSelectedBagstyleCategories] = useState<string[]>([]);
 
@@ -6023,7 +6028,7 @@ export default function Admin() {
                   <Download className="w-5 h-5 text-teal-600" />
                   bagstyle.site 크롤링
                 </h3>
-                <p className="text-sm text-gray-500 mt-1">bagstyle.site에서 상품, 배너, 카테고리를 크롤링합니다. (시계 카테고리 제외)</p>
+                <p className="text-sm text-gray-500 mt-1">bagstyle.site 남성/여성 탭별 베스트 100개 상품을 상세이미지 포함 크롤링합니다.</p>
               </div>
 
               <div className="p-6 space-y-6">
