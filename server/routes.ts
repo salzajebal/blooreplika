@@ -3909,7 +3909,8 @@ export async function registerRoutes(
               // Gender pages show fixed 100 best-sellers on page 1 only (no pagination)
               // Each tab stores its own 100 products independently (no cross-tab dedup)
               const ids = await fetchProductList(category.caId, 1, category.pageBase);
-              ids.forEach(id => allIds.add(id));
+              // Limit to exactly 100 to match bagstyle.site's display
+              ids.slice(0, 100).forEach(id => allIds.add(id));
               bagstyleProgress.message = `[${category.name}] ${allIds.size}개 상품 발견`;
             } else {
               let page = 1;
