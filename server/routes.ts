@@ -436,7 +436,15 @@ export async function registerRoutes(
           ? category as string 
           : undefined;
       
-      const subCatFilter = subcategoryId ? subcategoryId as string : undefined;
+      let subCatFilter = subcategoryId ? subcategoryId as string : undefined;
+
+      // subcategoryId가 UUID 형식으로 오면 slug(ca_id)로 변환 — 제품은 ca_id를 저장함
+      if (subCatFilter && subCatFilter.length > 10) {
+        try {
+          const foundSubcat = await storage.getSubcategory(subCatFilter);
+          if (foundSubcat && foundSubcat.slug) subCatFilter = foundSubcat.slug;
+        } catch {}
+      }
       
       const productCacheKey = `products:${catFilter || 'all'}:${subCatFilter || 'all'}:${searchQuery || 'all'}:${brandFilter || 'all'}:${genderFilter || 'all'}:${limitNum}:${offsetNum}`;
       type CachedProducts = { products: unknown[]; total: number };
