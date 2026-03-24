@@ -3029,7 +3029,7 @@ export default function Admin() {
           </div>
         )}
 
-        {activeTab === "products" && (
+        {activeTab === "products" && (<>
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
             <div className="flex flex-col gap-4 mb-6">
               <div className="flex justify-between items-center">
@@ -4054,7 +4054,7 @@ export default function Admin() {
               </Button>
             </div>
           </div>
-        )}
+        </>)}
 
         {activeTab === "members" && (
           <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
