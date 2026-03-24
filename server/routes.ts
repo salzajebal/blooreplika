@@ -3930,7 +3930,8 @@ export async function registerRoutes(
               const batch = idsArray.slice(i, i + 10);
               const results = await Promise.all(batch.map(id => fetchProductDetail(id, category.localId, category.caId)));
 
-              for (const p of results) {
+              for (let j = 0; j < results.length; j++) {
+                const p = results[j];
                 if (p && p.price > 0) {
                   try {
                     const brandId = await getOrCreateBrand(p.brandName, p.name);
@@ -3952,6 +3953,7 @@ export async function registerRoutes(
                       isNew: totalInserted % 10 === 0,
                       isActive: true,
                       gender: category.gender || undefined,
+                      sourceIdx: i + j, // 0-based rank (0 = 1위/베스트)
                     });
                     totalInserted++;
                     // Gender pages: don't add to globalSeenIds so each tab stores independently

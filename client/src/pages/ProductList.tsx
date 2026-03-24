@@ -333,7 +333,12 @@ export default function ProductList() {
     
     switch (sortBy) {
       case "newest":
-        result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        if (isGenderCategory) {
+          // 젠더 페이지: bagstyle.site 베스트 랭킹순위 (sourceIdx = 0이 1위)
+          result.sort((a, b) => ((a as any).sourceIdx ?? 999) - ((b as any).sourceIdx ?? 999));
+        } else {
+          result.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+        }
         break;
       case "price_asc":
         result.sort((a, b) => Number(a.price) - Number(b.price));

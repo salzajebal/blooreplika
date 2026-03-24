@@ -349,6 +349,7 @@ export class DatabaseStorage implements IStorage {
       isSoldOut: products.isSoldOut,
       isActive: products.isActive,
       discountPercent: products.discountPercent,
+      sourceIdx: products.sourceIdx,
       createdAt: products.createdAt,
     };
     
