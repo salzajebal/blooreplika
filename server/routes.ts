@@ -3831,8 +3831,8 @@ export async function registerRoutes(
 
         for (const category of CATEGORIES) {
           bagstyleProgress.category = category.name;
-          // Gender-specific pages (mens.php / women.php) don't have sub-subcategories
-          const isGenderPage = category.pageBase === "mens" || category.pageBase === "women";
+          // Only the "all" overview tabs are limited to 100 items from page 1
+          const isGenderPage = category.caId === "mens-all" || category.caId === "womens-all";
           const subcats = isGenderPage ? [] : (SUBCATEGORY_MAP[category.caId] || []);
           
           if (subcats.length > 0) {
