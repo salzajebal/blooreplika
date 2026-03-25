@@ -384,6 +384,7 @@ export class DatabaseStorage implements IStorage {
             OR (${products.name} ~* '\\mMen''s\\M' AND ${products.name} !~* '\\mWomen''s\\M')
             OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
             OR ${products.name} ILIKE '%Unisex%'
+            OR ${products.subcategoryId} LIKE 'b0%'
           ))
         )`);
       } else if (gender === '여성') {
@@ -395,6 +396,7 @@ export class DatabaseStorage implements IStorage {
             OR ${products.name} ILIKE '%ladies%'
             OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
             OR ${products.name} ILIKE '%Unisex%'
+            OR ${products.subcategoryId} LIKE 'c0%'
           ))
         )`);
       } else if (gender === '공용') {
