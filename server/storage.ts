@@ -535,9 +535,15 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(subcategories).orderBy(subcategories.sortOrder);
   }
 
-  async getSubcategoriesByCategoryId(categoryId: string): Promise<Subcategory[]> {
+  async getSubcategoriesByCategoryId(categoryId: string, gender?: string): Promise<Subcategory[]> {
+    const conditions: any[] = [eq(subcategories.categoryId, categoryId)];
+    if (gender === '남성') {
+      conditions.push(sql`${subcategories.slug} LIKE 'b0%'`);
+    } else if (gender === '여성') {
+      conditions.push(sql`${subcategories.slug} LIKE 'c0%'`);
+    }
     return db.select().from(subcategories)
-      .where(eq(subcategories.categoryId, categoryId))
+      .where(and(...conditions))
       .orderBy(subcategories.sortOrder);
   }
 

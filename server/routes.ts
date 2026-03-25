@@ -713,11 +713,14 @@ export async function registerRoutes(
 
   app.get("/api/subcategories", async (req: Request, res: Response) => {
     try {
-      const { categoryId } = req.query;
+      const { categoryId, gender } = req.query;
       let subcategoryList;
       
       if (categoryId) {
-        subcategoryList = await storage.getSubcategoriesByCategoryId(categoryId as string);
+        subcategoryList = await storage.getSubcategoriesByCategoryId(
+          categoryId as string,
+          gender ? gender as string : undefined
+        );
       } else {
         subcategoryList = await storage.getAllSubcategories();
       }

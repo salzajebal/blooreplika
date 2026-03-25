@@ -192,14 +192,13 @@ export default function ProductList() {
   });
 
   const { data: subcategoriesData } = useQuery({
-    queryKey: ['subcategories', effectiveCategorySlug],
+    queryKey: ['subcategories', effectiveCategorySlug, genderFromCategory],
     queryFn: async () => {
       if (!effectiveCategorySlug || effectiveCategorySlug === "all") {
-        const res = await fetch("/api/subcategories");
-        const data = await res.json();
-        return data.success ? data.data : [];
+        return [];
       }
-      const res = await fetch(`/api/subcategories?categoryId=${effectiveCategorySlug}`);
+      const genderParam = genderFromCategory ? `&gender=${encodeURIComponent(genderFromCategory)}` : "";
+      const res = await fetch(`/api/subcategories?categoryId=${effectiveCategorySlug}${genderParam}`);
       const data = await res.json();
       return data.success ? data.data : [];
     },
