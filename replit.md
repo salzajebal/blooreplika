@@ -84,6 +84,7 @@ Preferred communication style: Simple, everyday language.
 - Labs Blocks: Admin-managed content blocks for Labs/branding page (hero, text, image, image_text types)
 - Quick Menu Items: Admin-managed circular icon shortcuts on homepage (name, image upload, link URL, sort order, active toggle). Images stored in uploads/quickmenu/. Falls back to default hardcoded items when DB is empty.
 - Reviews: Customer purchase reviews with star ratings, photo attachments, product association. List-style display matching rixxrixx.com design with thumbnails, masked usernames, time-ago display. ReviewWriteForm component shared between Reviews page (no product selection) and ProductDetail page (with product context).
+- Category structure: belts and sunglasses products are merged into the `accessories` category (migration runs on server start via `runCategoryMigrations()`). Golf is a top-level category (`golf` slug, ca_id 70 on bagstyle.site, subcategories 7010-7050). Old URLs /products/jewelry, /products/belts, /products/sunglasses redirect to /products/accessories.
 
 **Validation:**
 - Zod schemas derived from Drizzle schemas using drizzle-zod

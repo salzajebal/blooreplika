@@ -5,6 +5,7 @@ import { createServer } from "http";
 import path from "path";
 import { setupChatWebSocket } from "./chatSocket";
 import { storage } from "./storage";
+import { pool } from "./db";
 
 // Global error handlers to prevent server crashes
 process.on('uncaughtException', (error) => {
@@ -128,10 +129,34 @@ app.use((req, res, next) => {
     },
     () => {
       log(`serving on port ${port}`);
+      runCategoryMigrations();
       runStartupMaintenance();
     },
   );
 })();
+
+async function runCategoryMigrations() {
+  try {
+    // 벨트/선글라스 → accessories 마이그레이션 (안전: 삭제 없음, UPDATE만)
+    await pool.query(`
+      UPDATE products SET category_id = 'accessories'
+      WHERE category_id IN ('belts', 'sunglasses')
+    `);
+    await pool.query(`
+      UPDATE subcategories SET category_id = 'accessories'
+      WHERE category_id IN ('belts', 'sunglasses')
+    `);
+    // 골프 카테고리가 categories 테이블에 없으면 추가
+    await pool.query(`
+      INSERT INTO categories (id, name, slug, description, sort_order, is_active)
+      VALUES ('golf', '골프', 'golf', '골프 의류 및 용품', 15, true)
+      ON CONFLICT (id) DO NOTHING
+    `);
+    log('Category migrations completed (belts/sunglasses→accessories, golf added)', 'migration');
+  } catch (err: any) {
+    console.error('[migration] Category migration error:', err.message);
+  }
+}
 
 async function runStartupMaintenance() {
   try {
