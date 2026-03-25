@@ -66,6 +66,7 @@ export default function ProductList() {
   const isBrandInitial = useRef(true);
   const isRestoringScroll = useRef(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const prevEffectiveCategoryRef = useRef<string>("all");
 
   const categoryInfo = CATEGORIES.find(c => c.slug === categorySlug);
   
@@ -280,6 +281,14 @@ export default function ProductList() {
     sessionStorage.setItem("productListPage", "1");
   }, [selectedBrand, selectedGender, selectedSubcategory]);
 
+  // 젠더 탭 전환 시 소분류 선택 초기화 (tabs: all→bags→clothing 등)
+  useEffect(() => {
+    if (prevEffectiveCategoryRef.current !== effectiveCategorySlug) {
+      prevEffectiveCategoryRef.current = effectiveCategorySlug;
+      setSelectedSubcategory(null);
+    }
+  }, [effectiveCategorySlug]);
+
   useEffect(() => {
     sessionStorage.setItem("productListPage", String(currentPage));
   }, [currentPage]);
@@ -365,8 +374,12 @@ export default function ProductList() {
     setBrandSearch("");
   }, []);
 
+  // 카테고리 소분류 드롭다운: 젠더 전체탭 or 소분류 없으면 숨김
+  const showSubcatFilter = !(isGenderCategory && effectiveCategorySlug === "all");
+
   const FilterDropdownButtons = () => (
     <div className="flex items-center gap-2 flex-wrap" ref={dropdownRef} data-testid="filter-dropdown-buttons">
+      {showSubcatFilter && (
       <div className="relative">
         <button
           onClick={() => toggleDropdown("category")}
@@ -380,13 +393,16 @@ export default function ProductList() {
           )}
           data-testid="button-filter-category"
         >
-          카테고리
+          소분류
           {selectedSubcatName && <span className="font-medium">: {selectedSubcatName}</span>}
           <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openDropdown === "category" && "rotate-180")} />
         </button>
 
         {openDropdown === "category" && (
-          <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[200px] max-h-[300px] overflow-y-auto scroll-smooth" style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin", scrollbarColor: "#ccc transparent", touchAction: "pan-y" }}>
+          <div
+            className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[200] min-w-[200px] max-h-[60vh] overflow-y-auto"
+            style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin", scrollbarColor: "#ccc transparent", touchAction: "pan-y" }}
+          >
             <button
               onClick={() => { setSelectedSubcategory(null); setOpenDropdown(null); }}
               className={cn(
@@ -418,6 +434,7 @@ export default function ProductList() {
           </div>
         )}
       </div>
+      )}
 
       <div className="relative">
         <button

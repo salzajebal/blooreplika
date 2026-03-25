@@ -370,7 +370,7 @@ export class DatabaseStorage implements IStorage {
         conditions.push(eq(products.categoryId, categoryId));
       }
     }
-    if (subcategoryId) conditions.push(eq(products.subcategoryId, subcategoryId));
+    if (subcategoryId) conditions.push(sql`${products.subcategoryId} LIKE ${subcategoryId + '%'}`);
     if (search) conditions.push(sql`${products.name} ILIKE ${'%' + search + '%'}`);
     if (brandId) conditions.push(eq(products.brandId, brandId));
     
