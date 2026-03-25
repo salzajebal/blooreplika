@@ -486,6 +486,9 @@ export default function Admin() {
   }>({ status: 'idle', total: 0, current: 0, changed: 0, skipped: 0, failed: 0, message: '' });
   const reclassifyUrlIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [genderReclassifyRunning, setGenderReclassifyRunning] = useState(false);
+  const [genderReclassifyResult, setGenderReclassifyResult] = useState<{ changed: number; skipped: number; total: number } | null>(null);
+
   const runReclassifyAnalyze = async () => {
     setReclassifyAnalyzing(true);
     setReclassifyRulesResult(null);
@@ -540,6 +543,21 @@ export default function Admin() {
     if (reclassifyUrlIntervalRef.current) { clearInterval(reclassifyUrlIntervalRef.current); reclassifyUrlIntervalRef.current = null; }
     await fetchWithAuth("/api/admin/products/reclassify-url/reset", { method: "POST" });
     setReclassifyUrlProgress({ status: 'idle', total: 0, current: 0, changed: 0, skipped: 0, failed: 0, message: '' });
+  };
+
+  const runGenderReclassify = async () => {
+    if (!window.confirm("성별 카테고리(남성/여성) ca_id 기준으로 상품의 categoryId와 gender를 재분류합니다.\n기존 상품은 삭제되지 않습니다. 계속하시겠습니까?")) return;
+    setGenderReclassifyRunning(true);
+    setGenderReclassifyResult(null);
+    try {
+      const res = await fetchWithAuth("/api/admin/reclassify-by-gender-caid", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setGenderReclassifyResult(data.data);
+        toast({ title: "성별 재분류 완료", description: `${data.data.changed}개 재분류, ${data.data.skipped}개 건너뜀` });
+      } else toast({ title: "실패", description: data.error, variant: "destructive" });
+    } catch { toast({ title: "오류", description: "서버 연결 오류", variant: "destructive" }); }
+    finally { setGenderReclassifyRunning(false); }
   };
 
   const runRematchBrands = async () => {
@@ -3769,6 +3787,26 @@ export default function Admin() {
               </div>
             </div>
             <div className="p-5 space-y-4">
+
+              {/* 성별 기반 카테고리 재분류 (ca_id 접두어 기준) */}
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-2">
+                <p className="text-sm font-medium text-purple-800">성별 카테고리 재분류 (핵심)</p>
+                <p className="text-xs text-purple-600">bagstyle 남성(b0xx)/여성(c0xx) ca_id 기준으로 categoryId와 gender를 정확하게 설정합니다. 기존 상품은 삭제되지 않습니다.</p>
+                <Button
+                  data-testid="button-gender-reclassify"
+                  onClick={runGenderReclassify}
+                  disabled={genderReclassifyRunning}
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                >
+                  {genderReclassifyRunning
+                    ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />재분류 중...</>
+                    : <><RefreshCw className="w-4 h-4 mr-2" />성별 기반 카테고리 재분류 실행</>
+                  }
+                </Button>
+                {genderReclassifyResult && (
+                  <p className="text-xs text-green-700 font-medium">✓ 완료: {genderReclassifyResult.changed.toLocaleString()}개 재분류, {genderReclassifyResult.skipped.toLocaleString()}개 건너뜀 (총 {genderReclassifyResult.total.toLocaleString()}개)</p>
+                )}
+              </div>
 
               {/* 분석 결과 */}
               {reclassifyAnalysis && (

@@ -85,7 +85,7 @@ export default function ProductList() {
   const genderFromCategory = categorySlug === "men" ? "남성" : categorySlug === "women" ? "여성" : null;
 
   const MEN_TABS = [
-    { id: "all",        name: "전체보기",    categorySlug: "men" },
+    { id: "all",        name: "전체보기",    categorySlug: null },
     { id: "clothing",   name: "남성의류",    categorySlug: "clothing" },
     { id: "bags",       name: "남성가방",    categorySlug: "bags" },
     { id: "wallets",    name: "지갑",        categorySlug: "wallets" },
@@ -96,7 +96,7 @@ export default function ProductList() {
   ];
 
   const WOMEN_TABS = [
-    { id: "all",        name: "전체보기",    categorySlug: "women" },
+    { id: "all",        name: "전체보기",    categorySlug: null },
     { id: "clothing",   name: "여성의류",    categorySlug: "clothing" },
     { id: "bags",       name: "여성가방",    categorySlug: "bags" },
     { id: "shoes",      name: "신발",        categorySlug: "shoes" },

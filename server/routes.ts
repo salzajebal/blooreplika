@@ -3406,8 +3406,7 @@ export async function registerRoutes(
         pageBase?: "mens" | "women" | "list";
         gender?: string;
       }[] = [
-        // 남성 탭 (shop/mens.php)
-        { caId: "mens-all", name: "남성전체보기", localId: "men",   pageBase: "mens", gender: "남성" },
+        // 남성 탭 (shop/mens.php) — mens-all/womens-all 제거: categoryId='men'/'women' 오저장 방지
         { caId: "b010", name: "남성의류",    localId: "clothing",  pageBase: "mens", gender: "남성" },
         { caId: "b020", name: "남성가방",    localId: "bags",      pageBase: "mens", gender: "남성" },
         { caId: "b040", name: "지갑",        localId: "wallets",   pageBase: "mens", gender: "남성" },
@@ -3416,7 +3415,6 @@ export async function registerRoutes(
         { caId: "b070", name: "남성벨트",    localId: "belts",       pageBase: "mens", gender: "남성" },
         { caId: "b080", name: "남성쥬얼리",  localId: "accessories", pageBase: "mens", gender: "남성" },
         // 여성 탭 (shop/women.php)
-        { caId: "womens-all", name: "여성전체보기", localId: "women", pageBase: "women", gender: "여성" },
         { caId: "c010", name: "여성의류",    localId: "clothing",    pageBase: "women", gender: "여성" },
         { caId: "c020", name: "여성가방",    localId: "bags",        pageBase: "women", gender: "여성" },
         { caId: "c050", name: "여성신발",    localId: "shoes",       pageBase: "women", gender: "여성" },
@@ -3537,27 +3535,14 @@ export async function registerRoutes(
       const fetchProductList = async (caId: string, page: number, pageBase?: "mens" | "women" | "list"): Promise<string[]> => {
         try {
           let url: string;
-          const isAll = !caId || caId === "mens-all" || caId === "womens-all";
           if (pageBase === "mens") {
-            if (page === 1) {
-              url = isAll
-                ? `https://bagstyle.site/shop/mens.php`
-                : `https://bagstyle.site/shop/mens.php?ca_id=${caId}`;
-            } else {
-              url = isAll
-                ? `https://bagstyle.site/shop/mens.php?pg_no=${page}`
-                : `https://bagstyle.site/shop/mens.php?ca_id=${caId}&pg_no=${page}`;
-            }
+            url = page === 1
+              ? `https://bagstyle.site/shop/mens.php?ca_id=${caId}`
+              : `https://bagstyle.site/shop/mens.php?ca_id=${caId}&pg_no=${page}`;
           } else if (pageBase === "women") {
-            if (page === 1) {
-              url = isAll
-                ? `https://bagstyle.site/shop/women.php`
-                : `https://bagstyle.site/shop/women.php?ca_id=${caId}`;
-            } else {
-              url = isAll
-                ? `https://bagstyle.site/shop/women.php?pg_no=${page}`
-                : `https://bagstyle.site/shop/women.php?ca_id=${caId}&pg_no=${page}`;
-            }
+            url = page === 1
+              ? `https://bagstyle.site/shop/women.php?ca_id=${caId}`
+              : `https://bagstyle.site/shop/women.php?ca_id=${caId}&pg_no=${page}`;
           } else {
             url = `https://bagstyle.site/shop/list.php?ca_id=${caId}&page=${page}`;
           }
@@ -6551,6 +6536,84 @@ export async function registerRoutes(
       res.json({ success: true, message: `${totalUpdated}개 상품의 성별 정보가 업데이트되었습니다. (총 ${totalProcessed}개 확인)`, updated: totalUpdated, processed: totalProcessed });
     } catch (error) {
       res.status(500).json({ success: false, error: "Failed to update genders" });
+    }
+  });
+
+  // ==================== 성별 기반 카테고리 재분류 ====================
+  app.post("/api/admin/reclassify-by-gender-caid", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      // subcategoryId(ca_id 접두어)로 올바른 categoryId + gender 결정
+      const CAID_CATEGORY_MAP: { prefix: string; categoryId: string; gender: string }[] = [
+        { prefix: "b010", categoryId: "clothing",    gender: "남성" },
+        { prefix: "b020", categoryId: "bags",        gender: "남성" },
+        { prefix: "b040", categoryId: "wallets",     gender: "남성" },
+        { prefix: "b0b0", categoryId: "shoes",       gender: "남성" },
+        { prefix: "b0a0", categoryId: "accessories", gender: "남성" },
+        { prefix: "b070", categoryId: "accessories", gender: "남성" },
+        { prefix: "b080", categoryId: "accessories", gender: "남성" },
+        { prefix: "c010", categoryId: "clothing",    gender: "여성" },
+        { prefix: "c020", categoryId: "bags",        gender: "여성" },
+        { prefix: "c030", categoryId: "wallets",     gender: "여성" },
+        { prefix: "c040", categoryId: "watches",     gender: "여성" },
+        { prefix: "c050", categoryId: "shoes",       gender: "여성" },
+        { prefix: "c060", categoryId: "accessories", gender: "여성" },
+        { prefix: "c070", categoryId: "accessories", gender: "여성" },
+        { prefix: "c0a0", categoryId: "accessories", gender: "여성" },
+      ];
+
+      // gender prefix fallback (subcategoryId 없는 경우)
+      const GENDER_PREFIX = [
+        { prefix: "b0", gender: "남성" },
+        { prefix: "c0", gender: "여성" },
+      ];
+
+      const rows = await pool.query(
+        `SELECT id, category_id, subcategory_id, gender FROM products WHERE category_id IN ('men','women') OR gender IS NULL`
+      );
+
+      let changed = 0;
+      let skipped = 0;
+
+      for (const row of rows.rows) {
+        const sub: string = row.subcategory_id || "";
+        let newCategoryId: string | null = null;
+        let newGender: string | null = row.gender || null;
+
+        // 1. subcategoryId로 categoryId 결정
+        const match = CAID_CATEGORY_MAP.find(m => sub.startsWith(m.prefix));
+        if (match) {
+          newCategoryId = match.categoryId;
+          newGender = match.gender;
+        }
+
+        // 2. gender가 없으면 prefix로 결정
+        if (!newGender) {
+          const gMatch = GENDER_PREFIX.find(g => sub.startsWith(g.prefix));
+          if (gMatch) newGender = gMatch.gender;
+        }
+
+        // 3. categoryId가 여전히 men/women이고 subcategoryId로 못 정했으면 스킵
+        const currentCatWrong = row.category_id === "men" || row.category_id === "women";
+        if (!newCategoryId && !currentCatWrong && row.gender === newGender) {
+          skipped++;
+          continue;
+        }
+
+        const updateData: Record<string, string> = {};
+        if (newCategoryId && row.category_id !== newCategoryId) updateData.category_id = newCategoryId;
+        if (newGender && row.gender !== newGender) updateData.gender = newGender;
+
+        if (Object.keys(updateData).length === 0) { skipped++; continue; }
+
+        const sets = Object.keys(updateData).map((k, i) => `${k} = $${i + 2}`).join(", ");
+        await pool.query(`UPDATE products SET ${sets} WHERE id = $1`, [row.id, ...Object.values(updateData)]);
+        changed++;
+      }
+
+      res.json({ success: true, data: { changed, skipped, total: rows.rows.length }, message: `${changed}개 상품 재분류 완료` });
+    } catch (error) {
+      console.error("[reclassify-by-gender-caid] Error:", error);
+      res.status(500).json({ success: false, error: "재분류 중 오류가 발생했습니다." });
     }
   });
 
