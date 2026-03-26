@@ -3528,24 +3528,15 @@ export async function registerRoutes(
         const delayMs = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
         // ── 상품 ID 목록 수집 (소분류 단위, 전 페이지) ──
-        const fetchProductIds = async (caId: string, pageBase: "mens" | "women" | "list"): Promise<string[]> => {
+        // 수정: mens.php/women.php는 베스트/랭킹 전용 페이지라 카테고리 상품이 없음.
+        // list.php?ca_id=...&page=... 가 올바른 카테고리 목록 URL.
+        const fetchProductIds = async (caId: string): Promise<string[]> => {
           const allIds = new Set<string>();
           let page = 1;
           let emptyStreak = 0;
           while (emptyStreak < 3) {
             try {
-              let url: string;
-              if (pageBase === "mens") {
-                url = page === 1
-                  ? `https://bagstyle.site/shop/mens.php?ca_id=${caId}`
-                  : `https://bagstyle.site/shop/mens.php?ca_id=${caId}&pg_no=${page}`;
-              } else if (pageBase === "women") {
-                url = page === 1
-                  ? `https://bagstyle.site/shop/women.php?ca_id=${caId}`
-                  : `https://bagstyle.site/shop/women.php?ca_id=${caId}&pg_no=${page}`;
-              } else {
-                url = `https://bagstyle.site/shop/list.php?ca_id=${caId}&page=${page}`;
-              }
+              const url = `https://bagstyle.site/shop/list.php?ca_id=${caId}&page=${page}`;
               const r = await fetch(url, { headers: bsHeaders });
               if (!r.ok) { emptyStreak++; await delayMs(500); page++; continue; }
               const html = await r.text();
@@ -3565,17 +3556,17 @@ export async function registerRoutes(
         };
 
         // ── 총 상품 수 파싱 (검증용) ──
-        const parseTotalCount = async (caId: string, pageBase: "mens" | "women" | "list"): Promise<number> => {
+        // 수정: list.php 사용, HTML 태그 포함 패턴 대응
+        // 실제 HTML: <p >총<span> 5,380  </span>개 상품</p>
+        const parseTotalCount = async (caId: string): Promise<number> => {
           try {
-            let url = pageBase === "mens"
-              ? `https://bagstyle.site/shop/mens.php?ca_id=${caId}`
-              : pageBase === "women"
-              ? `https://bagstyle.site/shop/women.php?ca_id=${caId}`
-              : `https://bagstyle.site/shop/list.php?ca_id=${caId}&page=1`;
+            const url = `https://bagstyle.site/shop/list.php?ca_id=${caId}&page=1`;
             const r = await fetch(url, { headers: bsHeaders });
             if (!r.ok) return 0;
             const html = await r.text();
-            const m = html.match(/총\s*([\d,]+)\s*(?:개|건)/);
+            // HTML 태그를 제거 후 총 N개 패턴 파싱
+            const stripped = html.replace(/<[^>]+>/g, ' ');
+            const m = stripped.match(/총\s*([\d,]+)\s*개/);
             return m ? parseInt(m[1].replace(/,/g, ''), 10) : 0;
           } catch { return 0; }
         };
@@ -3710,8 +3701,8 @@ export async function registerRoutes(
             if (bagstyleShouldStop) break;
 
             bagstyleProgress.message = `[${entry.categoryName} > ${sub.name}] 상품 ID 수집 중...`;
-            const expectedCount = await parseTotalCount(sub.caId, entry.pageBase);
-            const idsArray = await fetchProductIds(sub.caId, entry.pageBase);
+            const expectedCount = await parseTotalCount(sub.caId);
+            const idsArray = await fetchProductIds(sub.caId);
 
             if (idsArray.length === 0) {
               const logLine = `[${sub.caId}] ${sub.name}: 0개 (예상 ${expectedCount}개, ID 없음)`;
