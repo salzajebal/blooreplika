@@ -37,8 +37,11 @@ const CATEGORIES = [
   { id: "wallets",      name: "지갑",        slug: "wallets" },
   { id: "shoes",        name: "신발",        slug: "shoes" },
   { id: "golf",         name: "골프",        slug: "golf" },
-  { id: "accessories",  name: "쥬얼리/잡화", slug: "accessories" },
+  { id: "jewelry",      name: "쥬얼리/잡화", slug: "jewelry" },
+  { id: "sunglasses",   name: "선글라스",    slug: "sunglasses" },
+  { id: "belts",        name: "벨트",        slug: "belts" },
   { id: "watches",      name: "시계",        slug: "watches" },
+  { id: "accessories",  name: "잡화",        slug: "accessories" },
   { id: "sale",         name: "할인상품",    slug: "sale" },
   { id: "best",         name: "베스트상품",  slug: "best" },
 ];
@@ -91,7 +94,7 @@ export default function ProductList() {
     { id: "bags",     name: "남성가방",    categorySlug: "bags" },
     { id: "wallets",  name: "지갑",        categorySlug: "wallets" },
     { id: "shoes",    name: "신발",        categorySlug: "shoes" },
-    { id: "jewelry",  name: "쥬얼리/잡화", categorySlug: "accessories" },
+    { id: "jewelry",  name: "쥬얼리/잡화", categorySlug: "jewelry" },
   ];
 
   const WOMEN_TABS = [
@@ -100,7 +103,7 @@ export default function ProductList() {
     { id: "bags",     name: "여성가방",    categorySlug: "bags" },
     { id: "shoes",    name: "신발",        categorySlug: "shoes" },
     { id: "watches",  name: "패션시계",    categorySlug: "watches" },
-    { id: "jewelry",  name: "쥬얼리/잡화", categorySlug: "accessories" },
+    { id: "jewelry",  name: "쥬얼리/잡화", categorySlug: "jewelry" },
   ];
 
   const GENDER_TABS = categorySlug === "women" ? WOMEN_TABS : MEN_TABS;

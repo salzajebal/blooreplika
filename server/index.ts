@@ -137,22 +137,28 @@ app.use((req, res, next) => {
 
 async function runCategoryMigrations() {
   try {
-    // 벨트/선글라스 → accessories 마이그레이션 (안전: 삭제 없음, UPDATE만)
-    await pool.query(`
-      UPDATE products SET category_id = 'accessories'
-      WHERE category_id IN ('belts', 'sunglasses')
-    `);
-    await pool.query(`
-      UPDATE subcategories SET category_id = 'accessories'
-      WHERE category_id IN ('belts', 'sunglasses')
-    `);
-    // 골프 카테고리가 categories 테이블에 없으면 추가
-    await pool.query(`
-      INSERT INTO categories (id, name, slug, description, sort_order, is_active)
-      VALUES ('golf', '골프', 'golf', '골프 의류 및 용품', 15, true)
-      ON CONFLICT (id) DO NOTHING
-    `);
-    log('Category migrations completed (belts/sunglasses→accessories, golf added)', 'migration');
+    // 필수 카테고리 테이블 등록 (없으면 추가, 있으면 무시)
+    const requiredCategories = [
+      { id: 'clothing',   name: '의류',        slug: 'clothing',   sortOrder: 10 },
+      { id: 'bags',       name: '가방',        slug: 'bags',       sortOrder: 20 },
+      { id: 'wallets',    name: '지갑',        slug: 'wallets',    sortOrder: 30 },
+      { id: 'shoes',      name: '신발',        slug: 'shoes',      sortOrder: 40 },
+      { id: 'sunglasses', name: '선글라스',    slug: 'sunglasses', sortOrder: 50 },
+      { id: 'belts',      name: '벨트',        slug: 'belts',      sortOrder: 60 },
+      { id: 'jewelry',    name: '쥬얼리/잡화', slug: 'jewelry',    sortOrder: 70 },
+      { id: 'watches',    name: '시계',        slug: 'watches',    sortOrder: 80 },
+      { id: 'golf',       name: '골프',        slug: 'golf',       sortOrder: 90 },
+      { id: 'accessories',name: '잡화',        slug: 'accessories',sortOrder: 95 },
+    ];
+    for (const cat of requiredCategories) {
+      await pool.query(
+        `INSERT INTO categories (id, name, slug, description, sort_order, is_active)
+         VALUES ($1, $2, $3, '', $4, true)
+         ON CONFLICT (id) DO NOTHING`,
+        [cat.id, cat.name, cat.slug, cat.sortOrder]
+      );
+    }
+    log('Category migrations completed (all required categories ensured)', 'migration');
   } catch (err: any) {
     console.error('[migration] Category migration error:', err.message);
   }

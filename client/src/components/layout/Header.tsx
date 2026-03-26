@@ -64,16 +64,16 @@ const categoryMenuItems: CategoryMenuItem[] = [
   { name: '지갑', path: '/products/wallets' },
   { name: '골프', path: '/products/golf' },
   {
-    name: '쥬얼리/잡화', path: '/products/accessories',
+    name: '쥬얼리/잡화', path: '/products/jewelry',
     subcategories: [
-      { name: '목걸이', path: '/products/accessories?sub=necklace' },
-      { name: '반지', path: '/products/accessories?sub=ring' },
-      { name: '팔찌', path: '/products/accessories?sub=bracelet' },
-      { name: '선글라스', path: '/products/accessories?sub=sunglasses' },
-      { name: '벨트', path: '/products/accessories?sub=belt' },
-      { name: '머플러/스카프', path: '/products/accessories?sub=scarf' },
+      { name: '목걸이', path: '/products/jewelry?sub=necklace' },
+      { name: '반지', path: '/products/jewelry?sub=ring' },
+      { name: '팔찌', path: '/products/jewelry?sub=bracelet' },
+      { name: '머플러/스카프', path: '/products/jewelry?sub=scarf' },
     ]
   },
+  { name: '선글라스', path: '/products/sunglasses' },
+  { name: '벨트', path: '/products/belts' },
   { name: '베스트상품', path: '/products/best' },
   { name: '할인상품', path: '/products/sale' },
 ];
@@ -91,6 +91,8 @@ const topNavItems: TopNavItem[] = [
   { name: '신발', path: '/products/shoes' },
   { name: '지갑', path: '/products/wallets' },
   { name: '쥬얼리', path: '/products/jewelry' },
+  { name: '선글라스', path: '/products/sunglasses' },
+  { name: '벨트', path: '/products/belts' },
   { name: '골프', path: '/products/golf' },
   { name: '베스트', path: '/products/best' },
 ];
