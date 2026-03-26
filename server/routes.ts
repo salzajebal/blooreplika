@@ -3227,13 +3227,14 @@ export async function registerRoutes(
   // Clear all products
   app.delete("/api/admin/products/all", requireAdminAuth, async (_req: Request, res: Response) => {
     try {
-      const products = await storage.getAllProducts();
-      for (const p of products) {
-        await storage.deleteProduct(p.id);
-      }
-      res.json({ success: true, message: `${products.length}개 상품이 삭제되었습니다.` });
-    } catch (error) {
-      res.status(500).json({ success: false, error: "Failed to delete products" });
+      const countResult = await pool.query(`SELECT count(*)::int AS cnt FROM products`);
+      const total = countResult.rows[0]?.cnt || 0;
+      // 단일 SQL DELETE — 루프 없이 즉시 전체 삭제
+      await pool.query(`DELETE FROM products`);
+      res.json({ success: true, message: `총 ${total}개 상품이 삭제되었습니다.` });
+    } catch (error: any) {
+      console.error("[admin] delete all products error:", error.message);
+      res.status(500).json({ success: false, error: "상품 삭제 중 오류가 발생했습니다." });
     }
   });
 

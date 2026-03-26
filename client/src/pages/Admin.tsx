@@ -104,6 +104,11 @@ export default function Admin() {
   const [productPage, setProductPage] = useState(1);
   const [productPagination, setProductPagination] = useState({ total: 0, totalPages: 1 });
 
+  // 전체 삭제 확인 다이얼로그
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [deleteAllConfirmText, setDeleteAllConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // 일괄 선택
   const [selectedProductIds, setSelectedProductIds] = useState<Set<number>>(new Set());
   const [bulkActionType, setBulkActionType] = useState<"category" | "section">("category");
@@ -412,12 +417,15 @@ export default function Admin() {
   };
 
   const clearAllProducts = async () => {
-    if (!confirm("정말 모든 상품을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) return;
+    if (deleteAllConfirmText !== "전체삭제") return;
+    setIsDeleting(true);
     try {
       const res = await fetchWithAuth("/api/admin/products/all", { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
         toast({ title: "삭제 완료", description: data.message });
+        setShowDeleteAllConfirm(false);
+        setDeleteAllConfirmText("");
         fetchProductCount();
         fetchProducts();
       } else {
@@ -425,6 +433,8 @@ export default function Admin() {
       }
     } catch (error) {
       toast({ title: "오류", description: "상품을 삭제할 수 없습니다.", variant: "destructive" });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -6411,7 +6421,8 @@ export default function Admin() {
                   상품 관리
                 </h3>
               </div>
-              <div className="p-6">
+              <div className="p-6 space-y-4">
+                {/* 현재 상품 수 */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-center gap-3">
                     <Database className="w-6 h-6 text-blue-600" />
@@ -6438,16 +6449,69 @@ export default function Admin() {
                       <RefreshCw className={`w-4 h-4 ${productCountLoading ? 'animate-spin' : ''}`} />
                     </Button>
                   </div>
-                  <div className="mt-4">
+                </div>
+
+                {/* 전체 상품 삭제 위험 영역 */}
+                <div className="border-2 border-red-200 rounded-lg p-4 bg-red-50">
+                  <div className="flex items-start gap-3 mb-3">
+                    <Trash2 className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-bold text-red-700">전체 상품 삭제</h4>
+                      <p className="text-sm text-red-600 mt-0.5">
+                        DB의 모든 상품을 즉시 삭제합니다. 이 작업은 <strong>되돌릴 수 없습니다.</strong>
+                      </p>
+                    </div>
+                  </div>
+                  {!showDeleteAllConfirm ? (
                     <Button
                       data-testid="button-clear-products"
-                      onClick={clearAllProducts}
+                      onClick={() => { setShowDeleteAllConfirm(true); setDeleteAllConfirmText(""); }}
                       variant="destructive"
+                      size="sm"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
                       전체 상품 삭제
                     </Button>
-                  </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-red-700">
+                        확인을 위해 아래 입력창에 <span className="font-mono bg-red-100 px-1.5 py-0.5 rounded text-red-800">전체삭제</span> 를 입력하세요
+                      </p>
+                      <input
+                        type="text"
+                        value={deleteAllConfirmText}
+                        onChange={e => setDeleteAllConfirmText(e.target.value)}
+                        placeholder="전체삭제"
+                        className="w-full border border-red-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400 bg-white"
+                        data-testid="input-delete-all-confirm"
+                        autoFocus
+                        onKeyDown={e => { if (e.key === 'Enter' && deleteAllConfirmText === "전체삭제") clearAllProducts(); }}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={clearAllProducts}
+                          variant="destructive"
+                          size="sm"
+                          disabled={deleteAllConfirmText !== "전체삭제" || isDeleting}
+                          data-testid="button-confirm-delete-all"
+                        >
+                          {isDeleting ? (
+                            <><Loader2 className="w-4 h-4 mr-2 animate-spin" />삭제 중...</>
+                          ) : (
+                            <><Trash2 className="w-4 h-4 mr-2" />확인 — 전체 삭제</>
+                          )}
+                        </Button>
+                        <Button
+                          onClick={() => { setShowDeleteAllConfirm(false); setDeleteAllConfirmText(""); }}
+                          variant="outline"
+                          size="sm"
+                          disabled={isDeleting}
+                        >
+                          취소
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
