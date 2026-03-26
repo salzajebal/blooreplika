@@ -191,18 +191,19 @@ export default function ProductList() {
     staleTime: 600000,
   });
 
+  const effectiveGenderForSubcat = selectedGender || genderFromCategory;
   const { data: subcategoriesData } = useQuery({
-    queryKey: ['subcategories', effectiveCategorySlug, genderFromCategory],
+    queryKey: ['subcategories', effectiveCategorySlug, effectiveGenderForSubcat],
     queryFn: async () => {
       if (!effectiveCategorySlug || effectiveCategorySlug === "all") {
         return [];
       }
-      const genderParam = genderFromCategory ? `&gender=${encodeURIComponent(genderFromCategory)}` : "";
+      const genderParam = effectiveGenderForSubcat ? `&gender=${encodeURIComponent(effectiveGenderForSubcat)}` : "";
       const res = await fetch(`/api/subcategories?categoryId=${effectiveCategorySlug}${genderParam}`);
       const data = await res.json();
       return data.success ? data.data : [];
     },
-    staleTime: 600000,
+    staleTime: 60000,
   });
 
   const products = productsData?.success ? productsData.data : [];

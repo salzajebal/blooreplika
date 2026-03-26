@@ -541,6 +541,8 @@ export class DatabaseStorage implements IStorage {
       conditions.push(sql`${subcategories.slug} LIKE 'b0%'`);
     } else if (gender === '여성') {
       conditions.push(sql`${subcategories.slug} LIKE 'c0%'`);
+    } else if (gender === '골프') {
+      conditions.push(sql`${subcategories.slug} LIKE '7%'`);
     }
     return db.select().from(subcategories)
       .where(and(...conditions))

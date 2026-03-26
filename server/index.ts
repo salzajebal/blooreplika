@@ -130,6 +130,7 @@ app.use((req, res, next) => {
     () => {
       log(`serving on port ${port}`);
       runCategoryMigrations();
+      runSubcategoryMigrations();
       runStartupMaintenance();
     },
   );
@@ -161,6 +162,183 @@ async function runCategoryMigrations() {
     log('Category migrations completed (all required categories ensured)', 'migration');
   } catch (err: any) {
     console.error('[migration] Category migration error:', err.message);
+  }
+}
+
+async function runSubcategoryMigrations() {
+  try {
+    // bagstyle.site 전체 소분류 99개를 subcategories 테이블에 시드
+    // slug = caId (e.g. "b01010"), category_id = 상위 카테고리 ID (e.g. "clothing")
+    const subcats: { categoryId: string; name: string; slug: string; sortOrder: number }[] = [
+      // ── 남성의류 (clothing / b01xxx) ──
+      { categoryId: "clothing", name: "자켓/점퍼",    slug: "b01010", sortOrder: 1  },
+      { categoryId: "clothing", name: "패딩/털",      slug: "b01020", sortOrder: 2  },
+      { categoryId: "clothing", name: "가죽옷",       slug: "b01030", sortOrder: 3  },
+      { categoryId: "clothing", name: "코트/정장",    slug: "b01040", sortOrder: 4  },
+      { categoryId: "clothing", name: "후드티/집업",   slug: "b01050", sortOrder: 5  },
+      { categoryId: "clothing", name: "셔츠/남방",    slug: "b01060", sortOrder: 6  },
+      { categoryId: "clothing", name: "베스트/조끼",  slug: "b01070", sortOrder: 7  },
+      { categoryId: "clothing", name: "니트/스웨터",  slug: "b01080", sortOrder: 8  },
+      { categoryId: "clothing", name: "가디건",       slug: "b01090", sortOrder: 9  },
+      { categoryId: "clothing", name: "반팔티/폴로티", slug: "b010a0", sortOrder: 10 },
+      { categoryId: "clothing", name: "긴팔티/맨투맨", slug: "b010b0", sortOrder: 11 },
+      { categoryId: "clothing", name: "운동복/추리닝", slug: "b010c0", sortOrder: 12 },
+      { categoryId: "clothing", name: "팬츠/청바지",  slug: "b010d0", sortOrder: 13 },
+      { categoryId: "clothing", name: "반바지",       slug: "b010e0", sortOrder: 14 },
+      { categoryId: "clothing", name: "세트",         slug: "b010f0", sortOrder: 15 },
+      // ── 남성가방 (bags / b02xxx) ──
+      { categoryId: "bags", name: "토트백",           slug: "b02010", sortOrder: 1  },
+      { categoryId: "bags", name: "크로스백",         slug: "b02020", sortOrder: 2  },
+      { categoryId: "bags", name: "숄더백",           slug: "b02030", sortOrder: 3  },
+      { categoryId: "bags", name: "백팩",             slug: "b02040", sortOrder: 4  },
+      { categoryId: "bags", name: "서류가방/메신져백", slug: "b02050", sortOrder: 5  },
+      { categoryId: "bags", name: "파우치/클러치",    slug: "b02060", sortOrder: 6  },
+      { categoryId: "bags", name: "여행가방",         slug: "b02070", sortOrder: 7  },
+      { categoryId: "bags", name: "캐리어",           slug: "b02080", sortOrder: 8  },
+      { categoryId: "bags", name: "벨트백/새들/슬링", slug: "b02090", sortOrder: 9  },
+      { categoryId: "bags", name: "기타",             slug: "b020a0", sortOrder: 10 },
+      // ── 남성지갑 (wallets / b04xxx) ──
+      { categoryId: "wallets", name: "장지갑/소지갑", slug: "b04010", sortOrder: 1 },
+      { categoryId: "wallets", name: "카드지갑",      slug: "b04020", sortOrder: 2 },
+      { categoryId: "wallets", name: "동전지갑",      slug: "b04030", sortOrder: 3 },
+      // ── 남성신발 (shoes / b0bxxx) ──
+      { categoryId: "shoes", name: "스니커즈",        slug: "b0b010", sortOrder: 1 },
+      { categoryId: "shoes", name: "운동화",          slug: "b0b020", sortOrder: 2 },
+      { categoryId: "shoes", name: "정장구두",        slug: "b0b030", sortOrder: 3 },
+      { categoryId: "shoes", name: "샌들/슬리퍼",    slug: "b0b040", sortOrder: 4 },
+      { categoryId: "shoes", name: "부츠/워커",      slug: "b0b050", sortOrder: 5 },
+      { categoryId: "shoes", name: "로퍼/슬립온",    slug: "b0b060", sortOrder: 6 },
+      // ── 남성선글라스 (sunglasses / b0axxx) ──
+      { categoryId: "sunglasses", name: "선글라스",  slug: "b0a010", sortOrder: 1 },
+      { categoryId: "sunglasses", name: "안경태",    slug: "b0a020", sortOrder: 2 },
+      // ── 남성벨트 (belts / b07xxx) ──
+      { categoryId: "belts", name: "가죽벨트",        slug: "b07010", sortOrder: 1 },
+      { categoryId: "belts", name: "메쉬벨트",        slug: "b07020", sortOrder: 2 },
+      // ── 남성쥬얼리/잡화 (jewelry / b08xxx) ──
+      { categoryId: "jewelry", name: "목걸이",        slug: "b08010", sortOrder: 1  },
+      { categoryId: "jewelry", name: "팔찌",          slug: "b08020", sortOrder: 2  },
+      { categoryId: "jewelry", name: "반지",          slug: "b08030", sortOrder: 3  },
+      { categoryId: "jewelry", name: "백참/브로치",   slug: "b08040", sortOrder: 4  },
+      { categoryId: "jewelry", name: "만년필/볼펜",   slug: "b08050", sortOrder: 5  },
+      { categoryId: "jewelry", name: "장갑",          slug: "b08060", sortOrder: 6  },
+      { categoryId: "jewelry", name: "라이터/듀퐁",   slug: "b08070", sortOrder: 7  },
+      { categoryId: "jewelry", name: "스카프/머플러", slug: "b08080", sortOrder: 8  },
+      { categoryId: "jewelry", name: "넥타이",        slug: "b08090", sortOrder: 9  },
+      { categoryId: "jewelry", name: "모자",          slug: "b080a0", sortOrder: 10 },
+      { categoryId: "jewelry", name: "우산",          slug: "b080b0", sortOrder: 11 },
+      { categoryId: "jewelry", name: "커프스",        slug: "b080d0", sortOrder: 12 },
+      { categoryId: "jewelry", name: "키홀더",        slug: "b080e0", sortOrder: 13 },
+      { categoryId: "jewelry", name: "기타",          slug: "b080f0", sortOrder: 14 },
+      // ── 여성의류 (clothing / c01xxx) ──
+      { categoryId: "clothing", name: "자켓/점퍼",    slug: "c01010", sortOrder: 1  },
+      { categoryId: "clothing", name: "패딩/털",      slug: "c01020", sortOrder: 2  },
+      { categoryId: "clothing", name: "코트",         slug: "c01030", sortOrder: 3  },
+      { categoryId: "clothing", name: "후드티",       slug: "c01040", sortOrder: 4  },
+      { categoryId: "clothing", name: "셔츠/남방",    slug: "c01050", sortOrder: 5  },
+      { categoryId: "clothing", name: "조끼",         slug: "c01060", sortOrder: 6  },
+      { categoryId: "clothing", name: "가죽옷",       slug: "c01070", sortOrder: 7  },
+      { categoryId: "clothing", name: "니트/스웨터",  slug: "c01080", sortOrder: 8  },
+      { categoryId: "clothing", name: "가디건",       slug: "c01090", sortOrder: 9  },
+      { categoryId: "clothing", name: "반팔티/폴로",  slug: "c010a0", sortOrder: 10 },
+      { categoryId: "clothing", name: "긴팔티/맨투맨", slug: "c010b0", sortOrder: 11 },
+      { categoryId: "clothing", name: "운동복/추리닝", slug: "c010c0", sortOrder: 12 },
+      { categoryId: "clothing", name: "팬츠/청바지",  slug: "c010d0", sortOrder: 13 },
+      { categoryId: "clothing", name: "반바지/스커트", slug: "c010e0", sortOrder: 14 },
+      { categoryId: "clothing", name: "원피스",       slug: "c010f0", sortOrder: 15 },
+      { categoryId: "clothing", name: "수영복",       slug: "c010g0", sortOrder: 16 },
+      // ── 여성가방 (bags / c02xxx) ──
+      { categoryId: "bags", name: "숄더백",           slug: "c02010", sortOrder: 1  },
+      { categoryId: "bags", name: "토트백",           slug: "c02020", sortOrder: 2  },
+      { categoryId: "bags", name: "클러치백",         slug: "c02030", sortOrder: 3  },
+      { categoryId: "bags", name: "백팩",             slug: "c02040", sortOrder: 4  },
+      { categoryId: "bags", name: "파우치",           slug: "c02050", sortOrder: 5  },
+      { categoryId: "bags", name: "크로스",           slug: "c02060", sortOrder: 6  },
+      { categoryId: "bags", name: "메신져백",         slug: "c02070", sortOrder: 7  },
+      { categoryId: "bags", name: "여행가방",         slug: "c02080", sortOrder: 8  },
+      { categoryId: "bags", name: "케리어",           slug: "c02090", sortOrder: 9  },
+      { categoryId: "bags", name: "벨트백/새들/슬링", slug: "c020a0", sortOrder: 10 },
+      { categoryId: "bags", name: "미니백",           slug: "c020b0", sortOrder: 11 },
+      { categoryId: "bags", name: "기타",             slug: "c020c0", sortOrder: 12 },
+      // ── 여성지갑 (wallets / c03xxx) ──
+      { categoryId: "wallets", name: "장지갑/소지갑", slug: "c03010", sortOrder: 1 },
+      { categoryId: "wallets", name: "카드지갑",      slug: "c03020", sortOrder: 2 },
+      { categoryId: "wallets", name: "동전지갑",      slug: "c03030", sortOrder: 3 },
+      // ── 여성신발 (shoes / c05xxx) ──
+      { categoryId: "shoes", name: "스니커즈",        slug: "c05010", sortOrder: 1 },
+      { categoryId: "shoes", name: "운동화",          slug: "c05020", sortOrder: 2 },
+      { categoryId: "shoes", name: "샌들/슬리퍼",    slug: "c05030", sortOrder: 3 },
+      { categoryId: "shoes", name: "펌프스/힐",      slug: "c05040", sortOrder: 4 },
+      { categoryId: "shoes", name: "부츠/워커",      slug: "c05050", sortOrder: 5 },
+      { categoryId: "shoes", name: "단화/플랫",      slug: "c05060", sortOrder: 6 },
+      { categoryId: "shoes", name: "로퍼/슬립온",    slug: "c05070", sortOrder: 7 },
+      // ── 여성선글라스 (sunglasses / c07xxx) ──
+      { categoryId: "sunglasses", name: "선글라스",  slug: "c07010", sortOrder: 1 },
+      { categoryId: "sunglasses", name: "안경태",    slug: "c07020", sortOrder: 2 },
+      // ── 여성벨트 (belts / c06xxx) ──
+      { categoryId: "belts", name: "가죽벨트",        slug: "c06010", sortOrder: 1 },
+      { categoryId: "belts", name: "메쉬벨트",        slug: "c06020", sortOrder: 2 },
+      // ── 여성쥬얼리/잡화 (jewelry / c0axxx) ──
+      { categoryId: "jewelry", name: "목걸이",        slug: "c0a010", sortOrder: 1  },
+      { categoryId: "jewelry", name: "귀걸이",        slug: "c0a020", sortOrder: 2  },
+      { categoryId: "jewelry", name: "팔찌",          slug: "c0a030", sortOrder: 3  },
+      { categoryId: "jewelry", name: "반지",          slug: "c0a040", sortOrder: 4  },
+      { categoryId: "jewelry", name: "만년필/볼펜",   slug: "c0a050", sortOrder: 5  },
+      { categoryId: "jewelry", name: "키홀더",        slug: "c0a060", sortOrder: 6  },
+      { categoryId: "jewelry", name: "모자",          slug: "c0a070", sortOrder: 7  },
+      { categoryId: "jewelry", name: "장갑",          slug: "c0a080", sortOrder: 8  },
+      { categoryId: "jewelry", name: "우산",          slug: "c0a090", sortOrder: 9  },
+      { categoryId: "jewelry", name: "브로치/백참",   slug: "c0a0a0", sortOrder: 10 },
+      { categoryId: "jewelry", name: "스카프/머플러", slug: "c0a0b0", sortOrder: 11 },
+      { categoryId: "jewelry", name: "기타",          slug: "c0a0c0", sortOrder: 12 },
+      // ── 골프 남성의류 (clothing / 701xxx) ──
+      { categoryId: "clothing", name: "자켓/점퍼",    slug: "701010", sortOrder: 1  },
+      { categoryId: "clothing", name: "반팔티",       slug: "701020", sortOrder: 2  },
+      { categoryId: "clothing", name: "긴팔티",       slug: "701030", sortOrder: 3  },
+      { categoryId: "clothing", name: "긴바지",       slug: "701040", sortOrder: 4  },
+      { categoryId: "clothing", name: "비옷",         slug: "701050", sortOrder: 5  },
+      { categoryId: "clothing", name: "조끼",         slug: "701060", sortOrder: 6  },
+      { categoryId: "clothing", name: "반바지",       slug: "701070", sortOrder: 7  },
+      { categoryId: "clothing", name: "패딩/아우터",  slug: "701080", sortOrder: 8  },
+      { categoryId: "clothing", name: "니트/스웨터",  slug: "701090", sortOrder: 9  },
+      { categoryId: "clothing", name: "셋트",         slug: "7010a0", sortOrder: 10 },
+      // ── 골프 여성의류 (clothing / 702xxx) ──
+      { categoryId: "clothing", name: "자켓/점퍼",    slug: "702010", sortOrder: 1  },
+      { categoryId: "clothing", name: "반팔티",       slug: "702020", sortOrder: 2  },
+      { categoryId: "clothing", name: "긴팔티",       slug: "702030", sortOrder: 3  },
+      { categoryId: "clothing", name: "긴바지",       slug: "702040", sortOrder: 4  },
+      { categoryId: "clothing", name: "반바지",       slug: "702050", sortOrder: 5  },
+      { categoryId: "clothing", name: "조끼",         slug: "702060", sortOrder: 6  },
+      { categoryId: "clothing", name: "비옷",         slug: "702070", sortOrder: 7  },
+      { categoryId: "clothing", name: "패딩아우터",   slug: "702080", sortOrder: 8  },
+      { categoryId: "clothing", name: "원피스",       slug: "702090", sortOrder: 9  },
+      { categoryId: "clothing", name: "스커트",       slug: "7020a0", sortOrder: 10 },
+      { categoryId: "clothing", name: "니트/스웨터",  slug: "7020b0", sortOrder: 11 },
+      { categoryId: "clothing", name: "셋트",         slug: "7020c0", sortOrder: 12 },
+      // ── 골프 가방 (bags / 704xxx) ──
+      { categoryId: "bags", name: "캐디백",           slug: "704010", sortOrder: 1 },
+      { categoryId: "bags", name: "보스턴백",         slug: "704020", sortOrder: 2 },
+      { categoryId: "bags", name: "토트백",           slug: "704030", sortOrder: 3 },
+      { categoryId: "bags", name: "클러치백",         slug: "704040", sortOrder: 4 },
+      { categoryId: "bags", name: "기타",             slug: "704050", sortOrder: 5 },
+      // ── 골프 신발 (shoes / 703xxx) ──
+      { categoryId: "shoes", name: "골프화",          slug: "703010", sortOrder: 1 },
+      { categoryId: "shoes", name: "스니커즈",        slug: "703020", sortOrder: 2 },
+    ];
+
+    let inserted = 0, skipped = 0;
+    for (const sub of subcats) {
+      const res = await pool.query(
+        `INSERT INTO subcategories (id, category_id, name, slug, sort_order, is_active)
+         SELECT gen_random_uuid(), $1, $2, $3, $4, true
+         WHERE NOT EXISTS (SELECT 1 FROM subcategories WHERE slug = $3)`,
+        [sub.categoryId, sub.name, sub.slug, sub.sortOrder]
+      );
+      if (res.rowCount && res.rowCount > 0) inserted++;
+      else skipped++;
+    }
+    log(`Subcategory migrations completed: ${inserted} inserted, ${skipped} already existed`, 'migration');
+  } catch (err: any) {
+    console.error('[migration] Subcategory migration error:', err.message);
   }
 }
 
