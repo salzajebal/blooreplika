@@ -3436,9 +3436,10 @@ export async function registerRoutes(
     message: string;
     category: string;
     subcatLog: string[];
+    grandTotal: number;
     startedAt?: Date;
     completedAt?: Date;
-  } = { status: 'idle', total: 0, current: 0, message: '', category: '', subcatLog: [] };
+  } = { status: 'idle', total: 0, current: 0, message: '', category: '', subcatLog: [], grandTotal: 0 };
 
   app.get("/api/admin/crawl/bagstyle/progress", requireAdminAuth, (_req: Request, res: Response) => {
     res.json({ success: true, ...bagstyleProgress });
@@ -3451,6 +3452,7 @@ export async function registerRoutes(
     bagstyleProgress.message = '';
     bagstyleProgress.category = '';
     bagstyleProgress.subcatLog = [];
+    bagstyleProgress.grandTotal = 0;
     res.json({ success: true, message: "크롤링 상태가 초기화되었습니다." });
   });
 
@@ -3754,6 +3756,7 @@ export async function registerRoutes(
                   });
                   savedCount++;
                   grandTotal++;
+                  bagstyleProgress.grandTotal = grandTotal;
                 } catch { skippedCount++; }
               }
 
