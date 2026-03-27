@@ -3588,30 +3588,56 @@ export async function registerRoutes(
         };
         const delayMs = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+        // ── 타임아웃 + 리트라이 fetch 헬퍼 ──
+        const bsFetchWithTimeout = async (url: string, timeoutMs = 25000): Promise<Response> => {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), timeoutMs);
+          try {
+            return await fetch(url, { headers: bsHeaders, signal: controller.signal });
+          } finally {
+            clearTimeout(timer);
+          }
+        };
+        const bsFetchWithRetry = async (url: string, retries = 3, baseDelayMs = 1000): Promise<Response | null> => {
+          for (let attempt = 0; attempt < retries; attempt++) {
+            try {
+              const r = await bsFetchWithTimeout(url);
+              if (r.ok) return r;
+              if (r.status === 404) return null;
+              if (attempt < retries - 1) await delayMs(baseDelayMs * (attempt + 1));
+            } catch (e: any) {
+              const isTimeout = e?.name === 'AbortError';
+              console.warn(`[bagstyle] ${isTimeout ? '타임아웃' : '오류'} (시도 ${attempt + 1}/${retries}): ${url}`);
+              if (attempt < retries - 1) await delayMs(baseDelayMs * (attempt + 1));
+            }
+          }
+          return null;
+        };
+
         // ── 상품 ID 목록 수집 (소분류 단위, 전 페이지) ──
-        // 수정: mens.php/women.php는 베스트/랭킹 전용 페이지라 카테고리 상품이 없음.
-        // list.php?ca_id=...&page=... 가 올바른 카테고리 목록 URL.
         const fetchProductIds = async (caId: string): Promise<string[]> => {
           const allIds = new Set<string>();
           let page = 1;
-          let emptyStreak = 0;
-          while (emptyStreak < 3) {
-            try {
-              const url = `https://bagstyle.site/shop/list.php?ca_id=${caId}&page=${page}`;
-              const r = await fetch(url, { headers: bsHeaders });
-              if (!r.ok) { emptyStreak++; await delayMs(500); page++; continue; }
-              const html = await r.text();
-              const ids = Array.from(new Set((html.match(/it_id=(\d+)/g) || []).map((m: string) => m.replace('it_id=', ''))));
-              const newIds = ids.filter((id: string) => !allIds.has(id));
-              newIds.forEach((id: string) => allIds.add(id));
-              if (newIds.length === 0) emptyStreak++;
-              else emptyStreak = 0;
+          let emptyStreak = 0;   // 신규 ID가 없는 페이지 연속 횟수
+          let errorStreak = 0;   // 요청 자체가 실패한 연속 횟수
+          while (emptyStreak < 4 && errorStreak < 6) {
+            const url = `https://bagstyle.site/shop/list.php?ca_id=${caId}&page=${page}`;
+            const r = await bsFetchWithRetry(url, 3, 800);
+            if (!r) {
+              errorStreak++;
+              await delayMs(1000 * errorStreak);
               page++;
-              await delayMs(60);
-            } catch {
-              emptyStreak++;
-              await delayMs(300);
+              continue;
             }
+            errorStreak = 0;
+            const html = await r.text();
+            const ids = Array.from(new Set((html.match(/it_id=(\d+)/g) || []).map((m: string) => m.replace('it_id=', ''))));
+            const newIds = ids.filter((id: string) => !allIds.has(id));
+            newIds.forEach((id: string) => allIds.add(id));
+            if (newIds.length === 0) emptyStreak++;
+            else emptyStreak = 0;
+            page++;
+            await delayMs(80);
           }
           return Array.from(allIds);
         };
@@ -3622,10 +3648,9 @@ export async function registerRoutes(
         const parseTotalCount = async (caId: string): Promise<number> => {
           try {
             const url = `https://bagstyle.site/shop/list.php?ca_id=${caId}&page=1`;
-            const r = await fetch(url, { headers: bsHeaders });
-            if (!r.ok) return 0;
+            const r = await bsFetchWithRetry(url, 2, 500);
+            if (!r) return 0;
             const html = await r.text();
-            // HTML 태그를 제거 후 총 N개 패턴 파싱
             const stripped = html.replace(/<[^>]+>/g, ' ');
             const m = stripped.match(/총\s*([\d,]+)\s*개/);
             return m ? parseInt(m[1].replace(/,/g, ''), 10) : 0;
@@ -3642,8 +3667,8 @@ export async function registerRoutes(
         const fetchDetail = async (sourceId: string, categoryId: string, subcategoryId: string, gender: string) => {
           const url = `https://bagstyle.site/shop/item.php?it_id=${sourceId}`;
           try {
-            const r = await fetch(url, { headers: bsHeaders });
-            if (!r.ok) return null;
+            const r = await bsFetchWithRetry(url, 3, 800);
+            if (!r) return null;
             const html = await r.text();
             const $ = cheerio.load(html);
 
@@ -3788,7 +3813,11 @@ export async function registerRoutes(
             for (let i = 0; i < idsArray.length; i += 10) {
               if (bagstyleShouldStop) break;
               const batch = idsArray.slice(i, i + 10);
-              const results = await Promise.all(batch.map(id => fetchDetail(id, entry.categoryId, sub.caId, entry.gender)));
+              const results = await Promise.all(
+                batch.map(id => fetchDetail(id, entry.categoryId, sub.caId, entry.gender)
+                  .catch((e: any) => { console.error(`[bagstyle] fetchDetail 오류 (id=${id}):`, e?.message || e); return null; })
+                )
+              );
 
               for (const p of results) {
                 if (!p || p.price <= 0) { skippedCount++; continue; }
@@ -3817,7 +3846,10 @@ export async function registerRoutes(
                   savedCount++;
                   grandTotal++;
                   bagstyleProgress.grandTotal = grandTotal;
-                } catch { skippedCount++; }
+                } catch (dbErr: any) {
+                  skippedCount++;
+                  console.error(`[bagstyle] DB 저장 오류 (${p.name}):`, dbErr?.message || dbErr);
+                }
               }
 
               bagstyleProgress.current = Math.min(i + 10, idsArray.length);
@@ -3920,6 +3952,32 @@ export async function registerRoutes(
 
         const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+        // ── 타임아웃 + 리트라이 fetch 헬퍼 (bloostore) ──
+        const bsFetch = async (url: string, extraHeaders: Record<string, string> = {}, timeoutMs = 25000): Promise<Response> => {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), timeoutMs);
+          try {
+            return await fetch(url, { headers: { ...headers, ...extraHeaders }, signal: controller.signal });
+          } finally {
+            clearTimeout(timer);
+          }
+        };
+        const bsFetchRetry = async (url: string, extraHeaders: Record<string, string> = {}, retries = 3): Promise<Response | null> => {
+          for (let attempt = 0; attempt < retries; attempt++) {
+            try {
+              const r = await bsFetch(url, extraHeaders);
+              if (r.ok) return r;
+              if (r.status === 404) return null;
+              if (attempt < retries - 1) await delay(1000 * (attempt + 1));
+            } catch (e: any) {
+              const isTimeout = e?.name === 'AbortError';
+              console.warn(`[bloostore] ${isTimeout ? '타임아웃' : '오류'} (시도 ${attempt + 1}/${retries}): ${url}`);
+              if (attempt < retries - 1) await delay(1000 * (attempt + 1));
+            }
+          }
+          return null;
+        };
+
         const brandsToProcess = selectedBrands && selectedBrands.length > 0
           ? BLOOSTORE_WATCH_BRANDS.filter(b => selectedBrands.includes(b.id))
           : BLOOSTORE_WATCH_BRANDS;
@@ -3963,9 +4021,7 @@ export async function registerRoutes(
         const crawledNames = new Set<string>();
 
         const existingWatchNames = new Set(
-          (await storage.getAllProducts())
-            .filter(p => p.categoryId === watchCategory.id)
-            .map(p => p.name)
+          (await storage.getProductsByCategory(watchCategory.id)).map(p => p.name)
         );
 
         for (const brand of brandsToProcess) {
@@ -3980,16 +4036,20 @@ export async function registerRoutes(
 
           const seenProductIdx = new Set<number>();
 
+          let pageRetryCount = 0;
           while (hasMore) {
             try {
               const ajaxUrl = `https://bloostore.co.kr/ajax/get_shop_list_view.cm?page=${page}&pagesize=${pageSize}&category=${brand.categoryId}&sort=recent&menu_url=${brand.pageUrl}`;
-              const response = await fetch(ajaxUrl, { headers });
+              const response = await bsFetchRetry(ajaxUrl, { "Accept": "application/json, */*" }, 3);
 
-              if (!response.ok) {
-                console.error(`[bloostore] HTTP ${response.status} for ${brand.name} page ${page}`);
-                hasMore = false;
+              if (!response) {
+                console.error(`[bloostore] ${brand.name} page ${page} 응답 없음 (리트라이 소진)`);
+                pageRetryCount++;
+                if (pageRetryCount >= 3) { hasMore = false; }
+                else { await delay(2000 * pageRetryCount); }
                 continue;
               }
+              pageRetryCount = 0;
 
               const data = await response.json() as { html: string; msg: string };
 
@@ -4045,11 +4105,9 @@ export async function registerRoutes(
                   try {
                     await delay(400);
                     const detailUrl = `https://bloostore.co.kr/shop_view/?idx=${prod.idx}`;
-                    const detailResponse = await fetch(detailUrl, {
-                      headers: { ...headers, "Accept": "text/html", "Accept-Language": "ko-KR,ko;q=0.9" },
-                    });
+                    const detailResponse = await bsFetchRetry(detailUrl, { "Accept": "text/html", "Accept-Language": "ko-KR,ko;q=0.9" }, 2);
 
-                    if (detailResponse.ok) {
+                    if (detailResponse) {
                       const detailHtml = await detailResponse.text();
 
                       const owlSection = detailHtml.match(/owl-carousel prod-owl-list[\s\S]*?<\/div>\s*<\/div>/);
@@ -4131,7 +4189,13 @@ export async function registerRoutes(
               }
             } catch (pageErr) {
               console.error(`[bloostore] Error on page ${page} for ${brand.name}:`, pageErr);
-              hasMore = false;
+              pageRetryCount++;
+              if (pageRetryCount >= 5) {
+                console.error(`[bloostore] ${brand.name} 연속 오류 5회 → 다음 브랜드로 이동`);
+                hasMore = false;
+              } else {
+                await delay(2000 * pageRetryCount);
+              }
             }
           }
 
@@ -4202,6 +4266,26 @@ export async function registerRoutes(
       };
       const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+      // ── 타임아웃 + 리트라이 fetch 헬퍼 (backfill) ──
+      const bfFetchRetry = async (url: string, retries = 3): Promise<Response | null> => {
+        for (let attempt = 0; attempt < retries; attempt++) {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 25000);
+          try {
+            const r = await fetch(url, { headers, signal: controller.signal });
+            clearTimeout(timer);
+            if (r.ok) return r;
+            if (r.status === 404) return null;
+            if (attempt < retries - 1) await delay(1000 * (attempt + 1));
+          } catch (e: any) {
+            clearTimeout(timer);
+            console.warn(`[backfill] ${e?.name === 'AbortError' ? '타임아웃' : '오류'} (시도 ${attempt + 1}/${retries}): ${url}`);
+            if (attempt < retries - 1) await delay(1000 * (attempt + 1));
+          }
+        }
+        return null;
+      };
+
       backfillProgress = {
         status: 'running', total: 0, matched: 0,
         message: '블루스토어 상품 목록 수집 중...', startedAt: new Date(),
@@ -4219,12 +4303,19 @@ export async function registerRoutes(
             let hasMore = true;
             backfillProgress.message = `[${brand.name}] 상품 목록 수집 중...`;
 
+            let bfPageErrStreak = 0;
             while (hasMore) {
               try {
                 const ajaxUrl = `https://bloostore.co.kr/ajax/get_shop_list_view.cm?page=${page}&pagesize=${pageSize}&category=${brand.categoryId}&sort=recent&menu_url=${brand.pageUrl}`;
-                const response = await fetch(ajaxUrl, { headers });
+                const response = await bfFetchRetry(ajaxUrl, 3);
 
-                if (!response.ok) { hasMore = false; continue; }
+                if (!response) {
+                  bfPageErrStreak++;
+                  if (bfPageErrStreak >= 3) { hasMore = false; }
+                  else { await delay(2000 * bfPageErrStreak); }
+                  continue;
+                }
+                bfPageErrStreak = 0;
                 const data = await response.json() as { html: string; msg: string };
                 if (data.msg !== 'SUCCESS' || !data.html) { hasMore = false; continue; }
 
@@ -4250,7 +4341,9 @@ export async function registerRoutes(
                 await delay(200);
               } catch (err: any) {
                 console.error(`[backfill] Error fetching ${brand.name} page ${page}:`, err.message);
-                hasMore = false;
+                bfPageErrStreak++;
+                if (bfPageErrStreak >= 5) { hasMore = false; }
+                else { await delay(2000 * bfPageErrStreak); }
               }
             }
             console.log(`[backfill] ${brand.name}: collected ${bloostoreProducts.length} total products from bloostore`);
@@ -4372,7 +4465,31 @@ export async function registerRoutes(
         };
         const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-        const allProducts = await storage.getAllProducts();
+        // ── 타임아웃 + 리트라이 fetch 헬퍼 (watch-detail) ──
+        const wdFetch = async (url: string, extraHeaders: Record<string, string> = {}, timeoutMs = 25000): Promise<Response> => {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), timeoutMs);
+          try {
+            return await fetch(url, { headers: { ...headers, ...extraHeaders }, signal: controller.signal });
+          } finally {
+            clearTimeout(timer);
+          }
+        };
+        const wdFetchRetry = async (url: string, extraHeaders: Record<string, string> = {}, retries = 3): Promise<Response | null> => {
+          for (let attempt = 0; attempt < retries; attempt++) {
+            try {
+              const r = await wdFetch(url, extraHeaders);
+              if (r.ok) return r;
+              if (r.status === 404) return null;
+              if (attempt < retries - 1) await delay(1000 * (attempt + 1));
+            } catch (e: any) {
+              console.warn(`[watch-detail] ${e?.name === 'AbortError' ? '타임아웃' : '오류'} (시도 ${attempt + 1}/${retries}): ${url}`);
+              if (attempt < retries - 1) await delay(1000 * (attempt + 1));
+            }
+          }
+          return null;
+        };
+
         const watchCategory = (await storage.getAllCategories()).find(c => c.id === 'watches' || c.slug === 'watches' || c.name === '시계');
         if (!watchCategory) {
           watchDetailProgress.status = 'error';
@@ -4380,7 +4497,7 @@ export async function registerRoutes(
           return;
         }
 
-        let watchProducts = allProducts.filter(p => p.categoryId === watchCategory.id);
+        let watchProducts = await storage.getProductsByCategory(watchCategory.id);
         if (onlyMissing) {
           const imageCount = new Map<string, number>();
           watchProducts.forEach(p => {
@@ -4404,14 +4521,14 @@ export async function registerRoutes(
         const fetchBrandListingProducts = async (brand: typeof BLOOSTORE_WATCH_BRANDS[0]) => {
           let page = 1;
           const MAX_PAGES = 50;
-          while (page <= MAX_PAGES) {
+          let listingErrorStreak = 0;
+          while (page <= MAX_PAGES && listingErrorStreak < 4) {
             try {
               const listUrl = `https://bloostore.co.kr${brand.pageUrl}?page=${page}`;
               watchDetailProgress.message = `[${brand.name}] 상품 목록 수집 중... (페이지 ${page})`;
-              const response = await fetch(listUrl, {
-                headers: { ...headers, "Accept": "text/html", "Accept-Language": "ko-KR,ko;q=0.9" },
-              });
-              if (!response.ok) break;
+              const response = await wdFetchRetry(listUrl, { "Accept": "text/html", "Accept-Language": "ko-KR,ko;q=0.9" }, 3);
+              if (!response) { listingErrorStreak++; await delay(1500 * listingErrorStreak); continue; }
+              listingErrorStreak = 0;
               const html = await response.text();
 
               let newCount = 0;
@@ -4447,7 +4564,8 @@ export async function registerRoutes(
               await delay(500);
             } catch (err) {
               console.error(`[watch-detail] Error fetching ${brand.name} page ${page}:`, err);
-              break;
+              listingErrorStreak++;
+              await delay(1500 * listingErrorStreak);
             }
           }
         };
@@ -4490,11 +4608,9 @@ export async function registerRoutes(
             const detailImages: string[] = [];
             const detailUrl = `https://bloostore.co.kr/shop_view/?idx=${matched.idx}`;
             await delay(300);
-            const detailResponse = await fetch(detailUrl, {
-              headers: { ...headers, "Accept": "text/html", "Accept-Language": "ko-KR,ko;q=0.9" },
-            });
+            const detailResponse = await wdFetchRetry(detailUrl, { "Accept": "text/html", "Accept-Language": "ko-KR,ko;q=0.9" }, 2);
 
-            if (detailResponse.ok) {
+            if (detailResponse) {
               const detailHtml = await detailResponse.text();
 
               const owlSection = detailHtml.match(/owl-carousel prod-owl-list[\s\S]*?<\/div>\s*<\/div>/);
