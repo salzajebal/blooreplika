@@ -46,7 +46,7 @@ export interface IStorage {
   
   // Products
   getAllProducts(): Promise<Product[]>;
-  getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string, month?: string): Promise<{ products: Product[], total: number }>;
+  getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string, month?: string, subname?: string, filterCategory?: string): Promise<{ products: Product[], total: number }>;
   getProductsFullPaginated(limit: number, offset: number, categoryId?: string): Promise<{ products: Product[], total: number }>;
   getProductsCount(categoryId?: string): Promise<number>;
   getProductsByCategory(categoryId: string): Promise<Product[]>;
@@ -335,7 +335,7 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(products).orderBy(desc(products.createdAt));
   }
   
-  async getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string, month?: string): Promise<{ products: Product[], total: number }> {
+  async getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string, month?: string, subname?: string, filterCategory?: string): Promise<{ products: Product[], total: number }> {
     const leanSelect = {
       id: products.id,
       name: products.name,
@@ -421,6 +421,22 @@ export class DatabaseStorage implements IStorage {
       const start = new Date(y, m - 1, 1);
       const end = new Date(y, m, 1);
       conditions.push(sql`${products.createdAt} >= ${start.toISOString()} AND ${products.createdAt} < ${end.toISOString()}`);
+    }
+
+    // Subname filter: find all subcategory slugs matching the given name, filter products by those slugs
+    if (subname) {
+      const slugRows = await db.select({ slug: subcategories.slug }).from(subcategories).where(eq(subcategories.name, subname));
+      const slugs = slugRows.map(r => r.slug);
+      if (slugs.length > 0) {
+        conditions.push(inArray(products.subcategoryId, slugs));
+      } else {
+        conditions.push(sql`1=0`); // no matching subcategory
+      }
+    }
+
+    // filterCategory: secondary category filter for special pages (sameday/discount/best)
+    if (filterCategory) {
+      conditions.push(eq(products.categoryId, filterCategory));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

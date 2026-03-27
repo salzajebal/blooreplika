@@ -31,12 +31,17 @@ const CLOTHING_WOMEN = [
 const BAGS_MEN = [
   { name: "토트백", sub: "b02010" }, { name: "크로스백", sub: "b02020" },
   { name: "숄더백", sub: "b02030" }, { name: "백팩", sub: "b02040" },
-  { name: "서류가방", sub: "b02050" },
+  { name: "서류가방", sub: "b02050" }, { name: "파우치/클러치", sub: "b02060" },
+  { name: "여행가방", sub: "b02070" }, { name: "캐리어", sub: "b02080" },
+  { name: "벨트백/새들/슬링", sub: "b02090" }, { name: "기타", sub: "b020a0" },
 ];
 const BAGS_WOMEN = [
   { name: "숄더백", sub: "c02010" }, { name: "토트백", sub: "c02020" },
   { name: "클러치백", sub: "c02030" }, { name: "백팩", sub: "c02040" },
-  { name: "파우치", sub: "c02050" },
+  { name: "파우치", sub: "c02050" }, { name: "크로스백", sub: "c02060" },
+  { name: "메신져백", sub: "c02070" }, { name: "여행가방", sub: "c02080" },
+  { name: "캐리어", sub: "c02090" }, { name: "벨트백/새들/슬링", sub: "c020a0" },
+  { name: "미니백", sub: "c020b0" }, { name: "기타", sub: "c020c0" },
 ];
 const WALLETS_MEN = [
   { name: "장지갑/소지갑", sub: "b04010" }, { name: "카드지갑", sub: "b04020" },
@@ -60,18 +65,106 @@ const SHOES_WOMEN = [
 const JEWELRY_MEN = [
   { name: "목걸이", sub: "b08010" }, { name: "팔찌", sub: "b08020" },
   { name: "반지", sub: "b08030" }, { name: "백참/브로치", sub: "b08040" },
-  { name: "장갑", sub: "b08060" },
+  { name: "만년필/볼펜", sub: "b08050" }, { name: "장갑", sub: "b08060" },
+  { name: "라이터/듀퐁", sub: "b08070" }, { name: "스카프/머플러", sub: "b08080" },
+  { name: "넥타이", sub: "b08090" }, { name: "모자", sub: "b080a0" },
+  { name: "우산", sub: "b080b0" }, { name: "커프스", sub: "b080d0" },
+  { name: "키홀더", sub: "b080e0" }, { name: "기타", sub: "b080f0" },
 ];
 const JEWELRY_WOMEN = [
   { name: "목걸이", sub: "c0a010" }, { name: "귀걸이", sub: "c0a020" },
   { name: "팔찌", sub: "c0a030" }, { name: "반지", sub: "c0a040" },
+  { name: "만년필/볼펜", sub: "c0a050" }, { name: "키홀더", sub: "c0a060" },
   { name: "모자", sub: "c0a070" }, { name: "장갑", sub: "c0a080" },
+  { name: "우산", sub: "c0a090" }, { name: "브로치/백참", sub: "c0a0a0" },
+  { name: "스카프/머플러", sub: "c0a0b0" }, { name: "기타", sub: "c0a0c0" },
 ];
 const SUNGLASSES_ALL = [
   { name: "선글라스", sub: "b0a010" }, { name: "안경테", sub: "b0a020" },
 ];
 const BELTS_ALL = [
   { name: "가죽벨트", sub: "b07010" }, { name: "메쉬벨트", sub: "b07020" },
+];
+
+// Golf subcategories (2-level: L1 = section, L2 = items)
+const GOLF_L1 = [
+  {
+    id: "golf-men-clothing", name: "남성의류",
+    path: "/products/golf",
+    query: "?gender=남성",
+    items: [
+      { name: "자켓/점퍼", sub: "d01010" }, { name: "패딩/털", sub: "d01020" },
+      { name: "셔츠/폴로", sub: "d01030" }, { name: "바지/팬츠", sub: "d01040" },
+      { name: "반바지", sub: "d01050" }, { name: "니트/스웨터", sub: "d01060" },
+    ],
+  },
+  {
+    id: "golf-women-clothing", name: "여성의류",
+    path: "/products/golf",
+    query: "?gender=여성",
+    items: [
+      { name: "자켓/점퍼", sub: "d02010" }, { name: "패딩/털", sub: "d02020" },
+      { name: "셔츠/폴로", sub: "d02030" }, { name: "스커트/치마", sub: "d02040" },
+      { name: "바지/팬츠", sub: "d02050" }, { name: "원피스", sub: "d02060" },
+    ],
+  },
+  {
+    id: "golf-bags", name: "골프가방",
+    path: "/products/golf",
+    query: "?cat=bags",
+    items: [
+      { name: "캐디백", sub: "d03010" }, { name: "보스턴백", sub: "d03020" },
+      { name: "카트백", sub: "d03030" }, { name: "스탠드백", sub: "d03040" },
+    ],
+  },
+  {
+    id: "golf-shoes", name: "골프신발",
+    path: "/products/golf",
+    query: "?cat=shoes",
+    items: [
+      { name: "남성골프화", sub: "d04010" }, { name: "여성골프화", sub: "d04020" },
+    ],
+  },
+  {
+    id: "golf-acc", name: "골프용품",
+    path: "/products/golf",
+    query: "?cat=accessories",
+    items: [
+      { name: "장갑", sub: "d05010" }, { name: "모자", sub: "d05020" },
+      { name: "거리측정기", sub: "d05030" }, { name: "기타", sub: "d05040" },
+    ],
+  },
+];
+
+// 당일배송 / 할인상품 / 베스트상품 quick links
+const SAMEDAY_LINKS = [
+  { name: "전체", path: "/products/sameday" },
+  { name: "의류", path: "/products/sameday?cat=clothing" },
+  { name: "가방/백", path: "/products/sameday?cat=bags" },
+  { name: "클러치/지갑", path: "/products/sameday?cat=wallets" },
+  { name: "신발", path: "/products/sameday?cat=shoes" },
+  { name: "잡화/소품", path: "/products/sameday?cat=jewelry" },
+];
+const DISCOUNT_LINKS = [
+  { name: "전체", path: "/products/discount" },
+  { name: "가방/백", path: "/products/discount?cat=bags" },
+  { name: "의류", path: "/products/discount?cat=clothing" },
+  { name: "지갑", path: "/products/discount?cat=wallets" },
+  { name: "신발", path: "/products/discount?cat=shoes" },
+  { name: "벨트", path: "/products/discount?cat=belts" },
+  { name: "잡화/소품", path: "/products/discount?cat=jewelry" },
+];
+const BEST_LINKS = [
+  { name: "전체", path: "/products/best" },
+  { name: "남성의류", path: "/products/best?cat=clothing&gender=남성" },
+  { name: "남성가방", path: "/products/best?cat=bags&gender=남성" },
+  { name: "여성의류", path: "/products/best?cat=clothing&gender=여성" },
+  { name: "여성가방", path: "/products/best?cat=bags&gender=여성" },
+  { name: "신발", path: "/products/best?cat=shoes" },
+  { name: "지갑", path: "/products/best?cat=wallets" },
+  { name: "골프", path: "/products/best?cat=golf" },
+  { name: "쥬얼리/잡화", path: "/products/best?cat=jewelry" },
+  { name: "벨트", path: "/products/best?cat=belts" },
 ];
 
 // Gender mega-menu category structure
@@ -86,13 +179,23 @@ const GENDER_CATS = [
   { id: "belts", name: "벨트", path: "/products/belts", menSubcats: BELTS_ALL, womenSubcats: BELTS_ALL },
 ];
 
-// Category dropdowns (simple 1-level)
+// Combined (men+women deduped) subcategory items for category dropdowns
+function combineSubcats(men: { name: string; sub: string }[], women: { name: string; sub: string }[]): { name: string; sub: string }[] {
+  const seen = new Set<string>();
+  const result: { name: string; sub: string }[] = [];
+  for (const item of [...men, ...women]) {
+    if (!seen.has(item.name)) { seen.add(item.name); result.push(item); }
+  }
+  return result;
+}
+
+// Category dropdowns (shows combined men+women names, links to sub by caId)
 const CATEGORY_SUBCATS: Record<string, { label: string; path: string; items: { name: string; sub: string }[] }> = {
-  clothing: { label: "의류", path: "/products/clothing", items: CLOTHING_MEN },
-  bags: { label: "가방", path: "/products/bags", items: BAGS_MEN },
-  wallets: { label: "지갑", path: "/products/wallets", items: WALLETS_MEN },
-  shoes: { label: "신발", path: "/products/shoes", items: SHOES_MEN },
-  jewelry: { label: "쥬얼리/잡화", path: "/products/jewelry", items: JEWELRY_MEN },
+  clothing: { label: "의류", path: "/products/clothing", items: combineSubcats(CLOTHING_MEN, CLOTHING_WOMEN) },
+  bags: { label: "가방", path: "/products/bags", items: combineSubcats(BAGS_MEN, BAGS_WOMEN) },
+  wallets: { label: "지갑", path: "/products/wallets", items: combineSubcats([...WALLETS_MEN, ...WALLETS_WOMEN], []) },
+  shoes: { label: "신발", path: "/products/shoes", items: combineSubcats(SHOES_MEN, SHOES_WOMEN) },
+  jewelry: { label: "쥬얼리/잡화", path: "/products/jewelry", items: combineSubcats(JEWELRY_MEN, JEWELRY_WOMEN) },
 };
 
 // Generate month list (current month + 13 months back)
@@ -124,7 +227,7 @@ const sideMenuLinks = [
 const popularSearches = ["샤넬", "루이비통", "디올", "에르메스", "셀린느", "롤렉스", "자켓", "숄더백", "까르띠에", "후드"];
 
 // ─── Main Nav item types ──────────────────────────────────────────────────────
-type NavKey = "신상품" | "브랜드" | "성별" | "의류" | "가방" | "지갑" | "신발" | "골프" | "쥬얼리" | "선글라스" | "벨트";
+type NavKey = "신상품" | "브랜드" | "성별" | "의류" | "가방" | "지갑" | "신발" | "시계" | "골프" | "쥬얼리" | "선글라스" | "벨트" | "당일배송" | "할인상품" | "베스트상품";
 
 const SIMPLE_NAV = [
   { key: "신상품" as NavKey, label: "신상품", path: "/products/new" },
@@ -134,14 +237,14 @@ const SIMPLE_NAV = [
   { key: "가방" as NavKey, label: "가방", path: "/products/bags" },
   { key: "지갑" as NavKey, label: "지갑", path: "/products/wallets" },
   { key: "신발" as NavKey, label: "신발", path: "/products/shoes" },
-  { label: "시계", path: "/products/watches", key: null },
+  { key: "시계" as NavKey, label: "시계", path: "/products/watches" },
   { key: "골프" as NavKey, label: "골프", path: "/products/golf" },
   { key: "쥬얼리" as NavKey, label: "쥬얼리/잡화", path: "/products/jewelry" },
   { key: "선글라스" as NavKey, label: "선글라스", path: "/products/sunglasses" },
   { key: "벨트" as NavKey, label: "벨트", path: "/products/belts" },
-  { label: "당일배송", path: "/products/sameday", key: null },
-  { label: "할인상품", path: "/products/discount", key: null },
-  { label: "베스트상품", path: "/products/best", key: null },
+  { key: "당일배송" as NavKey, label: "당일배송", path: "/products/sameday" },
+  { key: "할인상품" as NavKey, label: "할인상품", path: "/products/discount" },
+  { key: "베스트상품" as NavKey, label: "베스트상품", path: "/products/best" },
 ];
 
 export function Header() {
@@ -160,9 +263,11 @@ export function Header() {
   const [navOpen, setNavOpen] = useState<string | null>(null);
   const [genderL2, setGenderL2] = useState<"남성" | "여성" | null>(null);
   const [genderL3, setGenderL3] = useState<string | null>(null);
+  const [golfL2, setGolfL2] = useState<string | null>(null);
   const navTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const genderL2Timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const genderL3Timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const golfL2Timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Mobile accordion state
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
@@ -242,6 +347,7 @@ export function Header() {
       setNavOpen(null);
       setGenderL2(null);
       setGenderL3(null);
+      setGolfL2(null);
     }, 120);
   }, []);
 
@@ -274,6 +380,19 @@ export function Header() {
 
   const keepGenderL3 = useCallback(() => {
     if (genderL3Timeout.current) clearTimeout(genderL3Timeout.current);
+  }, []);
+
+  const openGolfL2 = useCallback((id: string) => {
+    if (golfL2Timeout.current) clearTimeout(golfL2Timeout.current);
+    setGolfL2(id);
+  }, []);
+
+  const closeGolfL2 = useCallback(() => {
+    golfL2Timeout.current = setTimeout(() => setGolfL2(null), 120);
+  }, []);
+
+  const keepGolfL2 = useCallback(() => {
+    if (golfL2Timeout.current) clearTimeout(golfL2Timeout.current);
   }, []);
 
   const closeMobileMenu = () => {
@@ -459,6 +578,84 @@ export function Header() {
       </DropdownPanel>
     );
   };
+
+  // Golf mega-menu (2-level hover)
+  const GolfDropdown = () => {
+    const selectedSection = GOLF_L1.find((s) => s.id === golfL2);
+    return (
+      <div
+        className="absolute top-full left-1/2 -translate-x-1/2 flex z-[200] shadow-xl border border-gray-200 bg-white rounded-b-md"
+        onMouseEnter={keepNavOpen}
+        onMouseLeave={closeNav}
+      >
+        {/* Column 1: golf sections */}
+        <div className="border-r border-gray-100 min-w-[120px]">
+          <Link
+            href="/products/golf"
+            className="block px-5 py-3 text-[13px] font-medium text-black border-b border-gray-100 hover:bg-gray-50"
+            onClick={() => setNavOpen(null)}
+          >
+            전체보기
+          </Link>
+          {GOLF_L1.map((section) => (
+            <div
+              key={section.id}
+              className={`flex items-center justify-between px-5 py-3 text-[13px] cursor-pointer transition-colors ${golfL2 === section.id ? "bg-gray-50 font-semibold text-black" : "text-gray-700 hover:bg-gray-50 hover:text-black"}`}
+              onMouseEnter={() => openGolfL2(section.id)}
+              onMouseLeave={closeGolfL2}
+              onClick={() => { setLocation(`${section.path}${section.query}`); setNavOpen(null); }}
+            >
+              <span>{section.name}</span>
+              {section.items.length > 0 && <ChevronRight className="w-3 h-3 ml-2 opacity-40" />}
+            </div>
+          ))}
+        </div>
+
+        {/* Column 2: section items */}
+        {golfL2 && selectedSection && selectedSection.items.length > 0 && (
+          <div
+            className="min-w-[130px]"
+            onMouseEnter={keepGolfL2}
+            onMouseLeave={closeGolfL2}
+          >
+            <Link
+              href={`${selectedSection.path}${selectedSection.query}`}
+              className="block px-5 py-3 text-[13px] font-medium text-gray-500 border-b border-gray-100 hover:text-black hover:bg-gray-50"
+              onClick={() => setNavOpen(null)}
+            >
+              전체보기
+            </Link>
+            {selectedSection.items.map((item) => (
+              <Link
+                key={item.sub}
+                href={`${selectedSection.path}?sub=${item.sub}`}
+                className="block px-5 py-3 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50"
+                onClick={() => setNavOpen(null)}
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Quick-link dropdown (당일배송 / 할인상품 / 베스트상품 / 시계)
+  const QuickLinksDropdown = ({ links }: { links: { name: string; path: string }[] }) => (
+    <DropdownPanel className="min-w-[140px]">
+      {links.map((link) => (
+        <Link
+          key={link.path}
+          href={link.path}
+          className="block px-5 py-2.5 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap"
+          onClick={() => setNavOpen(null)}
+        >
+          {link.name}
+        </Link>
+      ))}
+    </DropdownPanel>
+  );
 
   // Sunglasses/Belts simple dropdown
   const SimpleSubDropdown = ({ items, path }: { items: { name: string; sub: string }[]; path: string }) => (
@@ -706,10 +903,25 @@ export function Header() {
                         </MobileAccordion>
 
                         {/* 시계 */}
-                        <MobileAccordion title="시계" isOpen={false} onToggle={() => {}} href="/products/watches" />
+                        <MobileAccordion title="시계" isOpen={mobileExpanded === "시계"} onToggle={() => setMobileExpanded(mobileExpanded === "시계" ? null : "시계")}>
+                          <Link href="/products/watches" className="block px-8 py-2.5 text-[13px] font-medium text-black hover:bg-gray-100" onClick={closeMobileMenu}>전체 시계</Link>
+                          {brands.slice(0, 20).map((b: any) => (
+                            <Link key={b.id} href={`/products/watches?brand=${b.id}`} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{b.name}</Link>
+                          ))}
+                        </MobileAccordion>
 
                         {/* 골프 */}
-                        <MobileAccordion title="골프" isOpen={false} onToggle={() => {}} href="/products/golf" />
+                        <MobileAccordion title="골프" isOpen={mobileExpanded === "골프"} onToggle={() => setMobileExpanded(mobileExpanded === "골프" ? null : "골프")}>
+                          <Link href="/products/golf" className="block px-8 py-2.5 text-[13px] font-medium text-black hover:bg-gray-100" onClick={closeMobileMenu}>전체보기</Link>
+                          {GOLF_L1.map((section) => (
+                            <div key={section.id}>
+                              <Link href={`${section.path}${section.query}`} className="block px-8 py-2.5 text-[13px] font-medium text-gray-700 hover:bg-gray-100" onClick={closeMobileMenu}>{section.name}</Link>
+                              {section.items.map((item) => (
+                                <Link key={item.sub} href={`${section.path}?sub=${item.sub}`} className="block px-10 py-2 text-[12px] text-gray-500 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{item.name}</Link>
+                              ))}
+                            </div>
+                          ))}
+                        </MobileAccordion>
 
                         {/* 쥬얼리 */}
                         <MobileAccordion title="쥬얼리/잡화" isOpen={mobileExpanded === "쥬얼리"} onToggle={() => setMobileExpanded(mobileExpanded === "쥬얼리" ? null : "쥬얼리")}>
@@ -730,17 +942,25 @@ export function Header() {
                         </MobileAccordion>
 
                         {/* 당일배송 */}
-                        <div className="flex border-b border-gray-50">
-                          <Link href="/products/sameday" className="flex-1 px-4 py-3.5 text-sm font-medium text-blue-600" onClick={closeMobileMenu}>당일배송</Link>
-                        </div>
+                        <MobileAccordion title="당일배송" isOpen={mobileExpanded === "당일배송"} onToggle={() => setMobileExpanded(mobileExpanded === "당일배송" ? null : "당일배송")} special="blue">
+                          {SAMEDAY_LINKS.map((link) => (
+                            <Link key={link.path} href={link.path} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{link.name}</Link>
+                          ))}
+                        </MobileAccordion>
+
                         {/* 할인상품 */}
-                        <div className="flex border-b border-gray-50">
-                          <Link href="/products/discount" className="flex-1 px-4 py-3.5 text-sm font-medium text-red-500" onClick={closeMobileMenu}>할인상품</Link>
-                        </div>
+                        <MobileAccordion title="할인상품" isOpen={mobileExpanded === "할인상품"} onToggle={() => setMobileExpanded(mobileExpanded === "할인상품" ? null : "할인상품")} special="red">
+                          {DISCOUNT_LINKS.map((link) => (
+                            <Link key={link.path} href={link.path} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{link.name}</Link>
+                          ))}
+                        </MobileAccordion>
+
                         {/* 베스트상품 */}
-                        <div className="flex border-b border-gray-50">
-                          <Link href="/products/best" className="flex-1 px-4 py-3.5 text-sm font-medium text-amber-600" onClick={closeMobileMenu}>베스트상품</Link>
-                        </div>
+                        <MobileAccordion title="베스트상품" isOpen={mobileExpanded === "베스트상품"} onToggle={() => setMobileExpanded(mobileExpanded === "베스트상품" ? null : "베스트상품")} special="amber">
+                          {BEST_LINKS.map((link) => (
+                            <Link key={link.path} href={link.path} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{link.name}</Link>
+                          ))}
+                        </MobileAccordion>
                       </nav>
                     </div>
 
@@ -812,14 +1032,14 @@ export function Header() {
           <div className="max-w-[1200px] mx-auto px-4">
             <ul className="flex items-center justify-center gap-0">
               {SIMPLE_NAV.map((item, idx) => {
-                const hasDropdown = item.key && ["신상품", "브랜드", "성별", "의류", "가방", "지갑", "신발", "쥬얼리", "선글라스", "벨트"].includes(item.key);
+                const hasDropdown = !!item.key;
                 const { cls: specialCls } = getNavLabel(item.label);
                 const active = isActive(item.path);
                 return (
                   <li
                     key={idx}
                     className="relative"
-                    onMouseEnter={() => { if (hasDropdown && item.key) openNav(item.key); else closeNav(); }}
+                    onMouseEnter={() => { if (item.key) openNav(item.key); else closeNav(); }}
                     onMouseLeave={closeNav}
                   >
                     <Link
@@ -839,9 +1059,14 @@ export function Header() {
                     {item.key === "가방" && navOpen === "가방" && <CategoryDropdown catKey="bags" />}
                     {item.key === "지갑" && navOpen === "지갑" && <CategoryDropdown catKey="wallets" />}
                     {item.key === "신발" && navOpen === "신발" && <CategoryDropdown catKey="shoes" />}
+                    {item.key === "시계" && navOpen === "시계" && <QuickLinksDropdown links={[{ name: "전체 시계", path: "/products/watches" }, ...brands.filter((b: any) => b.productCount > 0).slice(0, 20).map((b: any) => ({ name: b.name, path: `/products/watches?brand=${b.id}` }))]} />}
+                    {item.key === "골프" && navOpen === "골프" && <GolfDropdown />}
                     {item.key === "쥬얼리" && navOpen === "쥬얼리" && <CategoryDropdown catKey="jewelry" />}
                     {item.key === "선글라스" && navOpen === "선글라스" && <SimpleSubDropdown items={SUNGLASSES_ALL} path="/products/sunglasses" />}
                     {item.key === "벨트" && navOpen === "벨트" && <SimpleSubDropdown items={BELTS_ALL} path="/products/belts" />}
+                    {item.key === "당일배송" && navOpen === "당일배송" && <QuickLinksDropdown links={SAMEDAY_LINKS} />}
+                    {item.key === "할인상품" && navOpen === "할인상품" && <QuickLinksDropdown links={DISCOUNT_LINKS} />}
+                    {item.key === "베스트상품" && navOpen === "베스트상품" && <QuickLinksDropdown links={BEST_LINKS} />}
                   </li>
                 );
               })}

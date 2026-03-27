@@ -78,7 +78,7 @@ export default function ProductList() {
   
   const searchString = useSearch();
 
-  const { searchQuery, subcategoryId, urlBrand, activeTab, monthParam, genderParam } = useMemo(() => {
+  const { searchQuery, subcategoryId, urlBrand, activeTab, monthParam, genderParam, subnameParam, filterCategoryParam } = useMemo(() => {
     const params = new URLSearchParams(searchString);
     return {
       searchQuery: params.get("q"),
@@ -87,6 +87,8 @@ export default function ProductList() {
       activeTab: params.get("tab") || "all",
       monthParam: params.get("month") || undefined,
       genderParam: params.get("gender") || undefined,
+      subnameParam: params.get("subname") || undefined,
+      filterCategoryParam: params.get("cat") || undefined,
     };
   }, [searchString]);
 
@@ -173,13 +175,15 @@ export default function ProductList() {
     const effectiveGender = genderFilter !== undefined && genderFilter !== null ? genderFilter : (genderParam || genderFromCategory);
     const genderQP = effectiveGender ? `&gender=${encodeURIComponent(effectiveGender)}` : "";
     const monthQP = monthParam ? `&month=${encodeURIComponent(monthParam)}` : "";
-    const res = await fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}${subcategoryParam}${searchParam}${brandParam}${genderQP}${monthQP}`);
+    const subnameQP = subnameParam ? `&subname=${encodeURIComponent(subnameParam)}` : "";
+    const filterCatQP = filterCategoryParam ? `&filterCategory=${encodeURIComponent(filterCategoryParam)}` : "";
+    const res = await fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}${subcategoryParam}${searchParam}${brandParam}${genderQP}${monthQP}${subnameQP}${filterCatQP}`);
     const data = await res.json();
     return data;
   };
 
   const { data: productsData, isLoading: loading, isFetching, isPlaceholderData } = useQuery({
-    queryKey: ['products', effectiveCategorySlug, subcategoryId, currentPage, searchQuery, selectedBrand, selectedGender || genderParam || genderFromCategory, selectedSubcategory, monthParam],
+    queryKey: ['products', effectiveCategorySlug, subcategoryId, currentPage, searchQuery, selectedBrand, selectedGender || genderParam || genderFromCategory, selectedSubcategory, monthParam, subnameParam, filterCategoryParam],
     queryFn: () => fetchProducts(currentPage, searchQuery || undefined, selectedBrand, selectedGender, selectedSubcategory),
     placeholderData: (previousData) => previousData,
     staleTime: 30000,

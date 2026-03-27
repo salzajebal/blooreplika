@@ -422,7 +422,7 @@ export async function registerRoutes(
   
   app.get("/api/products", async (req: Request, res: Response) => {
     try {
-      const { category, categoryId, subcategoryId, limit, offset, includeBrands, search, brandId, gender, month } = req.query;
+      const { category, categoryId, subcategoryId, limit, offset, includeBrands, search, brandId, gender, month, subname, filterCategory } = req.query;
       
       const limitNum = limit ? parseInt(limit as string, 10) : 60;
       const offsetNum = offset ? parseInt(offset as string, 10) : 0;
@@ -447,7 +447,9 @@ export async function registerRoutes(
         } catch {}
       }
       
-      const productCacheKey = `products:${catFilter || 'all'}:${subCatFilter || 'all'}:${searchQuery || 'all'}:${brandFilter || 'all'}:${genderFilter || 'all'}:${monthFilter || 'all'}:${limitNum}:${offsetNum}`;
+      const subnameFilter = subname ? (subname as string) : undefined;
+      const filterCategoryFilter = filterCategory ? (filterCategory as string) : undefined;
+      const productCacheKey = `products:${catFilter || 'all'}:${subCatFilter || 'all'}:${searchQuery || 'all'}:${brandFilter || 'all'}:${genderFilter || 'all'}:${monthFilter || 'all'}:${subnameFilter || 'all'}:${filterCategoryFilter || 'all'}:${limitNum}:${offsetNum}`;
       type CachedProducts = { products: unknown[]; total: number };
       const cached = getCached<CachedProducts>(productCacheKey);
       
@@ -464,7 +466,7 @@ export async function registerRoutes(
         });
       }
       
-      const { products: productList, total } = await storage.getProductsPaginated(limitNum, offsetNum, catFilter, subCatFilter, searchQuery, brandFilter, genderFilter, monthFilter);
+      const { products: productList, total } = await storage.getProductsPaginated(limitNum, offsetNum, catFilter, subCatFilter, searchQuery, brandFilter, genderFilter, monthFilter, subnameFilter, filterCategoryFilter);
       
       // Store in cache
       setCache(productCacheKey, { products: productList, total });
