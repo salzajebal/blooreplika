@@ -46,7 +46,7 @@ export interface IStorage {
   
   // Products
   getAllProducts(): Promise<Product[]>;
-  getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string): Promise<{ products: Product[], total: number }>;
+  getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string, month?: string): Promise<{ products: Product[], total: number }>;
   getProductsFullPaginated(limit: number, offset: number, categoryId?: string): Promise<{ products: Product[], total: number }>;
   getProductsCount(categoryId?: string): Promise<number>;
   getProductsByCategory(categoryId: string): Promise<Product[]>;
@@ -335,7 +335,7 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(products).orderBy(desc(products.createdAt));
   }
   
-  async getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string): Promise<{ products: Product[], total: number }> {
+  async getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string, month?: string): Promise<{ products: Product[], total: number }> {
     const leanSelect = {
       id: products.id,
       name: products.name,
@@ -348,6 +348,7 @@ export class DatabaseStorage implements IStorage {
       isBest: products.isBest,
       isNew: products.isNew,
       isSoldOut: products.isSoldOut,
+      isSameDay: products.isSameDay,
       isActive: products.isActive,
       discountPercent: products.discountPercent,
       sourceIdx: products.sourceIdx,
@@ -360,8 +361,12 @@ export class DatabaseStorage implements IStorage {
         conditions.push(eq(products.isNew, true));
       } else if (categoryId === 'best') {
         conditions.push(eq(products.isBest, true));
-      } else if (categoryId === 'sale') {
+      } else if (categoryId === 'sale' || categoryId === 'discount') {
         conditions.push(sql`${products.discountPercent} > 0`);
+      } else if (categoryId === 'sameday') {
+        conditions.push(eq(products.isSameDay, true));
+      } else if (categoryId === 'new') {
+        conditions.push(eq(products.isNew, true));
       } else if (categoryId === 'men') {
         conditions.push(eq(products.categoryId, 'men'));
       } else if (categoryId === 'women') {
@@ -410,6 +415,14 @@ export class DatabaseStorage implements IStorage {
       }
     }
     
+    // Month filter: YYYY-MM format — filters createdAt to that month
+    if (month && /^\d{4}-\d{2}$/.test(month)) {
+      const [y, m] = month.split('-').map(Number);
+      const start = new Date(y, m - 1, 1);
+      const end = new Date(y, m, 1);
+      conditions.push(sql`${products.createdAt} >= ${start.toISOString()} AND ${products.createdAt} < ${end.toISOString()}`);
+    }
+
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
     
     const [countResult, productList] = await Promise.all([

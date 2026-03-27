@@ -422,13 +422,14 @@ export async function registerRoutes(
   
   app.get("/api/products", async (req: Request, res: Response) => {
     try {
-      const { category, categoryId, subcategoryId, limit, offset, includeBrands, search, brandId, gender } = req.query;
+      const { category, categoryId, subcategoryId, limit, offset, includeBrands, search, brandId, gender, month } = req.query;
       
       const limitNum = limit ? parseInt(limit as string, 10) : 60;
       const offsetNum = offset ? parseInt(offset as string, 10) : 0;
       const searchQuery = search ? (search as string).trim() : undefined;
       const brandFilter = brandId ? brandId as string : undefined;
       const genderFilter = gender ? gender as string : undefined;
+      const monthFilter = month ? month as string : undefined;
       
       const catFilter = (categoryId && categoryId !== "all") 
         ? categoryId as string 
@@ -446,7 +447,7 @@ export async function registerRoutes(
         } catch {}
       }
       
-      const productCacheKey = `products:${catFilter || 'all'}:${subCatFilter || 'all'}:${searchQuery || 'all'}:${brandFilter || 'all'}:${genderFilter || 'all'}:${limitNum}:${offsetNum}`;
+      const productCacheKey = `products:${catFilter || 'all'}:${subCatFilter || 'all'}:${searchQuery || 'all'}:${brandFilter || 'all'}:${genderFilter || 'all'}:${monthFilter || 'all'}:${limitNum}:${offsetNum}`;
       type CachedProducts = { products: unknown[]; total: number };
       const cached = getCached<CachedProducts>(productCacheKey);
       
@@ -463,7 +464,7 @@ export async function registerRoutes(
         });
       }
       
-      const { products: productList, total } = await storage.getProductsPaginated(limitNum, offsetNum, catFilter, subCatFilter, searchQuery, brandFilter, genderFilter);
+      const { products: productList, total } = await storage.getProductsPaginated(limitNum, offsetNum, catFilter, subCatFilter, searchQuery, brandFilter, genderFilter, monthFilter);
       
       // Store in cache
       setCache(productCacheKey, { products: productList, total });
@@ -3717,11 +3718,12 @@ export async function registerRoutes(
               discountPercent = Math.round(((originalPrice - price) / originalPrice) * 100);
             }
             const isBest = html.includes('BEST') || html.includes('best_icon') || html.includes('베스트');
+            const isSameDay = html.includes('당일배송') || html.includes('당일 배송') || html.includes('sameday') || html.includes('same_day') || html.includes('당일출발');
 
             return { sourceId, name, brandName, price, originalPrice: originalPrice > 0 ? originalPrice : undefined,
               description: name, detailContent, imageUrl: mainImages[0] || '',
               imageUrls: mainImages, detailImageUrls: detailImages,
-              categoryId, subcategoryId, gender, discountPercent, isBest, options };
+              categoryId, subcategoryId, gender, discountPercent, isBest, isSameDay, options };
           } catch { return null; }
         };
 
@@ -3805,6 +3807,7 @@ export async function registerRoutes(
                     options: p.options,
                     discountPercent: p.discountPercent,
                     isBest: p.isBest,
+                    isSameDay: p.isSameDay,
                     isNew: false,
                     isActive: true,
                     gender: p.gender,

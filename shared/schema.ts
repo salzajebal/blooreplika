@@ -144,6 +144,7 @@ export const products = pgTable("products", {
   isNew: boolean("is_new").default(false),
   gender: text("gender"),
   isSoldOut: boolean("is_sold_out").default(false),
+  isSameDay: boolean("is_same_day").default(false),
   isActive: boolean("is_active").default(true),
   discountPercent: integer("discount_percent").default(0),
   viewCount: integer("view_count").default(0),

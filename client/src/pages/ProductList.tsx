@@ -30,20 +30,23 @@ function ProductSkeleton() {
 
 const CATEGORIES = [
   { id: "new-arrivals",  name: "신상품",     slug: "new-arrivals" },
-  { id: "men",          name: "남성",        slug: "men" },
-  { id: "women",        name: "여성",        slug: "women" },
-  { id: "clothing",     name: "의류",        slug: "clothing" },
-  { id: "bags",         name: "가방",        slug: "bags" },
-  { id: "wallets",      name: "지갑",        slug: "wallets" },
-  { id: "shoes",        name: "신발",        slug: "shoes" },
-  { id: "golf",         name: "골프",        slug: "golf" },
-  { id: "jewelry",      name: "쥬얼리/잡화", slug: "jewelry" },
-  { id: "sunglasses",   name: "선글라스",    slug: "sunglasses" },
-  { id: "belts",        name: "벨트",        slug: "belts" },
-  { id: "watches",      name: "시계",        slug: "watches" },
-  { id: "accessories",  name: "잡화",        slug: "accessories" },
-  { id: "sale",         name: "할인상품",    slug: "sale" },
-  { id: "best",         name: "베스트상품",  slug: "best" },
+  { id: "new",           name: "신상품",     slug: "new" },
+  { id: "men",           name: "남성",       slug: "men" },
+  { id: "women",         name: "여성",       slug: "women" },
+  { id: "clothing",      name: "의류",       slug: "clothing" },
+  { id: "bags",          name: "가방",       slug: "bags" },
+  { id: "wallets",       name: "지갑",       slug: "wallets" },
+  { id: "shoes",         name: "신발",       slug: "shoes" },
+  { id: "golf",          name: "골프",       slug: "golf" },
+  { id: "jewelry",       name: "쥬얼리/잡화", slug: "jewelry" },
+  { id: "sunglasses",    name: "선글라스",   slug: "sunglasses" },
+  { id: "belts",         name: "벨트",       slug: "belts" },
+  { id: "watches",       name: "시계",       slug: "watches" },
+  { id: "accessories",   name: "잡화",       slug: "accessories" },
+  { id: "sale",          name: "할인상품",   slug: "sale" },
+  { id: "discount",      name: "할인상품",   slug: "discount" },
+  { id: "best",          name: "베스트상품", slug: "best" },
+  { id: "sameday",       name: "당일배송",   slug: "sameday" },
 ];
 
 type SortOption = "newest" | "price_asc" | "price_desc" | "popular";
@@ -75,13 +78,15 @@ export default function ProductList() {
   
   const searchString = useSearch();
 
-  const { searchQuery, subcategoryId, urlBrand, activeTab } = useMemo(() => {
+  const { searchQuery, subcategoryId, urlBrand, activeTab, monthParam, genderParam } = useMemo(() => {
     const params = new URLSearchParams(searchString);
     return {
       searchQuery: params.get("q"),
       subcategoryId: params.get("sub"),
       urlBrand: params.get("brand"),
       activeTab: params.get("tab") || "all",
+      monthParam: params.get("month") || undefined,
+      genderParam: params.get("gender") || undefined,
     };
   }, [searchString]);
 
@@ -165,15 +170,16 @@ export default function ProductList() {
     const subcategoryParam = subcatFilter ? `&subcategoryId=${subcatFilter}` : (subcategoryId ? `&subcategoryId=${subcategoryId}` : "");
     const searchParam = query ? `&search=${encodeURIComponent(query)}` : "";
     const brandParam = brandIdFilter ? `&brandId=${encodeURIComponent(brandIdFilter)}` : "";
-    const effectiveGender = genderFilter !== undefined && genderFilter !== null ? genderFilter : genderFromCategory;
-    const genderParam = effectiveGender ? `&gender=${encodeURIComponent(effectiveGender)}` : "";
-    const res = await fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}${subcategoryParam}${searchParam}${brandParam}${genderParam}`);
+    const effectiveGender = genderFilter !== undefined && genderFilter !== null ? genderFilter : (genderParam || genderFromCategory);
+    const genderQP = effectiveGender ? `&gender=${encodeURIComponent(effectiveGender)}` : "";
+    const monthQP = monthParam ? `&month=${encodeURIComponent(monthParam)}` : "";
+    const res = await fetch(`/api/products?limit=${ITEMS_PER_PAGE}&offset=${offset}${categoryParam}${subcategoryParam}${searchParam}${brandParam}${genderQP}${monthQP}`);
     const data = await res.json();
     return data;
   };
 
   const { data: productsData, isLoading: loading, isFetching, isPlaceholderData } = useQuery({
-    queryKey: ['products', effectiveCategorySlug, subcategoryId, currentPage, searchQuery, selectedBrand, selectedGender || genderFromCategory, selectedSubcategory],
+    queryKey: ['products', effectiveCategorySlug, subcategoryId, currentPage, searchQuery, selectedBrand, selectedGender || genderParam || genderFromCategory, selectedSubcategory, monthParam],
     queryFn: () => fetchProducts(currentPage, searchQuery || undefined, selectedBrand, selectedGender, selectedSubcategory),
     placeholderData: (previousData) => previousData,
     staleTime: 30000,
@@ -198,8 +204,8 @@ export default function ProductList() {
       if (!effectiveCategorySlug || effectiveCategorySlug === "all") {
         return [];
       }
-      const genderParam = effectiveGenderForSubcat ? `&gender=${encodeURIComponent(effectiveGenderForSubcat)}` : "";
-      const res = await fetch(`/api/subcategories?categoryId=${effectiveCategorySlug}${genderParam}`);
+      const subcatGenderQP = effectiveGenderForSubcat ? `&gender=${encodeURIComponent(effectiveGenderForSubcat)}` : "";
+      const res = await fetch(`/api/subcategories?categoryId=${effectiveCategorySlug}${subcatGenderQP}`);
       const data = await res.json();
       return data.success ? data.data : [];
     },
@@ -363,7 +369,7 @@ export default function ProductList() {
   }, [products, sortBy]);
 
   const subcategories = subcategoriesData || [];
-  const activeFiltersCount = (selectedSubcategory ? 1 : 0) + (selectedBrand ? 1 : 0) + ((selectedGender || genderFromCategory) ? 1 : 0);
+  const activeFiltersCount = (selectedBrand ? 1 : 0) + (selectedGender ? 1 : 0);
   const selectedBrandName = brands.find((b: any) => b.id === selectedBrand)?.name;
   const selectedSubcatName = subcategories.find((s: any) => s.id === selectedSubcategory)?.name;
 
@@ -383,7 +389,7 @@ export default function ProductList() {
 
   const FilterDropdownButtons = () => (
     <div className="flex items-center gap-2 flex-wrap" ref={dropdownRef} data-testid="filter-dropdown-buttons">
-      {showSubcatFilter && (
+      {false && (
       <div className="relative">
         <button
           onClick={() => toggleDropdown("category")}
@@ -584,91 +590,44 @@ export default function ProductList() {
       <Header />
       
       <main className="container mx-auto px-4 py-8">
-        {isGenderCategory ? (
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-center" data-testid="text-category-title">
-              {categorySlug === "men" ? "남성/베스트" : "여성/베스트"}
+        {/* Page title */}
+        <div className="mb-5">
+          {isGenderCategory ? (
+            <>
+              <h1 className="text-xl font-bold" data-testid="text-category-title">
+                {categorySlug === "men" ? "남성" : "여성"}
+              </h1>
+              <p className="text-gray-400 text-xs mt-1">※ 베스트상품 랭킹순위</p>
+            </>
+          ) : categorySlug === "sameday" ? (
+            <h1 className="text-xl font-bold text-blue-600" data-testid="text-category-title">당일배송</h1>
+          ) : categorySlug === "discount" || categorySlug === "sale" ? (
+            <h1 className="text-xl font-bold text-red-500" data-testid="text-category-title">할인상품</h1>
+          ) : categorySlug === "best" ? (
+            <h1 className="text-xl font-bold text-amber-600" data-testid="text-category-title">베스트상품</h1>
+          ) : categorySlug === "new" || categorySlug === "new-arrivals" ? (
+            <h1 className="text-xl font-bold" data-testid="text-category-title">
+              신상품 {monthParam ? `— ${monthParam.replace('-', '년')}월` : ""}
             </h1>
-            <p className="text-gray-400 text-xs text-center mt-1">※ 최근 1주일간 주문한 베스트상품 랭킹순위</p>
-            <div className="mt-4 border-b border-gray-200">
-              <div className="flex overflow-x-auto scrollbar-hide -mb-px">
-                {GENDER_TABS.map(tab => (
-                  <Link
-                    key={tab.id}
-                    href={`/products/${categorySlug}${tab.id === "all" ? "" : `?tab=${tab.id}`}`}
-                    className={cn(
-                      "whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors",
-                      activeTab === tab.id
-                        ? "border-black text-black"
-                        : "border-transparent text-gray-500 hover:text-black hover:border-gray-300"
-                    )}
-                    data-testid={`tab-gender-${tab.id}`}
-                  >
-                    {tab.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold" data-testid="text-category-title">
-              {searchQuery ? `"${searchQuery}" 검색 결과` : categoryInfo?.name || "전체 상품"}
+          ) : searchQuery ? (
+            <h1 className="text-xl font-bold" data-testid="text-category-title">"{searchQuery}" 검색 결과</h1>
+          ) : (
+            <h1 className="text-xl font-bold" data-testid="text-category-title">
+              {categoryInfo?.name || "전체 상품"}
+              {genderParam ? ` — ${genderParam}` : ""}
             </h1>
-            <p className="text-gray-500 text-sm mt-1">
-              {searchQuery 
-                ? `${filteredProducts.length}개의 상품을 찾았습니다.` 
-                : categoryInfo 
-                  ? `${categoryInfo.name} 카테고리의 최신 상품을 만나보세요.` 
-                  : "모든 카테고리의 상품을 둘러보세요."
-              }
-            </p>
-          </div>
-        )}
+          )}
+        </div>
 
+        {/* Simple filter bar */}
         <div className="mb-4">
-          <div className="flex flex-wrap gap-1.5 pb-3 overflow-x-auto scrollbar-hide">
-            <Link 
-              href="/products"
-              className={cn(
-                "px-3 py-1.5 text-sm rounded-full border transition-colors whitespace-nowrap font-medium",
-                !categorySlug || categorySlug === "all" 
-                  ? "bg-black text-white border-black" 
-                  : "bg-white text-gray-600 border-gray-300 hover:border-black"
-              )}
-            >
-              전체
-            </Link>
-            {CATEGORIES.map(cat => (
-              <Link 
-                key={cat.slug}
-                href={`/products/${cat.slug}`}
-                className={cn(
-                  "px-3 py-1.5 text-sm rounded-full border transition-colors whitespace-nowrap font-medium",
-                  categorySlug === cat.slug 
-                    ? "bg-black text-white border-black" 
-                    : "bg-white text-gray-600 border-gray-300 hover:border-black"
-                )}
-              >
-                {cat.name}
-              </Link>
-            ))}
-          </div>
-
-          <div className="mt-3 pb-3 border-b">
+          <div className="flex items-center gap-2 pb-3 border-b flex-wrap">
             <FilterDropdownButtons />
           </div>
 
-          {activeFiltersCount > 0 && (
+          {/* Active filter chips */}
+          {(selectedBrandName || selectedGender) && (
             <div className="flex items-center gap-2 mt-3 flex-wrap">
-              {selectedSubcatName && (
-                <span className="inline-flex items-center gap-1.5 bg-gray-100 text-sm px-3 py-1.5 rounded-full">
-                  카테고리: {selectedSubcatName}
-                  <button onClick={() => setSelectedSubcategory(null)} className="hover:text-black">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </span>
-              )}
               {selectedBrandName && (
                 <span className="inline-flex items-center gap-1.5 bg-gray-100 text-sm px-3 py-1.5 rounded-full">
                   브랜드: {selectedBrandName}
@@ -677,14 +636,12 @@ export default function ProductList() {
                   </button>
                 </span>
               )}
-              {(selectedGender || genderFromCategory) && (
+              {selectedGender && (
                 <span className="inline-flex items-center gap-1.5 bg-gray-100 text-sm px-3 py-1.5 rounded-full">
-                  성별: {selectedGender || genderFromCategory}
-                  {!isGenderCategory && (
-                    <button onClick={() => setSelectedGender(null)} className="hover:text-black">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
+                  성별: {selectedGender}
+                  <button onClick={() => setSelectedGender(null)} className="hover:text-black">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </span>
               )}
             </div>
