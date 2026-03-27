@@ -257,6 +257,8 @@ export default function Admin() {
   }>({ status: 'idle', total: 0, current: 0, message: '', category: '', subcatLog: [], grandTotal: 0 });
   const bagstyleIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const subcatLogRef = useRef<HTMLDivElement | null>(null);
+  const [canResume, setCanResume] = useState(false);
+  const [resumeCompletedCount, setResumeCompletedCount] = useState(0);
 
   const BAGSTYLE_CATEGORIES = [
     { localId: "b010", name: "남성의류", sub: 15 },
@@ -418,6 +420,8 @@ export default function Admin() {
       if (data.success) {
         setBagstyleProgress({ status: 'idle', total: 0, current: 0, message: '', category: '', subcatLog: [], grandTotal: 0 });
         if (bagstyleIntervalRef.current) { clearInterval(bagstyleIntervalRef.current); bagstyleIntervalRef.current = null; }
+        setCanResume(false);
+        setResumeCompletedCount(0);
         toast({ title: "초기화 완료", description: "크롤링 상태가 초기화되었습니다. 다시 시작할 수 있습니다." });
       }
     } catch {
@@ -609,6 +613,7 @@ export default function Admin() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           selectedCategories: selectedBagstyleCategories.length > 0 ? selectedBagstyleCategories : undefined,
+          resume: false,
         }),
       });
       const data = await res.json();
@@ -617,7 +622,34 @@ export default function Admin() {
           ? `${selectedBagstyleCategories.length}개 카테고리`
           : "전체 카테고리";
         toast({ title: "bagstyle 크롤링 시작", description: `${categoryText} 크롤링이 시작되었습니다.` });
+        setCanResume(false);
         setBagstyleProgress({ status: 'running', total: 0, current: 0, message: '시작 중...', category: '', subcatLog: [], grandTotal: 0 });
+        if (bagstyleIntervalRef.current) clearInterval(bagstyleIntervalRef.current);
+        bagstyleIntervalRef.current = setInterval(fetchBagstyleProgress, 500);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+
+  const resumeBagstyleCrawl = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bagstyle/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          selectedCategories: selectedBagstyleCategories.length > 0 ? selectedBagstyleCategories : undefined,
+          resume: true,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "이어서 크롤링 시작", description: data.message });
+        setCanResume(false);
+        setBagstyleProgress(prev => ({ ...prev, status: 'running', message: '이어서 시작 중...' }));
+        if (bagstyleIntervalRef.current) clearInterval(bagstyleIntervalRef.current);
         bagstyleIntervalRef.current = setInterval(fetchBagstyleProgress, 500);
       } else {
         toast({ title: "오류", description: data.error, variant: "destructive" });
@@ -735,6 +767,48 @@ export default function Admin() {
     } else {
       setCheckingAuth(false);
     }
+  }, []);
+
+  // 페이지 로드 시 크롤링 진행 중이면 자동 재연결 + 이어서 하기 가능 여부 체크
+  useEffect(() => {
+    const checkBagstyleStatus = async () => {
+      try {
+        const token = localStorage.getItem("adminToken");
+        if (!token) return;
+        const res = await fetch("/api/admin/crawl/bagstyle/progress", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!data.success) return;
+
+        if (data.status === 'running') {
+          // 크롤이 서버에서 아직 돌고 있음 → 자동 재연결
+          setBagstyleProgress({
+            status: data.status,
+            total: data.total || 0,
+            current: data.current || 0,
+            message: data.message || '',
+            category: data.category || '',
+            subcatLog: data.subcatLog || [],
+            grandTotal: data.grandTotal || 0,
+          });
+          if (!bagstyleIntervalRef.current) {
+            bagstyleIntervalRef.current = setInterval(fetchBagstyleProgress, 500);
+          }
+        } else {
+          // 크롤이 실행 중이 아닐 때 이어서 하기 가능 여부 확인
+          const resumeRes = await fetch("/api/admin/crawl/bagstyle/can-resume", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const resumeData = await resumeRes.json();
+          if (resumeData.success && resumeData.canResume) {
+            setCanResume(true);
+            setResumeCompletedCount(resumeData.completedCount);
+          }
+        }
+      } catch {}
+    };
+    checkBagstyleStatus();
   }, []);
 
   const verifyToken = async (token: string) => {
@@ -6438,6 +6512,24 @@ export default function Admin() {
                   </div>
                 )}
 
+                {/* 이어서 하기 안내 배너 */}
+                {canResume && bagstyleProgress.status !== 'running' && (
+                  <div className="flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-amber-800">이전 크롤링을 이어서 할 수 있습니다</p>
+                      <p className="text-xs text-amber-600">완료된 소분류 {resumeCompletedCount}개 — 나머지부터 재개합니다</p>
+                    </div>
+                    <Button
+                      data-testid="button-resume-bagstyle-crawl"
+                      onClick={resumeBagstyleCrawl}
+                      className="bg-amber-500 hover:bg-amber-600 text-white shrink-0"
+                      size="sm"
+                    >
+                      이어서 하기
+                    </Button>
+                  </div>
+                )}
+
                 {/* 컨트롤 버튼 */}
                 <div className="flex flex-wrap gap-3">
                   <Button
@@ -6462,7 +6554,7 @@ export default function Admin() {
                       <XCircle className="w-4 h-4 mr-2" />중단
                     </Button>
                   )}
-                  {(bagstyleProgress.status === 'completed' || bagstyleProgress.status === 'error') && (
+                  {(bagstyleProgress.status === 'completed' || bagstyleProgress.status === 'error' || (bagstyleProgress.status === 'idle' && canResume)) && (
                     <Button
                       data-testid="button-reset-bagstyle-crawl"
                       onClick={resetBagstyleCrawl}

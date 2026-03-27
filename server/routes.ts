@@ -3437,15 +3437,42 @@ export async function registerRoutes(
     category: string;
     subcatLog: string[];
     grandTotal: number;
+    completedSubcats: string[];
     startedAt?: Date;
     completedAt?: Date;
-  } = { status: 'idle', total: 0, current: 0, message: '', category: '', subcatLog: [], grandTotal: 0 };
+  } = { status: 'idle', total: 0, current: 0, message: '', category: '', subcatLog: [], grandTotal: 0, completedSubcats: [] };
+
+  const BAGSTYLE_RESUME_KEY = 'bagstyle_completed_subcats';
+
+  const saveCompletedSubcats = async (slugs: string[]) => {
+    try {
+      await pool.query(
+        `INSERT INTO site_settings (key, value, updated_at) VALUES ($1, $2, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()`,
+        [BAGSTYLE_RESUME_KEY, JSON.stringify(slugs)]
+      );
+    } catch {}
+  };
+
+  const loadCompletedSubcats = async (): Promise<string[]> => {
+    try {
+      const res = await pool.query(`SELECT value FROM site_settings WHERE key = $1`, [BAGSTYLE_RESUME_KEY]);
+      if (res.rows.length > 0) return JSON.parse(res.rows[0].value) as string[];
+    } catch {}
+    return [];
+  };
+
+  const clearCompletedSubcats = async () => {
+    try {
+      await pool.query(`DELETE FROM site_settings WHERE key = $1`, [BAGSTYLE_RESUME_KEY]);
+    } catch {}
+  };
 
   app.get("/api/admin/crawl/bagstyle/progress", requireAdminAuth, (_req: Request, res: Response) => {
     res.json({ success: true, ...bagstyleProgress });
   });
 
-  app.post("/api/admin/crawl/bagstyle/reset", requireAdminAuth, (_req: Request, res: Response) => {
+  app.post("/api/admin/crawl/bagstyle/reset", requireAdminAuth, async (_req: Request, res: Response) => {
     bagstyleProgress.status = 'idle';
     bagstyleProgress.total = 0;
     bagstyleProgress.current = 0;
@@ -3453,7 +3480,18 @@ export async function registerRoutes(
     bagstyleProgress.category = '';
     bagstyleProgress.subcatLog = [];
     bagstyleProgress.grandTotal = 0;
+    bagstyleProgress.completedSubcats = [];
+    await clearCompletedSubcats();
     res.json({ success: true, message: "크롤링 상태가 초기화되었습니다." });
+  });
+
+  app.get("/api/admin/crawl/bagstyle/can-resume", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const completed = await loadCompletedSubcats();
+      res.json({ success: true, canResume: completed.length > 0, completedCount: completed.length });
+    } catch {
+      res.json({ success: true, canResume: false, completedCount: 0 });
+    }
   });
 
   app.get("/api/admin/crawl/bagstyle/categories", requireAdminAuth, (_req: Request, res: Response) => {
@@ -3504,18 +3542,38 @@ export async function registerRoutes(
       return res.status(400).json({ success: false, error: "이미 크롤링이 진행 중입니다." });
     }
 
-    const { selectedCategories } = req.body;
+    const { selectedCategories, resume } = req.body;
+
+    let previouslyCompleted: string[] = [];
+    let previousLog: string[] = [];
+    let previousGrandTotal = 0;
+
+    if (resume) {
+      previouslyCompleted = await loadCompletedSubcats();
+      previousLog = bagstyleProgress.subcatLog.length > 0
+        ? bagstyleProgress.subcatLog
+        : (previouslyCompleted.length > 0 ? [`[이어서 시작] 이미 완료된 소분류 ${previouslyCompleted.length}개 스킵`] : []);
+      previousGrandTotal = bagstyleProgress.grandTotal;
+    } else {
+      await clearCompletedSubcats();
+    }
 
     bagstyleProgress.status = 'running';
     bagstyleProgress.total = 0;
     bagstyleProgress.current = 0;
-    bagstyleProgress.message = '크롤링 준비 중...';
+    bagstyleProgress.message = resume ? `이어서 시작 중... (${previouslyCompleted.length}개 소분류 완료됨)` : '크롤링 준비 중...';
     bagstyleProgress.category = '';
-    bagstyleProgress.subcatLog = [];
+    bagstyleProgress.subcatLog = previousLog;
+    bagstyleProgress.grandTotal = previousGrandTotal;
+    bagstyleProgress.completedSubcats = previouslyCompleted;
     bagstyleProgress.startedAt = new Date();
     bagstyleShouldStop = false;
 
-    res.json({ success: true, message: "bagstyle.site 전체 크롤링이 시작되었습니다." });
+    const resumeMessage = resume
+      ? `bagstyle.site 크롤링이 이어서 시작되었습니다. (${previouslyCompleted.length}개 소분류 스킵)`
+      : "bagstyle.site 전체 크롤링이 시작되었습니다.";
+
+    res.json({ success: true, message: resumeMessage });
 
     (async () => {
       try {
@@ -3691,7 +3749,7 @@ export async function registerRoutes(
           ? BAGSTYLE_CRAWL_MAP.filter(e => selectedCategories.includes(e.parentCaId))
           : BAGSTYLE_CRAWL_MAP;
 
-        let grandTotal = 0;
+        let grandTotal = bagstyleProgress.grandTotal;
 
         for (const entry of entriesToCrawl) {
           if (bagstyleShouldStop) break;
@@ -3699,6 +3757,12 @@ export async function registerRoutes(
 
           for (const sub of entry.subcategories) {
             if (bagstyleShouldStop) break;
+
+            // 이어서 하기: 이미 완료된 소분류는 스킵
+            if (bagstyleProgress.completedSubcats.includes(sub.caId)) {
+              console.log(`[bagstyle] 스킵 (이미 완료): [${sub.caId}] ${sub.name}`);
+              continue;
+            }
 
             bagstyleProgress.message = `[${entry.categoryName} > ${sub.name}] 상품 ID 수집 중...`;
             const expectedCount = await parseTotalCount(sub.caId);
@@ -3761,6 +3825,13 @@ export async function registerRoutes(
             const logLine = `[${sub.caId}] ${sub.name}: 저장 ${savedCount}개 | 예상 ${expectedCount > 0 ? expectedCount+'개' : '?'} ${match} (스킵 ${skippedCount})`;
             bagstyleProgress.subcatLog.push(logLine);
             console.log(`[bagstyle] ${logLine}`);
+
+            // 소분류 완료 → DB에 저장 (이어서 하기 기능용)
+            if (!bagstyleShouldStop) {
+              bagstyleProgress.completedSubcats.push(sub.caId);
+              await saveCompletedSubcats(bagstyleProgress.completedSubcats);
+            }
+
             await delayMs(100);
           }
         }
