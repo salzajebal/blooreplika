@@ -3589,7 +3589,7 @@ export async function registerRoutes(
         const delayMs = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
         // ── 타임아웃 + 리트라이 fetch 헬퍼 ──
-        const bsFetchWithTimeout = async (url: string, timeoutMs = 25000): Promise<Response> => {
+        const bsFetchWithTimeout = async (url: string, timeoutMs = 8000): Promise<Response> => {
           const controller = new AbortController();
           const timer = setTimeout(() => controller.abort(), timeoutMs);
           try {
@@ -3598,7 +3598,7 @@ export async function registerRoutes(
             clearTimeout(timer);
           }
         };
-        const bsFetchWithRetry = async (url: string, retries = 3, baseDelayMs = 1000): Promise<Response | null> => {
+        const bsFetchWithRetry = async (url: string, retries = 3, baseDelayMs = 200): Promise<Response | null> => {
           for (let attempt = 0; attempt < retries; attempt++) {
             try {
               const r = await bsFetchWithTimeout(url);
@@ -3622,10 +3622,10 @@ export async function registerRoutes(
           let errorStreak = 0;   // 요청 자체가 실패한 연속 횟수
           while (emptyStreak < 4 && errorStreak < 6) {
             const url = `https://bagstyle.site/shop/list.php?ca_id=${caId}&page=${page}`;
-            const r = await bsFetchWithRetry(url, 3, 800);
+            const r = await bsFetchWithRetry(url, 3, 200);
             if (!r) {
               errorStreak++;
-              await delayMs(1000 * errorStreak);
+              await delayMs(300 * errorStreak);
               page++;
               continue;
             }
@@ -3648,7 +3648,7 @@ export async function registerRoutes(
         const parseTotalCount = async (caId: string): Promise<number> => {
           try {
             const url = `https://bagstyle.site/shop/list.php?ca_id=${caId}&page=1`;
-            const r = await bsFetchWithRetry(url, 2, 500);
+            const r = await bsFetchWithRetry(url, 2, 150);
             if (!r) return 0;
             const html = await r.text();
             const stripped = html.replace(/<[^>]+>/g, ' ');
@@ -3667,7 +3667,7 @@ export async function registerRoutes(
         const fetchDetail = async (sourceId: string, categoryId: string, subcategoryId: string, gender: string) => {
           const url = `https://bagstyle.site/shop/item.php?it_id=${sourceId}`;
           try {
-            const r = await bsFetchWithRetry(url, 3, 800);
+            const r = await bsFetchWithRetry(url, 3, 200);
             if (!r) return null;
             const html = await r.text();
             const $ = cheerio.load(html);
@@ -3810,9 +3810,9 @@ export async function registerRoutes(
 
             let savedCount = 0, skippedCount = 0;
 
-            for (let i = 0; i < idsArray.length; i += 10) {
+            for (let i = 0; i < idsArray.length; i += 15) {
               if (bagstyleShouldStop) break;
-              const batch = idsArray.slice(i, i + 10);
+              const batch = idsArray.slice(i, i + 15);
               const results = await Promise.all(
                 batch.map(id => fetchDetail(id, entry.categoryId, sub.caId, entry.gender)
                   .catch((e: any) => { console.error(`[bagstyle] fetchDetail 오류 (id=${id}):`, e?.message || e); return null; })
@@ -3852,9 +3852,9 @@ export async function registerRoutes(
                 }
               }
 
-              bagstyleProgress.current = Math.min(i + 10, idsArray.length);
+              bagstyleProgress.current = Math.min(i + 15, idsArray.length);
               bagstyleProgress.message = `[${entry.categoryName} > ${sub.name}] 저장 중 (${bagstyleProgress.current}/${idsArray.length})...`;
-              await delayMs(80);
+              await delayMs(50);
             }
 
             const match = expectedCount > 0
@@ -3953,7 +3953,7 @@ export async function registerRoutes(
         const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
         // ── 타임아웃 + 리트라이 fetch 헬퍼 (bloostore) ──
-        const bsFetch = async (url: string, extraHeaders: Record<string, string> = {}, timeoutMs = 25000): Promise<Response> => {
+        const bsFetch = async (url: string, extraHeaders: Record<string, string> = {}, timeoutMs = 8000): Promise<Response> => {
           const controller = new AbortController();
           const timer = setTimeout(() => controller.abort(), timeoutMs);
           try {
@@ -3968,11 +3968,11 @@ export async function registerRoutes(
               const r = await bsFetch(url, extraHeaders);
               if (r.ok) return r;
               if (r.status === 404) return null;
-              if (attempt < retries - 1) await delay(1000 * (attempt + 1));
+              if (attempt < retries - 1) await delay(200 * (attempt + 1));
             } catch (e: any) {
               const isTimeout = e?.name === 'AbortError';
               console.warn(`[bloostore] ${isTimeout ? '타임아웃' : '오류'} (시도 ${attempt + 1}/${retries}): ${url}`);
-              if (attempt < retries - 1) await delay(1000 * (attempt + 1));
+              if (attempt < retries - 1) await delay(200 * (attempt + 1));
             }
           }
           return null;
@@ -4270,17 +4270,17 @@ export async function registerRoutes(
       const bfFetchRetry = async (url: string, retries = 3): Promise<Response | null> => {
         for (let attempt = 0; attempt < retries; attempt++) {
           const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 25000);
+          const timer = setTimeout(() => controller.abort(), 8000);
           try {
             const r = await fetch(url, { headers, signal: controller.signal });
             clearTimeout(timer);
             if (r.ok) return r;
             if (r.status === 404) return null;
-            if (attempt < retries - 1) await delay(1000 * (attempt + 1));
+            if (attempt < retries - 1) await delay(200 * (attempt + 1));
           } catch (e: any) {
             clearTimeout(timer);
             console.warn(`[backfill] ${e?.name === 'AbortError' ? '타임아웃' : '오류'} (시도 ${attempt + 1}/${retries}): ${url}`);
-            if (attempt < retries - 1) await delay(1000 * (attempt + 1));
+            if (attempt < retries - 1) await delay(200 * (attempt + 1));
           }
         }
         return null;
@@ -4466,7 +4466,7 @@ export async function registerRoutes(
         const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
         // ── 타임아웃 + 리트라이 fetch 헬퍼 (watch-detail) ──
-        const wdFetch = async (url: string, extraHeaders: Record<string, string> = {}, timeoutMs = 25000): Promise<Response> => {
+        const wdFetch = async (url: string, extraHeaders: Record<string, string> = {}, timeoutMs = 8000): Promise<Response> => {
           const controller = new AbortController();
           const timer = setTimeout(() => controller.abort(), timeoutMs);
           try {
@@ -4481,10 +4481,10 @@ export async function registerRoutes(
               const r = await wdFetch(url, extraHeaders);
               if (r.ok) return r;
               if (r.status === 404) return null;
-              if (attempt < retries - 1) await delay(1000 * (attempt + 1));
+              if (attempt < retries - 1) await delay(200 * (attempt + 1));
             } catch (e: any) {
               console.warn(`[watch-detail] ${e?.name === 'AbortError' ? '타임아웃' : '오류'} (시도 ${attempt + 1}/${retries}): ${url}`);
-              if (attempt < retries - 1) await delay(1000 * (attempt + 1));
+              if (attempt < retries - 1) await delay(200 * (attempt + 1));
             }
           }
           return null;
