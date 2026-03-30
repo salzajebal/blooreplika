@@ -260,27 +260,116 @@ export default function Admin() {
   const [canResume, setCanResume] = useState(false);
   const [resumeCompletedCount, setResumeCompletedCount] = useState(0);
 
-  const BAGSTYLE_CATEGORIES = [
-    { localId: "b010", name: "남성의류", sub: 15 },
-    { localId: "b020", name: "남성가방", sub: 10 },
-    { localId: "b040", name: "남성지갑", sub: 3 },
-    { localId: "b0b0", name: "남성신발", sub: 6 },
-    { localId: "b0a0", name: "남성선글라스", sub: 2 },
-    { localId: "b070", name: "남성벨트", sub: 2 },
-    { localId: "b080", name: "남성쥬얼리/잡화", sub: 14 },
-    { localId: "c010", name: "여성의류", sub: 16 },
-    { localId: "c020", name: "여성가방", sub: 12 },
-    { localId: "c030", name: "여성지갑", sub: 3 },
-    { localId: "c050", name: "여성신발", sub: 7 },
-    { localId: "c070", name: "여성선글라스", sub: 2 },
-    { localId: "c060", name: "여성벨트", sub: 2 },
-    { localId: "c0a0", name: "여성쥬얼리/잡화", sub: 12 },
-    { localId: "7010", name: "골프 남성의류", sub: 10 },
-    { localId: "7020", name: "골프 여성의류", sub: 12 },
-    { localId: "7040", name: "골프 가방", sub: 5 },
-    { localId: "7030", name: "골프 신발", sub: 2 },
+  const BAGSTYLE_CRAWL_TREE = [
+    { parentCaId: "b010", name: "남성의류", gender: "남성", subcategories: [
+      { caId: "b01010", name: "자켓/점퍼" }, { caId: "b01020", name: "패딩/털" },
+      { caId: "b01030", name: "가죽옷" }, { caId: "b01040", name: "코트/정장" },
+      { caId: "b01050", name: "후드티/집업" }, { caId: "b01060", name: "셔츠/남방" },
+      { caId: "b01070", name: "베스트/조끼" }, { caId: "b01080", name: "니트/스웨터" },
+      { caId: "b01090", name: "가디건" }, { caId: "b010a0", name: "반팔티/폴로티" },
+      { caId: "b010b0", name: "긴팔티/맨투맨" }, { caId: "b010c0", name: "운동복/추리닝" },
+      { caId: "b010d0", name: "팬츠/청바지" }, { caId: "b010e0", name: "반바지" },
+      { caId: "b010f0", name: "세트" },
+    ]},
+    { parentCaId: "b020", name: "남성가방", gender: "남성", subcategories: [
+      { caId: "b02010", name: "토트백" }, { caId: "b02020", name: "크로스백" },
+      { caId: "b02030", name: "숄더백" }, { caId: "b02040", name: "백팩" },
+      { caId: "b02050", name: "서류가방/메신져백" }, { caId: "b02060", name: "파우치/클러치" },
+      { caId: "b02070", name: "여행가방" }, { caId: "b02080", name: "캐리어" },
+      { caId: "b02090", name: "벨트백/새들/슬링" }, { caId: "b020a0", name: "기타" },
+    ]},
+    { parentCaId: "b040", name: "남성지갑", gender: "남성", subcategories: [
+      { caId: "b04010", name: "장지갑/소지갑" }, { caId: "b04020", name: "카드지갑" },
+      { caId: "b04030", name: "동전지갑" },
+    ]},
+    { parentCaId: "b0b0", name: "남성신발", gender: "남성", subcategories: [
+      { caId: "b0b010", name: "스니커즈" }, { caId: "b0b020", name: "운동화" },
+      { caId: "b0b030", name: "정장구두" }, { caId: "b0b040", name: "샌들/슬리퍼" },
+      { caId: "b0b050", name: "부츠/워커" }, { caId: "b0b060", name: "로퍼/슬립온" },
+    ]},
+    { parentCaId: "b0a0", name: "남성선글라스", gender: "남성", subcategories: [
+      { caId: "b0a010", name: "선글라스" }, { caId: "b0a020", name: "안경태" },
+    ]},
+    { parentCaId: "b070", name: "남성벨트", gender: "남성", subcategories: [
+      { caId: "b07010", name: "가죽벨트" }, { caId: "b07020", name: "메쉬벨트" },
+    ]},
+    { parentCaId: "b080", name: "남성쥬얼리/잡화", gender: "남성", subcategories: [
+      { caId: "b08010", name: "목걸이" }, { caId: "b08020", name: "팔찌" },
+      { caId: "b08030", name: "반지" }, { caId: "b08040", name: "백참/브로치" },
+      { caId: "b08050", name: "만년필/볼펜" }, { caId: "b08060", name: "장갑" },
+      { caId: "b08070", name: "라이터/듀퐁" }, { caId: "b08080", name: "스카프/머플러" },
+      { caId: "b08090", name: "넥타이" }, { caId: "b080a0", name: "모자" },
+      { caId: "b080b0", name: "우산" }, { caId: "b080d0", name: "커프스" },
+      { caId: "b080e0", name: "키홀더" }, { caId: "b080f0", name: "기타" },
+    ]},
+    { parentCaId: "c010", name: "여성의류", gender: "여성", subcategories: [
+      { caId: "c01010", name: "자켓/점퍼" }, { caId: "c01020", name: "패딩/털" },
+      { caId: "c01030", name: "코트" }, { caId: "c01040", name: "후드티" },
+      { caId: "c01050", name: "셔츠/남방" }, { caId: "c01060", name: "조끼" },
+      { caId: "c01070", name: "가죽옷" }, { caId: "c01080", name: "니트/스웨터" },
+      { caId: "c01090", name: "가디건" }, { caId: "c010a0", name: "반팔티/폴로" },
+      { caId: "c010b0", name: "긴팔티/맨투맨" }, { caId: "c010c0", name: "운동복/추리닝" },
+      { caId: "c010d0", name: "팬츠/청바지" }, { caId: "c010e0", name: "반바지/스커트" },
+      { caId: "c010f0", name: "원피스" }, { caId: "c010g0", name: "수영복" },
+    ]},
+    { parentCaId: "c020", name: "여성가방", gender: "여성", subcategories: [
+      { caId: "c02010", name: "숄더백" }, { caId: "c02020", name: "토트백" },
+      { caId: "c02030", name: "클러치백" }, { caId: "c02040", name: "백팩" },
+      { caId: "c02050", name: "파우치" }, { caId: "c02060", name: "크로스" },
+      { caId: "c02070", name: "메신져백" }, { caId: "c02080", name: "여행가방" },
+      { caId: "c02090", name: "케리어" }, { caId: "c020a0", name: "벨트백/새들/슬링" },
+      { caId: "c020b0", name: "미니백" }, { caId: "c020c0", name: "기타" },
+    ]},
+    { parentCaId: "c030", name: "여성지갑", gender: "여성", subcategories: [
+      { caId: "c03010", name: "장지갑/소지갑" }, { caId: "c03020", name: "카드지갑" },
+      { caId: "c03030", name: "동전지갑" },
+    ]},
+    { parentCaId: "c050", name: "여성신발", gender: "여성", subcategories: [
+      { caId: "c05010", name: "스니커즈" }, { caId: "c05020", name: "운동화" },
+      { caId: "c05030", name: "샌들/슬리퍼" }, { caId: "c05040", name: "펌프스/힐" },
+      { caId: "c05050", name: "부츠/워커" }, { caId: "c05060", name: "단화/플랫" },
+      { caId: "c05070", name: "로퍼/슬립온" },
+    ]},
+    { parentCaId: "c070", name: "여성선글라스", gender: "여성", subcategories: [
+      { caId: "c07010", name: "선글라스" }, { caId: "c07020", name: "안경태" },
+    ]},
+    { parentCaId: "c060", name: "여성벨트", gender: "여성", subcategories: [
+      { caId: "c06010", name: "가죽벨트" }, { caId: "c06020", name: "메쉬벨트" },
+    ]},
+    { parentCaId: "c0a0", name: "여성쥬얼리/잡화", gender: "여성", subcategories: [
+      { caId: "c0a010", name: "목걸이" }, { caId: "c0a020", name: "귀걸이" },
+      { caId: "c0a030", name: "팔찌" }, { caId: "c0a040", name: "반지" },
+      { caId: "c0a050", name: "만년필/볼펜" }, { caId: "c0a060", name: "키홀더" },
+      { caId: "c0a070", name: "모자" }, { caId: "c0a080", name: "장갑" },
+      { caId: "c0a090", name: "우산" }, { caId: "c0a0a0", name: "브로치/백참" },
+      { caId: "c0a0b0", name: "스카프/머플러" }, { caId: "c0a0c0", name: "기타" },
+    ]},
+    { parentCaId: "7010", name: "골프 남성의류", gender: "골프", subcategories: [
+      { caId: "701010", name: "자켓/점퍼" }, { caId: "701020", name: "반팔티" },
+      { caId: "701030", name: "긴팔티" }, { caId: "701040", name: "긴바지" },
+      { caId: "701050", name: "비옷" }, { caId: "701060", name: "조끼" },
+      { caId: "701070", name: "반바지" }, { caId: "701080", name: "패딩/아우터" },
+      { caId: "701090", name: "니트/스웨터" }, { caId: "7010a0", name: "셋트" },
+    ]},
+    { parentCaId: "7020", name: "골프 여성의류", gender: "골프", subcategories: [
+      { caId: "702010", name: "자켓/점퍼" }, { caId: "702020", name: "반팔티" },
+      { caId: "702030", name: "긴팔티" }, { caId: "702040", name: "긴바지" },
+      { caId: "702050", name: "반바지" }, { caId: "702060", name: "조끼" },
+      { caId: "702070", name: "비옷" }, { caId: "702080", name: "패딩아우터" },
+      { caId: "702090", name: "원피스" }, { caId: "7020a0", name: "스커트" },
+      { caId: "7020b0", name: "니트/스웨터" }, { caId: "7020c0", name: "셋트" },
+    ]},
+    { parentCaId: "7040", name: "골프 가방", gender: "골프", subcategories: [
+      { caId: "704010", name: "캐디백" }, { caId: "704020", name: "보스턴백" },
+      { caId: "704030", name: "토트백" }, { caId: "704040", name: "클러치백" },
+      { caId: "704050", name: "기타" },
+    ]},
+    { parentCaId: "7030", name: "골프 신발", gender: "골프", subcategories: [
+      { caId: "703010", name: "골프화" }, { caId: "703020", name: "스니커즈" },
+    ]},
   ];
-  const [selectedBagstyleCategories, setSelectedBagstyleCategories] = useState<string[]>([]);
+  const [selectedBagstyleSubcats, setSelectedBagstyleSubcats] = useState<string[]>([]);
+  const [expandedBagstyleCats, setExpandedBagstyleCats] = useState<string[]>([]);
 
   const [bloostoreProgress, setBloostoreProgress] = useState<{
     status: 'idle' | 'running' | 'completed' | 'error';
@@ -612,14 +701,14 @@ export default function Admin() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          selectedCategories: selectedBagstyleCategories.length > 0 ? selectedBagstyleCategories : undefined,
+          selectedSubcats: selectedBagstyleSubcats.length > 0 ? selectedBagstyleSubcats : undefined,
           resume: false,
         }),
       });
       const data = await res.json();
       if (data.success) {
-        const categoryText = selectedBagstyleCategories.length > 0
-          ? `${selectedBagstyleCategories.length}개 카테고리`
+        const categoryText = selectedBagstyleSubcats.length > 0
+          ? `${selectedBagstyleSubcats.length}개 소분류`
           : "전체 카테고리";
         toast({ title: "bagstyle 크롤링 시작", description: `${categoryText} 크롤링이 시작되었습니다.` });
         setCanResume(false);
@@ -640,7 +729,7 @@ export default function Admin() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          selectedCategories: selectedBagstyleCategories.length > 0 ? selectedBagstyleCategories : undefined,
+          selectedSubcats: selectedBagstyleSubcats.length > 0 ? selectedBagstyleSubcats : undefined,
           resume: true,
         }),
       });
@@ -679,20 +768,38 @@ export default function Admin() {
     }
   };
 
-  const toggleBagstyleCategory = (localId: string) => {
-    setSelectedBagstyleCategories(prev =>
-      prev.includes(localId)
-        ? prev.filter(id => id !== localId)
-        : [...prev, localId]
+  const allSubcatIds = BAGSTYLE_CRAWL_TREE.flatMap(c => c.subcategories.map(s => s.caId));
+
+  const toggleBagstyleSubcat = (caId: string) => {
+    setSelectedBagstyleSubcats(prev =>
+      prev.includes(caId) ? prev.filter(id => id !== caId) : [...prev, caId]
+    );
+  };
+
+  const toggleBagstyleCatAll = (parentCaId: string) => {
+    const cat = BAGSTYLE_CRAWL_TREE.find(c => c.parentCaId === parentCaId);
+    if (!cat) return;
+    const catSubcatIds = cat.subcategories.map(s => s.caId);
+    const allSelected = catSubcatIds.every(id => selectedBagstyleSubcats.includes(id));
+    if (allSelected) {
+      setSelectedBagstyleSubcats(prev => prev.filter(id => !catSubcatIds.includes(id)));
+    } else {
+      setSelectedBagstyleSubcats(prev => [...new Set([...prev, ...catSubcatIds])]);
+    }
+  };
+
+  const toggleBagstyleCatExpand = (parentCaId: string) => {
+    setExpandedBagstyleCats(prev =>
+      prev.includes(parentCaId) ? prev.filter(id => id !== parentCaId) : [...prev, parentCaId]
     );
   };
 
   const selectAllBagstyleCategories = () => {
-    setSelectedBagstyleCategories(BAGSTYLE_CATEGORIES.map(c => c.localId));
+    setSelectedBagstyleSubcats(allSubcatIds);
   };
 
   const deselectAllBagstyleCategories = () => {
-    setSelectedBagstyleCategories([]);
+    setSelectedBagstyleSubcats([]);
   };
 
   const fetchBloostoreProgress = async () => {
@@ -6396,43 +6503,108 @@ export default function Admin() {
                   </p>
                 </div>
 
-                {/* 카테고리 선택 */}
+                {/* 소분류 선택 트리 */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-semibold text-gray-800">카테고리 선택 (선택 안 하면 전체 크롤링)</h4>
+                    <h4 className="font-semibold text-gray-800">소분류 선택 <span className="text-xs font-normal text-gray-500">(선택 안 하면 전체 크롤링)</span></h4>
                     <div className="flex gap-2">
                       <Button data-testid="button-select-all-bagstyle" size="sm" variant="outline" onClick={selectAllBagstyleCategories}>전체 선택</Button>
                       <Button data-testid="button-deselect-all-bagstyle" size="sm" variant="outline" onClick={deselectAllBagstyleCategories}>전체 해제</Button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {BAGSTYLE_CATEGORIES.map(cat => {
-                      const isSelected = selectedBagstyleCategories.includes(cat.localId);
-                      const group = cat.localId.startsWith('7') ? '골프' : cat.localId.startsWith('b') ? '남성' : '여성';
-                      const groupColor = group === '남성' ? 'border-blue-200 bg-blue-50' : group === '여성' ? 'border-pink-200 bg-pink-50' : 'border-green-200 bg-green-50';
-                      const selectedColor = group === '남성' ? 'border-blue-500 bg-blue-100' : group === '여성' ? 'border-pink-500 bg-pink-100' : 'border-green-500 bg-green-100';
-                      return (
-                        <label
-                          key={cat.localId}
-                          data-testid={`checkbox-bagstyle-cat-${cat.localId}`}
-                          className={`flex items-center gap-2 p-2.5 rounded-lg border cursor-pointer transition-colors ${isSelected ? selectedColor : groupColor} hover:opacity-80`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => toggleBagstyleCategory(cat.localId)}
-                            className="rounded"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="text-xs font-medium text-gray-800 truncate">{cat.name}</div>
-                            <div className="text-xs text-gray-500">{group} · 소분류 {cat.sub}개</div>
-                          </div>
-                        </label>
-                      );
-                    })}
+                  <div className="space-y-1.5 max-h-[480px] overflow-y-auto pr-1" style={{ overscrollBehavior: "contain" }}>
+                    {(() => {
+                      const genderGroups = [
+                        { label: '남성', color: 'blue', cats: BAGSTYLE_CRAWL_TREE.filter(c => c.gender === '남성') },
+                        { label: '여성', color: 'pink', cats: BAGSTYLE_CRAWL_TREE.filter(c => c.gender === '여성') },
+                        { label: '골프', color: 'green', cats: BAGSTYLE_CRAWL_TREE.filter(c => c.gender === '골프') },
+                      ];
+                      return genderGroups.map(group => (
+                        <div key={group.label}>
+                          <div className={`text-xs font-bold px-2 py-1 rounded mb-1 ${
+                            group.color === 'blue' ? 'text-blue-700 bg-blue-50' :
+                            group.color === 'pink' ? 'text-pink-700 bg-pink-50' :
+                            'text-green-700 bg-green-50'
+                          }`}>{group.label}</div>
+                          {group.cats.map(cat => {
+                            const catSubcatIds = cat.subcategories.map(s => s.caId);
+                            const selectedCount = catSubcatIds.filter(id => selectedBagstyleSubcats.includes(id)).length;
+                            const allSelected = selectedCount === catSubcatIds.length;
+                            const someSelected = selectedCount > 0 && !allSelected;
+                            const isExpanded = expandedBagstyleCats.includes(cat.parentCaId);
+                            const headerBg = group.color === 'blue'
+                              ? (allSelected ? 'border-blue-400 bg-blue-100' : someSelected ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-white')
+                              : group.color === 'pink'
+                              ? (allSelected ? 'border-pink-400 bg-pink-100' : someSelected ? 'border-pink-300 bg-pink-50' : 'border-gray-200 bg-white')
+                              : (allSelected ? 'border-green-400 bg-green-100' : someSelected ? 'border-green-300 bg-green-50' : 'border-gray-200 bg-white');
+                            return (
+                              <div key={cat.parentCaId} className={`rounded-lg border overflow-hidden ${headerBg}`}>
+                                <div className="flex items-center gap-2 px-3 py-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={allSelected}
+                                    ref={el => { if (el) el.indeterminate = someSelected; }}
+                                    onChange={() => toggleBagstyleCatAll(cat.parentCaId)}
+                                    className="rounded flex-shrink-0"
+                                    data-testid={`checkbox-bagstyle-cat-${cat.parentCaId}`}
+                                  />
+                                  <button
+                                    className="flex-1 flex items-center justify-between text-left"
+                                    onClick={() => toggleBagstyleCatExpand(cat.parentCaId)}
+                                    data-testid={`expand-bagstyle-cat-${cat.parentCaId}`}
+                                  >
+                                    <span className="text-xs font-semibold text-gray-800">{cat.name}</span>
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                      {selectedCount > 0 && (
+                                        <span className={`text-xs font-medium ${
+                                          group.color === 'blue' ? 'text-blue-600' :
+                                          group.color === 'pink' ? 'text-pink-600' : 'text-green-600'
+                                        }`}>{selectedCount}/{catSubcatIds.length}</span>
+                                      )}
+                                      {!selectedCount && <span className="text-xs text-gray-400">{catSubcatIds.length}개</span>}
+                                      <ChevronDown className={`w-3.5 h-3.5 text-gray-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                    </div>
+                                  </button>
+                                </div>
+                                {isExpanded && (
+                                  <div className="px-3 pb-2 pt-1 border-t border-gray-100 bg-gray-50">
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-1">
+                                      {cat.subcategories.map(sub => {
+                                        const isSubSelected = selectedBagstyleSubcats.includes(sub.caId);
+                                        return (
+                                          <label
+                                            key={sub.caId}
+                                            data-testid={`checkbox-bagstyle-sub-${sub.caId}`}
+                                            className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs cursor-pointer transition-colors ${
+                                              isSubSelected
+                                                ? group.color === 'blue' ? 'bg-blue-100 text-blue-800 font-medium'
+                                                  : group.color === 'pink' ? 'bg-pink-100 text-pink-800 font-medium'
+                                                  : 'bg-green-100 text-green-800 font-medium'
+                                                : 'bg-white text-gray-700 hover:bg-gray-100'
+                                            } border ${isSubSelected ? (group.color === 'blue' ? 'border-blue-300' : group.color === 'pink' ? 'border-pink-300' : 'border-green-300') : 'border-gray-200'}`}
+                                          >
+                                            <input
+                                              type="checkbox"
+                                              checked={isSubSelected}
+                                              onChange={() => toggleBagstyleSubcat(sub.caId)}
+                                              className="w-3 h-3 flex-shrink-0"
+                                            />
+                                            <span className="truncate">{sub.name}</span>
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ));
+                    })()}
                   </div>
-                  {selectedBagstyleCategories.length > 0 && (
-                    <p className="text-xs text-teal-600 mt-2 font-medium">{selectedBagstyleCategories.length}개 카테고리 선택됨</p>
+                  {selectedBagstyleSubcats.length > 0 && (
+                    <p className="text-xs text-teal-600 mt-2 font-medium">소분류 {selectedBagstyleSubcats.length}개 선택됨</p>
                   )}
                 </div>
 
@@ -6541,7 +6713,7 @@ export default function Admin() {
                     {bagstyleProgress.status === 'running' ? (
                       <><Loader2 className="w-4 h-4 mr-2 animate-spin" />크롤링 중...</>
                     ) : (
-                      <><Download className="w-4 h-4 mr-2" />{selectedBagstyleCategories.length > 0 ? `선택 카테고리 크롤링 (${selectedBagstyleCategories.length}개)` : '전체 크롤링 시작'}</>
+                      <><Download className="w-4 h-4 mr-2" />{selectedBagstyleSubcats.length > 0 ? `선택 소분류 크롤링 (${selectedBagstyleSubcats.length}개)` : '전체 크롤링 시작'}</>
                     )}
                   </Button>
                   {bagstyleProgress.status === 'running' && (

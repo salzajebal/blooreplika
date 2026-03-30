@@ -3501,7 +3501,9 @@ export async function registerRoutes(
     const cats = BAGSTYLE_CRAWL_MAP.map(e => ({
       parentCaId: e.parentCaId,
       name: e.categoryName,
+      gender: e.gender,
       subcatCount: e.subcategories.length,
+      subcategories: e.subcategories.map(s => ({ caId: s.caId, name: s.name })),
     }));
     res.json({ success: true, categories: cats });
   });
@@ -3545,7 +3547,7 @@ export async function registerRoutes(
       return res.status(400).json({ success: false, error: "이미 크롤링이 진행 중입니다." });
     }
 
-    const { selectedCategories, resume } = req.body;
+    const { selectedCategories, selectedSubcats, resume } = req.body;
 
     let previouslyCompleted: string[] = [];
     let previousLog: string[] = [];
@@ -3774,9 +3776,20 @@ export async function registerRoutes(
         };
 
         // ── 메인 크롤 루프 ──
-        const entriesToCrawl = (selectedCategories && selectedCategories.length > 0)
-          ? BAGSTYLE_CRAWL_MAP.filter(e => selectedCategories.includes(e.parentCaId))
-          : BAGSTYLE_CRAWL_MAP;
+        // selectedSubcats(caId 목록)가 있으면 소분류 단위로 필터
+        // selectedCategories(parentCaId 목록)가 있으면 카테고리 단위로 필터
+        // 둘 다 없으면 전체 크롤
+        let entriesToCrawl: BagstyleCrawlEntry[];
+        if (selectedSubcats && selectedSubcats.length > 0) {
+          const subcatSet = new Set<string>(selectedSubcats as string[]);
+          entriesToCrawl = BAGSTYLE_CRAWL_MAP
+            .map(e => ({ ...e, subcategories: e.subcategories.filter(s => subcatSet.has(s.caId)) }))
+            .filter(e => e.subcategories.length > 0);
+        } else if (selectedCategories && selectedCategories.length > 0) {
+          entriesToCrawl = BAGSTYLE_CRAWL_MAP.filter(e => selectedCategories.includes(e.parentCaId));
+        } else {
+          entriesToCrawl = BAGSTYLE_CRAWL_MAP;
+        }
 
         let grandTotal = bagstyleProgress.grandTotal;
 
