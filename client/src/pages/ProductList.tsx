@@ -551,6 +551,13 @@ export default function ProductList() {
                       navigate("/products");
                     } else {
                       setSelectedGender(opt.value);
+                      if (subcategoryId) {
+                        const currentPath = location.split('?')[0];
+                        const currentParams = new URLSearchParams(searchString);
+                        currentParams.delete('sub');
+                        const newQuery = currentParams.toString();
+                        navigate(`${currentPath}${newQuery ? '?' + newQuery : ''}`);
+                      }
                     }
                     setOpenDropdown(null);
                   }}
