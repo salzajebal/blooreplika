@@ -3826,6 +3826,9 @@ export async function registerRoutes(
             bagstyleProgress.total = idsArray.length;
             bagstyleProgress.current = 0;
 
+            // 중복 방지: 해당 소분류의 기존 상품명 로드
+            const existingNames = await storage.getExistingProductNamesBySubcategory(sub.caId);
+
             let savedCount = 0, skippedCount = 0;
 
             for (let i = 0; i < idsArray.length; i += 15) {
@@ -3839,8 +3842,11 @@ export async function registerRoutes(
 
               for (const p of results) {
                 if (!p || p.price <= 0) { skippedCount++; continue; }
+                // 동일 소분류에 같은 이름의 상품이 이미 있으면 건너뜀
+                if (existingNames.has(p.name)) { skippedCount++; continue; }
                 try {
                   const brandId = await getOrCreateBrand(p.brandName, p.name);
+                  existingNames.add(p.name);
                   await storage.createProduct({
                     name: p.name,
                     categoryId: p.categoryId,

@@ -55,6 +55,7 @@ export interface IStorage {
   updateProduct(id: string, product: Partial<InsertProduct>): Promise<Product | undefined>;
   deleteProduct(id: string): Promise<boolean>;
   deleteProductsByCategory(categoryId: string): Promise<number>;
+  getExistingProductNamesBySubcategory(subcategoryId: string): Promise<Set<string>>;
   
   // Categories
   getAllCategories(): Promise<Category[]>;
@@ -521,6 +522,13 @@ export class DatabaseStorage implements IStorage {
     return result.length;
   }
 
+  async getExistingProductNamesBySubcategory(subcategoryId: string): Promise<Set<string>> {
+    const rows = await db
+      .select({ name: products.name })
+      .from(products)
+      .where(eq(products.subcategoryId, subcategoryId));
+    return new Set(rows.map(r => r.name));
+  }
 
   async getProductCountWithCategories(): Promise<{ total: number; byCategory: { categoryId: string; count: number }[] }> {
     const [totalResult, categoryResult] = await Promise.all([
