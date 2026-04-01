@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, integer, boolean, timestamp, decimal } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, integer, boolean, timestamp, decimal, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -152,7 +152,18 @@ export const products = pgTable("products", {
   avgRating: decimal("avg_rating", { precision: 2, scale: 1 }).default("0"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => ({
+  categoryIdIdx: index("products_category_id_idx").on(table.categoryId),
+  brandIdIdx: index("products_brand_id_idx").on(table.brandId),
+  subcategoryIdIdx: index("products_subcategory_id_idx").on(table.subcategoryId),
+  createdAtIdx: index("products_created_at_idx").on(table.createdAt),
+  isBestIdx: index("products_is_best_idx").on(table.isBest),
+  isNewIdx: index("products_is_new_idx").on(table.isNew),
+  isSameDayIdx: index("products_is_same_day_idx").on(table.isSameDay),
+  isActiveIdx: index("products_is_active_idx").on(table.isActive),
+  genderIdx: index("products_gender_idx").on(table.gender),
+  discountPercentIdx: index("products_discount_percent_idx").on(table.discountPercent),
+}));
 
 export const insertProductSchema = createInsertSchema(products).omit({
   id: true,

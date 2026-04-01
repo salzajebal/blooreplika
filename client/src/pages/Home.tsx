@@ -694,7 +694,7 @@ export default function Home() {
   const { data: productsData } = useQuery({
     queryKey: ['/api/products/home'],
     queryFn: async () => {
-      const res = await fetch('/api/products?limit=200');
+      const res = await fetch('/api/products?limit=60');
       const data = await res.json();
       return data.success ? data.data : [];
     }

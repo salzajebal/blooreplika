@@ -258,8 +258,13 @@ export async function registerRoutes(
   
   // In-memory image cache for faster subsequent loads
   const imageCache = new Map<string, { buffer: Buffer; timestamp: number }>();
-  const IMAGE_CACHE_TTL = 600000; // 10 minutes in milliseconds
-  const MAX_IMAGE_CACHE_SIZE = 100; // Maximum cached images
+  const IMAGE_CACHE_TTL = 3600000; // 1 hour in milliseconds
+  const MAX_IMAGE_CACHE_SIZE = 500; // Maximum cached images
+  let sharpModule: any = null;
+  const getSharp = async () => {
+    if (!sharpModule) sharpModule = (await import("sharp")).default;
+    return sharpModule;
+  };
   
   app.get("/api/image-proxy", async (req: Request, res: Response) => {
     try {
@@ -349,7 +354,7 @@ export async function registerRoutes(
       }
       
       // Use sharp to resize and compress non-GIF images to WebP
-      const sharp = (await import("sharp")).default;
+      const sharp = await getSharp();
       const optimizedImage = await sharp(buffer)
         .resize(width, null, { 
           withoutEnlargement: true,
