@@ -66,9 +66,9 @@ const JEWELRY_MEN = [
   { name: "목걸이", sub: "b08010" }, { name: "팔찌", sub: "b08020" },
   { name: "반지", sub: "b08030" }, { name: "백참/브로치", sub: "b08040" },
   { name: "만년필/볼펜", sub: "b08050" }, { name: "장갑", sub: "b08060" },
-  { name: "라이터/듀퐁", sub: "b08070" }, { name: "스카프/머플러", sub: "b08080" },
-  { name: "넥타이", sub: "b08090" }, { name: "모자", sub: "b080a0" },
-  { name: "우산", sub: "b080b0" }, { name: "커프스", sub: "b080d0" },
+  { name: "라이터/듀퐁", sub: "b08080" }, { name: "스카프/머플러", sub: "b08090" },
+  { name: "넥타이", sub: "b080a0" }, { name: "모자", sub: "b080b0" },
+  { name: "우산", sub: "b080c0" }, { name: "커프스", sub: "b080d0" },
   { name: "키홀더", sub: "b080e0" }, { name: "기타", sub: "b080f0" },
 ];
 const JEWELRY_WOMEN = [

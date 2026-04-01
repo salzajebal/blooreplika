@@ -624,6 +624,22 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/admin/products/delete-by-subcategory", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { subcategoryIds } = req.body;
+      if (!Array.isArray(subcategoryIds) || subcategoryIds.length === 0) {
+        return res.status(400).json({ success: false, error: "subcategoryIds 배열이 필요합니다." });
+      }
+      const deleted = await storage.deleteProductsBySubcategoryIds(subcategoryIds.map(String));
+      invalidateProductCache();
+      console.log(`[admin] 소분류 삭제 완료: ${subcategoryIds.join(',')} → ${deleted}개 삭제`);
+      res.json({ success: true, deleted });
+    } catch (error: any) {
+      console.error("[admin] delete-by-subcategory error:", error.message);
+      res.status(500).json({ success: false, error: "소분류 삭제 실패" });
+    }
+  });
+
   app.post("/api/admin/bulk-price-increase", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const { db } = await import("./db");
@@ -3340,9 +3356,9 @@ export async function registerRoutes(
         { caId: "b08010", name: "목걸이" },       { caId: "b08020", name: "팔찌" },
         { caId: "b08030", name: "반지" },         { caId: "b08040", name: "백참/브로치" },
         { caId: "b08050", name: "만년필/볼펜" },  { caId: "b08060", name: "장갑" },
-        { caId: "b08070", name: "라이터/듀퐁" },  { caId: "b08080", name: "스카프/머플러" },
-        { caId: "b08090", name: "넥타이" },       { caId: "b080a0", name: "모자" },
-        { caId: "b080b0", name: "우산" },         { caId: "b080d0", name: "커프스" },
+        { caId: "b08080", name: "라이터/듀퐁" },  { caId: "b08090", name: "스카프/머플러" },
+        { caId: "b080a0", name: "넥타이" },       { caId: "b080b0", name: "모자" },
+        { caId: "b080c0", name: "우산" },         { caId: "b080d0", name: "커프스" },
         { caId: "b080e0", name: "키홀더" },       { caId: "b080f0", name: "기타" },
       ],
     },

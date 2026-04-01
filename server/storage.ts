@@ -56,6 +56,7 @@ export interface IStorage {
   deleteProduct(id: string): Promise<boolean>;
   deleteProductsByCategory(categoryId: string): Promise<number>;
   getExistingProductNamesBySubcategory(subcategoryId: string): Promise<Set<string>>;
+  deleteProductsBySubcategoryIds(subcategoryIds: string[]): Promise<number>;
   
   // Categories
   getAllCategories(): Promise<Category[]>;
@@ -519,6 +520,12 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProductsByCategory(categoryId: string): Promise<number> {
     const result = await db.delete(products).where(eq(products.categoryId, categoryId)).returning();
+    return result.length;
+  }
+
+  async deleteProductsBySubcategoryIds(subcategoryIds: string[]): Promise<number> {
+    if (!subcategoryIds.length) return 0;
+    const result = await db.delete(products).where(inArray(products.subcategoryId, subcategoryIds)).returning();
     return result.length;
   }
 

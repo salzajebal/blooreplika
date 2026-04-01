@@ -297,9 +297,9 @@ export default function Admin() {
       { caId: "b08010", name: "목걸이" }, { caId: "b08020", name: "팔찌" },
       { caId: "b08030", name: "반지" }, { caId: "b08040", name: "백참/브로치" },
       { caId: "b08050", name: "만년필/볼펜" }, { caId: "b08060", name: "장갑" },
-      { caId: "b08070", name: "라이터/듀퐁" }, { caId: "b08080", name: "스카프/머플러" },
-      { caId: "b08090", name: "넥타이" }, { caId: "b080a0", name: "모자" },
-      { caId: "b080b0", name: "우산" }, { caId: "b080d0", name: "커프스" },
+      { caId: "b08080", name: "라이터/듀퐁" }, { caId: "b08090", name: "스카프/머플러" },
+      { caId: "b080a0", name: "넥타이" }, { caId: "b080b0", name: "모자" },
+      { caId: "b080c0", name: "우산" }, { caId: "b080d0", name: "커프스" },
       { caId: "b080e0", name: "키홀더" }, { caId: "b080f0", name: "기타" },
     ]},
     { parentCaId: "c010", name: "여성의류", gender: "여성", subcategories: [
@@ -370,6 +370,53 @@ export default function Admin() {
   ];
   const [selectedBagstyleSubcats, setSelectedBagstyleSubcats] = useState<string[]>([]);
   const [expandedBagstyleCats, setExpandedBagstyleCats] = useState<string[]>([]);
+  const [cleanupLoading, setCleanupLoading] = useState(false);
+  const [cleanupResult, setCleanupResult] = useState<{deleted: number; ids: string[]} | null>(null);
+
+  // 문제 소분류 목록 (실제 초과분만 - 삭제 후 재크롤 필요)
+  const PROBLEM_SUBCATS = [
+    { caId: 'b01040', name: '남성의류 - 코트/정장', issue: '초과 +545' },
+    { caId: 'b01050', name: '남성의류 - 후드티/집업', issue: '초과 +2,696' },
+    { caId: 'b01070', name: '남성의류 - 베스트/조끼', issue: '초과 +493' },
+    { caId: 'b010a0', name: '남성의류 - 반팔티/폴로티', issue: '초과 +1,359' },
+    { caId: 'b010d0', name: '남성의류 - 팬츠/청바지', issue: '초과 +9' },
+    { caId: 'b010e0', name: '남성의류 - 반바지', issue: '초과 +12' },
+    { caId: 'b04020', name: '남성지갑 - 카드지갑', issue: '초과 +90' },
+    { caId: 'b0b010', name: '남성신발 - 스니커즈', issue: '초과 +36' },
+    { caId: 'b0b040', name: '남성신발 - 샌들/슬리퍼', issue: '초과 +7' },
+    { caId: 'b0b060', name: '남성신발 - 로퍼/슬립온', issue: '초과 +21' },
+  ];
+  const [selectedCleanupSubcats, setSelectedCleanupSubcats] = useState<string[]>(
+    PROBLEM_SUBCATS.map(s => s.caId)
+  );
+
+  const handleSubcatCleanup = async () => {
+    if (selectedCleanupSubcats.length === 0) return;
+    const confirm = window.confirm(
+      `선택한 ${selectedCleanupSubcats.length}개 소분류의 상품을 모두 삭제합니다.\n다른 소분류는 절대 건드리지 않습니다.\n계속하시겠습니까?`
+    );
+    if (!confirm) return;
+    setCleanupLoading(true);
+    setCleanupResult(null);
+    try {
+      const res = await fetchWithAuth('/api/admin/products/delete-by-subcategory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subcategoryIds: selectedCleanupSubcats }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCleanupResult({ deleted: data.deleted, ids: selectedCleanupSubcats });
+        toast({ title: '소분류 정리 완료', description: `${data.deleted.toLocaleString()}개 상품 삭제됨. 이제 해당 소분류만 재크롤 해주세요.` });
+      } else {
+        toast({ title: '삭제 실패', description: data.error, variant: 'destructive' });
+      }
+    } catch (e: any) {
+      toast({ title: '오류', description: e.message, variant: 'destructive' });
+    } finally {
+      setCleanupLoading(false);
+    }
+  };
 
   const [bloostoreProgress, setBloostoreProgress] = useState<{
     status: 'idle' | 'running' | 'completed' | 'error';
@@ -6495,6 +6542,50 @@ export default function Admin() {
               </div>
 
               <div className="p-6 space-y-6">
+
+                {/* 소분류 정리 (초과/오류 소분류 삭제) */}
+                <div className="border border-red-200 rounded-lg overflow-hidden">
+                  <div className="bg-red-50 px-4 py-3 flex items-center gap-2">
+                    <span className="text-red-600 font-bold text-sm">⚠ 소분류 정리</span>
+                    <span className="text-xs text-red-500">초과·오류 소분류 상품 삭제 후 재크롤 필요</span>
+                  </div>
+                  <div className="p-4 space-y-2">
+                    <p className="text-xs text-gray-500 mb-3">선택한 소분류만 삭제됩니다. 다른 소분류는 절대 건드리지 않습니다.</p>
+                    <div className="space-y-1 max-h-64 overflow-y-auto">
+                      {PROBLEM_SUBCATS.map(s => (
+                        <label key={s.caId} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 rounded px-2 py-1">
+                          <input
+                            type="checkbox"
+                            checked={selectedCleanupSubcats.includes(s.caId)}
+                            onChange={e => setSelectedCleanupSubcats(prev =>
+                              e.target.checked ? [...prev, s.caId] : prev.filter(id => id !== s.caId)
+                            )}
+                            className="accent-red-500"
+                          />
+                          <span className="flex-1">{s.name}</span>
+                          <span className="text-xs text-red-500 font-medium">{s.issue}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-3 pt-2 border-t border-red-100 mt-2">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={handleSubcatCleanup}
+                        disabled={cleanupLoading || selectedCleanupSubcats.length === 0}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        {cleanupLoading ? '삭제 중...' : `선택 ${selectedCleanupSubcats.length}개 소분류 삭제`}
+                      </Button>
+                      {cleanupResult && (
+                        <span className="text-sm text-green-700 font-medium">
+                          ✅ {cleanupResult.deleted.toLocaleString()}개 삭제 완료 → 이제 해당 소분류 재크롤 하세요
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 {/* 안내 */}
                 <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
                   <p className="text-sm text-teal-800">
