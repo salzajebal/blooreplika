@@ -91,47 +91,41 @@ const GOLF_L1 = [
   {
     id: "golf-men-clothing", name: "남성의류",
     path: "/products/golf",
-    query: "?gender=남성",
+    query: "?sub=7010",
     items: [
-      { name: "자켓/점퍼", sub: "d01010" }, { name: "패딩/털", sub: "d01020" },
-      { name: "셔츠/폴로", sub: "d01030" }, { name: "바지/팬츠", sub: "d01040" },
-      { name: "반바지", sub: "d01050" }, { name: "니트/스웨터", sub: "d01060" },
+      { name: "자켓/점퍼", sub: "701010" }, { name: "반팔티", sub: "701020" },
+      { name: "긴팔티", sub: "701030" }, { name: "긴바지", sub: "701040" },
+      { name: "반바지", sub: "701070" }, { name: "니트/스웨터", sub: "701090" },
+      { name: "패딩/아우터", sub: "701080" }, { name: "조끼", sub: "701060" },
     ],
   },
   {
     id: "golf-women-clothing", name: "여성의류",
     path: "/products/golf",
-    query: "?gender=여성",
+    query: "?sub=7020",
     items: [
-      { name: "자켓/점퍼", sub: "d02010" }, { name: "패딩/털", sub: "d02020" },
-      { name: "셔츠/폴로", sub: "d02030" }, { name: "스커트/치마", sub: "d02040" },
-      { name: "바지/팬츠", sub: "d02050" }, { name: "원피스", sub: "d02060" },
+      { name: "자켓/점퍼", sub: "702010" }, { name: "반팔티", sub: "702020" },
+      { name: "긴팔티", sub: "702030" }, { name: "긴바지", sub: "702040" },
+      { name: "반바지", sub: "702050" }, { name: "원피스", sub: "702090" },
+      { name: "스커트", sub: "7020a0" }, { name: "니트/스웨터", sub: "7020b0" },
+      { name: "패딩아우터", sub: "702080" }, { name: "조끼", sub: "702060" },
     ],
   },
   {
     id: "golf-bags", name: "골프가방",
     path: "/products/golf",
-    query: "?cat=bags",
+    query: "?sub=7040",
     items: [
-      { name: "캐디백", sub: "d03010" }, { name: "보스턴백", sub: "d03020" },
-      { name: "카트백", sub: "d03030" }, { name: "스탠드백", sub: "d03040" },
+      { name: "캐디백", sub: "704010" }, { name: "보스턴백", sub: "704020" },
+      { name: "토트백", sub: "704030" }, { name: "클러치백", sub: "704040" },
     ],
   },
   {
     id: "golf-shoes", name: "골프신발",
     path: "/products/golf",
-    query: "?cat=shoes",
+    query: "?sub=7030",
     items: [
-      { name: "남성골프화", sub: "d04010" }, { name: "여성골프화", sub: "d04020" },
-    ],
-  },
-  {
-    id: "golf-acc", name: "골프용품",
-    path: "/products/golf",
-    query: "?cat=accessories",
-    items: [
-      { name: "장갑", sub: "d05010" }, { name: "모자", sub: "d05020" },
-      { name: "거리측정기", sub: "d05030" }, { name: "기타", sub: "d05040" },
+      { name: "골프화", sub: "703010" }, { name: "스니커즈", sub: "703020" },
     ],
   },
 ];

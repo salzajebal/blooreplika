@@ -371,6 +371,8 @@ export class DatabaseStorage implements IStorage {
         conditions.push(eq(products.categoryId, 'men'));
       } else if (categoryId === 'women') {
         conditions.push(eq(products.categoryId, 'women'));
+      } else if (categoryId === 'golf') {
+        conditions.push(eq(products.gender, '골프'));
       } else {
         conditions.push(eq(products.categoryId, categoryId));
       }
@@ -633,6 +635,8 @@ export class DatabaseStorage implements IStorage {
             OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%Unisex%'
           ))
         )`);
+      } else if (categoryId === 'golf') {
+        conditions.push(eq(products.gender, '골프'));
       } else {
         conditions.push(eq(products.categoryId, categoryId));
       }
