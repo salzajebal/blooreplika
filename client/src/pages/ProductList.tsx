@@ -201,7 +201,7 @@ export default function ProductList() {
     staleTime: 600000,
   });
 
-  const effectiveGenderForSubcat = selectedGender || genderFromCategory;
+  const effectiveGenderForSubcat = selectedGender || genderParam || genderFromCategory;
   const { data: subcategoriesData } = useQuery({
     queryKey: ['subcategories', effectiveCategorySlug, effectiveGenderForSubcat],
     queryFn: async () => {

@@ -67,7 +67,7 @@ export interface IStorage {
   
   // Subcategories
   getAllSubcategories(): Promise<Subcategory[]>;
-  getSubcategoriesByCategoryId(categoryId: string): Promise<Subcategory[]>;
+  getSubcategoriesByCategoryId(categoryId: string, gender?: string): Promise<Subcategory[]>;
   getSubcategory(id: string): Promise<Subcategory | undefined>;
   createSubcategory(subcategory: InsertSubcategory): Promise<Subcategory>;
   updateSubcategory(id: string, subcategory: Partial<InsertSubcategory>): Promise<Subcategory | undefined>;
@@ -596,9 +596,9 @@ export class DatabaseStorage implements IStorage {
   async getSubcategoriesByCategoryId(categoryId: string, gender?: string): Promise<Subcategory[]> {
     const conditions: any[] = [eq(subcategories.categoryId, categoryId)];
     if (gender === '남성') {
-      conditions.push(sql`${subcategories.slug} LIKE 'b0%'`);
+      conditions.push(sql`(${subcategories.slug} LIKE 'b0%' OR ${subcategories.slug} LIKE '701%')`);
     } else if (gender === '여성') {
-      conditions.push(sql`${subcategories.slug} LIKE 'c0%'`);
+      conditions.push(sql`(${subcategories.slug} LIKE 'c0%' OR ${subcategories.slug} LIKE 'f0%' OR ${subcategories.slug} LIKE '702%')`);
     } else if (gender === '골프') {
       conditions.push(sql`${subcategories.slug} LIKE '7%'`);
     }
