@@ -253,10 +253,10 @@ async function runSubcategoryMigrations() {
       { categoryId: "bags", name: "클러치백",         slug: "c02030", sortOrder: 3  },
       { categoryId: "bags", name: "백팩",             slug: "c02040", sortOrder: 4  },
       { categoryId: "bags", name: "파우치",           slug: "c02050", sortOrder: 5  },
-      { categoryId: "bags", name: "크로스",           slug: "c02060", sortOrder: 6  },
+      { categoryId: "bags", name: "크로스백",          slug: "c02060", sortOrder: 6  },
       { categoryId: "bags", name: "메신져백",         slug: "c02070", sortOrder: 7  },
       { categoryId: "bags", name: "여행가방",         slug: "c02080", sortOrder: 8  },
-      { categoryId: "bags", name: "케리어",           slug: "c02090", sortOrder: 9  },
+      { categoryId: "bags", name: "캐리어",           slug: "c02090", sortOrder: 9  },
       { categoryId: "bags", name: "벨트백/새들/슬링", slug: "c020a0", sortOrder: 10 },
       { categoryId: "bags", name: "미니백",           slug: "c020b0", sortOrder: 11 },
       { categoryId: "bags", name: "기타",             slug: "c020c0", sortOrder: 12 },
@@ -327,18 +327,18 @@ async function runSubcategoryMigrations() {
       { categoryId: "shoes", name: "스니커즈",        slug: "703020", sortOrder: 2 },
     ];
 
-    let inserted = 0, skipped = 0;
+    let inserted = 0, updated = 0;
     for (const sub of subcats) {
       const res = await pool.query(
         `INSERT INTO subcategories (id, category_id, name, slug, sort_order, is_active)
-         SELECT gen_random_uuid(), $1, $2, $3, $4, true
-         WHERE NOT EXISTS (SELECT 1 FROM subcategories WHERE slug = $3)`,
+         VALUES (gen_random_uuid(), $1, $2, $3, $4, true)
+         ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, category_id = EXCLUDED.category_id`,
         [sub.categoryId, sub.name, sub.slug, sub.sortOrder]
       );
       if (res.rowCount && res.rowCount > 0) inserted++;
-      else skipped++;
+      else updated++;
     }
-    log(`Subcategory migrations completed: ${inserted} inserted, ${skipped} already existed`, 'migration');
+    log(`Subcategory migrations completed: ${inserted} upserted`, 'migration');
   } catch (err: any) {
     console.error('[migration] Subcategory migration error:', err.message);
   }

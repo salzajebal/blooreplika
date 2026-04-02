@@ -221,7 +221,7 @@ const sideMenuLinks = [
 const popularSearches = ["샤넬", "루이비통", "디올", "에르메스", "셀린느", "롤렉스", "자켓", "숄더백", "까르띠에", "후드"];
 
 // ─── Main Nav item types ──────────────────────────────────────────────────────
-type NavKey = "신상품" | "브랜드" | "성별" | "의류" | "가방" | "지갑" | "신발" | "시계" | "골프" | "쥬얼리" | "선글라스" | "벨트" | "당일배송" | "할인상품" | "베스트상품";
+type NavKey = "신상품" | "브랜드" | "성별" | "의류" | "가방" | "지갑" | "신발" | "시계" | "골프" | "쥬얼리" | "당일배송" | "할인상품" | "베스트상품";
 
 const SIMPLE_NAV = [
   { key: "신상품" as NavKey, label: "신상품", path: "/products/new" },
@@ -234,8 +234,6 @@ const SIMPLE_NAV = [
   { key: "시계" as NavKey, label: "시계", path: "/products/watches" },
   { key: "골프" as NavKey, label: "골프", path: "/products/golf" },
   { key: "쥬얼리" as NavKey, label: "쥬얼리/잡화", path: "/products/jewelry" },
-  { key: "선글라스" as NavKey, label: "선글라스", path: "/products/sunglasses" },
-  { key: "벨트" as NavKey, label: "벨트", path: "/products/belts" },
   { key: "당일배송" as NavKey, label: "당일배송", path: "/products/sameday" },
   { key: "할인상품" as NavKey, label: "할인상품", path: "/products/discount" },
   { key: "베스트상품" as NavKey, label: "베스트상품", path: "/products/best" },
@@ -661,6 +659,34 @@ export function Header() {
     </DropdownPanel>
   );
 
+  // Jewelry + Sunglasses + Belts merged dropdown
+  const JewelryMergedDropdown = () => {
+    const cat = CATEGORY_SUBCATS["jewelry"];
+    if (!cat) return null;
+    return (
+      <DropdownPanel className="min-w-[160px]">
+        <Link href={cat.path} className="block px-5 py-3 text-[13px] font-medium text-black border-b border-gray-100 hover:bg-gray-50" onClick={() => setNavOpen(null)}>쥬얼리/잡화 전체</Link>
+        {cat.items.map((sub) => (
+          <Link key={sub.sub} href={`${cat.path}?subname=${encodeURIComponent(sub.name)}`} className="block px-5 py-2.5 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>{sub.name}</Link>
+        ))}
+        <div className="border-t border-gray-100 mt-1 pt-1">
+          <span className="block px-5 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">선글라스</span>
+          <Link href="/products/sunglasses" className="block px-5 py-2.5 text-[13px] font-medium text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>전체보기</Link>
+          {SUNGLASSES_ALL.map((sub) => (
+            <Link key={sub.sub} href={`/products/sunglasses?sub=${sub.sub}`} className="block px-5 py-2.5 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>{sub.name}</Link>
+          ))}
+        </div>
+        <div className="border-t border-gray-100 mt-1 pt-1">
+          <span className="block px-5 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">벨트</span>
+          <Link href="/products/belts" className="block px-5 py-2.5 text-[13px] font-medium text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>전체보기</Link>
+          {BELTS_ALL.map((sub) => (
+            <Link key={sub.sub} href={`/products/belts?sub=${sub.sub}`} className="block px-5 py-2.5 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>{sub.name}</Link>
+          ))}
+        </div>
+      </DropdownPanel>
+    );
+  };
+
   // ── Mobile accordion helpers ─────────────────────────────────────────────────
   const MobileAccordion = ({ title, isOpen, onToggle, href, children, special }: { title: string; isOpen: boolean; onToggle: () => void; href?: string; children?: React.ReactNode; special?: string }) => (
     <div>
@@ -917,21 +943,15 @@ export function Header() {
                           ))}
                         </MobileAccordion>
 
-                        {/* 쥬얼리 */}
+                        {/* 쥬얼리 + 선글라스 + 벨트 */}
                         <MobileAccordion title="쥬얼리/잡화" isOpen={mobileExpanded === "쥬얼리"} onToggle={() => setMobileExpanded(mobileExpanded === "쥬얼리" ? null : "쥬얼리")}>
-                          <Link href="/products/jewelry" className="block px-8 py-2.5 text-[13px] font-medium text-black hover:bg-gray-100" onClick={closeMobileMenu}>전체보기</Link>
+                          <Link href="/products/jewelry" className="block px-8 py-2.5 text-[13px] font-medium text-black hover:bg-gray-100" onClick={closeMobileMenu}>쥬얼리/잡화 전체</Link>
                           {JEWELRY_MEN.map((s) => <Link key={s.sub} href={`/products/jewelry?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{s.name}</Link>)}
-                        </MobileAccordion>
-
-                        {/* 선글라스 */}
-                        <MobileAccordion title="선글라스" isOpen={mobileExpanded === "선글라스"} onToggle={() => setMobileExpanded(mobileExpanded === "선글라스" ? null : "선글라스")}>
-                          <Link href="/products/sunglasses" className="block px-8 py-2.5 text-[13px] font-medium text-black hover:bg-gray-100" onClick={closeMobileMenu}>전체보기</Link>
+                          <div className="px-8 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide border-t border-gray-100 mt-1">선글라스</div>
+                          <Link href="/products/sunglasses" className="block px-8 py-2.5 text-[13px] font-medium text-gray-700 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>전체보기</Link>
                           {SUNGLASSES_ALL.map((s) => <Link key={s.sub} href={`/products/sunglasses?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{s.name}</Link>)}
-                        </MobileAccordion>
-
-                        {/* 벨트 */}
-                        <MobileAccordion title="벨트" isOpen={mobileExpanded === "벨트"} onToggle={() => setMobileExpanded(mobileExpanded === "벨트" ? null : "벨트")}>
-                          <Link href="/products/belts" className="block px-8 py-2.5 text-[13px] font-medium text-black hover:bg-gray-100" onClick={closeMobileMenu}>전체보기</Link>
+                          <div className="px-8 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide border-t border-gray-100 mt-1">벨트</div>
+                          <Link href="/products/belts" className="block px-8 py-2.5 text-[13px] font-medium text-gray-700 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>전체보기</Link>
                           {BELTS_ALL.map((s) => <Link key={s.sub} href={`/products/belts?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{s.name}</Link>)}
                         </MobileAccordion>
 
@@ -1055,9 +1075,7 @@ export function Header() {
                     {item.key === "신발" && navOpen === "신발" && <CategoryDropdown catKey="shoes" />}
                     {item.key === "시계" && navOpen === "시계" && <QuickLinksDropdown links={[{ name: "전체 시계", path: "/products/watches" }, ...brands.filter((b: any) => b.productCount > 0).slice(0, 20).map((b: any) => ({ name: b.name, path: `/products/watches?brand=${b.id}` }))]} />}
                     {item.key === "골프" && navOpen === "골프" && <GolfDropdown />}
-                    {item.key === "쥬얼리" && navOpen === "쥬얼리" && <CategoryDropdown catKey="jewelry" />}
-                    {item.key === "선글라스" && navOpen === "선글라스" && <SimpleSubDropdown items={SUNGLASSES_ALL} path="/products/sunglasses" />}
-                    {item.key === "벨트" && navOpen === "벨트" && <SimpleSubDropdown items={BELTS_ALL} path="/products/belts" />}
+                    {item.key === "쥬얼리" && navOpen === "쥬얼리" && <JewelryMergedDropdown />}
                     {item.key === "당일배송" && navOpen === "당일배송" && <QuickLinksDropdown links={SAMEDAY_LINKS} />}
                     {item.key === "할인상품" && navOpen === "할인상품" && <QuickLinksDropdown links={DISCOUNT_LINKS} />}
                     {item.key === "베스트상품" && navOpen === "베스트상품" && <QuickLinksDropdown links={BEST_LINKS} />}
