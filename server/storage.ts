@@ -387,6 +387,7 @@ export class DatabaseStorage implements IStorage {
       if (gender === '남성') {
         conditions.push(sql`(
           ${products.subcategoryId} LIKE 'b0%'
+          OR ${products.subcategoryId} LIKE '701%'
           OR ${products.gender} = '남성' OR ${products.gender} = '공용'
           OR (${products.gender} IS NULL AND (
             ${products.name} ILIKE '%남성%' OR ${products.name} ILIKE '%[남성]%'
@@ -399,6 +400,7 @@ export class DatabaseStorage implements IStorage {
       } else if (gender === '여성') {
         conditions.push(sql`(
           ${products.subcategoryId} LIKE 'c0%' OR ${products.subcategoryId} LIKE 'f0%'
+          OR ${products.subcategoryId} LIKE '702%'
           OR ${products.gender} = '여성' OR ${products.gender} = '공용'
           OR (${products.gender} IS NULL AND (
             ${products.name} ILIKE '%여성%' OR ${products.name} ILIKE '%[여성]%'
