@@ -278,19 +278,20 @@ async function runSubcategoryMigrations() {
       // ── 여성벨트 (belts / c06xxx) ──
       { categoryId: "belts", name: "가죽벨트",        slug: "c06010", sortOrder: 1 },
       { categoryId: "belts", name: "메쉬벨트",        slug: "c06020", sortOrder: 2 },
-      // ── 여성쥬얼리/잡화 (jewelry / f0axxx) ──
-      { categoryId: "jewelry", name: "목걸이",        slug: "f0a010", sortOrder: 1  },
-      { categoryId: "jewelry", name: "귀걸이",        slug: "f0a020", sortOrder: 2  },
-      { categoryId: "jewelry", name: "팔찌",          slug: "f0a030", sortOrder: 3  },
-      { categoryId: "jewelry", name: "반지",          slug: "f0a040", sortOrder: 4  },
-      { categoryId: "jewelry", name: "만년필/볼펜",   slug: "f0a050", sortOrder: 5  },
-      { categoryId: "jewelry", name: "키홀더",        slug: "f0a060", sortOrder: 6  },
-      { categoryId: "jewelry", name: "모자",          slug: "f0a070", sortOrder: 7  },
-      { categoryId: "jewelry", name: "장갑",          slug: "f0a080", sortOrder: 8  },
-      { categoryId: "jewelry", name: "우산",          slug: "f0a090", sortOrder: 9  },
-      { categoryId: "jewelry", name: "브로치/백참",   slug: "f0a0a0", sortOrder: 10 },
-      { categoryId: "jewelry", name: "스카프/머플러", slug: "f0a0b0", sortOrder: 11 },
-      { categoryId: "jewelry", name: "기타",          slug: "f0a0c0", sortOrder: 12 },
+      // ── 여성쥬얼리 (각 소분류가 독립 부모 caId) ──
+      { categoryId: "jewelry", name: "목걸이",        slug: "f0a0",   sortOrder: 1  },
+      // 귀걸이 caId 미확인 (확인 후 추가)
+      { categoryId: "jewelry", name: "팔찌",          slug: "f0b0",   sortOrder: 3  },
+      { categoryId: "jewelry", name: "반지",          slug: "f0c0",   sortOrder: 4  },
+      // ── 여성잡화 (c0a0xxx: 만년필/키홀더/모자 등 소분류 있음) ──
+      { categoryId: "jewelry", name: "만년필/볼펜",   slug: "c0a010", sortOrder: 5  },
+      { categoryId: "jewelry", name: "키홀더",        slug: "c0a020", sortOrder: 6  },
+      { categoryId: "jewelry", name: "모자",          slug: "c0a030", sortOrder: 7  },
+      { categoryId: "jewelry", name: "장갑",          slug: "c0a040", sortOrder: 8  },
+      { categoryId: "jewelry", name: "우산",          slug: "c0a050", sortOrder: 9  },
+      { categoryId: "jewelry", name: "브로치/백참",   slug: "c0a060", sortOrder: 10 },
+      { categoryId: "jewelry", name: "스카프/머플러", slug: "c0a070", sortOrder: 11 },
+      { categoryId: "jewelry", name: "기타",          slug: "c0a080", sortOrder: 12 },
       // ── 골프 남성의류 (clothing / 701xxx) ──
       { categoryId: "clothing", name: "자켓/점퍼",    slug: "701010", sortOrder: 1  },
       { categoryId: "clothing", name: "반팔티",       slug: "701020", sortOrder: 2  },
@@ -348,19 +349,21 @@ async function runJewelryCaIdFix() {
     const { db } = await import("./db");
     const { sql } = await import("drizzle-orm");
     // 잘못 저장된 c0a0xx → 올바른 f0a0xx 로 수정 (1회성 마이그레이션)
+    // 이전 잘못된 마이그레이션으로 c0a0xx→f0a0xx 이동된 상품들을 원복
     const fixes: Array<[string, string]> = [
-      ["c0a010", "f0a050"], // 만년필/볼펜
-      ["c0a020", "f0a060"], // 키홀더
-      ["c0a030", "f0a070"], // 모자
-      ["c0a040", "f0a080"], // 장갑 (혹시 크롤된 경우)
-      ["c0a050", "f0a050"], // 중복방지
-      ["c0a060", "f0a060"],
-      ["c0a070", "f0a070"],
-      ["c0a080", "f0a080"],
-      ["c0a090", "f0a090"],
-      ["c0a0a0", "f0a0a0"],
-      ["c0a0b0", "f0a0b0"],
-      ["c0a0c0", "f0a0c0"],
+      ["f0a050", "c0a010"], // 만년필/볼펜 원복
+      ["f0a060", "c0a020"], // 키홀더 원복
+      ["f0a070", "c0a030"], // 모자 원복
+      ["f0a080", "c0a040"], // 장갑 원복
+      ["f0a090", "c0a050"], // 우산 원복
+      ["f0a0a0", "c0a060"], // 브로치/백참 원복
+      ["f0a0b0", "c0a070"], // 스카프/머플러 원복
+      ["f0a0c0", "c0a080"], // 기타 원복
+      // 잘못 존재하는 f0a010~f0a040 → f0a0 (쥬얼리전체)로 통합
+      ["f0a010", "f0a0"],
+      ["f0a020", "f0a0"],
+      ["f0a030", "f0a0"],
+      ["f0a040", "f0a0"],
     ];
     let totalFixed = 0;
     for (const [from, to] of fixes) {
