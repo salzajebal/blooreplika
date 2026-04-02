@@ -336,13 +336,13 @@ export default function Admin() {
     { parentCaId: "c060", name: "여성벨트", gender: "여성", subcategories: [
       { caId: "c06010", name: "가죽벨트" }, { caId: "c06020", name: "메쉬벨트" },
     ]},
-    { parentCaId: "c0a0", name: "여성쥬얼리/잡화", gender: "여성", subcategories: [
-      { caId: "c0a010", name: "목걸이" }, { caId: "c0a020", name: "귀걸이" },
-      { caId: "c0a030", name: "팔찌" }, { caId: "c0a040", name: "반지" },
-      { caId: "c0a050", name: "만년필/볼펜" }, { caId: "c0a060", name: "키홀더" },
-      { caId: "c0a070", name: "모자" }, { caId: "c0a080", name: "장갑" },
-      { caId: "c0a090", name: "우산" }, { caId: "c0a0a0", name: "브로치/백참" },
-      { caId: "c0a0b0", name: "스카프/머플러" }, { caId: "c0a0c0", name: "기타" },
+    { parentCaId: "f0a0", name: "여성쥬얼리/잡화", gender: "여성", subcategories: [
+      { caId: "f0a010", name: "목걸이" }, { caId: "f0a020", name: "귀걸이" },
+      { caId: "f0a030", name: "팔찌" }, { caId: "f0a040", name: "반지" },
+      { caId: "f0a050", name: "만년필/볼펜" }, { caId: "f0a060", name: "키홀더" },
+      { caId: "f0a070", name: "모자" }, { caId: "f0a080", name: "장갑" },
+      { caId: "f0a090", name: "우산" }, { caId: "f0a0a0", name: "브로치/백참" },
+      { caId: "f0a0b0", name: "스카프/머플러" }, { caId: "f0a0c0", name: "기타" },
     ]},
     { parentCaId: "7010", name: "골프 남성의류", gender: "골프", subcategories: [
       { caId: "701010", name: "자켓/점퍼" }, { caId: "701020", name: "반팔티" },

@@ -131,6 +131,7 @@ app.use((req, res, next) => {
       log(`serving on port ${port}`);
       runCategoryMigrations();
       runSubcategoryMigrations();
+      runJewelryCaIdFix();
       runStartupMaintenance();
     },
   );
@@ -277,19 +278,19 @@ async function runSubcategoryMigrations() {
       // ── 여성벨트 (belts / c06xxx) ──
       { categoryId: "belts", name: "가죽벨트",        slug: "c06010", sortOrder: 1 },
       { categoryId: "belts", name: "메쉬벨트",        slug: "c06020", sortOrder: 2 },
-      // ── 여성쥬얼리/잡화 (jewelry / c0axxx) ──
-      { categoryId: "jewelry", name: "목걸이",        slug: "c0a010", sortOrder: 1  },
-      { categoryId: "jewelry", name: "귀걸이",        slug: "c0a020", sortOrder: 2  },
-      { categoryId: "jewelry", name: "팔찌",          slug: "c0a030", sortOrder: 3  },
-      { categoryId: "jewelry", name: "반지",          slug: "c0a040", sortOrder: 4  },
-      { categoryId: "jewelry", name: "만년필/볼펜",   slug: "c0a050", sortOrder: 5  },
-      { categoryId: "jewelry", name: "키홀더",        slug: "c0a060", sortOrder: 6  },
-      { categoryId: "jewelry", name: "모자",          slug: "c0a070", sortOrder: 7  },
-      { categoryId: "jewelry", name: "장갑",          slug: "c0a080", sortOrder: 8  },
-      { categoryId: "jewelry", name: "우산",          slug: "c0a090", sortOrder: 9  },
-      { categoryId: "jewelry", name: "브로치/백참",   slug: "c0a0a0", sortOrder: 10 },
-      { categoryId: "jewelry", name: "스카프/머플러", slug: "c0a0b0", sortOrder: 11 },
-      { categoryId: "jewelry", name: "기타",          slug: "c0a0c0", sortOrder: 12 },
+      // ── 여성쥬얼리/잡화 (jewelry / f0axxx) ──
+      { categoryId: "jewelry", name: "목걸이",        slug: "f0a010", sortOrder: 1  },
+      { categoryId: "jewelry", name: "귀걸이",        slug: "f0a020", sortOrder: 2  },
+      { categoryId: "jewelry", name: "팔찌",          slug: "f0a030", sortOrder: 3  },
+      { categoryId: "jewelry", name: "반지",          slug: "f0a040", sortOrder: 4  },
+      { categoryId: "jewelry", name: "만년필/볼펜",   slug: "f0a050", sortOrder: 5  },
+      { categoryId: "jewelry", name: "키홀더",        slug: "f0a060", sortOrder: 6  },
+      { categoryId: "jewelry", name: "모자",          slug: "f0a070", sortOrder: 7  },
+      { categoryId: "jewelry", name: "장갑",          slug: "f0a080", sortOrder: 8  },
+      { categoryId: "jewelry", name: "우산",          slug: "f0a090", sortOrder: 9  },
+      { categoryId: "jewelry", name: "브로치/백참",   slug: "f0a0a0", sortOrder: 10 },
+      { categoryId: "jewelry", name: "스카프/머플러", slug: "f0a0b0", sortOrder: 11 },
+      { categoryId: "jewelry", name: "기타",          slug: "f0a0c0", sortOrder: 12 },
       // ── 골프 남성의류 (clothing / 701xxx) ──
       { categoryId: "clothing", name: "자켓/점퍼",    slug: "701010", sortOrder: 1  },
       { categoryId: "clothing", name: "반팔티",       slug: "701020", sortOrder: 2  },
@@ -339,6 +340,42 @@ async function runSubcategoryMigrations() {
     log(`Subcategory migrations completed: ${inserted} inserted, ${skipped} already existed`, 'migration');
   } catch (err: any) {
     console.error('[migration] Subcategory migration error:', err.message);
+  }
+}
+
+async function runJewelryCaIdFix() {
+  try {
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    // 잘못 저장된 c0a0xx → 올바른 f0a0xx 로 수정 (1회성 마이그레이션)
+    const fixes: Array<[string, string]> = [
+      ["c0a010", "f0a050"], // 만년필/볼펜
+      ["c0a020", "f0a060"], // 키홀더
+      ["c0a030", "f0a070"], // 모자
+      ["c0a040", "f0a080"], // 장갑 (혹시 크롤된 경우)
+      ["c0a050", "f0a050"], // 중복방지
+      ["c0a060", "f0a060"],
+      ["c0a070", "f0a070"],
+      ["c0a080", "f0a080"],
+      ["c0a090", "f0a090"],
+      ["c0a0a0", "f0a0a0"],
+      ["c0a0b0", "f0a0b0"],
+      ["c0a0c0", "f0a0c0"],
+    ];
+    let totalFixed = 0;
+    for (const [from, to] of fixes) {
+      const result = await db.execute(
+        sql`UPDATE products SET subcategory_id = ${to} WHERE subcategory_id = ${from}`
+      );
+      const count = (result as any).rowCount ?? 0;
+      if (count > 0) {
+        totalFixed += count;
+        log(`[jewelry-fix] ${from} → ${to}: ${count}개 수정`, "migration");
+      }
+    }
+    if (totalFixed > 0) log(`[jewelry-fix] 완료: ${totalFixed}개 subcategoryId 수정`, "migration");
+  } catch (err: any) {
+    console.error("[jewelry-fix] error:", err.message);
   }
 }
 

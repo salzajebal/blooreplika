@@ -3409,14 +3409,14 @@ export async function registerRoutes(
         { caId: "c06010", name: "가죽벨트" }, { caId: "c06020", name: "메쉬벨트" },
       ],
     },
-    { gender: "여성", categoryId: "jewelry", categoryName: "여성쥬얼리/잡화", parentCaId: "c0a0", pageBase: "women",
+    { gender: "여성", categoryId: "jewelry", categoryName: "여성쥬얼리/잡화", parentCaId: "f0a0", pageBase: "women",
       subcategories: [
-        { caId: "c0a010", name: "목걸이" },      { caId: "c0a020", name: "귀걸이" },
-        { caId: "c0a030", name: "팔찌" },        { caId: "c0a040", name: "반지" },
-        { caId: "c0a050", name: "만년필/볼펜" }, { caId: "c0a060", name: "키홀더" },
-        { caId: "c0a070", name: "모자" },        { caId: "c0a080", name: "장갑" },
-        { caId: "c0a090", name: "우산" },        { caId: "c0a0a0", name: "브로치/백참" },
-        { caId: "c0a0b0", name: "스카프/머플러" },{ caId: "c0a0c0", name: "기타" },
+        { caId: "f0a010", name: "목걸이" },      { caId: "f0a020", name: "귀걸이" },
+        { caId: "f0a030", name: "팔찌" },        { caId: "f0a040", name: "반지" },
+        { caId: "f0a050", name: "만년필/볼펜" }, { caId: "f0a060", name: "키홀더" },
+        { caId: "f0a070", name: "모자" },        { caId: "f0a080", name: "장갑" },
+        { caId: "f0a090", name: "우산" },        { caId: "f0a0a0", name: "브로치/백참" },
+        { caId: "f0a0b0", name: "스카프/머플러" },{ caId: "f0a0c0", name: "기타" },
       ],
     },
     // ═══════════════ 골프 ═══════════════
@@ -6247,7 +6247,7 @@ export async function registerRoutes(
         { prefix: "c050", categoryId: "shoes",       gender: "여성" },
         { prefix: "c060", categoryId: "accessories", gender: "여성" },
         { prefix: "c070", categoryId: "accessories", gender: "여성" },
-        { prefix: "c0a0", categoryId: "accessories", gender: "여성" },
+        { prefix: "f0a0", categoryId: "accessories", gender: "여성" },
       ];
 
       // gender prefix fallback (subcategoryId 없는 경우)
@@ -6616,7 +6616,7 @@ export async function registerRoutes(
     'c040': 'watches',
     'b0a0': 'sunglasses',  'c070': 'sunglasses',
     'b070': 'belts',       'c060': 'belts',
-    'b080': 'accessories', 'c0a0': 'accessories',
+    'b080': 'accessories', 'f0a0': 'accessories',
     // 가방 전용 페이지 소분류
     'e0a0': 'bags', 'e0b0': 'bags', 'e0c0': 'bags', 'e0d0': 'bags', 'e0e0': 'bags',
   };
