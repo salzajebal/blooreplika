@@ -72,12 +72,12 @@ const JEWELRY_MEN = [
   { name: "키홀더", sub: "b080e0" }, { name: "기타", sub: "b080f0" },
 ];
 const JEWELRY_WOMEN = [
-  { name: "목걸이", sub: "f0a0" }, { name: "귀걸이", sub: "" },
+  { name: "목걸이", sub: "f0a0" }, { name: "귀걸이", sub: "f0d0" },
   { name: "팔찌", sub: "f0b0" }, { name: "반지", sub: "f0c0" },
-  { name: "만년필/볼펜", sub: "c0a010" }, { name: "키홀더", sub: "c0a020" },
-  { name: "모자", sub: "c0a030" }, { name: "장갑", sub: "c0a040" },
-  { name: "우산", sub: "c0a050" }, { name: "브로치/백참", sub: "c0a060" },
-  { name: "스카프/머플러", sub: "c0a070" }, { name: "기타", sub: "c0a080" },
+  { name: "백참/브로치", sub: "f090" }, { name: "스카프/머플러", sub: "f030" },
+  { name: "모자", sub: "f070" }, { name: "키홀더", sub: "f0e0" },
+  { name: "만년필/볼펜", sub: "f050" }, { name: "장갑", sub: "f080" },
+  { name: "우산", sub: "f0f0" }, { name: "기타", sub: "f0h0" },
 ];
 const SUNGLASSES_ALL = [
   { name: "선글라스", sub: "b0a010" }, { name: "안경테", sub: "b0a020" },

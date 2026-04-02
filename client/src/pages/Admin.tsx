@@ -339,18 +339,38 @@ export default function Admin() {
     { parentCaId: "f0a0", name: "여성쥬얼리-목걸이", gender: "여성", subcategories: [
       { caId: "f0a0", name: "목걸이" },
     ]},
-    // 귀걸이 caId 미확인 → 확인 후 추가
+    { parentCaId: "f0d0", name: "여성쥬얼리-귀걸이", gender: "여성", subcategories: [
+      { caId: "f0d0", name: "귀걸이" },
+    ]},
     { parentCaId: "f0b0", name: "여성쥬얼리-팔찌", gender: "여성", subcategories: [
       { caId: "f0b0", name: "팔찌" },
     ]},
     { parentCaId: "f0c0", name: "여성쥬얼리-반지", gender: "여성", subcategories: [
       { caId: "f0c0", name: "반지" },
     ]},
-    { parentCaId: "c0a0", name: "여성잡화(만년필/키홀더/모자 등)", gender: "여성", subcategories: [
-      { caId: "c0a010", name: "만년필/볼펜" }, { caId: "c0a020", name: "키홀더" },
-      { caId: "c0a030", name: "모자" },        { caId: "c0a040", name: "장갑" },
-      { caId: "c0a050", name: "우산" },        { caId: "c0a060", name: "브로치/백참" },
-      { caId: "c0a070", name: "스카프/머플러" },{ caId: "c0a080", name: "기타" },
+    { parentCaId: "f090", name: "여성잡화-백참/브로치", gender: "여성", subcategories: [
+      { caId: "f090", name: "백참/브로치" },
+    ]},
+    { parentCaId: "f030", name: "여성잡화-스카프/머플러", gender: "여성", subcategories: [
+      { caId: "f030", name: "스카프/머플러" },
+    ]},
+    { parentCaId: "f070", name: "여성잡화-모자", gender: "여성", subcategories: [
+      { caId: "f070", name: "모자" },
+    ]},
+    { parentCaId: "f0e0", name: "여성잡화-키홀더", gender: "여성", subcategories: [
+      { caId: "f0e0", name: "키홀더" },
+    ]},
+    { parentCaId: "f050", name: "여성잡화-만년필/볼펜", gender: "여성", subcategories: [
+      { caId: "f050", name: "만년필/볼펜" },
+    ]},
+    { parentCaId: "f080", name: "여성잡화-장갑", gender: "여성", subcategories: [
+      { caId: "f080", name: "장갑" },
+    ]},
+    { parentCaId: "f0f0", name: "여성잡화-우산", gender: "여성", subcategories: [
+      { caId: "f0f0", name: "우산" },
+    ]},
+    { parentCaId: "f0h0", name: "여성잡화-기타", gender: "여성", subcategories: [
+      { caId: "f0h0", name: "기타" },
     ]},
     { parentCaId: "7010", name: "골프 남성의류", gender: "골프", subcategories: [
       { caId: "701010", name: "자켓/점퍼" }, { caId: "701020", name: "반팔티" },

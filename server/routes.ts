@@ -3409,25 +3409,43 @@ export async function registerRoutes(
         { caId: "c06010", name: "가죽벨트" }, { caId: "c06020", name: "메쉬벨트" },
       ],
     },
-    // 여성 쥬얼리 - 각 소분류가 독립 부모 caId (소분류 없이 해당 caId 전체 크롤)
+    // 여성 쥬얼리/잡화 (f0 하위, 각 소분류가 독립 caId - 확인 완료)
     { gender: "여성", categoryId: "jewelry", categoryName: "여성쥬얼리-목걸이", parentCaId: "f0a0", pageBase: "women",
       subcategories: [ { caId: "f0a0", name: "목걸이" } ],
     },
-    // 귀걸이 caId 미확인 → 확인 후 추가 예정
+    { gender: "여성", categoryId: "jewelry", categoryName: "여성쥬얼리-귀걸이", parentCaId: "f0d0", pageBase: "women",
+      subcategories: [ { caId: "f0d0", name: "귀걸이" } ],
+    },
     { gender: "여성", categoryId: "jewelry", categoryName: "여성쥬얼리-팔찌", parentCaId: "f0b0", pageBase: "women",
       subcategories: [ { caId: "f0b0", name: "팔찌" } ],
     },
     { gender: "여성", categoryId: "jewelry", categoryName: "여성쥬얼리-반지", parentCaId: "f0c0", pageBase: "women",
       subcategories: [ { caId: "f0c0", name: "반지" } ],
     },
-    // c0a0: 여성 잡화(만년필/키홀더/모자 등) - 소분류 있음
-    { gender: "여성", categoryId: "jewelry", categoryName: "여성잡화", parentCaId: "c0a0", pageBase: "women",
-      subcategories: [
-        { caId: "c0a010", name: "만년필/볼펜" }, { caId: "c0a020", name: "키홀더" },
-        { caId: "c0a030", name: "모자" },        { caId: "c0a040", name: "장갑" },
-        { caId: "c0a050", name: "우산" },        { caId: "c0a060", name: "브로치/백참" },
-        { caId: "c0a070", name: "스카프/머플러" },{ caId: "c0a080", name: "기타" },
-      ],
+    // 여성 잡화 (f0 하위, 확인 완료)
+    { gender: "여성", categoryId: "jewelry", categoryName: "여성잡화-백참/브로치", parentCaId: "f090", pageBase: "women",
+      subcategories: [ { caId: "f090", name: "백참/브로치" } ],
+    },
+    { gender: "여성", categoryId: "jewelry", categoryName: "여성잡화-스카프/머플러", parentCaId: "f030", pageBase: "women",
+      subcategories: [ { caId: "f030", name: "스카프/머플러" } ],
+    },
+    { gender: "여성", categoryId: "jewelry", categoryName: "여성잡화-모자", parentCaId: "f070", pageBase: "women",
+      subcategories: [ { caId: "f070", name: "모자" } ],
+    },
+    { gender: "여성", categoryId: "jewelry", categoryName: "여성잡화-키홀더", parentCaId: "f0e0", pageBase: "women",
+      subcategories: [ { caId: "f0e0", name: "키홀더" } ],
+    },
+    { gender: "여성", categoryId: "jewelry", categoryName: "여성잡화-만년필/볼펜", parentCaId: "f050", pageBase: "women",
+      subcategories: [ { caId: "f050", name: "만년필/볼펜" } ],
+    },
+    { gender: "여성", categoryId: "jewelry", categoryName: "여성잡화-장갑", parentCaId: "f080", pageBase: "women",
+      subcategories: [ { caId: "f080", name: "장갑" } ],
+    },
+    { gender: "여성", categoryId: "jewelry", categoryName: "여성잡화-우산", parentCaId: "f0f0", pageBase: "women",
+      subcategories: [ { caId: "f0f0", name: "우산" } ],
+    },
+    { gender: "여성", categoryId: "jewelry", categoryName: "여성잡화-기타", parentCaId: "f0h0", pageBase: "women",
+      subcategories: [ { caId: "f0h0", name: "기타" } ],
     },
     // ═══════════════ 골프 ═══════════════
     { gender: "골프", categoryId: "clothing", categoryName: "골프남성의류", parentCaId: "7010", pageBase: "list",
@@ -6260,6 +6278,16 @@ export async function registerRoutes(
         { prefix: "f0a0", categoryId: "accessories", gender: "여성" },
         { prefix: "f0b0", categoryId: "accessories", gender: "여성" },
         { prefix: "f0c0", categoryId: "accessories", gender: "여성" },
+        { prefix: "f0d0", categoryId: "accessories", gender: "여성" },
+        { prefix: "f0e0", categoryId: "accessories", gender: "여성" },
+        { prefix: "f0f0", categoryId: "accessories", gender: "여성" },
+        { prefix: "f0g0", categoryId: "accessories", gender: "여성" },
+        { prefix: "f0h0", categoryId: "accessories", gender: "여성" },
+        { prefix: "f090", categoryId: "accessories", gender: "여성" },
+        { prefix: "f080", categoryId: "accessories", gender: "여성" },
+        { prefix: "f070", categoryId: "accessories", gender: "여성" },
+        { prefix: "f050", categoryId: "accessories", gender: "여성" },
+        { prefix: "f030", categoryId: "accessories", gender: "여성" },
         { prefix: "c0a0", categoryId: "accessories", gender: "여성" },
       ];
 
@@ -6267,6 +6295,7 @@ export async function registerRoutes(
       const GENDER_PREFIX = [
         { prefix: "b0", gender: "남성" },
         { prefix: "c0", gender: "여성" },
+        { prefix: "f0", gender: "여성" }, // f0 = 쥬얼리/잡화 (여성)
       ];
 
       const rows = await pool.query(
@@ -6629,7 +6658,12 @@ export async function registerRoutes(
     'c040': 'watches',
     'b0a0': 'sunglasses',  'c070': 'sunglasses',
     'b070': 'belts',       'c060': 'belts',
-    'b080': 'accessories', 'f0a0': 'accessories', 'f0b0': 'accessories', 'f0c0': 'accessories', 'c0a0': 'accessories',
+    'b080': 'accessories',
+    // f0 하위 쥬얼리/잡화 전체
+    'f0a0': 'accessories', 'f0b0': 'accessories', 'f0c0': 'accessories', 'f0d0': 'accessories',
+    'f0e0': 'accessories', 'f0f0': 'accessories', 'f0g0': 'accessories', 'f0h0': 'accessories',
+    'f090': 'accessories', 'f080': 'accessories', 'f070': 'accessories', 'f050': 'accessories',
+    'f030': 'accessories', 'c0a0': 'accessories',
     // 가방 전용 페이지 소분류
     'e0a0': 'bags', 'e0b0': 'bags', 'e0c0': 'bags', 'e0d0': 'bags', 'e0e0': 'bags',
   };
