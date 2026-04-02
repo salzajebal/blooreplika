@@ -400,7 +400,7 @@ export class DatabaseStorage implements IStorage {
       } else if (gender === '여성') {
         conditions.push(sql`(
           ${products.subcategoryId} LIKE 'c0%' OR ${products.subcategoryId} LIKE 'f0%'
-          OR ${products.subcategoryId} LIKE '702%'
+          OR ${products.subcategoryId} LIKE '702%' OR ${products.subcategoryId} LIKE 'g0%'
           OR ${products.gender} = '여성' OR ${products.gender} = '공용'
           OR (${products.gender} IS NULL AND (
             ${products.name} ILIKE '%여성%' OR ${products.name} ILIKE '%[여성]%'
@@ -432,16 +432,12 @@ export class DatabaseStorage implements IStorage {
     // Subname filter: find all subcategory slugs matching the given name.
     // Uses prefix match (text before first '/') to match both men's and women's variants.
     // e.g. "후드티/집업" also matches "후드티" (women's), "반팔티/폴로티" also matches "반팔티/폴로"
-    // Cross-gender aliases: "정장구두" → for women also includes 펌프스/힐, 단화/플랫
-    const SUBNAME_ALIASES: Record<string, string[]> = {
-      '정장구두': ['펌프스/힐', '단화/플랫'],
-    };
+    // "정장구두" matches both b0b030 (남성) and g030 (여성) since both are named "정장구두" in DB.
     if (subname) {
       const baseSubname = subname.split('/')[0];
-      const extraNames: string[] = (gender === '여성' && SUBNAME_ALIASES[subname]) ? SUBNAME_ALIASES[subname] : [];
       const slugRows = await db.select({ slug: subcategories.slug })
         .from(subcategories)
-        .where(sql`${subcategories.name} = ${subname} OR ${subcategories.name} ILIKE ${baseSubname + '/%'} OR ${subcategories.name} ILIKE ${baseSubname}${extraNames.length > 0 ? sql` OR ${subcategories.name} = ANY(${extraNames})` : sql``}`);
+        .where(sql`${subcategories.name} = ${subname} OR ${subcategories.name} ILIKE ${baseSubname + '/%'} OR ${subcategories.name} ILIKE ${baseSubname}`);
       const slugs = slugRows.map(r => r.slug);
       if (slugs.length > 0) {
         conditions.push(inArray(products.subcategoryId, slugs));
@@ -598,7 +594,7 @@ export class DatabaseStorage implements IStorage {
     if (gender === '남성') {
       conditions.push(sql`(${subcategories.slug} LIKE 'b0%' OR ${subcategories.slug} LIKE '701%')`);
     } else if (gender === '여성') {
-      conditions.push(sql`(${subcategories.slug} LIKE 'c0%' OR ${subcategories.slug} LIKE 'f0%' OR ${subcategories.slug} LIKE '702%')`);
+      conditions.push(sql`(${subcategories.slug} LIKE 'c0%' OR ${subcategories.slug} LIKE 'f0%' OR ${subcategories.slug} LIKE '702%' OR ${subcategories.slug} LIKE 'g0%')`);
     } else if (gender === '골프') {
       conditions.push(sql`${subcategories.slug} LIKE '7%'`);
     }

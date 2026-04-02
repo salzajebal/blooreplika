@@ -265,14 +265,15 @@ async function runSubcategoryMigrations() {
       { categoryId: "wallets", name: "장지갑/소지갑", slug: "c03010", sortOrder: 1 },
       { categoryId: "wallets", name: "카드지갑",      slug: "c03020", sortOrder: 2 },
       { categoryId: "wallets", name: "동전지갑",      slug: "c03030", sortOrder: 3 },
-      // ── 여성신발 (shoes / c05xxx) ──
+      // ── 여성신발 (shoes / c05xxx, g0xx) ──
       { categoryId: "shoes", name: "스니커즈",        slug: "c05010", sortOrder: 1 },
       { categoryId: "shoes", name: "운동화",          slug: "c05020", sortOrder: 2 },
-      { categoryId: "shoes", name: "샌들/슬리퍼",    slug: "c05030", sortOrder: 3 },
-      { categoryId: "shoes", name: "펌프스/힐",      slug: "c05040", sortOrder: 4 },
-      { categoryId: "shoes", name: "부츠/워커",      slug: "c05050", sortOrder: 5 },
-      { categoryId: "shoes", name: "단화/플랫",      slug: "c05060", sortOrder: 6 },
-      { categoryId: "shoes", name: "로퍼/슬립온",    slug: "c05070", sortOrder: 7 },
+      { categoryId: "shoes", name: "정장구두",        slug: "g030",   sortOrder: 3 },
+      { categoryId: "shoes", name: "샌들/슬리퍼",    slug: "c05030", sortOrder: 4 },
+      { categoryId: "shoes", name: "펌프스/힐",      slug: "c05040", sortOrder: 5 },
+      { categoryId: "shoes", name: "부츠/워커",      slug: "c05050", sortOrder: 6 },
+      { categoryId: "shoes", name: "단화/플랫",      slug: "c05060", sortOrder: 7 },
+      { categoryId: "shoes", name: "로퍼/슬립온",    slug: "c05070", sortOrder: 8 },
       // ── 여성선글라스 (sunglasses / c07xxx) ──
       { categoryId: "sunglasses", name: "선글라스",  slug: "c07010", sortOrder: 1 },
       { categoryId: "sunglasses", name: "안경태",    slug: "c07020", sortOrder: 2 },
@@ -352,6 +353,7 @@ async function runCriticalNameFixes() {
       ['c01010', '자켓/점퍼'],  // '자켓' → '자켓/점퍼'
       ['c02060', '크로스백'],   // '크로스' → '크로스백'
       ['c02090', '캐리어'],     // '케리어' → '캐리어'
+      ['g030',   '정장구두'],   // 여성 정장구두 (bagstyle ca_id=g030)
     ];
     let fixed = 0;
     for (const [slug, correctName] of fixes) {

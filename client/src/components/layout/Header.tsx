@@ -58,7 +58,7 @@ const SHOES_MEN = [
 ];
 const SHOES_WOMEN = [
   { name: "스니커즈", sub: "c05010" }, { name: "운동화", sub: "c05020" },
-  { name: "정장구두", sub: "c05040" }, { name: "샌들/슬리퍼", sub: "c05030" },
+  { name: "정장구두", sub: "g030" },   { name: "샌들/슬리퍼", sub: "c05030" },
   { name: "펌프스/힐", sub: "c05040" }, { name: "부츠/워커", sub: "c05050" },
   { name: "단화/플랫", sub: "c05060" }, { name: "로퍼/슬립온", sub: "c05070" },
 ];
