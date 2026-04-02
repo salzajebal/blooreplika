@@ -373,7 +373,30 @@ export default function ProductList() {
   }, [products, sortBy]);
 
   const subcategories = subcategoriesData || [];
-  const activeFiltersCount = (selectedBrand ? 1 : 0) + (selectedGender ? 1 : 0);
+
+  // 골프 남성(701xxx) ↔ 여성(702xxx) 서브카테고리 매핑
+  const GOLF_MEN_TO_WOMEN: Record<string, string | null> = {
+    '7010':   '7020',
+    '701010': '702010', '701020': '702020', '701030': '702030',
+    '701040': '702040', '701070': '702050', '701090': '7020b0',
+    '701080': '702080', '701060': '702060',
+  };
+  const GOLF_WOMEN_TO_MEN: Record<string, string | null> = {
+    '7020':   '7010',
+    '702010': '701010', '702020': '701020', '702030': '701030',
+    '702040': '701040', '702050': '701070', '7020b0': '701090',
+    '702080': '701080', '702060': '701060',
+    '702090': null, '7020a0': null, // 원피스/스커트 - 남성 없음
+  };
+  const isGolfGenderSub = (sub: string | null | undefined) =>
+    !!sub && (sub.startsWith('701') || sub.startsWith('702') || sub === '7010' || sub === '7020');
+
+  // 골프 sub 코드로부터 성별 표시 파생
+  const golfSubGender = isGolfGenderSub(subcategoryId)
+    ? (subcategoryId!.startsWith('701') ? '남성' : '여성')
+    : null;
+
+  const activeFiltersCount = (selectedBrand ? 1 : 0) + (selectedGender ? 1 : 0) + (golfSubGender && !selectedGender ? 1 : 0);
   const selectedBrandName = brands.find((b: any) => b.id === selectedBrand)?.name;
   const selectedSubcatName = subcategories.find((s: any) => s.id === selectedSubcategory)?.name;
 
@@ -525,7 +548,7 @@ export default function ProductList() {
           onClick={() => toggleDropdown("gender")}
           className={cn(
             "flex items-center gap-1.5 px-4 py-2 text-sm rounded-full border transition-colors",
-            (selectedGender || genderFromCategory)
+            (selectedGender || genderFromCategory || golfSubGender)
               ? "bg-black text-white border-black"
               : openDropdown === "gender"
                 ? "border-black text-black"
@@ -534,14 +557,14 @@ export default function ProductList() {
           data-testid="button-filter-gender"
         >
           성별
-          {(selectedGender || genderFromCategory) && <span className="font-medium">: {selectedGender || genderFromCategory}</span>}
+          {(selectedGender || genderFromCategory || golfSubGender) && <span className="font-medium">: {selectedGender || genderFromCategory || golfSubGender}</span>}
           <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openDropdown === "gender" && "rotate-180")} />
         </button>
 
         {openDropdown === "gender" && (
           <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[140px]">
             {GENDER_OPTIONS.map(opt => {
-              const effectiveGenderVal = selectedGender !== null ? selectedGender : genderFromCategory;
+              const effectiveGenderVal = selectedGender !== null ? selectedGender : (golfSubGender || genderFromCategory);
               const isActive = effectiveGenderVal === opt.value;
               return (
                 <button
@@ -549,6 +572,31 @@ export default function ProductList() {
                   onClick={() => {
                     if (opt.value === null && isGenderCategory) {
                       navigate("/products");
+                    } else if (isGolfGenderSub(subcategoryId)) {
+                      // 골프 성별 전용 sub: URL의 sub 코드를 매핑하여 이동
+                      const currentPath = location.split('?')[0];
+                      const currentParams = new URLSearchParams(searchString);
+                      if (opt.value === '여성') {
+                        const mapped = GOLF_MEN_TO_WOMEN[subcategoryId!];
+                        if (mapped !== undefined && mapped !== null) {
+                          currentParams.set('sub', mapped);
+                        } else {
+                          currentParams.delete('sub');
+                        }
+                      } else if (opt.value === '남성') {
+                        const mapped = GOLF_WOMEN_TO_MEN[subcategoryId!];
+                        if (mapped !== undefined && mapped !== null) {
+                          currentParams.set('sub', mapped);
+                        } else {
+                          currentParams.delete('sub');
+                        }
+                      } else {
+                        // 전체: 현재 섹션 prefix로 이동 (701xxx→7010, 702xxx→7020)
+                        if (subcategoryId!.startsWith('701')) currentParams.set('sub', '7010');
+                        else if (subcategoryId!.startsWith('702')) currentParams.set('sub', '7020');
+                        else currentParams.delete('sub');
+                      }
+                      navigate(`${currentPath}${currentParams.toString() ? '?' + currentParams.toString() : ''}`);
                     } else {
                       setSelectedGender(opt.value);
                       if (subcategoryId) {
@@ -584,6 +632,12 @@ export default function ProductList() {
             setSelectedSubcategory(null);
             if (isGenderCategory) {
               navigate("/products");
+            } else if (golfSubGender && subcategoryId) {
+              // 골프 성별 sub 초기화: sub 파라미터 제거
+              const currentPath = location.split('?')[0];
+              const currentParams = new URLSearchParams(searchString);
+              currentParams.delete('sub');
+              navigate(`${currentPath}${currentParams.toString() ? '?' + currentParams.toString() : ''}`);
             }
           }}
           className="flex items-center gap-1 px-3 py-2 text-sm text-gray-500 hover:text-black transition-colors"
@@ -651,6 +705,22 @@ export default function ProductList() {
                 <span className="inline-flex items-center gap-1.5 bg-gray-100 text-sm px-3 py-1.5 rounded-full">
                   성별: {selectedGender}
                   <button onClick={() => setSelectedGender(null)} className="hover:text-black">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              )}
+              {golfSubGender && !selectedGender && (
+                <span className="inline-flex items-center gap-1.5 bg-gray-100 text-sm px-3 py-1.5 rounded-full">
+                  성별: {golfSubGender}
+                  <button
+                    onClick={() => {
+                      const currentPath = location.split('?')[0];
+                      const currentParams = new URLSearchParams(searchString);
+                      currentParams.delete('sub');
+                      navigate(`${currentPath}${currentParams.toString() ? '?' + currentParams.toString() : ''}`);
+                    }}
+                    className="hover:text-black"
+                  >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </span>
