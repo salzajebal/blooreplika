@@ -427,9 +427,14 @@ export class DatabaseStorage implements IStorage {
       conditions.push(sql`${products.createdAt} >= ${start.toISOString()} AND ${products.createdAt} < ${end.toISOString()}`);
     }
 
-    // Subname filter: find all subcategory slugs matching the given name, filter products by those slugs
+    // Subname filter: find all subcategory slugs matching the given name.
+    // Uses prefix match (text before first '/') to match both men's and women's variants.
+    // e.g. "후드티/집업" also matches "후드티" (women's), "반팔티/폴로티" also matches "반팔티/폴로"
     if (subname) {
-      const slugRows = await db.select({ slug: subcategories.slug }).from(subcategories).where(eq(subcategories.name, subname));
+      const baseSubname = subname.split('/')[0];
+      const slugRows = await db.select({ slug: subcategories.slug })
+        .from(subcategories)
+        .where(sql`${subcategories.name} = ${subname} OR ${subcategories.name} ILIKE ${baseSubname + '/%'} OR ${subcategories.name} ILIKE ${baseSubname}`);
       const slugs = slugRows.map(r => r.slug);
       if (slugs.length > 0) {
         conditions.push(inArray(products.subcategoryId, slugs));
