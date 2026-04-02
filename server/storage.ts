@@ -459,10 +459,13 @@ export class DatabaseStorage implements IStorage {
     // e.g. "후드티/집업" also matches "후드티" (women's), "반팔티/폴로티" also matches "반팔티/폴로"
     // "정장구두" matches both b0b030 (남성) and g030 (여성) since both are named "정장구두" in DB.
     if (subname) {
-      const baseSubname = subname.split('/')[0];
+      const parts = subname.split('/').map(p => p.trim()).filter(Boolean);
+      const basePart = parts[0];
+      // Build OR conditions: exact match, prefix-based match (코트/정장 → 코트), and each part
+      const partConditions = parts.map(p => sql`${subcategories.name} ILIKE ${p}`);
       const slugRows = await db.select({ slug: subcategories.slug })
         .from(subcategories)
-        .where(sql`${subcategories.name} = ${subname} OR ${subcategories.name} ILIKE ${baseSubname + '/%'} OR ${subcategories.name} ILIKE ${baseSubname}`);
+        .where(sql`${subcategories.name} = ${subname} OR ${subcategories.name} ILIKE ${basePart + '/%'} OR ${subcategories.name} ILIKE ${basePart} OR (${sql.join(partConditions, sql` OR `)})`);
       const slugs = slugRows.map(r => r.slug);
       if (slugs.length > 0) {
         conditions.push(inArray(products.subcategoryId, slugs));

@@ -174,11 +174,19 @@ const GENDER_CATS = [
 ];
 
 // Combined (men+women deduped) subcategory items for category dropdowns
+// Deduplicates by base name (before '/') and substring containment to handle
+// near-duplicates like "코트/정장" vs "코트", "후드티/집업" vs "후드티", "베스트/조끼" vs "조끼"
 function combineSubcats(men: { name: string; sub: string }[], women: { name: string; sub: string }[]): { name: string; sub: string }[] {
-  const seen = new Set<string>();
   const result: { name: string; sub: string }[] = [];
   for (const item of [...men, ...women]) {
-    if (!seen.has(item.name)) { seen.add(item.name); result.push(item); }
+    const baseItem = item.name.split('/')[0].trim();
+    const isDup = result.some(existing => {
+      const baseExisting = existing.name.split('/')[0].trim();
+      return baseExisting === baseItem
+        || existing.name.includes(baseItem)
+        || item.name.includes(baseExisting);
+    });
+    if (!isDup) result.push(item);
   }
   return result;
 }

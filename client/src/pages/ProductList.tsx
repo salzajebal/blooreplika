@@ -416,59 +416,84 @@ export default function ProductList() {
 
   const FilterDropdownButtons = () => (
     <div className="flex items-center gap-2 flex-wrap" ref={dropdownRef} data-testid="filter-dropdown-buttons">
-      {showSubcatFilter && subcategories.length > 0 && (
-      <div className="relative">
-        <button
-          onClick={() => toggleDropdown("category")}
-          className={cn(
-            "flex items-center gap-1.5 px-4 py-2 text-sm rounded-full border transition-colors",
-            selectedSubcategory
-              ? "bg-black text-white border-black"
-              : openDropdown === "category"
-                ? "border-black text-black"
-                : "border-gray-300 text-gray-600 hover:border-gray-500"
-          )}
-          data-testid="button-filter-category"
-        >
-          소분류
-          {selectedSubcatName && <span className="font-medium">: {selectedSubcatName}</span>}
-          <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openDropdown === "category" && "rotate-180")} />
-        </button>
-
-        {openDropdown === "category" && (
-          <div
-            className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[200] min-w-[200px] max-h-[60vh] overflow-y-auto scroll-smooth"
-            style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin", scrollbarColor: "#ccc transparent", touchAction: "pan-y" }}
-          >
+      {showSubcatFilter && subcategories.length > 0 && (() => {
+        const dedupedSubcats = subcategories.filter(
+          (sub: any, _idx: number, arr: any[]) => {
+            const baseItem = sub.name.split('/')[0].trim();
+            return arr.findIndex((s: any) => {
+              const baseS = s.name.split('/')[0].trim();
+              return baseS === baseItem || s.name.includes(baseItem) || sub.name.includes(baseS);
+            }) === arr.indexOf(sub);
+          }
+        );
+        const clearSubname = () => {
+          const base = location.split('?')[0];
+          const p = new URLSearchParams(searchString);
+          p.delete('subname');
+          navigate(`${base}${p.toString() ? '?' + p.toString() : ''}`);
+          setOpenDropdown(null);
+        };
+        const setSubname = (name: string) => {
+          const base = location.split('?')[0];
+          const p = new URLSearchParams(searchString);
+          p.set('subname', name);
+          navigate(`${base}?${p.toString()}`);
+          setOpenDropdown(null);
+        };
+        return (
+          <div className="relative">
             <button
-              onClick={() => { setSelectedSubcategory(null); setOpenDropdown(null); }}
+              onClick={() => toggleDropdown("category")}
               className={cn(
-                "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
-                !selectedSubcategory && "font-bold text-black"
+                "flex items-center gap-1.5 px-4 py-2 text-sm rounded-full border transition-colors",
+                subnameParam
+                  ? "bg-black text-white border-black"
+                  : openDropdown === "category"
+                    ? "border-black text-black"
+                    : "border-gray-300 text-gray-600 hover:border-gray-500"
               )}
-              data-testid="button-subcat-all"
+              data-testid="button-filter-category"
             >
-              전체
-              {!selectedSubcategory && <Check className="w-4 h-4" />}
+              소분류
+              {subnameParam && <span className="font-medium">: {subnameParam}</span>}
+              <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openDropdown === "category" && "rotate-180")} />
             </button>
-            {subcategories.map((sub: any) => (
-              <button
-                key={sub.id}
-                onClick={() => { setSelectedSubcategory(sub.id); setOpenDropdown(null); }}
-                className={cn(
-                  "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
-                  selectedSubcategory === sub.id && "font-bold text-black"
-                )}
-                data-testid={`button-subcat-${sub.id}`}
+
+            {openDropdown === "category" && (
+              <div
+                className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[200] min-w-[200px] max-h-[60vh] overflow-y-auto scroll-smooth"
+                style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin", scrollbarColor: "#ccc transparent", touchAction: "pan-y" }}
               >
-                {sub.name}
-                {selectedSubcategory === sub.id && <Check className="w-4 h-4" />}
-              </button>
-            ))}
+                <button
+                  onClick={clearSubname}
+                  className={cn(
+                    "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
+                    !subnameParam && "font-bold text-black"
+                  )}
+                  data-testid="button-subcat-all"
+                >
+                  전체
+                  {!subnameParam && <Check className="w-4 h-4" />}
+                </button>
+                {dedupedSubcats.map((sub: any) => (
+                  <button
+                    key={sub.slug || sub.id}
+                    onClick={() => setSubname(sub.name)}
+                    className={cn(
+                      "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
+                      subnameParam === sub.name && "font-bold text-black"
+                    )}
+                    data-testid={`button-subcat-${sub.slug || sub.id}`}
+                  >
+                    {sub.name}
+                    {subnameParam === sub.name && <Check className="w-4 h-4" />}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      )}
+        );
+      })()}
 
       <div className="relative">
         <button
