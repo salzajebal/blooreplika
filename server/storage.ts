@@ -386,26 +386,26 @@ export class DatabaseStorage implements IStorage {
     if (gender) {
       if (gender === '남성') {
         conditions.push(sql`(
-          ${products.gender} = '남성' OR ${products.gender} = '공용'
+          ${products.subcategoryId} LIKE 'b0%'
+          OR ${products.gender} = '남성' OR ${products.gender} = '공용'
           OR (${products.gender} IS NULL AND (
             ${products.name} ILIKE '%남성%' OR ${products.name} ILIKE '%[남성]%'
             OR (${products.name} ~* '\\mMens?\\M' AND ${products.name} !~* '\\mWomens?\\M')
             OR (${products.name} ~* '\\mMen''s\\M' AND ${products.name} !~* '\\mWomen''s\\M')
             OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
             OR ${products.name} ILIKE '%Unisex%'
-            OR ${products.subcategoryId} LIKE 'b0%'
           ))
         )`);
       } else if (gender === '여성') {
         conditions.push(sql`(
-          ${products.gender} = '여성' OR ${products.gender} = '공용'
+          ${products.subcategoryId} LIKE 'c0%' OR ${products.subcategoryId} LIKE 'f0%'
+          OR ${products.gender} = '여성' OR ${products.gender} = '공용'
           OR (${products.gender} IS NULL AND (
             ${products.name} ILIKE '%여성%' OR ${products.name} ILIKE '%[여성]%'
             OR ${products.name} ~* '\\mWomens?\\M' OR ${products.name} ~* '\\mWomen''s\\M'
             OR ${products.name} ILIKE '%ladies%'
             OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
             OR ${products.name} ILIKE '%Unisex%'
-            OR ${products.subcategoryId} LIKE 'c0%'
           ))
         )`);
       } else if (gender === '공용') {
