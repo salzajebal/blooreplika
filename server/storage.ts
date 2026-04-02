@@ -432,11 +432,16 @@ export class DatabaseStorage implements IStorage {
     // Subname filter: find all subcategory slugs matching the given name.
     // Uses prefix match (text before first '/') to match both men's and women's variants.
     // e.g. "후드티/집업" also matches "후드티" (women's), "반팔티/폴로티" also matches "반팔티/폴로"
+    // Cross-gender aliases: "정장구두" → for women also includes 펌프스/힐, 단화/플랫
+    const SUBNAME_ALIASES: Record<string, string[]> = {
+      '정장구두': ['펌프스/힐', '단화/플랫'],
+    };
     if (subname) {
       const baseSubname = subname.split('/')[0];
+      const extraNames: string[] = (gender === '여성' && SUBNAME_ALIASES[subname]) ? SUBNAME_ALIASES[subname] : [];
       const slugRows = await db.select({ slug: subcategories.slug })
         .from(subcategories)
-        .where(sql`${subcategories.name} = ${subname} OR ${subcategories.name} ILIKE ${baseSubname + '/%'} OR ${subcategories.name} ILIKE ${baseSubname}`);
+        .where(sql`${subcategories.name} = ${subname} OR ${subcategories.name} ILIKE ${baseSubname + '/%'} OR ${subcategories.name} ILIKE ${baseSubname}${extraNames.length > 0 ? sql` OR ${subcategories.name} = ANY(${extraNames})` : sql``}`);
       const slugs = slugRows.map(r => r.slug);
       if (slugs.length > 0) {
         conditions.push(inArray(products.subcategoryId, slugs));
