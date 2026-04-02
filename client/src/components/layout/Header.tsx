@@ -342,7 +342,7 @@ export function Header() {
       setGenderL2(null);
       setGenderL3(null);
       setGolfL2(null);
-    }, 120);
+    }, 300);
   }, []);
 
   const keepNavOpen = useCallback(() => {
@@ -356,7 +356,7 @@ export function Header() {
   }, []);
 
   const closeGenderL2 = useCallback(() => {
-    genderL2Timeout.current = setTimeout(() => setGenderL2(null), 120);
+    genderL2Timeout.current = setTimeout(() => setGenderL2(null), 300);
   }, []);
 
   const keepGenderL2 = useCallback(() => {
@@ -369,7 +369,7 @@ export function Header() {
   }, []);
 
   const closeGenderL3 = useCallback(() => {
-    genderL3Timeout.current = setTimeout(() => setGenderL3(null), 120);
+    genderL3Timeout.current = setTimeout(() => setGenderL3(null), 300);
   }, []);
 
   const keepGenderL3 = useCallback(() => {
@@ -382,7 +382,7 @@ export function Header() {
   }, []);
 
   const closeGolfL2 = useCallback(() => {
-    golfL2Timeout.current = setTimeout(() => setGolfL2(null), 120);
+    golfL2Timeout.current = setTimeout(() => setGolfL2(null), 300);
   }, []);
 
   const keepGolfL2 = useCallback(() => {
@@ -561,7 +561,7 @@ export function Header() {
         {cat.items.map((sub) => (
           <Link
             key={sub.sub}
-            href={`${cat.path}?sub=${sub.sub}`}
+            href={`${cat.path}?subname=${encodeURIComponent(sub.name)}`}
             className="block px-5 py-2.5 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap"
             onClick={() => setNavOpen(null)}
             data-testid={`nav-sub-${sub.sub}`}
