@@ -402,10 +402,10 @@ export class DatabaseStorage implements IStorage {
             ))
           )
           AND NOT (
-            ${products.gender} IS NULL
-            AND (
-              ${products.name} ILIKE '%여성%' OR ${products.name} ILIKE '%[여성]%'
-              OR ${products.name} ~* '\\mWomens?\\M' OR ${products.name} ~* '\\mWomen''s\\M'
+            (
+              ${products.name} ILIKE '%여성용%' OR ${products.name} ILIKE '%[여성]%'
+              OR (${products.name} ~* '\\mWomens?\\M' AND ${products.name} !~* '\\mMens?\\M')
+              OR (${products.name} ~* '\\mWomen''s\\M' AND ${products.name} !~* '\\mMen''s\\M')
               OR ${products.name} ILIKE '%ladies%'
             )
             AND NOT (${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%Unisex%')
@@ -427,9 +427,8 @@ export class DatabaseStorage implements IStorage {
             ))
           )
           AND NOT (
-            ${products.gender} IS NULL
-            AND (
-              ${products.name} ILIKE '%남성%' OR ${products.name} ILIKE '%[남성]%'
+            (
+              ${products.name} ILIKE '%남성용%' OR ${products.name} ILIKE '%[남성]%'
               OR (${products.name} ~* '\\mMens?\\M' AND ${products.name} !~* '\\mWomens?\\M')
               OR (${products.name} ~* '\\mMen''s\\M' AND ${products.name} !~* '\\mWomen''s\\M')
             )
