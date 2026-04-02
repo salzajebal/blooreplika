@@ -416,7 +416,7 @@ export default function ProductList() {
 
   const FilterDropdownButtons = () => (
     <div className="flex items-center gap-2 flex-wrap" ref={dropdownRef} data-testid="filter-dropdown-buttons">
-      {false && (
+      {showSubcatFilter && subcategories.length > 0 && (
       <div className="relative">
         <button
           onClick={() => toggleDropdown("category")}
@@ -465,9 +465,6 @@ export default function ProductList() {
                 {selectedSubcategory === sub.id && <Check className="w-4 h-4" />}
               </button>
             ))}
-            {subcategories.length === 0 && (
-              <div className="px-4 py-3 text-sm text-gray-400">하위 카테고리 없음</div>
-            )}
           </div>
         )}
       </div>
