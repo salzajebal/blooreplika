@@ -131,6 +131,7 @@ app.use((req, res, next) => {
       log(`serving on port ${port}`);
       runCategoryMigrations();
       runSubcategoryMigrations();
+      runCriticalNameFixes();
       runJewelryCaIdFix();
       runStartupMaintenance();
     },
@@ -327,20 +328,46 @@ async function runSubcategoryMigrations() {
       { categoryId: "shoes", name: "스니커즈",        slug: "703020", sortOrder: 2 },
     ];
 
-    let inserted = 0, updated = 0;
+    let inserted = 0, skipped = 0;
     for (const sub of subcats) {
       const res = await pool.query(
         `INSERT INTO subcategories (id, category_id, name, slug, sort_order, is_active)
-         VALUES (gen_random_uuid(), $1, $2, $3, $4, true)
-         ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name, category_id = EXCLUDED.category_id`,
+         SELECT gen_random_uuid(), $1, $2, $3, $4, true
+         WHERE NOT EXISTS (SELECT 1 FROM subcategories WHERE slug = $3)`,
         [sub.categoryId, sub.name, sub.slug, sub.sortOrder]
       );
       if (res.rowCount && res.rowCount > 0) inserted++;
-      else updated++;
+      else skipped++;
     }
-    log(`Subcategory migrations completed: ${inserted} upserted`, 'migration');
+    log(`Subcategory migrations completed: ${inserted} inserted, ${skipped} already existed`, 'migration');
   } catch (err: any) {
     console.error('[migration] Subcategory migration error:', err.message);
+  }
+}
+
+async function runCriticalNameFixes() {
+  try {
+    // 프로덕션 DB에서 잘못 저장된 서브카테고리 이름을 직접 수정
+    const fixes: Array<[string, string]> = [
+      ['c01010', '자켓/점퍼'],  // '자켓' → '자켓/점퍼'
+      ['c02060', '크로스백'],   // '크로스' → '크로스백'
+      ['c02090', '캐리어'],     // '케리어' → '캐리어'
+    ];
+    let fixed = 0;
+    for (const [slug, correctName] of fixes) {
+      const res = await pool.query(
+        `UPDATE subcategories SET name = $1 WHERE slug = $2 AND name != $1`,
+        [correctName, slug]
+      );
+      if (res.rowCount && res.rowCount > 0) {
+        fixed++;
+        log(`Fixed subcategory name: ${slug} → "${correctName}"`, 'migration');
+      }
+    }
+    if (fixed > 0) log(`Critical name fixes applied: ${fixed} updated`, 'migration');
+    else log('Critical name fixes: all names already correct', 'migration');
+  } catch (err: any) {
+    console.error('[migration] Critical name fix error:', err.message);
   }
 }
 
