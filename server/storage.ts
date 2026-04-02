@@ -388,31 +388,53 @@ export class DatabaseStorage implements IStorage {
       const isWatches = categoryId === 'watches';
       if (gender === '남성') {
         conditions.push(sql`(
-          ${products.subcategoryId} LIKE 'b0%'
-          OR ${products.subcategoryId} LIKE '701%'
-          OR ${products.gender} = '남성' OR ${products.gender} = '공용'
-          OR (${products.gender} IS NULL AND (
-            ${products.name} ILIKE '%남성%' OR ${products.name} ILIKE '%[남성]%'
-            OR (${products.name} ~* '\\mMens?\\M' AND ${products.name} !~* '\\mWomens?\\M')
-            OR (${products.name} ~* '\\mMen''s\\M' AND ${products.name} !~* '\\mWomen''s\\M')
-            OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
-            OR ${products.name} ILIKE '%Unisex%'
-            OR ${isWatches ? sql`(${products.subcategoryId} IS NULL)` : sql`FALSE`}
-          ))
+          (
+            ${products.subcategoryId} LIKE 'b0%'
+            OR ${products.subcategoryId} LIKE '701%'
+            OR ${products.gender} = '남성' OR ${products.gender} = '공용'
+            OR (${products.gender} IS NULL AND (
+              ${products.name} ILIKE '%남성%' OR ${products.name} ILIKE '%[남성]%'
+              OR (${products.name} ~* '\\mMens?\\M' AND ${products.name} !~* '\\mWomens?\\M')
+              OR (${products.name} ~* '\\mMen''s\\M' AND ${products.name} !~* '\\mWomen''s\\M')
+              OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
+              OR ${products.name} ILIKE '%Unisex%'
+              OR ${isWatches ? sql`(${products.subcategoryId} IS NULL)` : sql`FALSE`}
+            ))
+          )
+          AND NOT (
+            ${products.gender} IS NULL
+            AND (
+              ${products.name} ILIKE '%여성%' OR ${products.name} ILIKE '%[여성]%'
+              OR ${products.name} ~* '\\mWomens?\\M' OR ${products.name} ~* '\\mWomen''s\\M'
+              OR ${products.name} ILIKE '%ladies%'
+            )
+            AND NOT (${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%Unisex%')
+          )
         )`);
       } else if (gender === '여성') {
         conditions.push(sql`(
-          ${products.subcategoryId} LIKE 'c0%' OR ${products.subcategoryId} LIKE 'f0%'
-          OR ${products.subcategoryId} LIKE '702%' OR ${products.subcategoryId} LIKE 'g0%'
-          OR ${products.gender} = '여성' OR ${products.gender} = '공용'
-          OR (${products.gender} IS NULL AND (
-            ${products.name} ILIKE '%여성%' OR ${products.name} ILIKE '%[여성]%'
-            OR ${products.name} ~* '\\mWomens?\\M' OR ${products.name} ~* '\\mWomen''s\\M'
-            OR ${products.name} ILIKE '%ladies%'
-            OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
-            OR ${products.name} ILIKE '%Unisex%'
-            OR ${isWatches ? sql`(${products.subcategoryId} IS NULL)` : sql`FALSE`}
-          ))
+          (
+            ${products.subcategoryId} LIKE 'c0%' OR ${products.subcategoryId} LIKE 'f0%'
+            OR ${products.subcategoryId} LIKE '702%' OR ${products.subcategoryId} LIKE 'g0%'
+            OR ${products.gender} = '여성' OR ${products.gender} = '공용'
+            OR (${products.gender} IS NULL AND (
+              ${products.name} ILIKE '%여성%' OR ${products.name} ILIKE '%[여성]%'
+              OR ${products.name} ~* '\\mWomens?\\M' OR ${products.name} ~* '\\mWomen''s\\M'
+              OR ${products.name} ILIKE '%ladies%'
+              OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
+              OR ${products.name} ILIKE '%Unisex%'
+              OR ${isWatches ? sql`(${products.subcategoryId} IS NULL)` : sql`FALSE`}
+            ))
+          )
+          AND NOT (
+            ${products.gender} IS NULL
+            AND (
+              ${products.name} ILIKE '%남성%' OR ${products.name} ILIKE '%[남성]%'
+              OR (${products.name} ~* '\\mMens?\\M' AND ${products.name} !~* '\\mWomens?\\M')
+              OR (${products.name} ~* '\\mMen''s\\M' AND ${products.name} !~* '\\mWomen''s\\M')
+            )
+            AND NOT (${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%Unisex%')
+          )
         )`);
       } else if (gender === '공용') {
         conditions.push(sql`(
