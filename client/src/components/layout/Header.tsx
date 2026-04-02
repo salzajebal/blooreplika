@@ -664,24 +664,47 @@ export function Header() {
     const cat = CATEGORY_SUBCATS["jewelry"];
     if (!cat) return null;
     return (
-      <DropdownPanel className="min-w-[160px]">
-        <Link href={cat.path} className="block px-5 py-3 text-[13px] font-medium text-black border-b border-gray-100 hover:bg-gray-50" onClick={() => setNavOpen(null)}>쥬얼리/잡화 전체</Link>
-        {cat.items.map((sub) => (
-          <Link key={sub.sub} href={`${cat.path}?subname=${encodeURIComponent(sub.name)}`} className="block px-5 py-2.5 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>{sub.name}</Link>
-        ))}
-        <div className="border-t border-gray-100 mt-1 pt-1">
-          <span className="block px-5 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">선글라스</span>
-          <Link href="/products/sunglasses" className="block px-5 py-2.5 text-[13px] font-medium text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>전체보기</Link>
-          {SUNGLASSES_ALL.map((sub) => (
-            <Link key={sub.sub} href={`/products/sunglasses?sub=${sub.sub}`} className="block px-5 py-2.5 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>{sub.name}</Link>
-          ))}
-        </div>
-        <div className="border-t border-gray-100 mt-1 pt-1">
-          <span className="block px-5 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide">벨트</span>
-          <Link href="/products/belts" className="block px-5 py-2.5 text-[13px] font-medium text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>전체보기</Link>
-          {BELTS_ALL.map((sub) => (
-            <Link key={sub.sub} href={`/products/belts?sub=${sub.sub}`} className="block px-5 py-2.5 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>{sub.name}</Link>
-          ))}
+      <DropdownPanel className="w-[520px]">
+        <div className="flex divide-x divide-gray-100">
+          {/* 좌측: 쥬얼리/잡화 전체 + 2열 그리드 */}
+          <div className="flex-1 py-2 min-w-0">
+            <Link
+              href={cat.path}
+              className="block px-4 py-2.5 text-[13px] font-semibold text-black border-b border-gray-100 hover:bg-gray-50"
+              onClick={() => setNavOpen(null)}
+            >
+              쥬얼리/잡화 전체
+            </Link>
+            <div className="grid grid-cols-2 px-2 py-1">
+              {cat.items.map((sub) => (
+                <Link
+                  key={sub.sub}
+                  href={`${cat.path}?subname=${encodeURIComponent(sub.name)}`}
+                  className="block px-3 py-2 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap rounded"
+                  onClick={() => setNavOpen(null)}
+                >
+                  {sub.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+          {/* 우측: 선글라스 + 벨트 */}
+          <div className="w-[150px] flex-shrink-0 py-2">
+            <div>
+              <span className="block px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide border-b border-gray-100">선글라스</span>
+              <Link href="/products/sunglasses" className="block px-4 py-2.5 text-[13px] font-medium text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>전체보기</Link>
+              {SUNGLASSES_ALL.map((sub) => (
+                <Link key={sub.sub} href={`/products/sunglasses?sub=${sub.sub}`} className="block px-4 py-2.5 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>{sub.name}</Link>
+              ))}
+            </div>
+            <div className="border-t border-gray-100 mt-1 pt-1">
+              <span className="block px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide border-b border-gray-100">벨트</span>
+              <Link href="/products/belts" className="block px-4 py-2.5 text-[13px] font-medium text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>전체보기</Link>
+              {BELTS_ALL.map((sub) => (
+                <Link key={sub.sub} href={`/products/belts?sub=${sub.sub}`} className="block px-4 py-2.5 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>{sub.name}</Link>
+              ))}
+            </div>
+          </div>
         </div>
       </DropdownPanel>
     );
