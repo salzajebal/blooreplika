@@ -384,6 +384,8 @@ export class DatabaseStorage implements IStorage {
     if (brandId) conditions.push(eq(products.brandId, brandId));
     
     if (gender) {
+      // 시계 카테고리: bloostore 상품은 gender/subcategoryId 미설정(null) → 공용 취급
+      const isWatches = categoryId === 'watches';
       if (gender === '남성') {
         conditions.push(sql`(
           ${products.subcategoryId} LIKE 'b0%'
@@ -395,6 +397,7 @@ export class DatabaseStorage implements IStorage {
             OR (${products.name} ~* '\\mMen''s\\M' AND ${products.name} !~* '\\mWomen''s\\M')
             OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
             OR ${products.name} ILIKE '%Unisex%'
+            OR ${isWatches ? sql`(${products.subcategoryId} IS NULL)` : sql`FALSE`}
           ))
         )`);
       } else if (gender === '여성') {
@@ -408,6 +411,7 @@ export class DatabaseStorage implements IStorage {
             OR ${products.name} ILIKE '%ladies%'
             OR ${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%[공용]%'
             OR ${products.name} ILIKE '%Unisex%'
+            OR ${isWatches ? sql`(${products.subcategoryId} IS NULL)` : sql`FALSE`}
           ))
         )`);
       } else if (gender === '공용') {
