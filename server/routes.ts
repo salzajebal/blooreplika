@@ -289,7 +289,7 @@ export async function registerRoutes(
       }
       
       // Allow proxying from approved domains
-      const allowedDomains = ["pliki.wisacdn.com", "bagstyle.site"];
+      const allowedDomains = ["pliki.wisacdn.com", "bagstyle.site", "cdamdong.co.kr", "cdn.shopify.com", "shopify.com"];
       const isAllowed = allowedDomains.some(domain => imageUrl.includes(domain));
       if (!isAllowed) {
         return res.status(403).json({ success: false, error: "Domain not allowed" });

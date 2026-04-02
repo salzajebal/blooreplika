@@ -745,20 +745,14 @@ export default function ProductList() {
                       "bg-gray-50 relative overflow-hidden",
                       viewMode === "grid" ? "aspect-square rounded-lg" : "w-32 h-32 flex-shrink-0"
                     )}>
-                      {product.imageUrl ? (
-                        <img 
-                          src={getProxiedImageUrl(product.imageUrl)} 
-                          alt={product.name} 
-                          loading="lazy"
-                          decoding="async"
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-300">
-                          <Package className="w-12 h-12" />
-                        </div>
-                      )}
+                      <img 
+                        src={getProxiedImageUrl(product.imageUrl)} 
+                        alt={product.name} 
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                      />
                       
                       {product.isSoldOut && (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
