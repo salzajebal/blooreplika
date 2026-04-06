@@ -6406,6 +6406,40 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== BLOOSTORE IMAGE PROXY ====================
+  // Proxies cdn.imweb.me images with correct Referer to bypass hotlink protection
+  app.get("/api/bloostore-image-proxy", async (req: Request, res: Response) => {
+    const rawUrl = req.query.url as string;
+    if (!rawUrl) return res.status(400).send("url required");
+    let targetUrl: string;
+    try {
+      targetUrl = decodeURIComponent(rawUrl);
+      new URL(targetUrl); // validate
+    } catch {
+      return res.status(400).send("invalid url");
+    }
+    if (!targetUrl.includes("cdn.imweb.me") && !targetUrl.includes("bloostore.co.kr")) {
+      return res.status(403).send("forbidden");
+    }
+    try {
+      const imgResp = await fetch(targetUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Referer": "https://www.bloostore.co.kr/",
+          "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
+        }
+      });
+      if (!imgResp.ok) return res.status(imgResp.status).send("upstream error");
+      const contentType = imgResp.headers.get("content-type") || "image/jpeg";
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      const buf = Buffer.from(await imgResp.arrayBuffer());
+      return res.send(buf);
+    } catch (err: any) {
+      return res.status(500).send("proxy error");
+    }
+  });
+
   // ==================== BLOOSTORE REVIEW CRAWL ====================
 
   let bloostoreReviewProgress: {
@@ -6598,7 +6632,9 @@ export async function registerRoutes(
               await delay(200);
             }
 
-            const finalImageUrls = localImageUrls.length > 0 ? localImageUrls : rawImageUrls;
+            // If local download failed, use proxy URLs so browser can load via server with correct Referer
+            const proxyImageUrls = rawImageUrls.map(u => `/api/bloostore-image-proxy?url=${encodeURIComponent(u)}`);
+            const finalImageUrls = localImageUrls.length > 0 ? localImageUrls : proxyImageUrls;
 
             const reviewData: any = {
               authorName,

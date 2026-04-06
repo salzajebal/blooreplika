@@ -95,9 +95,17 @@ export default function Reviews() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const toProxyUrl = (url: string): string => {
+    if (!url) return url;
+    if (url.includes('cdn.imweb.me') || (url.includes('bloostore.co.kr') && !url.startsWith('/'))) {
+      return `/api/bloostore-image-proxy?url=${encodeURIComponent(url)}`;
+    }
+    return url;
+  };
+
   const getThumbImage = (review: Review): string | null => {
-    if (review.imageUrls && review.imageUrls.length > 0) return review.imageUrls[0];
-    if (review.imageUrl) return review.imageUrl;
+    if (review.imageUrls && review.imageUrls.length > 0) return toProxyUrl(review.imageUrls[0]);
+    if (review.imageUrl) return toProxyUrl(review.imageUrl);
     if (review.productImageUrl) return review.productImageUrl;
     return null;
   };
