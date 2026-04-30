@@ -219,7 +219,7 @@ const MONTHS = generateMonths();
 const sideMenuLinks = [
   { name: "이달의 혜택", path: "/benefits" },
   { name: "매거진", path: "/magazine" },
-  { name: "라이크잇 랩스", path: "https://xn--oi2bw61awb384c.kr/labs", external: true },
+  { name: "velour 랩스", path: "https://xn--oi2bw61awb384c.kr/labs", external: true },
   { name: "실시간 검수", path: "/inspection" },
   { name: "구매 후기", path: "/reviews" },
   { name: "공지사항", path: "/notices" },
@@ -796,7 +796,7 @@ export function Header() {
                     {/* Sheet header */}
                     <div className="bg-black text-white p-4 flex items-center justify-between">
                       <Link href="/" onClick={closeMobileMenu}>
-                        <img src="/logo.jpg" alt="LIKE IT" className="h-7 w-auto object-contain" style={{ filter: "invert(1)" }} />
+                        <span className="text-white font-bold text-xl tracking-widest" style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "0.15em" }}>velour</span>
                       </Link>
                       <SheetClose asChild>
                         <Button variant="ghost" size="icon" className="text-white hover:text-gray-300 p-0">
@@ -1028,7 +1028,7 @@ export function Header() {
                 </Sheet>
 
                 <Link href="/" className="flex items-center" data-testid="link-home">
-                  <img src="/logo.jpg" alt="LIKE IT" className="h-7 md:h-9 w-auto object-contain" />
+                  <span className="font-bold text-xl md:text-2xl tracking-widest text-black" style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "0.15em" }}>velour</span>
                 </Link>
               </div>
 

@@ -1,6 +1,6 @@
 # Overview
 
-This is a Korean luxury e-commerce platform (라이크잇 - LIKE IT) built as a full-stack web application. The platform allows users to browse and purchase luxury brand products including bags, clothing, shoes, wallets, jewelry, and accessories from 77+ luxury brands. It includes an admin panel for product management, member system, order processing, and real-time brand product crawling.
+This is a Korean luxury e-commerce platform (velour) built as a full-stack web application. The platform allows users to browse and purchase luxury brand products including bags, clothing, shoes, wallets, jewelry, and accessories from 77+ luxury brands. It includes an admin panel for product management, member system, order processing, and real-time brand product crawling.
 
 The design follows pliki6.com's clean, minimal, white-dominant aesthetic with "LIKE IT" branding in Playfair Display font.
 

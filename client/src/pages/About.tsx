@@ -31,22 +31,22 @@ export default function About() {
           </div>
 
           <div className="text-center mb-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-8">LIKE IT 소개</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-8">velour 소개</h2>
             
             <div className="space-y-4 mb-12">
               <img 
                 src={getProxiedImageUrl("https://cdamdong.co.kr/data/editor/2404/fb8a1977ad0d286829ea739fa652286f_1714477655_3407.jpg")}
-                alt="LIKE IT"
+                alt="velour"
                 className="w-full max-w-3xl mx-auto h-auto"
               />
               <img 
                 src={getProxiedImageUrl("https://cdamdong.co.kr/data/editor/2404/fb8a1977ad0d286829ea739fa652286f_1714477654_896.jpg")}
-                alt="LIKE IT"
+                alt="velour"
                 className="w-full max-w-3xl mx-auto h-auto"
               />
               <img 
                 src={getProxiedImageUrl("https://cdamdong.co.kr/data/editor/2405/bc4384ae45a1f8f36665ebebb16c8aa6_1714551887_383.gif")}
-                alt="LIKE IT"
+                alt="velour"
                 className="w-full max-w-3xl mx-auto h-auto"
               />
             </div>
@@ -54,7 +54,7 @@ export default function About() {
 
           <div className="max-w-3xl mx-auto text-left">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8 text-center">
-              라이크잇 – 10년 이상의 신뢰와 품질
+              velour – 10년 이상의 신뢰와 품질
             </h1>
 
             <div className="mb-8">
@@ -74,7 +74,7 @@ export default function About() {
             <hr className="my-8 border-gray-300" />
 
             <div className="mb-8">
-              <h3 className="text-xl font-bold text-gray-800 mb-6">라이크잇의 차별점</h3>
+              <h3 className="text-xl font-bold text-gray-800 mb-6">velour의 차별점</h3>
               
               <div className="space-y-6">
                 <div>
@@ -114,7 +114,7 @@ export default function About() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="text-black font-bold">●</span>
-                      <span>라이크잇은 <strong>과장 없는 정직한 정보만 제공</strong></span>
+                      <span>velour은 <strong>과장 없는 정직한 정보만 제공</strong></span>
                     </li>
                   </ul>
                 </div>
@@ -182,7 +182,7 @@ export default function About() {
                 <ul className="space-y-1 text-gray-700 ml-4">
                   <li className="flex items-start gap-2">
                     <span className="text-black font-bold">●</span>
-                    <span><strong>라이크잇은 "직접 착용할 수 있는 제품"만을 제공</strong></span>
+                    <span><strong>velour은 "직접 착용할 수 있는 제품"만을 제공</strong></span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-black font-bold">●</span>
@@ -213,7 +213,7 @@ export default function About() {
                 거품 없는 가격으로 합리적인 소비를 지원합니다.
               </p>
               <p className="text-lg font-medium text-gray-900">
-                신뢰할 수 있는 레플리카 브랜드를 찾고 있다면, 구글에 라이크잇을 검색해보세요.
+                신뢰할 수 있는 레플리카 브랜드를 찾고 있다면, 구글에 velour을 검색해보세요.
               </p>
             </div>
           </div>

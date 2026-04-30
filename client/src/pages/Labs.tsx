@@ -116,7 +116,7 @@ function DefaultHero() {
           style={{ fontFamily: "'Playfair Display', serif" }}
           data-testid="labs-hero-title"
         >
-          LIKE IT
+          velour
         </h1>
         <p className="text-white/70 text-[13px] md:text-[15px] leading-[1.8]">
           믿을 수 있는 거래의 시작,
@@ -134,7 +134,7 @@ function HeroBlock({ block }: { block: any }) {
       {block.imageUrl ? (
         <img
           src={block.imageUrl}
-          alt={block.overlayTitle || "LIKE IT LABS"}
+          alt={block.overlayTitle || "velour LABS"}
           className="absolute inset-0 w-full h-full object-cover"
         />
       ) : (
@@ -299,13 +299,13 @@ function DefaultContent() {
         <h2 className="text-[20px] md:text-[24px] font-bold text-gray-900 leading-[1.4] tracking-tight mb-1.5">
           모든 시작은
           <br />
-          <span style={{ color: "#C8A97E" }}>LIKE IT LABS</span>에서
+          <span style={{ color: "#C8A97E" }}>velour LABS</span>에서
         </h2>
         <p className="text-[13px] md:text-[14px] text-gray-500 leading-[1.9] mt-5">
-          라이크잇에서 거래되는 모든 상품은 LIKE IT LABS를 거쳐갑니다.
+          velour에서 거래되는 모든 상품은 velour LABS를 거쳐갑니다.
           <br /><br />
           최근 업계에서는 상품 사진과 다른 상품들을 보내는 업체들이 많아졌습니다.
-          LIKE IT LABS의 구성원들은 500개 이상의 공장 핸들링 및 검수센터를 운영하며
+          velour LABS의 구성원들은 500개 이상의 공장 핸들링 및 검수센터를 운영하며
           업계에서 오랜 시간 경력을 쌓아온 국내 최고의 전문가입니다.
         </p>
       </div>

@@ -70,7 +70,7 @@ export default function Login() {
           <CardHeader className="text-center space-y-2">
             <CardTitle className="text-2xl font-bold text-gray-900">로그인</CardTitle>
             <CardDescription className="text-gray-600">
-              LIKE IT 회원 로그인
+              velour 회원 로그인
             </CardDescription>
           </CardHeader>
           

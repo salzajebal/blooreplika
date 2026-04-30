@@ -285,7 +285,7 @@ export default function ProductDetail() {
       
       <main className="flex-1 pb-20">
         <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-2.5 text-center">
-          <p className="text-xs md:text-sm tracking-wider">라이크잇 정품보증 | 무료검수 | 전상품 무료배송 | 카카오톡 실시간 상담</p>
+          <p className="text-xs md:text-sm tracking-wider">velour 정품보증 | 무료검수 | 전상품 무료배송 | 카카오톡 실시간 상담</p>
         </div>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
           <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-500 mb-4 sm:mb-8 overflow-x-auto whitespace-nowrap">
@@ -400,7 +400,7 @@ export default function ProductDetail() {
 
               <div className="bg-gray-50 p-4 rounded">
                 <p className="text-sm text-gray-700 mb-3">
-                  라이크잇만의 특별한 고객 등급혜택<br/>
+                  velour만의 특별한 고객 등급혜택<br/>
                   <span className="text-xs text-gray-500">구매실적에 따라 다양한 혜택을 드립니다.</span>
                 </p>
                 <table className="w-full text-sm border-collapse">
@@ -622,7 +622,7 @@ export default function ProductDetail() {
               >
                 <p className="text-gray-400 text-xs sm:text-sm mb-1">시작부터 끝까지 프리미엄</p>
                 <p className="text-white text-xl sm:text-2xl font-bold tracking-wide" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  LIKE IT Premium
+                  velour Premium
                 </p>
                 <p className="text-gray-400 text-xs mt-2">정품보증 · 무료검수 · 전상품 무료배송</p>
               </a>
@@ -639,7 +639,7 @@ export default function ProductDetail() {
               >
                 <p className="text-gray-400 text-xs sm:text-sm mb-1">시작부터 끝까지 프리미엄</p>
                 <p className="text-white text-xl sm:text-2xl font-bold tracking-wide" style={{ fontFamily: "'Playfair Display', serif" }}>
-                  LIKE IT Premium
+                  velour Premium
                 </p>
                 <p className="text-gray-400 text-xs mt-2">정품보증 · 무료검수 · 전상품 무료배송</p>
               </a>

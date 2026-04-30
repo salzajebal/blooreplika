@@ -167,7 +167,7 @@ function QuickMenu() {
     { name: "라이브", imageUrl: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/9ae31c3dcae26a14f6d33e8f261915b7.jpg", linkUrl: "/live" },
     { name: "이달의 혜택", imageUrl: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/cb42e567c3a7d720530b7d4b5c8b1864.png", linkUrl: "/benefits" },
     { name: "구매 후기", imageUrl: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/3e60fc4da68ecc883a6de2887e24871a.jpg", linkUrl: "/reviews" },
-    { name: "라이크잇 랩스", imageUrl: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/e18260c9937b029fd70a2365ed71c48b.jpg", linkUrl: "https://xn--oi2bw61awb384c.kr/labs" },
+    { name: "velour 랩스", imageUrl: "https://pliki.wisacdn.com/_data/banner/user_group_banner/pliki_202405/84/e18260c9937b029fd70a2365ed71c48b.jpg", linkUrl: "https://xn--oi2bw61awb384c.kr/labs" },
   ];
 
   const { data: dbItems } = useQuery({

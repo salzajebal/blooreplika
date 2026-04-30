@@ -2694,7 +2694,7 @@ export default function Admin() {
               <span className="font-bold text-black text-sm">CD</span>
             </div>
             <div>
-              <h1 className="font-bold">LIKE IT</h1>
+              <h1 className="font-bold">velour</h1>
               <p className="text-xs text-gray-400">관리자 패널</p>
             </div>
           </div>
@@ -5950,7 +5950,7 @@ export default function Admin() {
                         type="text"
                         value={depositAccountSettings.accountHolder}
                         onChange={(e) => setDepositAccountSettings(prev => ({ ...prev, accountHolder: e.target.value }))}
-                        placeholder="예: LIKE IT"
+                        placeholder="예: velour"
                         className="w-full max-w-md"
                       />
                     </div>
@@ -9238,7 +9238,7 @@ function LabsTab({ authToken }: { authToken: string }) {
           <div>
             <h3 className="text-lg font-bold flex items-center gap-2">
               <Globe className="w-5 h-5 text-cyan-600" />
-              LIKE IT LABS 관리
+              velour LABS 관리
             </h3>
             <p className="text-sm text-gray-500 mt-1">Labs 페이지의 콘텐츠 블록을 관리합니다. 블록 유형: 히어로, 텍스트, 이미지, 텍스트+이미지</p>
           </div>
