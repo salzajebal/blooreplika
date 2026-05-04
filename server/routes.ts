@@ -199,6 +199,13 @@ export async function registerRoutes(
       if ((fixResult.rowCount ?? 0) > 0) {
         console.log(`Cleared bloostore text from ${fixResult.rowCount} reviews`);
       }
+      // Remove inspection-related quick menu items (라이브검수 등)
+      const delResult = await db.execute(
+        sqlTag`DELETE FROM quick_menu_items WHERE link_url LIKE '%/inspection%' OR name LIKE '%검수%'`
+      );
+      if ((delResult.rowCount ?? 0) > 0) {
+        console.log(`[cleanup] Removed ${delResult.rowCount} inspection quick menu item(s)`);
+      }
     } catch (e) {
       console.error("Orphan cleanup error:", e);
     }
