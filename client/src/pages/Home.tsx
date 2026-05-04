@@ -7,17 +7,7 @@ import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { useState, useEffect } from "react";
 
 function FloatingButtons() {
-  const [kakaoLink, setKakaoLink] = useState("");
   const [showScrollTop, setShowScrollTop] = useState(false);
-  
-  useEffect(() => {
-    fetch("/api/settings/kakaoTalkLink")
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.data?.value) setKakaoLink(data.data.value);
-      })
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 400);
@@ -25,34 +15,22 @@ function FloatingButtons() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const openKakaoChat = () => {
-    if (kakaoLink) window.open(kakaoLink, "_blank");
-  };
-
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-  
+
+  if (!showScrollTop) return null;
+
   return (
-    <div className="fixed right-3 md:right-5 bottom-24 md:bottom-20 z-50 flex flex-col gap-2.5">
-      <button 
-        onClick={openKakaoChat}
-        className="w-12 h-12 md:w-14 md:h-14 bg-[#FEE500] border-0 rounded-full shadow-lg flex flex-col items-center justify-center hover:bg-[#F5DC00] transition-all hover:scale-105"
-        data-testid="floating-support"
+    <div className="fixed right-3 md:right-5 bottom-32 md:bottom-28 z-40 flex flex-col gap-2.5">
+      <button
+        onClick={scrollToTop}
+        className="w-11 h-11 md:w-12 md:h-12 bg-white border border-gray-200 rounded-full shadow-lg flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-all hover:scale-105"
+        data-testid="floating-scroll-top"
+        aria-label="맨 위로"
       >
-        <svg className="w-6 h-6 md:w-7 md:h-7" viewBox="0 0 24 24" fill="#3C1E1E">
-          <path d="M12 3C6.48 3 2 6.58 2 11c0 2.84 1.86 5.33 4.65 6.76l-.95 3.54c-.08.3.24.55.52.41l4.17-2.27c.53.06 1.07.09 1.61.09 5.52 0 10-3.58 10-8s-4.48-8-10-8z"/>
-        </svg>
+        <ArrowUp className="w-5 h-5 md:w-6 md:h-6" />
       </button>
-      {showScrollTop && (
-        <button 
-          onClick={scrollToTop}
-          className="w-12 h-12 md:w-14 md:h-14 bg-white border border-gray-200 rounded-full shadow-lg flex flex-col items-center justify-center text-gray-500 hover:bg-gray-50 transition-all hover:scale-105"
-          data-testid="floating-scroll-top"
-        >
-          <ArrowUp className="w-5 h-5 md:w-6 md:h-6" />
-        </button>
-      )}
     </div>
   );
 }
