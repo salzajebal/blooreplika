@@ -459,16 +459,28 @@ export class DatabaseStorage implements IStorage {
     // e.g. "후드티/집업" also matches "후드티" (women's), "반팔티/폴로티" also matches "반팔티/폴로"
     // "정장구두" matches both b0b030 (남성) and g030 (여성) since both are named "정장구두" in DB.
     if (subname) {
-      const parts = subname.split('/').map(p => p.trim()).filter(Boolean);
+      // Strip leading "#" if present (some subcategory names may have "#" prefix)
+      const cleanSubname = subname.startsWith('#') ? subname.slice(1) : subname;
+      const parts = cleanSubname.split('/').map(p => p.trim()).filter(Boolean);
       const basePart = parts[0];
-      // Build OR conditions: exact match, prefix-based match (코트/정장 → 코트), and each part
+      // Build OR conditions: exact match (with and without #), prefix-based, and each part
       const partConditions = parts.map(p => sql`${subcategories.name} ILIKE ${p}`);
       const slugRows = await db.select({ slug: subcategories.slug })
         .from(subcategories)
-        .where(sql`${subcategories.name} = ${subname} OR ${subcategories.name} ILIKE ${basePart + '/%'} OR ${subcategories.name} ILIKE ${basePart} OR (${sql.join(partConditions, sql` OR `)})`);
+        .where(sql`
+          ${subcategories.name} = ${cleanSubname}
+          OR ${subcategories.name} = ${'#' + cleanSubname}
+          OR ${subcategories.name} ILIKE ${basePart + '/%'}
+          OR ${subcategories.name} ILIKE ${'#' + basePart + '/%'}
+          OR ${subcategories.name} ILIKE ${basePart}
+          OR (${sql.join(partConditions, sql` OR `)})
+        `);
       const slugs = slugRows.map(r => r.slug);
       if (slugs.length > 0) {
-        conditions.push(inArray(products.subcategoryId, slugs));
+        // Use LIKE prefix matching (consistent with subcategoryId param) so products
+        // whose subcategoryId starts with a slug are also matched
+        const subnameConditions = slugs.map(slug => sql`${products.subcategoryId} LIKE ${slug + '%'}`);
+        conditions.push(sql`(${sql.join(subnameConditions, sql` OR `)})`);
       } else {
         conditions.push(sql`1=0`); // no matching subcategory
       }

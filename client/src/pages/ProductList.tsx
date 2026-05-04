@@ -317,6 +317,13 @@ export default function ProductList() {
     if (prevEffectiveCategoryRef.current !== effectiveCategorySlug) {
       prevEffectiveCategoryRef.current = effectiveCategorySlug;
       setSelectedSubcategory(null);
+      // subname URL 파라미터도 초기화 (카테고리 전환 시 이전 소분류 필터 제거)
+      const base = location.split('?')[0];
+      const p = new URLSearchParams(searchString);
+      if (p.has('subname')) {
+        p.delete('subname');
+        navigate(`${base}${p.toString() ? '?' + p.toString() : ''}`);
+      }
     }
   }, [effectiveCategorySlug]);
 
@@ -663,7 +670,7 @@ export default function ProductList() {
         )}
       </div>
 
-      {activeFiltersCount > 0 && (
+      {(activeFiltersCount > 0 || subnameParam) && (
         <button
           onClick={() => {
             setSelectedBrand(null);
@@ -671,11 +678,13 @@ export default function ProductList() {
             setSelectedSubcategory(null);
             if (isGenderCategory) {
               navigate("/products");
-            } else if (golfSubGender && subcategoryId) {
-              // 골프 성별 sub 초기화: sub 파라미터 제거
+            } else {
               const currentPath = location.split('?')[0];
               const currentParams = new URLSearchParams(searchString);
-              currentParams.delete('sub');
+              currentParams.delete('subname');
+              if (golfSubGender && subcategoryId) {
+                currentParams.delete('sub');
+              }
               navigate(`${currentPath}${currentParams.toString() ? '?' + currentParams.toString() : ''}`);
             }
           }}
@@ -730,8 +739,24 @@ export default function ProductList() {
           </div>
 
           {/* Active filter chips */}
-          {(selectedBrandName || selectedGender) && (
+          {(selectedBrandName || selectedGender || subnameParam || golfSubGender) && (
             <div className="flex items-center gap-2 mt-3 flex-wrap">
+              {subnameParam && (
+                <span className="inline-flex items-center gap-1.5 bg-gray-100 text-sm px-3 py-1.5 rounded-full">
+                  소분류: {subnameParam}
+                  <button
+                    onClick={() => {
+                      const base = location.split('?')[0];
+                      const p = new URLSearchParams(searchString);
+                      p.delete('subname');
+                      navigate(`${base}${p.toString() ? '?' + p.toString() : ''}`);
+                    }}
+                    className="hover:text-black"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </span>
+              )}
               {selectedBrandName && (
                 <span className="inline-flex items-center gap-1.5 bg-gray-100 text-sm px-3 py-1.5 rounded-full">
                   브랜드: {selectedBrandName}
