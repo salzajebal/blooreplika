@@ -795,7 +795,7 @@ export function Header() {
                     {/* Sheet header */}
                     <div className="bg-black text-white p-4 flex items-center justify-between">
                       <Link href="/" onClick={closeMobileMenu}>
-                        <span style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "0.28em", fontWeight: 700, fontSize: "1.25rem", color: "white" }}>velour</span>
+                        <span style={{ fontFamily: "'Cormorant Garamond', serif", letterSpacing: "0.45em", fontWeight: 300, fontSize: "1.4rem", color: "white", textTransform: "uppercase" }}>velour</span>
                       </Link>
                       <SheetClose asChild>
                         <Button variant="ghost" size="icon" className="text-white hover:text-gray-300 p-0">
@@ -1027,7 +1027,7 @@ export function Header() {
                 </Sheet>
 
                 <Link href="/" className="flex items-center" data-testid="link-home">
-                  <span style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "0.28em", fontWeight: 700, fontSize: "clamp(1.15rem, 2vw, 1.5rem)", color: "#111" }}>velour</span>
+                  <span style={{ fontFamily: "'Cormorant Garamond', serif", letterSpacing: "0.45em", fontWeight: 300, fontSize: "clamp(1.3rem, 2vw, 1.65rem)", color: "#111", textTransform: "uppercase" }}>velour</span>
                 </Link>
               </div>
 
