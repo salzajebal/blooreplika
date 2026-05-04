@@ -30,7 +30,6 @@ import Events from "@/pages/Events";
 import Blog from "@/pages/Blog";
 import Choice from "@/pages/Choice";
 import OrderInquiry from "@/pages/OrderInquiry";
-import Inspection from "@/pages/Inspection";
 import ContentPage from "@/pages/ContentPage";
 import Magazine from "@/pages/Magazine";
 import Labs from "@/pages/Labs";
@@ -113,7 +112,6 @@ function Router() {
       <Route path="/order/:id" component={Order} />
       <Route path="/orders" component={OrderInquiry} />
       <Route path="/search" component={ProductList} />
-      <Route path="/inspection" component={Inspection} />
       <Route path="/magazine/:id" component={Magazine} />
       <Route path="/magazine" component={Magazine} />
       <Route path="/labs" component={Labs} />

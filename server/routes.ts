@@ -25,8 +25,6 @@ import {
   insertBlogPostSchema,
   insertCouponSchema,
   insertCouponPaymentSchema,
-  insertInspectionSchema,
-  insertShippingPhotoSchema,
   insertContentSectionSchema,
   insertMagazineSchema,
   insertLabsBlockSchema
@@ -134,33 +132,6 @@ const quickMenuImageUpload = multer({
   },
 });
 
-const inspectionMediaUpload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => {
-      const dir = path.join(process.cwd(), "uploads", "inspection");
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      cb(null, dir);
-    },
-    filename: (_req, file, cb) => {
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, `insp-${uniqueSuffix}${ext}`);
-    },
-  }),
-  limits: { fileSize: 100 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    const imageTypes = /jpeg|jpg|png|gif|webp/;
-    const videoTypes = /mp4|mov|avi|webm|mkv/;
-    const ext = path.extname(file.originalname).toLowerCase().replace(".", "");
-    const isImage = imageTypes.test(ext) || file.mimetype.startsWith("image/");
-    const isVideo = videoTypes.test(ext) || file.mimetype.startsWith("video/");
-    if (isImage || isVideo) {
-      cb(null, true);
-    } else {
-      cb(new Error("이미지 또는 영상 파일만 업로드 가능합니다."));
-    }
-  },
-});
 
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "admin123";
@@ -221,27 +192,6 @@ export async function registerRoutes(
   (async () => {
     try {
       const { db } = await import("./db");
-      const { inspections, shippingPhotos } = await import("@shared/schema");
-      const { like } = await import("drizzle-orm");
-      const localInsp = await db.select({ id: inspections.id, imageUrl: inspections.imageUrl })
-        .from(inspections).where(like(inspections.imageUrl, '/uploads/%'));
-      const localShip = await db.select({ id: shippingPhotos.id, imageUrl: shippingPhotos.imageUrl })
-        .from(shippingPhotos).where(like(shippingPhotos.imageUrl, '/uploads/%'));
-      
-      const orphanedInsp = localInsp.filter(r => !fs.existsSync(path.join(process.cwd(), r.imageUrl)));
-      const orphanedShip = localShip.filter(r => !fs.existsSync(path.join(process.cwd(), r.imageUrl)));
-
-      if (orphanedInsp.length > 0) {
-        const { inArray } = await import("drizzle-orm");
-        await db.delete(inspections).where(inArray(inspections.id, orphanedInsp.map(r => r.id)));
-        console.log(`Cleaned ${orphanedInsp.length} orphaned inspection records`);
-      }
-      if (orphanedShip.length > 0) {
-        const { inArray } = await import("drizzle-orm");
-        await db.delete(shippingPhotos).where(inArray(shippingPhotos.id, orphanedShip.map(r => r.id)));
-        console.log(`Cleaned ${orphanedShip.length} orphaned shipping photo records`);
-      }
-
       const { sql: sqlTag } = await import("drizzle-orm");
       const fixResult = await db.execute(
         sqlTag`UPDATE reviews SET content = '' WHERE content LIKE '%블루스토어 구매 후기입니다%'`
@@ -5607,176 +5557,6 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("Error syncing shoe prices:", error);
       res.status(500).json({ success: false, error: error.message || "가격 동기화 중 오류가 발생했습니다." });
-    }
-  });
-
-  // ==================== INSPECTIONS API ====================
-
-  app.get("/api/inspections", async (req: Request, res: Response) => {
-    try {
-      const { category } = req.query;
-      const items = await storage.getActiveInspections(category as string);
-      res.json({ success: true, data: items });
-    } catch (error) {
-      console.error("Error fetching inspections:", error);
-      res.status(500).json({ success: false, error: "Failed to fetch inspections" });
-    }
-  });
-
-  app.get("/api/admin/inspections", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const items = await storage.getAllInspections();
-      res.json({ success: true, data: items });
-    } catch (error) {
-      console.error("Error fetching inspections:", error);
-      res.status(500).json({ success: false, error: "Failed to fetch inspections" });
-    }
-  });
-
-  app.post("/api/admin/upload/inspection-media", requireAdminAuth, inspectionMediaUpload.single("file"), async (req: Request, res: Response) => {
-    try {
-      const file = req.file as Express.Multer.File;
-      if (!file) {
-        return res.status(400).json({ success: false, error: "파일이 필요합니다." });
-      }
-      const isVideo = file.mimetype.startsWith("video/");
-      const mediaType = isVideo ? "video" : "image";
-
-      try {
-        const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-        const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
-        const fileBuffer = fs.readFileSync(file.path);
-        const uploadRes = await fetch(uploadURL, {
-          method: "PUT",
-          body: fileBuffer,
-          headers: { "Content-Type": file.mimetype },
-        });
-        if (!uploadRes.ok) {
-          throw new Error(`Object storage upload failed: ${uploadRes.status}`);
-        }
-        fs.unlinkSync(file.path);
-        res.json({ success: true, url: objectPath, mediaType });
-      } catch (storageError) {
-        console.error("Object storage upload failed, using local fallback:", storageError);
-        const fileUrl = `/uploads/inspection/${file.filename}`;
-        res.json({ success: true, url: fileUrl, mediaType });
-      }
-    } catch (error) {
-      console.error("Error uploading inspection media:", error);
-      res.status(500).json({ success: false, error: "파일 업로드 실패" });
-    }
-  });
-
-  app.post("/api/inspections", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const validatedData = insertInspectionSchema.parse(req.body);
-      const item = await storage.createInspection(validatedData);
-      res.status(201).json({ success: true, data: item });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ success: false, error: error.errors });
-      }
-      console.error("Error creating inspection:", error);
-      res.status(500).json({ success: false, error: "Failed to create inspection" });
-    }
-  });
-
-  app.patch("/api/inspections/:id", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const partialSchema = insertInspectionSchema.partial();
-      const validatedData = partialSchema.parse(req.body);
-      const item = await storage.updateInspection(req.params.id, validatedData);
-      if (!item) {
-        return res.status(404).json({ success: false, error: "Inspection not found" });
-      }
-      res.json({ success: true, data: item });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ success: false, error: error.errors });
-      }
-      console.error("Error updating inspection:", error);
-      res.status(500).json({ success: false, error: "Failed to update inspection" });
-    }
-  });
-
-  app.delete("/api/inspections/:id", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const success = await storage.deleteInspection(req.params.id);
-      if (!success) {
-        return res.status(404).json({ success: false, error: "Inspection not found" });
-      }
-      res.json({ success: true, message: "Inspection deleted" });
-    } catch (error) {
-      console.error("Error deleting inspection:", error);
-      res.status(500).json({ success: false, error: "Failed to delete inspection" });
-    }
-  });
-
-  // ==================== SHIPPING PHOTOS API ====================
-
-  app.get("/api/shipping-photos", async (req: Request, res: Response) => {
-    try {
-      const { category } = req.query;
-      const items = await storage.getActiveShippingPhotos(category as string);
-      res.json({ success: true, data: items });
-    } catch (error) {
-      console.error("Error fetching shipping photos:", error);
-      res.status(500).json({ success: false, error: "Failed to fetch shipping photos" });
-    }
-  });
-
-  app.get("/api/admin/shipping-photos", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const items = await storage.getAllShippingPhotos();
-      res.json({ success: true, data: items });
-    } catch (error) {
-      console.error("Error fetching shipping photos:", error);
-      res.status(500).json({ success: false, error: "Failed to fetch shipping photos" });
-    }
-  });
-
-  app.post("/api/shipping-photos", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const validatedData = insertShippingPhotoSchema.parse(req.body);
-      const item = await storage.createShippingPhoto(validatedData);
-      res.status(201).json({ success: true, data: item });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ success: false, error: error.errors });
-      }
-      console.error("Error creating shipping photo:", error);
-      res.status(500).json({ success: false, error: "Failed to create shipping photo" });
-    }
-  });
-
-  app.patch("/api/shipping-photos/:id", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const partialSchema = insertShippingPhotoSchema.partial();
-      const validatedData = partialSchema.parse(req.body);
-      const item = await storage.updateShippingPhoto(req.params.id, validatedData);
-      if (!item) {
-        return res.status(404).json({ success: false, error: "Shipping photo not found" });
-      }
-      res.json({ success: true, data: item });
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ success: false, error: error.errors });
-      }
-      console.error("Error updating shipping photo:", error);
-      res.status(500).json({ success: false, error: "Failed to update shipping photo" });
-    }
-  });
-
-  app.delete("/api/shipping-photos/:id", requireAdminAuth, async (req: Request, res: Response) => {
-    try {
-      const success = await storage.deleteShippingPhoto(req.params.id);
-      if (!success) {
-        return res.status(404).json({ success: false, error: "Shipping photo not found" });
-      }
-      res.json({ success: true, message: "Shipping photo deleted" });
-    } catch (error) {
-      console.error("Error deleting shipping photo:", error);
-      res.status(500).json({ success: false, error: "Failed to delete shipping photo" });
     }
   });
 
