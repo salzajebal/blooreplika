@@ -638,6 +638,29 @@ export class DatabaseStorage implements IStorage {
     } else if (gender === '골프') {
       conditions.push(sql`${subcategories.slug} LIKE '7%'`);
     }
+
+    // 실제 제품이 존재하는 소분류만 반환 (products.subcategoryId LIKE slug% 로 prefix 매칭)
+    // 카테고리별 특성에 맞게 필터링:
+    //   - golf: gender='골프' 로 구분 (categoryId가 다를 수 있음)
+    //   - jewelry: subcategoryId prefix로만 구분 (f0%, b080% 등)
+    //   - 기타: categoryId 직접 매칭
+    let categoryCondition: ReturnType<typeof sql>;
+    if (categoryId === 'golf') {
+      categoryCondition = sql`p.gender = '골프'`;
+    } else if (categoryId === 'jewelry') {
+      categoryCondition = sql`TRUE`; // subcategoryId prefix가 쥬얼리 전용
+    } else {
+      categoryCondition = sql`p.category_id = ${categoryId}`;
+    }
+
+    conditions.push(sql`EXISTS (
+      SELECT 1 FROM products p
+      WHERE p.subcategory_id LIKE (${subcategories.slug} || '%')
+      AND ${categoryCondition}
+      AND p.is_active = TRUE
+      LIMIT 1
+    )`);
+
     return db.select().from(subcategories)
       .where(and(...conditions))
       .orderBy(subcategories.sortOrder);
