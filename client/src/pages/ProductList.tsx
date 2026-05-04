@@ -13,6 +13,23 @@ import { cn, decodeHtml } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
+function LazyProductImage({ src, alt }: { src: string; alt: string }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="absolute inset-0 bg-gray-200">
+      {!loaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+        onLoad={() => setLoaded(true)}
+        onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; setLoaded(true); }}
+      />
+    </div>
+  );
+}
 
 function ProductSkeleton() {
   return (
@@ -837,13 +854,9 @@ export default function ProductList() {
                       "bg-gray-50 relative overflow-hidden",
                       viewMode === "grid" ? "aspect-square rounded-lg" : "w-32 h-32 flex-shrink-0"
                     )}>
-                      <img 
-                        src={getProxiedImageUrl(product.imageUrl)} 
-                        alt={product.name} 
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                      <LazyProductImage
+                        src={getProxiedImageUrl(product.imageUrl)}
+                        alt={product.name}
                       />
                       
                       {product.isSoldOut && (

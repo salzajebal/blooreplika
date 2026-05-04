@@ -6432,7 +6432,7 @@ export async function registerRoutes(
       if (!imgResp.ok) return res.status(imgResp.status).send("upstream error");
       const contentType = imgResp.headers.get("content-type") || "image/jpeg";
       res.setHeader("Content-Type", contentType);
-      res.setHeader("Cache-Control", "public, max-age=86400");
+      res.setHeader("Cache-Control", "public, max-age=604800, stale-while-revalidate=86400");
       const buf = Buffer.from(await imgResp.arrayBuffer());
       return res.send(buf);
     } catch (err: any) {

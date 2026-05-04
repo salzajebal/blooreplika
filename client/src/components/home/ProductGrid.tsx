@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Heart, Loader2, ChevronLeft, ChevronRight, ShoppingBag, Eye } from "lucide-react";
+import { Heart, ChevronLeft, ChevronRight, ShoppingBag, Eye } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
@@ -8,6 +8,47 @@ import type { Product } from "@shared/schema";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
+
+function ProductImage({ src, alt, priority = false }: { src: string; alt: string; priority?: boolean }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="absolute inset-0 bg-gray-200">
+      {!loaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
+      <img
+        src={src}
+        alt={alt}
+        loading={priority ? "eager" : "lazy"}
+        decoding={priority ? "sync" : "async"}
+        fetchPriority={priority ? "high" : "low"}
+        className={cn(
+          "w-full h-full object-cover group-hover:scale-105 transition-all duration-500",
+          loaded ? "opacity-100" : "opacity-0"
+        )}
+        onLoad={() => setLoaded(true)}
+        onError={(e) => {
+          (e.target as HTMLImageElement).src = DEFAULT_IMAGE;
+          setLoaded(true);
+        }}
+      />
+    </div>
+  );
+}
+
+function ProductCardSkeleton() {
+  return (
+    <div className="bg-white border border-gray-200 overflow-hidden flex flex-col animate-pulse">
+      <div className="aspect-square bg-gray-200" />
+      <div className="p-4 flex-1 flex flex-col gap-2.5">
+        <div className="h-3 bg-gray-200 rounded w-1/3" />
+        <div className="h-4 bg-gray-200 rounded w-full" />
+        <div className="h-4 bg-gray-200 rounded w-2/3" />
+        <div className="mt-auto pt-2.5 border-t border-gray-100">
+          <div className="h-5 bg-gray-200 rounded w-1/2" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const DEFAULT_CATEGORIES = [
   { id: "new-arrivals", name: "신상품" },
@@ -179,25 +220,23 @@ export function ProductGrid() {
       </div>
 
       {loading ? (
-        <div className="py-16 text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-gray-400" />
-          <div className="text-gray-500 text-sm">상품을 불러오는 중...</div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
+          {Array.from({ length: 12 }).map((_, i) => <ProductCardSkeleton key={i} />)}
         </div>
       ) : products.length > 0 ? (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
-          {products.map((product) => (
+          {products.map((product, index) => (
             <Link 
               key={product.id} 
               href={`/product/${product.id}`}
               className="group bg-white border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer"
               data-testid={`card-product-${product.id}`}
             >
-              <div className="aspect-square bg-gray-50 relative overflow-hidden">
-                <img 
-                  src={getProxiedImageUrl(product.imageUrl, "medium")} 
-                  alt={product.name} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+              <div className="aspect-square bg-gray-100 relative overflow-hidden">
+                <ProductImage
+                  src={getProxiedImageUrl(product.imageUrl, "medium")}
+                  alt={product.name}
+                  priority={index < 8}
                 />
                 
                 {product.isSoldOut && (
