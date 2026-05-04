@@ -294,10 +294,18 @@ export default function ProductList() {
       return;
     }
     setCurrentPage(1);
+    setSelectedBrand(null);
     if (!isGenderCategory) {
       setSelectedGender(null);
     }
     setSelectedSubcategory(null);
+    // URL의 subname 파라미터도 초기화 (카테고리 변경 시 이전 소분류 필터 제거)
+    const base = location.split('?')[0];
+    const p = new URLSearchParams(searchString);
+    let changed = false;
+    if (p.has('subname')) { p.delete('subname'); changed = true; }
+    if (p.has('brand')) { p.delete('brand'); changed = true; }
+    if (changed) navigate(`${base}${p.toString() ? '?' + p.toString() : ''}`);
     sessionStorage.setItem("productListPage", "1");
     sessionStorage.setItem("productListScroll", "0");
     sessionStorage.setItem("productListCategory", categorySlug || "");
