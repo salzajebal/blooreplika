@@ -495,6 +495,8 @@ export default function ProductList() {
               <div
                 className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[200] min-w-[200px] max-h-[60vh] overflow-y-auto scroll-smooth"
                 style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin", scrollbarColor: "#ccc transparent", touchAction: "pan-y" }}
+                onTouchStart={(e) => e.stopPropagation()}
+                onTouchMove={(e) => e.stopPropagation()}
               >
                 <button
                   onClick={clearSubname}
@@ -561,7 +563,12 @@ export default function ProductList() {
                 />
               </div>
             </div>
-            <div className="overflow-y-auto max-h-[320px] scroll-smooth" style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin", scrollbarColor: "#ccc transparent", touchAction: "pan-y" }}>
+            <div
+              className="overflow-y-auto max-h-[320px] scroll-smooth"
+              style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin", scrollbarColor: "#ccc transparent", touchAction: "pan-y" }}
+              onTouchStart={(e) => e.stopPropagation()}
+              onTouchMove={(e) => e.stopPropagation()}
+            >
               {!brandSearch && (
                 <button
                   onClick={() => { setSelectedBrand(null); setOpenDropdown(null); setBrandSearch(""); }}
