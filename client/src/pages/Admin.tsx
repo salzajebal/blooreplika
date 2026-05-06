@@ -493,6 +493,8 @@ export default function Admin() {
     message: string;
   }>({ status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '' });
   const puluaIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [watchDeleteConfirm, setWatchDeleteConfirm] = useState(false);
+  const [watchDeleting, setWatchDeleting] = useState(false);
 
   const BLOOSTORE_BRANDS = [
     { id: "rolex", name: "롤렉스" },
@@ -1043,6 +1045,26 @@ export default function Admin() {
       await fetchWithAuth("/api/admin/crawl/pulua/stop", { method: "POST" });
       toast({ title: "중단 요청", description: "현재 상품 처리 후 중단됩니다." });
     } catch {}
+  };
+
+  const deleteAllWatches = async () => {
+    setWatchDeleting(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/products/category/watches", { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "삭제 완료", description: data.message });
+        fetchProductCount();
+        fetchProducts();
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "삭제 중 오류가 발생했습니다.", variant: "destructive" });
+    } finally {
+      setWatchDeleting(false);
+      setWatchDeleteConfirm(false);
+    }
   };
 
   const toggleBloostoreBrand = (brandId: string) => {
@@ -7355,6 +7377,35 @@ export default function Admin() {
                     )}
                   </div>
                 )}
+
+                {/* 시계 상품 전체 삭제 */}
+                <div className="border border-red-200 rounded-lg p-4 bg-red-50 space-y-3">
+                  <p className="text-sm font-semibold text-red-700">⚠ 시계 상품 전체 삭제</p>
+                  <p className="text-xs text-red-600">기존 시계 상품을 모두 삭제하고 풀루아 상품으로 새로 채울 때 사용합니다. 이 작업은 되돌릴 수 없습니다.</p>
+                  {!watchDeleteConfirm ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setWatchDeleteConfirm(true)}
+                      className="border-red-400 text-red-600 hover:bg-red-100"
+                      disabled={puluaProgress.status === 'running'}
+                    >
+                      시계 상품 전체 삭제
+                    </Button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={deleteAllWatches}
+                        disabled={watchDeleting}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        {watchDeleting ? <><Loader2 className="w-3 h-3 mr-1 animate-spin" />삭제 중...</> : "정말 삭제"}
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setWatchDeleteConfirm(false)}>취소</Button>
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex flex-wrap gap-3">
                   <Button

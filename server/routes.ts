@@ -5018,6 +5018,18 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
+  app.delete("/api/admin/products/category/:categoryId", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { categoryId } = req.params;
+      const deleted = await storage.deleteProductsByCategory(categoryId);
+      console.log(`[admin] Deleted ${deleted} products from category: ${categoryId}`);
+      res.json({ success: true, deleted, message: `${deleted}개 상품이 삭제되었습니다.` });
+    } catch (error) {
+      console.error("Error deleting products by category:", error);
+      res.status(500).json({ success: false, error: "삭제 중 오류가 발생했습니다." });
+    }
+  });
+
   app.post("/api/admin/crawl/pulua/start", requireAdminAuth, async (req: Request, res: Response) => {
     if (puluaProgress.status === 'running') {
       return res.status(400).json({ success: false, error: "이미 풀루아 크롤링이 진행 중입니다." });
