@@ -2,7 +2,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Search, ArrowUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, ArrowUp, Star, Camera } from "lucide-react";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { useState, useEffect, useRef, useCallback } from "react";
 
@@ -134,6 +134,196 @@ function MainBannerSlider() {
   );
 }
 
+
+function maskName(name: string): string {
+  if (!name) return "익명";
+  if (name.length <= 2) return name[0] + "*";
+  return name[0] + "*".repeat(name.length - 2) + name[name.length - 1];
+}
+
+function toReviewProxyUrl(url: string): string {
+  if (!url) return url;
+  if (url.includes('cdn.imweb.me') || (url.includes('bloostore.co.kr') && !url.startsWith('/'))) {
+    return `/api/bloostore-image-proxy?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
+function HomeReviewsSection() {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
+  const hasDragged = useRef(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateArrows = useCallback(() => {
+    const el = rowRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 8);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
+  }, []);
+
+  useEffect(() => {
+    const el = rowRef.current;
+    if (!el) return;
+    updateArrows();
+    el.addEventListener("scroll", updateArrows, { passive: true });
+    const ro = new ResizeObserver(updateArrows);
+    ro.observe(el);
+    return () => { el.removeEventListener("scroll", updateArrows); ro.disconnect(); };
+  }, [updateArrows]);
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (!rowRef.current) return;
+    isDragging.current = true;
+    hasDragged.current = false;
+    startX.current = e.pageX - rowRef.current.offsetLeft;
+    scrollLeft.current = rowRef.current.scrollLeft;
+    rowRef.current.style.cursor = "grabbing";
+  };
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current || !rowRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - rowRef.current.offsetLeft;
+    const walk = (x - startX.current) * 1.2;
+    if (Math.abs(walk) > 4) hasDragged.current = true;
+    rowRef.current.scrollLeft = scrollLeft.current - walk;
+  };
+  const onMouseUp = () => {
+    isDragging.current = false;
+    if (rowRef.current) rowRef.current.style.cursor = "grab";
+  };
+  const scroll = (dir: "left" | "right") => {
+    if (!rowRef.current) return;
+    rowRef.current.scrollBy({ left: dir === "right" ? 320 : -320, behavior: "smooth" });
+  };
+
+  const { data: reviewsData } = useQuery({
+    queryKey: ['/api/reviews/home-preview'],
+    queryFn: async () => {
+      const res = await fetch('/api/reviews?limit=20&photoOnly=true');
+      const data = await res.json();
+      return data.success ? data.data : [];
+    },
+    staleTime: 120000,
+  });
+
+  const reviews: any[] = reviewsData || [];
+  if (reviews.length === 0) return null;
+
+  return (
+    <section className="bg-white border-b border-gray-100 py-6 md:py-8" data-testid="home-reviews-section">
+      <div className="max-w-[1200px] mx-auto px-4">
+        {/* 헤더 */}
+        <div className="flex items-end justify-between mb-4 md:mb-5">
+          <div className="flex items-center gap-2">
+            <Camera className="w-4 h-4 text-gray-500" />
+            <h2 className="text-base md:text-lg font-bold tracking-wide text-gray-900" style={{ fontFamily: "'Playfair Display', serif" }}>
+              실제구매후기
+            </h2>
+            <span className="text-xs text-gray-400 font-normal ml-1">고객님들의 솔직한 후기</span>
+          </div>
+          <Link
+            href="/reviews"
+            className="text-xs text-gray-400 hover:text-black transition-colors flex items-center gap-0.5"
+            data-testid="home-reviews-more"
+          >
+            더보기 <ChevronRight className="w-3 h-3" />
+          </Link>
+        </div>
+
+        {/* 가로 스크롤 */}
+        <div className="relative group/reviews">
+          {canScrollLeft && (
+            <button
+              onClick={() => scroll("left")}
+              className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 hover:bg-white border border-gray-200 shadow-md rounded-full items-center justify-center text-gray-600 hover:text-black transition-all -translate-x-3"
+              aria-label="이전"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+          )}
+          {canScrollRight && (
+            <button
+              onClick={() => scroll("right")}
+              className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 hover:bg-white border border-gray-200 shadow-md rounded-full items-center justify-center text-gray-600 hover:text-black transition-all translate-x-3"
+              aria-label="다음"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          )}
+
+          <div
+            ref={rowRef}
+            className="flex gap-3 overflow-x-auto pb-2 select-none"
+            style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", cursor: "grab" }}
+            onMouseDown={onMouseDown}
+            onMouseMove={onMouseMove}
+            onMouseUp={onMouseUp}
+            onMouseLeave={onMouseUp}
+          >
+            {reviews.map((review: any) => {
+              const thumb = review.imageUrls?.length > 0
+                ? toReviewProxyUrl(review.imageUrls[0])
+                : review.imageUrl
+                  ? toReviewProxyUrl(review.imageUrl)
+                  : review.productImageUrl || null;
+
+              return (
+                <Link
+                  key={review.id}
+                  href="/reviews"
+                  draggable={false}
+                  onClick={(e) => { if (hasDragged.current) e.preventDefault(); }}
+                  className="flex-shrink-0 w-[140px] md:w-[160px] group block"
+                  data-testid={`home-review-${review.id}`}
+                >
+                  {/* 사진 */}
+                  <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 mb-2">
+                    {thumb ? (
+                      <img
+                        src={thumb}
+                        alt="후기 사진"
+                        draggable={false}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                        <Camera className="w-6 h-6 text-gray-300" />
+                      </div>
+                    )}
+                    {/* 별점 뱃지 */}
+                    <div className="absolute bottom-1.5 left-1.5 flex items-center gap-0.5 bg-black/60 rounded px-1.5 py-0.5">
+                      <Star className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
+                      <span className="text-[10px] text-white font-medium">{review.rating || 5}</span>
+                    </div>
+                  </div>
+
+                  {/* 작성자 + 상품명 */}
+                  <p className="text-[10px] text-gray-400 font-medium">{maskName(review.authorName)}</p>
+                  {review.productName && (
+                    <p className="text-[10px] text-gray-500 line-clamp-1 mt-0.5">{review.productName}</p>
+                  )}
+                  {/* 내용 미리보기 */}
+                  <p className="text-xs text-gray-700 line-clamp-2 mt-1 leading-snug">{review.content || review.title}</p>
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* 모바일 페이드 힌트 */}
+          {canScrollRight && (
+            <div className="md:hidden absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-white/80 to-transparent pointer-events-none" />
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function useSectionTitle(key: string, defaultTitle: string, defaultSubtitle: string) {
   const { data } = useQuery({
@@ -617,6 +807,7 @@ export default function Home() {
       
       <main>
         <MainBannerSlider />
+        <HomeReviewsSection />
         <DynamicHomeSections />
         <TopBrandSection />
         <ForYouSection products={products} brands={brands} />
