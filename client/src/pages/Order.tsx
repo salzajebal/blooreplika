@@ -374,10 +374,6 @@ export default function Order() {
     }
 
     const memberToken = localStorage.getItem("memberToken");
-    if (!memberToken) {
-      setIsLoggedIn(false);
-      return;
-    }
     
     setSubmitting(true);
     
@@ -425,26 +421,16 @@ export default function Order() {
         paymentMethod: paymentMethod || undefined,
       };
 
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (memberToken) headers["Authorization"] = `Bearer ${memberToken}`;
+
       const res = await fetch("/api/orders", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${memberToken}`,
-        },
+        headers,
         body: JSON.stringify(orderBody),
       });
 
       const data = await res.json();
-      
-      if (res.status === 401) {
-        setIsLoggedIn(false);
-        toast({
-          title: "로그인 필요",
-          description: "로그인 세션이 만료되었습니다. 다시 로그인해주세요.",
-          variant: "destructive",
-        });
-        return;
-      }
       
       if (data.success) {
         const createdOrderNumber = data.data.orderNumber;
@@ -466,52 +452,12 @@ export default function Order() {
   };
 
 
-  if (loading || isLoggedIn === null) {
+  if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-gray-500">상품 정보를 불러오는 중...</div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (isLoggedIn === false) {
-    return (
-      <div className="min-h-screen flex flex-col bg-gray-50">
-        <Header />
-        <main className="flex-1 flex items-center justify-center py-12">
-          <div className="max-w-md w-full mx-auto px-4">
-            <div className="bg-white rounded-xl shadow-lg p-8 sm:p-10 text-center" data-testid="login-required-notice">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <LogIn className="w-8 h-8 text-gray-400" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">로그인이 필요합니다</h2>
-              <p className="text-gray-500 mb-6 text-sm leading-relaxed">
-                주문하시려면 회원 로그인이 필요합니다.<br />
-                아직 회원이 아니시라면 회원가입 후 이용해주세요.
-              </p>
-              <div className="flex flex-col gap-3">
-                <Button
-                  data-testid="button-go-login"
-                  className="w-full bg-black text-white hover:bg-gray-800"
-                  onClick={() => setLocation("/login")}
-                >
-                  로그인하기
-                </Button>
-                <Button
-                  data-testid="button-go-signup"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setLocation("/signup")}
-                >
-                  회원가입
-                </Button>
-              </div>
-            </div>
-          </div>
         </main>
         <Footer />
       </div>
@@ -727,6 +673,24 @@ export default function Order() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8 text-center">
             주문서 작성
           </h1>
+
+          {/* 비회원 안내 배너 */}
+          {!isLoggedIn && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+              <LogIn className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-amber-800">비회원으로 주문하시나요?</p>
+                <p className="text-xs text-amber-700 mt-0.5">아래 주문자 정보를 직접 입력하시면 비회원 주문이 가능합니다. 회원 로그인 시 정보가 자동으로 입력되며 적립금도 받으실 수 있습니다.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLocation("/login")}
+                className="text-xs text-amber-800 underline underline-offset-2 whitespace-nowrap flex-shrink-0"
+              >
+                로그인하기
+              </button>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">

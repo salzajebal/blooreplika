@@ -3178,11 +3178,7 @@ export async function registerRoutes(
     try {
       const authHeader = req.headers.authorization;
       const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : undefined;
-      const memberSession = await getMemberFromToken(token);
-      
-      if (!memberSession) {
-        return res.status(401).json({ success: false, error: "주문하려면 로그인이 필요합니다." });
-      }
+      const memberSession = token ? await getMemberFromToken(token) : null;
       
       const { couponPayment, isCartOrder, cartItems, paymentData, ...orderData } = req.body;
       
@@ -3199,7 +3195,7 @@ export async function registerRoutes(
         }).join(', ');
 
         const order = await storage.createOrder({
-          memberId: memberSession.memberId,
+          memberId: memberSession?.memberId || null,
           memberName: orderData.memberName,
           memberEmail: orderData.memberEmail,
           memberPhone: orderData.memberPhone,
@@ -3232,7 +3228,7 @@ export async function registerRoutes(
       
       const order = await storage.createOrder({
         ...validatedData,
-        memberId: memberSession.memberId,
+        memberId: memberSession?.memberId || null,
         orderNumber,
         status: "pending",
         paymentStatus: "pending"
