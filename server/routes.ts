@@ -184,7 +184,18 @@ export async function registerRoutes(
   // Enable gzip/brotli compression for all responses
   app.use(compression());
   
-  app.use("/uploads", express.default.static(path.join(process.cwd(), "uploads")));
+  app.use("/uploads", (req: Request, res: Response, next: Function) => {
+    const filePath = path.join(process.cwd(), "uploads", req.path);
+    if (fs.existsSync(filePath)) {
+      return express.default.static(path.join(process.cwd(), "uploads"))(req, res, next);
+    }
+    // 파일이 없으면 404 대신 기본 이미지로 리다이렉트
+    if (req.path.startsWith("/reviews/")) {
+      res.redirect("/api/default-review-image");
+    } else {
+      next();
+    }
+  });
   
   registerObjectStorageRoutes(app);
   const objectStorageService = new ObjectStorageService();
@@ -206,13 +217,44 @@ export async function registerRoutes(
       if ((delResult.rowCount ?? 0) > 0) {
         console.log(`[cleanup] Removed ${delResult.rowCount} inspection quick menu item(s)`);
       }
+
+      // 로컬 파일시스템에 없는 리뷰 이미지 URL 정리 (재배포 후 파일 소실 대응)
+      try {
+        const reviewsWithImages = await db.execute(
+          sqlTag`SELECT id, image_url, image_urls FROM reviews WHERE image_url LIKE '/uploads/reviews/%' OR image_urls::text LIKE '%/uploads/reviews/%'`
+        );
+        let nullified = 0;
+        for (const row of reviewsWithImages.rows as any[]) {
+          const imageUrl: string | null = row.image_url;
+          const imageUrls: string[] = row.image_urls || [];
+          const checkUrl = imageUrl || imageUrls[0];
+          if (!checkUrl || !checkUrl.startsWith('/uploads/')) continue;
+          const filePath = path.join(process.cwd(), checkUrl);
+          if (!fs.existsSync(filePath)) {
+            await db.execute(
+              sqlTag`UPDATE reviews SET image_url = NULL, image_urls = '{}' WHERE id = ${row.id}`
+            );
+            nullified++;
+          }
+        }
+        if (nullified > 0) {
+          console.log(`[cleanup] Nullified ${nullified} review(s) with missing image files`);
+        }
+      } catch (e) {
+        console.error("Review image cleanup error:", e);
+      }
     } catch (e) {
       console.error("Orphan cleanup error:", e);
     }
   })();
 
   // ==================== IMAGE PROXY API ====================
-  
+
+  // 리뷰 기본 이미지 (파일 없을 때 대체)
+  app.get("/api/default-review-image", (_req: Request, res: Response) => {
+    res.redirect(302, "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&h=400&fit=crop&auto=format");
+  });
+
   // In-memory image cache for faster subsequent loads
   const imageCache = new Map<string, { buffer: Buffer; timestamp: number }>();
   const IMAGE_CACHE_TTL = 3600000; // 1 hour in milliseconds
