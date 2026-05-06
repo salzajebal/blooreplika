@@ -484,6 +484,16 @@ export default function Admin() {
   const watchDetailIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [watchDetailOnlyMissing, setWatchDetailOnlyMissing] = useState(true);
 
+  const [puluaProgress, setPuluaProgress] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    inserted: number;
+    skipped: number;
+    message: string;
+  }>({ status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '' });
+  const puluaIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const BLOOSTORE_BRANDS = [
     { id: "rolex", name: "롤렉스" },
     { id: "cartier", name: "까르띠에" },
@@ -996,6 +1006,43 @@ export default function Admin() {
     } catch {
       toast({ title: "오류", description: "크롤링을 시작할 수 없습니다.", variant: "destructive" });
     }
+  };
+
+  const fetchPuluaProgress = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/pulua/progress");
+      const data = await res.json();
+      if (data.success) {
+        setPuluaProgress({ status: data.status, total: data.total || 0, current: data.current || 0, inserted: data.inserted || 0, skipped: data.skipped || 0, message: data.message || '' });
+        if (data.status !== 'running') {
+          if (puluaIntervalRef.current) { clearInterval(puluaIntervalRef.current); puluaIntervalRef.current = null; }
+          if (data.status === 'completed') { fetchProductCount(); fetchProducts(); }
+        }
+      }
+    } catch {}
+  };
+
+  const startPuluaCrawl = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/pulua/start", { method: "POST", headers: { "Content-Type": "application/json" } });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "풀루아 크롤링 시작", description: "pulua.co.kr 시계 상품을 수집합니다." });
+        setPuluaProgress({ status: 'running', total: 0, current: 0, inserted: 0, skipped: 0, message: '시작 중...' });
+        puluaIntervalRef.current = setInterval(fetchPuluaProgress, 800);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+
+  const stopPuluaCrawl = async () => {
+    try {
+      await fetchWithAuth("/api/admin/crawl/pulua/stop", { method: "POST" });
+      toast({ title: "중단 요청", description: "현재 상품 처리 후 중단됩니다." });
+    } catch {}
   };
 
   const toggleBloostoreBrand = (brandId: string) => {
@@ -7243,6 +7290,101 @@ export default function Admin() {
                 <div className="text-xs text-gray-400 space-y-1">
                   <p>• 블루스토어에서 시계 상품의 상세이미지 URL을 재수집합니다.</p>
                   <p>• "이미지 없는 상품만" 체크 시 imageUrls가 비어있는 상품만 대상으로 합니다.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* pulua.co.kr 시계 크롤러 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Download className="w-5 h-5 text-emerald-600" />
+                  pulua.co.kr 시계 크롤링
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  pulua.co.kr 시계 카테고리 (~940개)에서 상품명·가격·상세이미지를 한 번에 수집합니다.
+                </p>
+              </div>
+              <div className="p-6 space-y-4">
+                {puluaProgress.status !== 'idle' && (
+                  <div className={`rounded-xl border-2 p-4 space-y-3 ${
+                    puluaProgress.status === 'running' ? 'border-emerald-300 bg-emerald-50' :
+                    puluaProgress.status === 'completed' ? 'border-green-300 bg-green-50' :
+                    'border-red-300 bg-red-50'
+                  }`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {puluaProgress.status === 'running' && <Loader2 className="w-4 h-4 text-emerald-600 animate-spin" />}
+                        {puluaProgress.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                        {puluaProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                        <span className={`font-bold text-sm ${
+                          puluaProgress.status === 'running' ? 'text-emerald-700' :
+                          puluaProgress.status === 'completed' ? 'text-green-700' : 'text-red-700'
+                        }`}>
+                          {puluaProgress.status === 'running' ? '크롤링 진행 중' :
+                           puluaProgress.status === 'completed' ? '완료' : '중단/오류'}
+                        </span>
+                      </div>
+                      {puluaProgress.total > 0 && (
+                        <div className="text-right text-xs text-gray-500">
+                          <span className="font-bold text-gray-800">{puluaProgress.current}</span>/{puluaProgress.total}
+                        </div>
+                      )}
+                    </div>
+                    {puluaProgress.message && (
+                      <div className="bg-white rounded-lg px-3 py-2 border">
+                        <p className="text-xs text-gray-600 font-mono truncate">{puluaProgress.message}</p>
+                      </div>
+                    )}
+                    {puluaProgress.total > 0 && (
+                      <>
+                        <div className="flex gap-4 text-xs text-gray-600">
+                          <span>저장 <strong className="text-emerald-700">{puluaProgress.inserted}</strong>개</span>
+                          <span>건너뜀 <strong>{puluaProgress.skipped}</strong>개</span>
+                          <span>전체 <strong>{puluaProgress.total}</strong>개</span>
+                        </div>
+                        {puluaProgress.status === 'running' && (
+                          <div className="w-full bg-gray-200 rounded-full h-1.5">
+                            <div
+                              className="bg-emerald-500 h-1.5 rounded-full transition-all"
+                              style={{ width: `${puluaProgress.total > 0 ? Math.round((puluaProgress.current / puluaProgress.total) * 100) : 0}%` }}
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    onClick={startPuluaCrawl}
+                    disabled={puluaProgress.status === 'running'}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1"
+                    data-testid="button-start-pulua-crawl"
+                  >
+                    {puluaProgress.status === 'running' ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />크롤링 중...</>
+                    ) : (
+                      <><Download className="w-4 h-4 mr-2" />풀루아 크롤링 시작</>
+                    )}
+                  </Button>
+                  {puluaProgress.status === 'running' && (
+                    <Button variant="outline" onClick={stopPuluaCrawl} className="border-red-300 text-red-600 hover:bg-red-50">
+                      중단
+                    </Button>
+                  )}
+                  {puluaProgress.status !== 'idle' && puluaProgress.status !== 'running' && (
+                    <Button variant="outline" onClick={() => setPuluaProgress({ status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '' })}>
+                      초기화
+                    </Button>
+                  )}
+                </div>
+                <div className="text-xs text-gray-400 space-y-1">
+                  <p>• pulua.co.kr/category/시계/28/ 전체 페이지를 순서대로 수집합니다.</p>
+                  <p>• 상품별 상세 페이지에서 이미지 8~10장을 한 번에 가져옵니다.</p>
+                  <p>• 이미 DB에 있는 상품(이름·URL 기준)은 자동으로 건너뜁니다.</p>
+                  <p>• 카테고리는 '시계'로 고정, 브랜드는 상품명에서 자동 매칭합니다.</p>
                 </div>
               </div>
             </div>

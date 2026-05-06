@@ -4994,6 +4994,212 @@ export async function registerRoutes(
     })();
   });
 
+  // ============= PULUA.CO.KR 시계 크롤러 =============
+  let puluaProgress: {
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    inserted: number;
+    skipped: number;
+    message: string;
+    startedAt?: Date;
+    completedAt?: Date;
+  } = { status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '' };
+
+  app.get("/api/admin/crawl/pulua/progress", requireAdminAuth, (_req: Request, res: Response) => {
+    res.json({ success: true, ...puluaProgress });
+  });
+
+  app.post("/api/admin/crawl/pulua/stop", requireAdminAuth, (_req: Request, res: Response) => {
+    if (puluaProgress.status === 'running') {
+      puluaProgress.status = 'error';
+      puluaProgress.message = '사용자에 의해 중단되었습니다.';
+    }
+    res.json({ success: true });
+  });
+
+  app.post("/api/admin/crawl/pulua/start", requireAdminAuth, async (req: Request, res: Response) => {
+    if (puluaProgress.status === 'running') {
+      return res.status(400).json({ success: false, error: "이미 풀루아 크롤링이 진행 중입니다." });
+    }
+
+    puluaProgress = { status: 'running', total: 0, current: 0, inserted: 0, skipped: 0, message: '풀루아 크롤링 준비 중...', startedAt: new Date() };
+    res.json({ success: true, message: "풀루아 시계 크롤링이 시작되었습니다." });
+
+    (async () => {
+      try {
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+        const PULUA_HEADERS = {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,*/*",
+          "Accept-Language": "ko-KR,ko;q=0.9",
+          "Referer": "https://pulua.co.kr/",
+        };
+
+        const puluaFetch = async (url: string, retries = 3): Promise<Response | null> => {
+          for (let i = 0; i < retries; i++) {
+            try {
+              const ctrl = new AbortController();
+              const timer = setTimeout(() => ctrl.abort(), 10000);
+              try {
+                const r = await fetch(url, { headers: PULUA_HEADERS, signal: ctrl.signal });
+                clearTimeout(timer);
+                if (r.ok) return r;
+                if (r.status === 404) return null;
+                if (i < retries - 1) await delay(500 * (i + 1));
+              } finally { clearTimeout(timer); }
+            } catch (e: any) {
+              console.warn(`[pulua] ${e?.name === 'AbortError' ? '타임아웃' : '오류'} (${i+1}/${retries}): ${url}`);
+              if (i < retries - 1) await delay(500 * (i + 1));
+            }
+          }
+          return null;
+        };
+
+        // 카테고리 확인/생성
+        const existingCats = await storage.getAllCategories();
+        const watchCat = existingCats.find(c => c.id === 'watches' || c.slug === 'watches') ||
+          await storage.createCategory({ id: 'watches', name: '시계', slug: 'watches', sortOrder: 130, isActive: true });
+
+        // 기존 상품명 세트 (중복 방지)
+        const existingWatchProducts = await storage.getProductsByCategory(watchCat.id);
+        const existingNames = new Set(existingWatchProducts.map(p => p.name));
+        const existingSourceUrls = new Set(existingWatchProducts.map(p => p.sourceUrl).filter(Boolean));
+
+        const allBrands = await storage.getAllBrands();
+
+        // 모든 페이지 상품 링크 수집
+        const CATEGORY_URL = "https://pulua.co.kr/category/%EC%8B%9C%EA%B3%84/28/";
+        const PRODUCT_LINK_REGEX = /href="(\/product\/[^/]+\/(\d+)\/category\/28[^"]*)"\s*[^>]*>\s*<img\s+src="([^"]+)"[^>]*alt="([^"]+)"/g;
+
+        type PuluaListItem = { url: string; id: string; listImg: string; name: string };
+        const allListItems: PuluaListItem[] = [];
+        const seenIds = new Set<string>();
+
+        let page = 1;
+        const MAX_PAGES = 60;
+        while (page <= MAX_PAGES && puluaProgress.status === 'running') {
+          const listUrl = page === 1 ? CATEGORY_URL : `${CATEGORY_URL}?page=${page}`;
+          puluaProgress.message = `상품 목록 수집 중... (${page}페이지, ${allListItems.length}개 발견)`;
+          const r = await puluaFetch(listUrl);
+          if (!r) { page++; continue; }
+          const html = await r.text();
+          let newOnPage = 0;
+          let m: RegExpExecArray | null;
+          const re = new RegExp(PRODUCT_LINK_REGEX.source, 'g');
+          while ((m = re.exec(html)) !== null) {
+            const id = m[2]; const listImg = m[3]; const name = decodeURIComponent(m[4].replace(/\+/g, ' ')).trim();
+            const fullUrl = 'https://pulua.co.kr' + m[1];
+            if (!seenIds.has(id)) {
+              seenIds.add(id);
+              allListItems.push({ url: fullUrl, id, listImg, name });
+              newOnPage++;
+            }
+          }
+          console.log(`[pulua] page ${page}: ${newOnPage} new products`);
+          if (newOnPage === 0) break;
+          page++;
+          await delay(600);
+        }
+
+        puluaProgress.total = allListItems.length;
+        puluaProgress.message = `총 ${allListItems.length}개 상품 상세 수집 시작...`;
+        console.log(`[pulua] Total products found: ${allListItems.length}`);
+
+        for (let i = 0; i < allListItems.length && puluaProgress.status === 'running'; i++) {
+          const item = allListItems[i];
+          puluaProgress.current = i + 1;
+          puluaProgress.message = `(${i+1}/${allListItems.length}) ${item.name}`;
+
+          // 이미 있는 상품 건너뜀
+          if (existingNames.has(item.name) || existingSourceUrls.has(item.url)) {
+            puluaProgress.skipped++;
+            continue;
+          }
+
+          try {
+            await delay(400);
+            const dr = await puluaFetch(item.url, 2);
+            if (!dr) { puluaProgress.skipped++; continue; }
+            const dhtml = await dr.text();
+
+            // 가격 추출 (JSON-LD 우선)
+            let price = 0;
+            const jsonldPriceMatch = dhtml.match(/"price"\s*:\s*(\d+)/);
+            if (jsonldPriceMatch) {
+              price = parseInt(jsonldPriceMatch[1], 10);
+            } else {
+              const priceMatch = dhtml.match(/(\d{1,3}(?:,\d{3})+)원/) ;
+              if (priceMatch) price = parseInt(priceMatch[1].replace(/,/g, ''), 10);
+            }
+
+            // 이미지 수집 (uratop.com CDN 전체 스캔)
+            const URATOP_SKIP = ['btn_wish', 'btn_list', 'btn_cart', 'ico_', 'icon_', 'blank.'];
+            const addUratop = (set: Set<string>, url: string) => {
+              const clean = url.split('?')[0];
+              if (clean.includes('uratop.com') && !URATOP_SKIP.some(s => clean.includes(s))) set.add(clean);
+            };
+            const imgSet = new Set<string>();
+            // src 속성
+            [...dhtml.matchAll(/src="(https?:\/\/uratop\.com[^"?#]+)"/g)].forEach(m2 => addUratop(imgSet, m2[1]));
+            // data-src 속성
+            [...dhtml.matchAll(/data-src="(https?:\/\/uratop\.com[^"?#]+)"/g)].forEach(m2 => addUratop(imgSet, m2[1]));
+            // og:image
+            const ogImg = dhtml.match(/og:image[^>]*content="([^"]+uratop\.com[^"?#]+)"/)?.[1];
+            const detailImages = [...imgSet];
+            
+            const listImg = item.listImg;
+            const finalImages: string[] = [];
+            if (ogImg) finalImages.push(ogImg.split('?')[0]);
+            if (listImg && !finalImages.includes(listImg)) finalImages.push(listImg);
+            detailImages.forEach(img => { if (!finalImages.includes(img)) finalImages.push(img); });
+
+            const imageUrl = finalImages[0] || listImg || '';
+
+            // 브랜드 매칭
+            const brandId = matchBrandFromText(item.name, allBrands) || undefined;
+
+            // 상품명 정리 (og:title 우선)
+            const ogTitle = dhtml.match(/og:title[^>]*content="([^"]+?)(?:\s*-\s*풀루아)?"/)?.[1]?.trim() || item.name;
+
+            await storage.createProduct({
+              name: ogTitle,
+              price,
+              originalPrice: price,
+              description: `${ogTitle}`,
+              categoryId: watchCat.id,
+              brandId,
+              imageUrl,
+              imageUrls: finalImages.length > 0 ? finalImages : [imageUrl],
+              sourceUrl: item.url,
+              isActive: true,
+              isNew: true,
+              isBest: false,
+            });
+
+            existingNames.add(ogTitle);
+            existingSourceUrls.add(item.url);
+            puluaProgress.inserted++;
+            console.log(`[pulua] ✓ ${ogTitle} (가격:${price}원, 이미지:${finalImages.length}장)`);
+          } catch (err) {
+            console.error(`[pulua] Error: ${item.name}`, err);
+            puluaProgress.skipped++;
+          }
+        }
+
+        puluaProgress.status = 'completed';
+        puluaProgress.message = `완료! ${puluaProgress.inserted}개 상품 저장 (건너뜀: ${puluaProgress.skipped}개)`;
+        puluaProgress.completedAt = new Date();
+        console.log(`[pulua] Done: inserted=${puluaProgress.inserted}, skipped=${puluaProgress.skipped}`);
+
+      } catch (err: any) {
+        puluaProgress.status = 'error';
+        puluaProgress.message = `오류: ${err.message || '알 수 없는 오류'}`;
+        console.error('[pulua] Crawl error:', err);
+      }
+    })();
+  });
+
   // ============= PUPPETEER DETAIL IMAGE FETCH (상세이미지) =============
   let puppeteerDetailProgress: {
     status: 'idle' | 'running' | 'completed' | 'error';
