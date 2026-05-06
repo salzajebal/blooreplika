@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
-import { CheckCircle, Package, MapPin, MessageCircle, CreditCard, Building2, Wallet, LogIn, Search } from "lucide-react";
+import { CheckCircle, Package, MapPin, MessageCircle, CreditCard, Building2, Wallet, LogIn, Search, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import type { Product } from "@shared/schema";
