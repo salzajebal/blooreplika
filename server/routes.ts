@@ -4902,42 +4902,57 @@ export async function registerRoutes(
               const detailHtml = await detailResponse.text();
               const $d = cheerio.load(detailHtml);
 
-              // Extract from owl-carousel HTML (not CSS) using cheerio
+              const BLOOSTORE_SKIP_HASHES = ['6f538ba', '62260e84', 'b7fbe75', 'faf6a05', '2a127166', '9e771eb0', 'placeholder_image'];
+              const addDetailImg = (url: string) => {
+                if (!url) return;
+                if (url.startsWith('//')) url = 'https:' + url;
+                const clean = url.split('?')[0];
+                if (!(clean.includes('cdn.imweb.me') || clean.includes('cdn-optimized.imweb.me'))) return;
+                if (BLOOSTORE_SKIP_HASHES.some(s => clean.includes(s))) return;
+                if (!detailImages.includes(clean)) detailImages.push(clean);
+              };
+
+              // 1) 캐러셀 메인 이미지 (src / data-original / data-src)
               $d('.owl-carousel.prod-owl-list .item img, .owl-carousel.prod-owl-list ._item img').each((_i: number, img: any) => {
-                let src = $d(img).attr('data-original') || $d(img).attr('data-src') || $d(img).attr('src') || '';
-                if (src.startsWith('//')) src = 'https:' + src;
-                const cleanUrl = src.split('?')[0];
-                if ((cleanUrl.includes('cdn.imweb.me') || cleanUrl.includes('cdn-optimized.imweb.me')) && !detailImages.includes(cleanUrl)) {
-                  detailImages.push(cleanUrl);
-                }
+                addDetailImg($d(img).attr('data-original') || $d(img).attr('data-src') || $d(img).attr('src') || '');
               });
 
-              // Also extract from shop_goods_img thumbnails (additional angles)
+              // 2) shop_goods_img 썸네일 (background-image CSS)
               $d('.shop_goods_img li a').each((_i: number, a: any) => {
                 const style = $d(a).attr('style') || '';
-                const urlMatch = style.match(/url\('(https:\/\/cdn[^']+)'\)/);
-                if (urlMatch) {
-                  const cleanUrl = urlMatch[1].split('?')[0];
-                  if (!detailImages.includes(cleanUrl)) detailImages.push(cleanUrl);
-                }
+                const m = style.match(/url\('(https:\/\/cdn[^']+)'\)/);
+                if (m) addDetailImg(m[1]);
               });
 
-              // Fallback: any cdn img in the product image area
-              if (detailImages.length === 0) {
-                $d('img[src*="cdn.imweb.me"], img[src*="cdn-optimized.imweb.me"]').each((_i: number, img: any) => {
-                  const src = ($d(img).attr('src') || '').split('?')[0];
-                  const SKIP = ['6f538ba', '62260e84', 'b7fbe75', 'faf6a05', '2a127166', '9e771eb0'];
-                  if (src && !SKIP.some(s => src.includes(s)) && !detailImages.includes(src)) {
-                    detailImages.push(src);
-                  }
-                });
+              // 3) 핵심: data-original 속성에 있는 상세이미지 (lazy-load 방식)
+              //    bloostore는 상세 설명 이미지를 data-original에 저장하고 JS로 채움
+              $d('img[data-original*="cdn"]').each((_i: number, img: any) => {
+                addDetailImg($d(img).attr('data-original') || '');
+              });
+              // data-src 방식도 추가
+              $d('img[data-src*="cdn"]').each((_i: number, img: any) => {
+                addDetailImg($d(img).attr('data-src') || '');
+              });
+
+              // 4) 정규식으로 data-original 전체 스캔 (cheerio가 놓친 경우 대비)
+              const dataOrigRegex = /data-original="(https:\/\/cdn[^"?]+)/g;
+              let doMatch;
+              while ((doMatch = dataOrigRegex.exec(detailHtml)) !== null) {
+                addDetailImg(doMatch[1]);
               }
 
-              // og:image as final fallback / first image
+              // 5) og:image 첫 번째 이미지로 추가
               const ogMatch = detailHtml.match(/og:image[^>]*content="(https:\/\/cdn[^"?]+)/);
               if (ogMatch) {
                 const ogUrl = ogMatch[1].split('?')[0];
                 if (!detailImages.includes(ogUrl)) detailImages.unshift(ogUrl);
+              }
+
+              // 6) 아무것도 없으면 src 전체 스캔 폴백
+              if (detailImages.length === 0) {
+                $d('img[src*="cdn.imweb.me"], img[src*="cdn-optimized.imweb.me"]').each((_i: number, img: any) => {
+                  addDetailImg($d(img).attr('src') || '');
+                });
               }
             }
 
