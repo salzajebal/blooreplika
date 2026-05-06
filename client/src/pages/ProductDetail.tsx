@@ -881,7 +881,7 @@ export default function ProductDetail() {
             </div>
           )}
 
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+          <div className="fixed bottom-14 md:bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-[45]" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
             <div className="flex gap-0 max-w-7xl mx-auto">
               <button
                 onClick={handleAddToCart}
