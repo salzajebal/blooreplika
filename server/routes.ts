@@ -4900,31 +4900,41 @@ export async function registerRoutes(
 
             if (detailResponse) {
               const detailHtml = await detailResponse.text();
+              const $d = cheerio.load(detailHtml);
 
-              const owlSection = detailHtml.match(/owl-carousel prod-owl-list[\s\S]*?<\/div>\s*<\/div>/);
-              if (owlSection) {
-                const owlImgs = owlSection[0].match(/src="(https:\/\/cdn[^"]+)"/g) || [];
-                owlImgs.forEach(m => {
-                  const url = m.replace('src="', '').replace('"', '').split('?')[0];
-                  if (!detailImages.includes(url)) detailImages.push(url);
-                });
-                const dataOrigImgs = owlSection[0].match(/data-original="(https:\/\/cdn[^"]+)"/g) || [];
-                dataOrigImgs.forEach(m => {
-                  const url = m.replace('data-original="', '').replace('"', '').split('?')[0];
-                  if (!detailImages.includes(url)) detailImages.push(url);
+              // Extract from owl-carousel HTML (not CSS) using cheerio
+              $d('.owl-carousel.prod-owl-list .item img, .owl-carousel.prod-owl-list ._item img').each((_i: number, img: any) => {
+                let src = $d(img).attr('data-original') || $d(img).attr('data-src') || $d(img).attr('src') || '';
+                if (src.startsWith('//')) src = 'https:' + src;
+                const cleanUrl = src.split('?')[0];
+                if ((cleanUrl.includes('cdn.imweb.me') || cleanUrl.includes('cdn-optimized.imweb.me')) && !detailImages.includes(cleanUrl)) {
+                  detailImages.push(cleanUrl);
+                }
+              });
+
+              // Also extract from shop_goods_img thumbnails (additional angles)
+              $d('.shop_goods_img li a').each((_i: number, a: any) => {
+                const style = $d(a).attr('style') || '';
+                const urlMatch = style.match(/url\('(https:\/\/cdn[^']+)'\)/);
+                if (urlMatch) {
+                  const cleanUrl = urlMatch[1].split('?')[0];
+                  if (!detailImages.includes(cleanUrl)) detailImages.push(cleanUrl);
+                }
+              });
+
+              // Fallback: any cdn img in the product image area
+              if (detailImages.length === 0) {
+                $d('img[src*="cdn.imweb.me"], img[src*="cdn-optimized.imweb.me"]').each((_i: number, img: any) => {
+                  const src = ($d(img).attr('src') || '').split('?')[0];
+                  const SKIP = ['6f538ba', '62260e84', 'b7fbe75', 'faf6a05', '2a127166', '9e771eb0'];
+                  if (src && !SKIP.some(s => src.includes(s)) && !detailImages.includes(src)) {
+                    detailImages.push(src);
+                  }
                 });
               }
 
-              const goodsImgSection = detailHtml.match(/shop_goods_img[\s\S]*?<\/ul>/);
-              if (goodsImgSection) {
-                const bgUrls = goodsImgSection[0].match(/url\('(https:\/\/cdn[^']+)'\)/g) || [];
-                bgUrls.forEach(m => {
-                  const url = m.replace("url('", '').replace("')", '').split('?')[0];
-                  if (!detailImages.includes(url)) detailImages.push(url);
-                });
-              }
-
-              const ogMatch = detailHtml.match(/og:image[^>]*content="(https:\/\/cdn[^"]+)"/);
+              // og:image as final fallback / first image
+              const ogMatch = detailHtml.match(/og:image[^>]*content="(https:\/\/cdn[^"?]+)/);
               if (ogMatch) {
                 const ogUrl = ogMatch[1].split('?')[0];
                 if (!detailImages.includes(ogUrl)) detailImages.unshift(ogUrl);
