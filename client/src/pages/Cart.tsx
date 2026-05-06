@@ -64,19 +64,7 @@ export default function Cart() {
     }));
   };
 
-  const checkLoginAndRedirect = (redirectPath: string): boolean => {
-    const memberToken = localStorage.getItem("memberToken");
-    if (!memberToken) {
-      if (window.confirm("로그인이 필요합니다.\n로그인 페이지로 이동하시겠습니까?")) {
-        setLocation(`/login?redirect=${encodeURIComponent(redirectPath)}`);
-      }
-      return false;
-    }
-    return true;
-  };
-
   const handleCheckout = () => {
-    if (!checkLoginAndRedirect("/cart")) return;
     const itemsWithOptions = items.map(item => ({
       ...item,
       selectedSize: itemOptions[item.id]?.size || "",
@@ -240,7 +228,6 @@ export default function Cart() {
                             if (itemOptions[item.id]?.color) params.append("color", itemOptions[item.id].color);
                             const queryString = params.toString();
                             const orderPath = `/order/${item.id}${queryString ? "?" + queryString : ""}`;
-                            if (!checkLoginAndRedirect(orderPath)) return;
                             setLocation(orderPath);
                           }}
                           data-testid={`button-buy-${item.id}`}

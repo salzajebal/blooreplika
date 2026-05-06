@@ -195,13 +195,6 @@ export default function ProductDetail() {
       });
       return;
     }
-    const memberToken = localStorage.getItem("memberToken");
-    if (!memberToken) {
-      if (window.confirm("로그인이 필요합니다.\n로그인 페이지로 이동하시겠습니까?")) {
-        setLocation(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
-      }
-      return;
-    }
     if (!validateOptionSelection()) return;
     const optionParts: string[] = [];
     if (selectedColor) optionParts.push(`컬러:${selectedColor}`);
