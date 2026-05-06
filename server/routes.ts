@@ -5921,7 +5921,7 @@ export async function registerRoutes(
             const maxCount = item.maxProducts || 6;
             let brandId: string | undefined;
             if (item.brandName) {
-              const allBrands = await storage.getBrands();
+              const allBrands = await storage.getAllBrands();
               const matched = allBrands.find((b: any) => b.name?.toLowerCase() === item.brandName?.toLowerCase());
               brandId = matched?.id;
             }
