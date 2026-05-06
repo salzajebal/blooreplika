@@ -1912,6 +1912,8 @@ export async function registerRoutes(
         pointBalance: 10000  // 회원가입 시 1만 포인트 지급
       });
       
+      sendTelegramNotification(`🎉 <b>새 회원가입</b>\n👤 ${name} (${username})\n📱 ${phone || "미입력"}`).catch(() => {});
+
       res.status(201).json({ 
         success: true, 
         message: "회원가입이 완료되었습니다.",
@@ -2233,10 +2235,127 @@ export async function registerRoutes(
         updatedAt: new Date()
       });
       
+      sendTelegramNotification(`💬 <b>새 1:1 채팅 (회원)</b>\n👤 ${session.name}\n💬 ${message.substring(0, 100)}`).catch(() => {});
+
       res.status(201).json({ success: true, data: chatMessage });
     } catch (error) {
       console.error("Error sending member message:", error);
       res.status(500).json({ success: false, error: "메시지 전송에 실패했습니다." });
+    }
+  });
+
+  // ==================== TELEGRAM NOTIFICATION HELPER ====================
+
+  async function sendTelegramNotification(text: string): Promise<void> {
+    try {
+      const settings = await storage.getAllSiteSettings();
+      const token   = settings.find(s => s.key === "telegram_bot_token")?.value;
+      const chatId  = settings.find(s => s.key === "telegram_chat_id")?.value;
+      const enabled = settings.find(s => s.key === "telegram_enabled")?.value === "true";
+      if (!token || !chatId || !enabled) return;
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
+      });
+    } catch (e) {
+      console.error("[telegram] notification failed:", e);
+    }
+  }
+
+  // ==================== TELEGRAM BOT API ====================
+
+  app.get("/api/admin/telegram/settings", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const settings = await storage.getAllSiteSettings();
+      res.json({
+        success: true,
+        data: {
+          token:           settings.find(s => s.key === "telegram_bot_token")?.value || "",
+          chatId:          settings.find(s => s.key === "telegram_chat_id")?.value || "",
+          enabled:         settings.find(s => s.key === "telegram_enabled")?.value === "true",
+          notifyOrder:     settings.find(s => s.key === "telegram_notify_order")?.value !== "false",
+          notifyMember:    settings.find(s => s.key === "telegram_notify_member")?.value !== "false",
+          notifyChat:      settings.find(s => s.key === "telegram_notify_chat")?.value !== "false",
+        },
+      });
+    } catch (e) {
+      res.status(500).json({ success: false, error: "설정을 불러올 수 없습니다." });
+    }
+  });
+
+  app.post("/api/admin/telegram/settings", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { token, chatId, enabled, notifyOrder, notifyMember, notifyChat } = req.body;
+      await Promise.all([
+        storage.setSiteSetting("telegram_bot_token",   token   || ""),
+        storage.setSiteSetting("telegram_chat_id",     chatId  || ""),
+        storage.setSiteSetting("telegram_enabled",     enabled ? "true" : "false"),
+        storage.setSiteSetting("telegram_notify_order",  notifyOrder  !== false ? "true" : "false"),
+        storage.setSiteSetting("telegram_notify_member", notifyMember !== false ? "true" : "false"),
+        storage.setSiteSetting("telegram_notify_chat",   notifyChat   !== false ? "true" : "false"),
+      ]);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ success: false, error: "저장에 실패했습니다." });
+    }
+  });
+
+  // 토큰 자동 검증 — Telegram getMe API 호출
+  app.post("/api/admin/telegram/validate", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { token } = req.body;
+      if (!token) return res.status(400).json({ success: false, error: "토큰을 입력해주세요." });
+      const r = await fetch(`https://api.telegram.org/bot${token}/getMe`);
+      const data = await r.json() as any;
+      if (!data.ok) return res.status(400).json({ success: false, error: "유효하지 않은 토큰입니다. BotFather에서 발급받은 토큰을 확인하세요." });
+      res.json({ success: true, data: { username: data.result.username, firstName: data.result.first_name } });
+    } catch (e) {
+      res.status(500).json({ success: false, error: "텔레그램 서버에 연결할 수 없습니다." });
+    }
+  });
+
+  // 채팅 ID 자동 감지 — getUpdates로 최근 채팅 목록 반환
+  app.post("/api/admin/telegram/get-chats", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { token } = req.body;
+      if (!token) return res.status(400).json({ success: false, error: "토큰을 입력해주세요." });
+      const r = await fetch(`https://api.telegram.org/bot${token}/getUpdates?limit=100&allowed_updates=["message","channel_post"]`);
+      const data = await r.json() as any;
+      if (!data.ok) return res.status(400).json({ success: false, error: "업데이트를 가져올 수 없습니다." });
+
+      const seen = new Set<string>();
+      const chats: { id: string; title: string; type: string }[] = [];
+      for (const update of (data.result || [])) {
+        const chat = update.message?.chat || update.channel_post?.chat;
+        if (!chat) continue;
+        const key = String(chat.id);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const title = chat.title || chat.username || chat.first_name || String(chat.id);
+        chats.push({ id: key, title, type: chat.type });
+      }
+      res.json({ success: true, data: chats });
+    } catch (e) {
+      res.status(500).json({ success: false, error: "채팅 목록을 가져올 수 없습니다." });
+    }
+  });
+
+  // 테스트 메시지 전송
+  app.post("/api/admin/telegram/test", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { token, chatId } = req.body;
+      if (!token || !chatId) return res.status(400).json({ success: false, error: "토큰과 채팅 ID가 필요합니다." });
+      const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, text: "✅ <b>velour 알림 연결 성공!</b>\n\n이제 주문·회원가입·1:1 채팅 알림이 이 채널로 발송됩니다.", parse_mode: "HTML" }),
+      });
+      const data = await r.json() as any;
+      if (!data.ok) return res.status(400).json({ success: false, error: `전송 실패: ${data.description}` });
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ success: false, error: "테스트 메시지 전송에 실패했습니다." });
     }
   });
 
@@ -2426,6 +2545,7 @@ export async function registerRoutes(
         message: message.trim(),
       });
       await storage.updateChatConversation(conversationId, { updatedAt: new Date() });
+      sendTelegramNotification(`💬 <b>새 1:1 채팅 (비회원)</b>\n👤 ${guestName.trim()}\n💬 ${message.trim().substring(0, 100)}`).catch(() => {});
       res.status(201).json({ success: true, data: chatMessage });
     } catch (error) {
       console.error("Error sending guest message:", error);
@@ -3081,6 +3201,7 @@ export async function registerRoutes(
           paymentStatus: "pending"
         });
         
+        sendTelegramNotification(`🛍️ <b>새 주문 (장바구니)</b>\n👤 ${orderData.memberName}\n📦 ${cartItems[0].productName}${cartItems.length > 1 ? ` 외 ${cartItems.length - 1}건` : ""}\n💰 ${orderData.totalAmount?.toLocaleString()}원`).catch(() => {});
         return res.status(201).json({ success: true, data: order });
       }
       
@@ -3110,6 +3231,8 @@ export async function registerRoutes(
         });
       }
       
+      sendTelegramNotification(`🛍️ <b>새 주문</b>\n👤 ${order.memberName}\n📦 ${order.productName}\n💰 ${order.totalAmount?.toLocaleString()}원\n💳 ${order.paymentMethod === "card" ? "카드결제" : "계좌이체"}`).catch(() => {});
+
       res.status(201).json({ success: true, data: order });
     } catch (error) {
       if (error instanceof z.ZodError) {

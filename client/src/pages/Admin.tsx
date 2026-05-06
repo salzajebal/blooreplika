@@ -89,7 +89,7 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff" | "contentSections" | "magazines" | "labs" | "quickMenu">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff" | "contentSections" | "magazines" | "labs" | "quickMenu" | "telegram">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [visitorStats, setVisitorStats] = useState<{ realtime: number; today: number; pageViews: number; recentPages: { page: string; count: number }[] } | null>(null);
   
@@ -233,6 +233,17 @@ export default function Admin() {
     kakaoPixelEnabled: false,
   });
   const [pixelLoading, setPixelLoading] = useState(false);
+
+  const [tgSettings, setTgSettings] = useState({
+    token: "", chatId: "", enabled: false,
+    notifyOrder: true, notifyMember: true, notifyChat: true,
+  });
+  const [tgStep, setTgStep] = useState<1|2|3>(1);
+  const [tgBotInfo, setTgBotInfo] = useState<{ username: string; firstName: string } | null>(null);
+  const [tgChats, setTgChats] = useState<{ id: string; title: string; type: string }[]>([]);
+  const [tgLoading, setTgLoading] = useState(false);
+  const [tgSaving, setTgSaving] = useState(false);
+  const [tgMsg, setTgMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [detailBannerSettings, setDetailBannerSettings] = useState({ banner1: "", banner2: "" });
   
   const [staffUsers, setStaffUsers] = useState<{id: string; username: string; name?: string | null; role?: string | null; createdAt?: Date | null}[]>([]);
@@ -1596,6 +1607,21 @@ export default function Admin() {
   }, [activeTab, isAuthenticated]);
 
   useEffect(() => {
+    if (isAuthenticated && activeTab === "telegram") {
+      fetchWithAuth("/api/admin/telegram/settings")
+        .then(r => r.json())
+        .then(d => {
+          if (d.success) {
+            setTgSettings(d.data);
+            if (d.data.token && d.data.chatId) setTgStep(3);
+            else if (d.data.token) setTgStep(2);
+            else setTgStep(1);
+          }
+        }).catch(() => {});
+    }
+  }, [activeTab, isAuthenticated]);
+
+  useEffect(() => {
     if (isAuthenticated && activeTab === "staff" && adminRole === "super_admin") {
       fetchStaffUsers();
     }
@@ -2849,6 +2875,15 @@ export default function Admin() {
               >
                 <Circle className="w-4 h-4 md:mr-2" />
                 <span className="hidden md:inline">퀵메뉴 관리</span>
+              </Button>
+              <Button
+                data-testid="tab-telegram"
+                variant={activeTab === "telegram" ? "default" : "outline"}
+                onClick={() => setActiveTab("telegram")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "telegram" ? "bg-sky-500 hover:bg-sky-600" : ""}`}
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4 md:mr-2 fill-current" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+                <span className="hidden md:inline">텔레그램 봇</span>
               </Button>
               <Button
                 data-testid="tab-settings"
@@ -7000,6 +7035,226 @@ export default function Admin() {
 
         {activeTab === "quickMenu" && adminRole === "super_admin" && (
           <QuickMenuTab authToken={authToken} />
+        )}
+
+        {activeTab === "telegram" && adminRole === "super_admin" && (
+          <div className="space-y-6 max-w-2xl">
+            {/* 헤더 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center">
+                  <svg viewBox="0 0 24 24" className="w-6 h-6 fill-white"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/></svg>
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">텔레그램 봇 연결</h2>
+                  <p className="text-sm text-gray-500">주문·회원가입·채팅 알림을 텔레그램으로 즉시 받습니다.</p>
+                </div>
+              </div>
+
+              {/* 스텝 인디케이터 */}
+              <div className="flex items-center gap-2 mt-4">
+                {[1,2,3].map((s) => (
+                  <div key={s} className="flex items-center gap-2">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${tgStep >= s ? "bg-sky-500 text-white" : "bg-gray-200 text-gray-500"}`}>{s}</div>
+                    {s < 3 && <div className={`h-1 w-10 rounded ${tgStep > s ? "bg-sky-500" : "bg-gray-200"}`} />}
+                  </div>
+                ))}
+                <span className="ml-2 text-sm text-gray-500">{tgStep === 1 ? "봇 토큰 입력" : tgStep === 2 ? "채팅 ID 선택" : "알림 설정"}</span>
+              </div>
+            </div>
+
+            {/* Step 1 — 토큰 입력 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${tgStep >= 1 ? "bg-sky-500 text-white" : "bg-gray-200"}`}>1</div>
+                <h3 className="font-bold">봇 토큰 입력</h3>
+              </div>
+              <div className="bg-sky-50 border border-sky-200 rounded-lg p-3 text-sm text-sky-800 space-y-1">
+                <p className="font-semibold">📱 BotFather에서 토큰 발급받기</p>
+                <p>① 텔레그램 앱에서 <b>@BotFather</b> 검색 → 대화 시작</p>
+                <p>② <code className="bg-sky-100 px-1 rounded">/newbot</code> 입력 → 봇 이름·username 설정</p>
+                <p>③ 발급된 <b>토큰</b>을 아래에 붙여넣기</p>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
+                  value={tgSettings.token}
+                  onChange={e => setTgSettings(p => ({ ...p, token: e.target.value }))}
+                  className="font-mono text-sm"
+                  data-testid="input-tg-token"
+                />
+                <Button
+                  onClick={async () => {
+                    if (!tgSettings.token.trim()) return;
+                    setTgLoading(true); setTgMsg(null);
+                    const r = await fetchWithAuth("/api/admin/telegram/validate", { method: "POST", body: JSON.stringify({ token: tgSettings.token.trim() }) });
+                    const d = await r.json();
+                    setTgLoading(false);
+                    if (d.success) { setTgBotInfo(d.data); setTgStep(2); setTgMsg({ type: "ok", text: `✅ @${d.data.username} 연결 성공!` }); }
+                    else setTgMsg({ type: "err", text: d.error });
+                  }}
+                  disabled={tgLoading || !tgSettings.token.trim()}
+                  className="bg-sky-500 hover:bg-sky-600 text-white shrink-0"
+                  data-testid="button-tg-validate"
+                >
+                  {tgLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : "자동 확인"}
+                </Button>
+              </div>
+              {tgBotInfo && <p className="text-sm text-green-600 font-semibold">✅ 봇: {tgBotInfo.firstName} (@{tgBotInfo.username})</p>}
+              {tgMsg && <p className={`text-sm font-medium ${tgMsg.type === "ok" ? "text-green-600" : "text-red-600"}`}>{tgMsg.text}</p>}
+            </div>
+
+            {/* Step 2 — 채팅 ID */}
+            {tgStep >= 2 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-sky-500 text-white">2</div>
+                  <h3 className="font-bold">알림 받을 채팅 선택</h3>
+                </div>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 space-y-1">
+                  <p className="font-semibold">📋 채팅 ID 자동 감지 방법</p>
+                  <p>① 봇을 알림 받을 <b>채널/그룹에 초대</b>하거나, 봇과 <b>개인 채팅</b> 시작</p>
+                  <p>② 해당 채팅에서 <b>아무 메시지나 1개</b> 보내기</p>
+                  <p>③ 아래 [채팅 자동 감지] 버튼 클릭</p>
+                </div>
+                <Button
+                  onClick={async () => {
+                    setTgLoading(true); setTgMsg(null);
+                    const r = await fetchWithAuth("/api/admin/telegram/get-chats", { method: "POST", body: JSON.stringify({ token: tgSettings.token }) });
+                    const d = await r.json();
+                    setTgLoading(false);
+                    if (d.success) {
+                      setTgChats(d.data);
+                      if (d.data.length === 0) setTgMsg({ type: "err", text: "감지된 채팅이 없습니다. 봇에게 먼저 메시지를 보내주세요." });
+                      else setTgMsg({ type: "ok", text: `${d.data.length}개 채팅 감지됨. 아래에서 선택하세요.` });
+                    } else setTgMsg({ type: "err", text: d.error });
+                  }}
+                  disabled={tgLoading}
+                  className="bg-amber-500 hover:bg-amber-600 text-white"
+                  data-testid="button-tg-get-chats"
+                >
+                  {tgLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                  채팅 자동 감지
+                </Button>
+
+                {tgChats.length > 0 && (
+                  <div className="space-y-2">
+                    {tgChats.map(chat => (
+                      <button
+                        key={chat.id}
+                        onClick={() => { setTgSettings(p => ({ ...p, chatId: chat.id })); setTgStep(3); setTgMsg(null); }}
+                        className={`w-full text-left px-4 py-3 rounded-lg border transition-all ${tgSettings.chatId === chat.id ? "border-sky-500 bg-sky-50" : "border-gray-200 hover:border-sky-300"}`}
+                        data-testid={`button-tg-chat-${chat.id}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{chat.title}</span>
+                          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">{chat.type}</span>
+                        </div>
+                        <span className="text-xs text-gray-400 font-mono">ID: {chat.id}</span>
+                        {tgSettings.chatId === chat.id && <span className="ml-2 text-sky-500 text-xs font-bold">✓ 선택됨</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* 직접 입력 */}
+                <div>
+                  <p className="text-xs text-gray-500 mb-1">또는 채팅 ID 직접 입력</p>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="-1001234567890"
+                      value={tgSettings.chatId}
+                      onChange={e => setTgSettings(p => ({ ...p, chatId: e.target.value }))}
+                      className="font-mono text-sm"
+                      data-testid="input-tg-chatid"
+                    />
+                    {tgSettings.chatId && <Button onClick={() => setTgStep(3)} className="bg-sky-500 hover:bg-sky-600 text-white shrink-0">다음 →</Button>}
+                  </div>
+                </div>
+                {tgMsg && <p className={`text-sm font-medium ${tgMsg.type === "ok" ? "text-green-600" : "text-red-600"}`}>{tgMsg.text}</p>}
+              </div>
+            )}
+
+            {/* Step 3 — 알림 설정 + 저장 */}
+            {tgStep >= 3 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-5">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-sky-500 text-white">3</div>
+                  <h3 className="font-bold">알림 설정</h3>
+                </div>
+
+                {/* 활성화 토글 */}
+                <div className="flex items-center justify-between p-4 bg-sky-50 border border-sky-200 rounded-lg">
+                  <div>
+                    <p className="font-bold text-sky-900">텔레그램 알림 활성화</p>
+                    <p className="text-xs text-sky-700">비활성화 시 아무 알림도 발송되지 않습니다.</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked={tgSettings.enabled} onChange={e => setTgSettings(p => ({ ...p, enabled: e.target.checked }))} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
+                  </label>
+                </div>
+
+                {/* 알림 항목 토글 */}
+                <div className="space-y-3">
+                  {([
+                    { key: "notifyOrder" as const, icon: "🛍️", label: "새 주문 알림", desc: "고객이 주문할 때마다 알림" },
+                    { key: "notifyMember" as const, icon: "🎉", label: "신규 회원가입 알림", desc: "새 회원이 가입할 때마다 알림" },
+                    { key: "notifyChat" as const, icon: "💬", label: "1:1 채팅 메시지 알림", desc: "고객이 채팅 메시지를 보낼 때 알림" },
+                  ]).map(({ key, icon, label, desc }) => (
+                    <div key={key} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{icon}</span>
+                        <div>
+                          <p className="font-medium text-sm">{label}</p>
+                          <p className="text-xs text-gray-400">{desc}</p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked={tgSettings[key]} onChange={e => setTgSettings(p => ({ ...p, [key]: e.target.checked }))} className="sr-only peer" />
+                        <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 테스트 + 저장 */}
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      setTgLoading(true); setTgMsg(null);
+                      const r = await fetchWithAuth("/api/admin/telegram/test", { method: "POST", body: JSON.stringify({ token: tgSettings.token, chatId: tgSettings.chatId }) });
+                      const d = await r.json();
+                      setTgLoading(false);
+                      setTgMsg(d.success ? { type: "ok", text: "✅ 테스트 메시지 전송 완료!" } : { type: "err", text: d.error });
+                    }}
+                    disabled={tgLoading}
+                    data-testid="button-tg-test"
+                  >
+                    {tgLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                    테스트 메시지 전송
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      setTgSaving(true); setTgMsg(null);
+                      const r = await fetchWithAuth("/api/admin/telegram/settings", { method: "POST", body: JSON.stringify(tgSettings) });
+                      const d = await r.json();
+                      setTgSaving(false);
+                      setTgMsg(d.success ? { type: "ok", text: "✅ 저장 완료! 이제 텔레그램으로 알림이 발송됩니다." } : { type: "err", text: d.error });
+                    }}
+                    disabled={tgSaving}
+                    className="bg-sky-500 hover:bg-sky-600 text-white"
+                    data-testid="button-tg-save"
+                  >
+                    {tgSaving ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                    설정 저장
+                  </Button>
+                </div>
+                {tgMsg && <p className={`text-sm font-medium ${tgMsg.type === "ok" ? "text-green-600" : "text-red-600"}`}>{tgMsg.text}</p>}
+              </div>
+            )}
+          </div>
         )}
 
         {activeTab === "staff" && adminRole === "super_admin" && (
