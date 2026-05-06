@@ -80,58 +80,42 @@ const reviewImageUpload = multer({
   },
 });
 
+const imageFileFilter = (_req: any, file: any, cb: any) => {
+  const allowedTypes = /jpeg|jpg|png|gif|webp/;
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedTypes.test(file.mimetype);
+  if (extname && mimetype) cb(null, true);
+  else cb(new Error("이미지 파일만 업로드 가능합니다. (jpg, png, gif, webp)"));
+};
+
 const bannerImageUpload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => {
-      const dir = path.join(process.cwd(), "uploads", "banners");
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      cb(null, dir);
-    },
-    filename: (_req, file, cb) => {
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, `banner-${uniqueSuffix}${ext}`);
-    },
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) {
-      cb(null, true);
-    } else {
-      cb(new Error("이미지 파일만 업로드 가능합니다. (jpg, png, gif, webp)"));
-    }
-  },
+  fileFilter: imageFileFilter,
 });
 
 const quickMenuImageUpload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => {
-      const dir = path.join(process.cwd(), "uploads", "quickmenu");
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      cb(null, dir);
-    },
-    filename: (_req, file, cb) => {
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      const ext = path.extname(file.originalname).toLowerCase();
-      cb(null, `qm-${uniqueSuffix}${ext}`);
-    },
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (_req: any, file: any, cb: any) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) {
-      cb(null, true);
-    } else {
-      cb(new Error("이미지 파일만 업로드 가능합니다. (jpg, png, gif, webp)"));
-    }
-  },
+  fileFilter: imageFileFilter,
 });
 
+
+async function uploadBufferToObjectStorage(
+  svc: ObjectStorageService,
+  buffer: Buffer,
+  mimetype: string
+): Promise<string> {
+  const uploadURL = await svc.getObjectEntityUploadURL();
+  const objectPath = svc.normalizeObjectEntityPath(uploadURL);
+  const uploadRes = await fetch(uploadURL, {
+    method: "PUT",
+    body: buffer,
+    headers: { "Content-Type": mimetype },
+  });
+  if (!uploadRes.ok) throw new Error(`Object Storage upload failed: ${uploadRes.status}`);
+  return objectPath;
+}
 
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "admin123";
@@ -189,12 +173,8 @@ export async function registerRoutes(
     if (fs.existsSync(filePath)) {
       return express.default.static(path.join(process.cwd(), "uploads"))(req, res, next);
     }
-    // 파일이 없으면 404 대신 기본 이미지로 리다이렉트
-    if (req.path.startsWith("/reviews/")) {
-      res.redirect("/api/default-review-image");
-    } else {
-      next();
-    }
+    // 파일이 없으면(재배포 후) 기본 이미지로 폴백
+    res.redirect("/api/default-review-image");
   });
   
   registerObjectStorageRoutes(app);
@@ -3100,8 +3080,8 @@ export async function registerRoutes(
       if (!file) {
         return res.status(400).json({ success: false, error: "이미지 파일이 필요합니다." });
       }
-      const fileUrl = `/uploads/banners/${file.filename}`;
-      res.json({ success: true, data: { imageUrl: fileUrl } });
+      const objectPath = await uploadBufferToObjectStorage(objectStorageService, file.buffer, file.mimetype);
+      res.json({ success: true, data: { imageUrl: objectPath } });
     } catch (error) {
       console.error("Error uploading banner image:", error);
       res.status(500).json({ success: false, error: "배너 이미지 업로드에 실패했습니다." });
@@ -6118,15 +6098,9 @@ export async function registerRoutes(
       let imageUrl = req.body.imageUrl || "";
       if (req.file) {
         try {
-          const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-          const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
-          const fileBuffer = fs.readFileSync(req.file.path);
-          const uploadRes = await fetch(uploadURL, { method: "PUT", body: fileBuffer, headers: { "Content-Type": req.file.mimetype } });
-          if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`);
-          fs.unlinkSync(req.file.path);
-          imageUrl = objectPath;
+          imageUrl = await uploadBufferToObjectStorage(objectStorageService, req.file.buffer, req.file.mimetype);
         } catch {
-          imageUrl = `/uploads/quickmenu/${req.file.filename}`;
+          imageUrl = "";
         }
       }
       if (!imageUrl) {
@@ -6157,15 +6131,9 @@ export async function registerRoutes(
       if (isActive !== undefined) updateData.isActive = isActive === "true" || isActive === true;
       if (req.file) {
         try {
-          const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-          const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
-          const fileBuffer = fs.readFileSync(req.file.path);
-          const uploadRes = await fetch(uploadURL, { method: "PUT", body: fileBuffer, headers: { "Content-Type": req.file.mimetype } });
-          if (!uploadRes.ok) throw new Error(`Upload failed: ${uploadRes.status}`);
-          fs.unlinkSync(req.file.path);
-          updateData.imageUrl = objectPath;
+          updateData.imageUrl = await uploadBufferToObjectStorage(objectStorageService, req.file.buffer, req.file.mimetype);
         } catch {
-          updateData.imageUrl = `/uploads/quickmenu/${req.file.filename}`;
+          // ignore, keep existing imageUrl
         }
       } else if (req.body.imageUrl !== undefined) {
         updateData.imageUrl = req.body.imageUrl;
@@ -6197,8 +6165,8 @@ export async function registerRoutes(
       if (!file) {
         return res.status(400).json({ success: false, error: "이미지 파일이 필요합니다." });
       }
-      const fileUrl = `/uploads/quickmenu/${file.filename}`;
-      res.json({ success: true, data: { imageUrl: fileUrl } });
+      const objectPath = await uploadBufferToObjectStorage(objectStorageService, file.buffer, file.mimetype);
+      res.json({ success: true, data: { imageUrl: objectPath } });
     } catch (error) {
       res.status(500).json({ success: false, error: "이미지 업로드에 실패했습니다." });
     }
@@ -6555,24 +6523,15 @@ export async function registerRoutes(
         // imweb q param (base64 encoded board keyword config)
         const Q_PARAM = "YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9";
 
-        // Helper: download image to local uploads/reviews/
-        const reviewsDir = path.join(process.cwd(), 'uploads', 'reviews');
-        if (!fs.existsSync(reviewsDir)) fs.mkdirSync(reviewsDir, { recursive: true });
-
+        // Helper: download image and upload to Object Storage
         const downloadImage = async (srcUrl: string): Promise<string | null> => {
           try {
             const imgResp = await fetch(srcUrl, { headers: { ...headers, "Referer": BASE_URL + "/" } });
             if (!imgResp.ok) return null;
             const contentType = imgResp.headers.get('content-type') || 'image/jpeg';
-            const ext = contentType.includes('png') ? 'png' : contentType.includes('gif') ? 'gif' : contentType.includes('webp') ? 'webp' : 'jpg';
-            const hash = crypto.createHash('md5').update(srcUrl).digest('hex').slice(0, 12);
-            const fileName = `bloo_${hash}.${ext}`;
-            const filePath = path.join(reviewsDir, fileName);
-            if (!fs.existsSync(filePath)) {
-              const buf = Buffer.from(await imgResp.arrayBuffer());
-              fs.writeFileSync(filePath, buf);
-            }
-            return `/uploads/reviews/${fileName}`;
+            const buf = Buffer.from(await imgResp.arrayBuffer());
+            const objectPath = await uploadBufferToObjectStorage(objectStorageService, buf, contentType);
+            return objectPath;
           } catch {
             return null;
           }
