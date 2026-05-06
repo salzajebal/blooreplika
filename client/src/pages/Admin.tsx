@@ -8148,6 +8148,8 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
   const [selectedProducts, setSelectedProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [brands, setBrands] = useState<any[]>([]);
+  const [brandSearch, setBrandSearch] = useState("");
+  const [showBrandDropdown, setShowBrandDropdown] = useState(false);
 
   useEffect(() => {
     fetch("/api/categories").then(r => r.json()).then(d => { if (d.success) setCategories(d.data || []); }).catch(() => {});
@@ -8517,19 +8519,50 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
                       ))}
                     </select>
                   </div>
-                  <div>
+                  <div className="relative">
                     <label className="block text-sm font-medium mb-1">브랜드 (선택)</label>
-                    <select
-                      data-testid="input-brandName"
-                      className="w-full border rounded-lg px-3 py-2 text-sm"
-                      value={form.brandName}
-                      onChange={e => setForm({ ...form, brandName: e.target.value })}
-                    >
-                      <option value="">전체 (브랜드 필터 없음)</option>
-                      {brands.map((b: any) => (
-                        <option key={b.id} value={b.name}>{b.name}</option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <Input
+                        data-testid="input-brandName"
+                        placeholder="브랜드 검색..."
+                        value={showBrandDropdown ? brandSearch : (form.brandName || "")}
+                        onFocus={() => { setShowBrandDropdown(true); setBrandSearch(form.brandName || ""); }}
+                        onChange={e => { setBrandSearch(e.target.value); setShowBrandDropdown(true); }}
+                        onBlur={() => setTimeout(() => setShowBrandDropdown(false), 200)}
+                        className="w-full pr-8"
+                        autoComplete="off"
+                      />
+                      {form.brandName && (
+                        <button
+                          type="button"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                          onMouseDown={e => { e.preventDefault(); setForm({ ...form, brandName: "" }); setBrandSearch(""); }}
+                        >✕</button>
+                      )}
+                    </div>
+                    {showBrandDropdown && (
+                      <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto" style={{ overscrollBehavior: "contain" }}>
+                        <div
+                          className="px-3 py-2 text-sm text-gray-500 hover:bg-gray-50 cursor-pointer"
+                          onMouseDown={e => { e.preventDefault(); setForm({ ...form, brandName: "" }); setBrandSearch(""); setShowBrandDropdown(false); }}
+                        >전체 (브랜드 필터 없음)</div>
+                        {brands
+                          .filter((b: any) => !brandSearch || b.name.toLowerCase().includes(brandSearch.toLowerCase()))
+                          .map((b: any) => (
+                            <div
+                              key={b.id}
+                              className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 ${form.brandName === b.name ? "bg-blue-100 font-semibold text-blue-700" : "text-gray-800"}`}
+                              onMouseDown={e => { e.preventDefault(); setForm({ ...form, brandName: b.name }); setBrandSearch(""); setShowBrandDropdown(false); }}
+                            >
+                              {b.name}
+                            </div>
+                          ))
+                        }
+                        {brands.filter((b: any) => !brandSearch || b.name.toLowerCase().includes(brandSearch.toLowerCase())).length === 0 && (
+                          <div className="px-3 py-2 text-sm text-gray-400">검색 결과 없음</div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">최대 상품 수</label>
