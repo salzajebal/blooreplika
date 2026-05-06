@@ -2240,6 +2240,151 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== FACEBOOK PRODUCT CATALOG XML FEED ====================
+
+  const FB_CATEGORY_MAP: Record<string, { id: string; name: string }> = {
+    bags:        { id: "169",  name: "Apparel & Accessories > Handbags, Wallets & Cases > Handbags" },
+    clothing:    { id: "1604", name: "Apparel & Accessories > Clothing" },
+    shoes:       { id: "187",  name: "Apparel & Accessories > Shoes" },
+    wallets:     { id: "3032", name: "Apparel & Accessories > Handbags, Wallets & Cases > Wallets & Money Clips" },
+    jewelry:     { id: "188",  name: "Apparel & Accessories > Jewelry" },
+    watches:     { id: "201",  name: "Apparel & Accessories > Jewelry > Watches" },
+    golf:        { id: "990",  name: "Sporting Goods > Golf" },
+    accessories: { id: "166",  name: "Apparel & Accessories" },
+    sunglasses:  { id: "178",  name: "Apparel & Accessories > Sunglasses" },
+    belts:       { id: "2541", name: "Apparel & Accessories > Clothing Accessories > Belts" },
+    default:     { id: "166",  name: "Apparel & Accessories" },
+  };
+
+  function escapeXml(s: string): string {
+    return s
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&apos;");
+  }
+
+  app.get("/api/catalog/feed.xml", async (req: Request, res: Response) => {
+    try {
+      const filterCategory = (req.query.category as string) || undefined;
+      const BATCH = 500;
+
+      // 사이트 도메인
+      const proto = req.headers["x-forwarded-proto"] || (req.secure ? "https" : "http");
+      const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:5000";
+      const baseUrl = `${proto}://${host}`;
+
+      // 브랜드 맵 로드
+      const allBrands = await storage.getAllBrands();
+      const brandMap = new Map(allBrands.map(b => [b.id, b.name]));
+
+      res.setHeader("Content-Type", "application/xml; charset=utf-8");
+      res.setHeader("Cache-Control", "public, max-age=3600");
+
+      // XML 헤더
+      res.write(`<?xml version="1.0" encoding="UTF-8"?>\n`);
+      res.write(`<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">\n`);
+      res.write(`  <channel>\n`);
+      res.write(`    <title>velour - 명품 쇼핑몰</title>\n`);
+      res.write(`    <link>${baseUrl}</link>\n`);
+      res.write(`    <description>velour 상품 카탈로그 피드</description>\n`);
+
+      let offset = 0;
+      let total = 0;
+      let written = 0;
+
+      do {
+        const { products: batch, total: t } = await storage.getProductsFullPaginated(BATCH, offset, filterCategory);
+        total = t;
+
+        for (const p of batch) {
+          if (!p.isActive || !p.imageUrl) continue;
+
+          const catKey = (p.categoryId || "").toLowerCase();
+          const fbCat = FB_CATEGORY_MAP[catKey] || FB_CATEGORY_MAP.default;
+          const brandName = p.brandId ? (brandMap.get(p.brandId) || "velour") : "velour";
+          const availability = p.isSoldOut ? "out of stock" : "in stock";
+          const priceKRW = `${p.price} KRW`;
+
+          // 이미지 URL — bloostore 이미지는 프록시로
+          const rawImg = p.imageUrl;
+          const imgUrl = rawImg.includes("bloostore")
+            ? `${baseUrl}/api/bloostore-image-proxy?url=${encodeURIComponent(rawImg)}`
+            : rawImg.startsWith("http") ? rawImg : `${baseUrl}${rawImg}`;
+
+          const productUrl = `${baseUrl}/product/${p.id}`;
+          const title = escapeXml(p.name.substring(0, 150));
+          const desc = escapeXml((p.description || p.name).substring(0, 500));
+
+          res.write(`    <item>\n`);
+          res.write(`      <g:id>${escapeXml(p.id)}</g:id>\n`);
+          res.write(`      <g:title>${title}</g:title>\n`);
+          res.write(`      <g:description>${desc}</g:description>\n`);
+          res.write(`      <g:link>${productUrl}</g:link>\n`);
+          res.write(`      <g:image_link>${escapeXml(imgUrl)}</g:image_link>\n`);
+          res.write(`      <g:condition>new</g:condition>\n`);
+          res.write(`      <g:availability>${availability}</g:availability>\n`);
+          res.write(`      <g:price>${priceKRW}</g:price>\n`);
+          res.write(`      <g:brand>${escapeXml(brandName)}</g:brand>\n`);
+          res.write(`      <g:google_product_category>${fbCat.id}</g:google_product_category>\n`);
+          if (p.categoryId) res.write(`      <g:custom_label_0>${escapeXml(p.categoryId)}</g:custom_label_0>\n`);
+          if (p.gender)     res.write(`      <g:custom_label_1>${escapeXml(p.gender)}</g:custom_label_1>\n`);
+          if (p.isBest)     res.write(`      <g:custom_label_2>best</g:custom_label_2>\n`);
+          if (p.isNew)      res.write(`      <g:custom_label_3>new</g:custom_label_3>\n`);
+          res.write(`    </item>\n`);
+          written++;
+        }
+
+        offset += BATCH;
+      } while (offset < total);
+
+      res.write(`  </channel>\n`);
+      res.write(`</rss>\n`);
+      res.end();
+
+      console.log(`[catalog] feed.xml generated: ${written} products (filter: ${filterCategory || "all"})`);
+    } catch (error) {
+      console.error("Error generating catalog feed:", error);
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, error: "카탈로그 피드 생성에 실패했습니다." });
+      } else {
+        res.end();
+      }
+    }
+  });
+
+  app.get("/api/catalog/stats", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const counts = await storage.getProductCountWithCategories();
+      const categories = await storage.getAllCategories();
+      const countMap = new Map(counts.byCategory.map(c => [c.categoryId, c.count]));
+
+      const proto = req.headers["x-forwarded-proto"] || (req.secure ? "https" : "http");
+      const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:5000";
+      const baseUrl = `${proto}://${host}`;
+
+      const feedUrl = `${baseUrl}/api/catalog/feed.xml`;
+
+      res.json({
+        success: true,
+        data: {
+          totalProducts: counts.total,
+          feedUrl,
+          categories: categories.map(cat => ({
+            id: cat.id,
+            name: cat.name,
+            count: countMap.get(cat.id) || 0,
+            feedUrl: `${feedUrl}?category=${cat.id}`,
+          })),
+        },
+      });
+    } catch (error) {
+      console.error("Error fetching catalog stats:", error);
+      res.status(500).json({ success: false, error: "카탈로그 통계를 불러올 수 없습니다." });
+    }
+  });
+
   // ==================== GUEST CHAT API ====================
 
   app.post("/api/chat/guest/start", async (req: Request, res: Response) => {
