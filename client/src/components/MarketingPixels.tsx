@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
 
 interface PixelSettings {
   facebookPixelId: string;
@@ -11,6 +12,7 @@ interface PixelSettings {
 
 export function MarketingPixels() {
   const [settings, setSettings] = useState<PixelSettings | null>(null);
+  const [location] = useLocation();
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -49,6 +51,25 @@ export function MarketingPixels() {
       removeKakaoPixel();
     }
   }, [settings]);
+
+  // 페이지 이동 시마다 PageView 이벤트 재발화 (SPA 라우팅 대응)
+  useEffect(() => {
+    if (!settings) return;
+
+    if (settings.facebookPixelEnabled && settings.facebookPixelId && (window as any).fbq) {
+      (window as any).fbq("track", "PageView");
+    }
+
+    if (settings.googleAnalyticsEnabled && settings.googleAnalyticsId && (window as any).gtag) {
+      (window as any).gtag("config", settings.googleAnalyticsId, {
+        page_path: location,
+      });
+    }
+
+    if (settings.kakaoPixelEnabled && settings.kakaoPixelId && (window as any)._caq) {
+      (window as any)._caq.push(["view"]);
+    }
+  }, [location, settings]);
 
   return null;
 }
@@ -123,7 +144,7 @@ function injectKakaoPixel(pixelId: string) {
   script.id = "kakao-pixel-script";
   script.innerHTML = `
     !function(c,a,k,e,p){c._caq = c._caq || [];
-    if(!a.getElementById(e)){t=a.createElement(k);t.id=e;t.src="//t1.daumcdn.net/kas/static/kp.js";a.head.appendChild(t);}
+    if(!a.getElementById(e)){var t=a.createElement(k);t.id=e;t.src="//t1.daumcdn.net/kas/static/kp.js";a.head.appendChild(t);}
     c._caq.push(['init','${pixelId}']);c._caq.push(['view']);}(window,document,'script','kakao-pixel');
   `;
   document.head.appendChild(script);

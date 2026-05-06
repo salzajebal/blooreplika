@@ -234,6 +234,13 @@ export default function Admin() {
   });
   const [pixelLoading, setPixelLoading] = useState(false);
 
+  const [catalogStats, setCatalogStats] = useState<{
+    totalProducts: number;
+    feedUrl: string;
+    categories: { id: string; name: string; count: number; feedUrl: string }[];
+  } | null>(null);
+  const [catalogCopied, setCatalogCopied] = useState<string | null>(null);
+
   const [tgSettings, setTgSettings] = useState({
     token: "", chatId: "", enabled: false,
     notifyOrder: true, notifyMember: true, notifyChat: true,
@@ -1599,6 +1606,7 @@ export default function Admin() {
     if (isAuthenticated && activeTab === "settings") {
       fetchProductCount();
       fetchPixelSettings();
+      fetchCatalogStats();
       fetch("/api/product-detail-banners")
         .then(r => r.json())
         .then(d => { if (d.success) setDetailBannerSettings(d.data); })
@@ -1748,6 +1756,23 @@ export default function Admin() {
     } catch (error) {
       console.error("Error fetching pixel settings:", error);
     }
+  };
+
+  const fetchCatalogStats = async () => {
+    try {
+      const res = await fetchWithAuth("/api/catalog/stats");
+      const data = await res.json();
+      if (data.success) setCatalogStats(data.data);
+    } catch (error) {
+      console.error("Error fetching catalog stats:", error);
+    }
+  };
+
+  const copyCatalogUrl = (url: string, key: string) => {
+    navigator.clipboard.writeText(url).then(() => {
+      setCatalogCopied(key);
+      setTimeout(() => setCatalogCopied(null), 2000);
+    });
   };
 
   const savePixelSettings = async () => {
@@ -6290,6 +6315,69 @@ export default function Admin() {
                     </li>
                   </ul>
                 </div>
+              </div>
+            </div>
+
+            {/* 카탈로그 XML 피드 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-green-600" />
+                  카탈로그 XML 피드
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">페이스북/카카오 쇼핑 광고용 상품 피드 URL입니다. 카테고리별로 별도 URL을 제공합니다.</p>
+              </div>
+              <div className="p-6 space-y-4">
+                {catalogStats ? (
+                  <>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-2">전체 피드 <span className="text-gray-400 font-normal">({catalogStats.totalProducts.toLocaleString()}개 상품)</span></p>
+                      <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                        <code className="text-xs text-gray-700 flex-1 truncate">{catalogStats.feedUrl}</code>
+                        <button
+                          onClick={() => copyCatalogUrl(catalogStats.feedUrl, "all")}
+                          className="flex-shrink-0 text-xs px-3 py-1.5 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center gap-1"
+                        >
+                          {catalogCopied === "all" ? <><Check className="w-3 h-3 text-green-600" /> 복사됨</> : <><Link2 className="w-3 h-3" /> 복사</>}
+                        </button>
+                        <a href={catalogStats.feedUrl} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 text-xs px-3 py-1.5 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+                          열기
+                        </a>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-2">카테고리별 피드</p>
+                      <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        {catalogStats.categories.filter(c => c.count > 0).map(cat => (
+                          <div key={cat.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                            <span className="text-xs font-medium text-gray-700 w-24 flex-shrink-0">{cat.name}</span>
+                            <span className="text-xs text-gray-400 w-16 flex-shrink-0">{cat.count.toLocaleString()}개</span>
+                            <code className="text-xs text-gray-500 flex-1 truncate">{cat.feedUrl}</code>
+                            <button
+                              onClick={() => copyCatalogUrl(cat.feedUrl, cat.id)}
+                              className="flex-shrink-0 text-xs px-2 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors flex items-center gap-1"
+                            >
+                              {catalogCopied === cat.id ? <><Check className="w-3 h-3 text-green-600" /> 복사됨</> : <><Link2 className="w-3 h-3" /> 복사</>}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-3">
+                      <ul className="text-xs text-gray-500 space-y-1">
+                        <li>• 페이스북 비즈니스 관리자 → 카탈로그 → 데이터 소스에서 위 URL을 등록하세요.</li>
+                        <li>• 피드는 1시간마다 캐시됩니다 (Cache-Control: max-age=3600).</li>
+                        <li>• 카테고리별 URL은 해당 카테고리 상품만 포함합니다.</li>
+                      </ul>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-6 text-gray-400">
+                    <button onClick={fetchCatalogStats} className="text-sm text-blue-600 hover:underline">카탈로그 정보 불러오기</button>
+                  </div>
+                )}
               </div>
             </div>
 
