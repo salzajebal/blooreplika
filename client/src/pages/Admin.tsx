@@ -473,6 +473,17 @@ export default function Admin() {
   }>({ status: 'idle', total: 0, current: 0, message: '', brand: '' });
   const bloostoreIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [watchDetailProgress, setWatchDetailProgress] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    updated: number;
+    skipped: number;
+    message: string;
+  }>({ status: 'idle', total: 0, current: 0, updated: 0, skipped: 0, message: '' });
+  const watchDetailIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [watchDetailOnlyMissing, setWatchDetailOnlyMissing] = useState(true);
+
   const BLOOSTORE_BRANDS = [
     { id: "rolex", name: "롤렉스" },
     { id: "cartier", name: "까르띠에" },
@@ -941,6 +952,49 @@ export default function Admin() {
       }
     } catch (error) {
       toast({ title: "오류", description: "시계 크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+
+  const fetchWatchDetailProgress = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/watch-details/progress");
+      const data = await res.json();
+      if (data.success) {
+        setWatchDetailProgress({
+          status: data.status,
+          total: data.total || 0,
+          current: data.current || 0,
+          updated: data.updated || 0,
+          skipped: data.skipped || 0,
+          message: data.message || '',
+        });
+        if (data.status !== 'running') {
+          if (watchDetailIntervalRef.current) {
+            clearInterval(watchDetailIntervalRef.current);
+            watchDetailIntervalRef.current = null;
+          }
+        }
+      }
+    } catch {}
+  };
+
+  const startWatchDetailCrawl = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/watch-details/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ onlyMissing: watchDetailOnlyMissing }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "시계 상세이미지 크롤링 시작", description: "블루스토어 시계 상세이미지를 업데이트합니다." });
+        setWatchDetailProgress({ status: 'running', total: 0, current: 0, updated: 0, skipped: 0, message: '시작 중...' });
+        watchDetailIntervalRef.current = setInterval(fetchWatchDetailProgress, 1000);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "크롤링을 시작할 수 없습니다.", variant: "destructive" });
     }
   };
 
@@ -7105,6 +7159,93 @@ export default function Admin() {
               </div>
             </div>
 
+            {/* 시계 상세이미지 크롤러 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-indigo-600" />
+                  시계 상세이미지 업데이트
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">블루스토어에서 시계 상품의 상세이미지를 다시 크롤링하여 업데이트합니다.</p>
+              </div>
+              <div className="p-6 space-y-4">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={watchDetailOnlyMissing}
+                    onChange={e => setWatchDetailOnlyMissing(e.target.checked)}
+                    className="w-4 h-4 accent-indigo-600"
+                  />
+                  <span className="text-sm text-gray-700">이미지 없는 상품만 업데이트 (빠름)</span>
+                </label>
+
+                {watchDetailProgress.status !== 'idle' && (
+                  <div className={`rounded-lg p-4 border space-y-2 ${
+                    watchDetailProgress.status === 'running' ? 'border-indigo-300 bg-indigo-50' :
+                    watchDetailProgress.status === 'completed' ? 'border-green-300 bg-green-50' :
+                    'border-red-300 bg-red-50'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      {watchDetailProgress.status === 'running' && <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />}
+                      {watchDetailProgress.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                      {watchDetailProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                      <span className={`text-sm font-medium ${
+                        watchDetailProgress.status === 'running' ? 'text-indigo-700' :
+                        watchDetailProgress.status === 'completed' ? 'text-green-700' : 'text-red-700'
+                      }`}>
+                        {watchDetailProgress.status === 'running' ? '진행 중' :
+                         watchDetailProgress.status === 'completed' ? '완료' : '오류'}
+                      </span>
+                    </div>
+                    {watchDetailProgress.message && (
+                      <p className="text-xs text-gray-600 font-mono">{watchDetailProgress.message}</p>
+                    )}
+                    {watchDetailProgress.total > 0 && (
+                      <div className="flex gap-4 text-xs text-gray-600">
+                        <span>전체 <strong>{watchDetailProgress.total}</strong>개</span>
+                        <span>업데이트 <strong className="text-green-700">{watchDetailProgress.updated}</strong>개</span>
+                        <span>건너뜀 <strong>{watchDetailProgress.skipped}</strong>개</span>
+                        <span>진행 <strong>{watchDetailProgress.current}</strong>/{watchDetailProgress.total}</span>
+                      </div>
+                    )}
+                    {watchDetailProgress.total > 0 && watchDetailProgress.status === 'running' && (
+                      <div className="w-full bg-gray-200 rounded-full h-1.5">
+                        <div
+                          className="bg-indigo-500 h-1.5 rounded-full transition-all"
+                          style={{ width: `${Math.round((watchDetailProgress.current / watchDetailProgress.total) * 100)}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <Button
+                    onClick={startWatchDetailCrawl}
+                    disabled={watchDetailProgress.status === 'running'}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1"
+                  >
+                    {watchDetailProgress.status === 'running' ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />크롤링 중...</>
+                    ) : (
+                      <><RefreshCw className="w-4 h-4 mr-2" />상세이미지 업데이트 시작</>
+                    )}
+                  </Button>
+                  {watchDetailProgress.status !== 'idle' && watchDetailProgress.status !== 'running' && (
+                    <Button
+                      variant="outline"
+                      onClick={() => setWatchDetailProgress({ status: 'idle', total: 0, current: 0, updated: 0, skipped: 0, message: '' })}
+                    >
+                      초기화
+                    </Button>
+                  )}
+                </div>
+                <div className="text-xs text-gray-400 space-y-1">
+                  <p>• 블루스토어에서 시계 상품의 상세이미지 URL을 재수집합니다.</p>
+                  <p>• "이미지 없는 상품만" 체크 시 imageUrls가 비어있는 상품만 대상으로 합니다.</p>
+                </div>
+              </div>
+            </div>
 
           </div>
         )}
