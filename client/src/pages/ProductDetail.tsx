@@ -47,15 +47,15 @@ export default function ProductDetail() {
 
   const fetchProductReviews = async () => {
     try {
-      const res = await fetch(`/api/reviews?productId=${id}&limit=5`);
+      const res = await fetch(`/api/reviews?productId=${id}&limit=1000`);
       const data = await res.json();
       if (data.success && data.data.length > 0) {
-        setReviews(data.data.slice(0, 5));
+        setReviews(data.data);
       } else {
-        const generalRes = await fetch(`/api/reviews?limit=5`);
+        const generalRes = await fetch(`/api/reviews?limit=1000`);
         const generalData = await generalRes.json();
         if (generalData.success) {
-          setReviews(generalData.data.slice(0, 5));
+          setReviews(generalData.data);
         }
       }
     } catch (error) {
