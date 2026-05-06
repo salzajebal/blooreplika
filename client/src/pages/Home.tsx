@@ -4,7 +4,7 @@ import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, Search, ArrowUp } from "lucide-react";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 function FloatingButtons() {
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -364,6 +364,152 @@ function ForYouSection({ products, brands }: { products: any[]; brands: any[] })
 }
 
 
+function ProductScrollRow({ products, getBrandName }: { products: any[]; getBrandName: (id: string) => string }) {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
+  const hasDragged = useRef(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateArrows = useCallback(() => {
+    const el = rowRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 8);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
+  }, []);
+
+  useEffect(() => {
+    const el = rowRef.current;
+    if (!el) return;
+    updateArrows();
+    el.addEventListener("scroll", updateArrows, { passive: true });
+    const ro = new ResizeObserver(updateArrows);
+    ro.observe(el);
+    return () => { el.removeEventListener("scroll", updateArrows); ro.disconnect(); };
+  }, [updateArrows]);
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (!rowRef.current) return;
+    isDragging.current = true;
+    hasDragged.current = false;
+    startX.current = e.pageX - rowRef.current.offsetLeft;
+    scrollLeft.current = rowRef.current.scrollLeft;
+    rowRef.current.style.cursor = "grabbing";
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current || !rowRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - rowRef.current.offsetLeft;
+    const walk = (x - startX.current) * 1.2;
+    if (Math.abs(walk) > 4) hasDragged.current = true;
+    rowRef.current.scrollLeft = scrollLeft.current - walk;
+  };
+
+  const onMouseUp = () => {
+    isDragging.current = false;
+    if (rowRef.current) rowRef.current.style.cursor = "grab";
+  };
+
+  const scroll = (dir: "left" | "right") => {
+    if (!rowRef.current) return;
+    rowRef.current.scrollBy({ left: dir === "right" ? 320 : -320, behavior: "smooth" });
+  };
+
+  return (
+    <div className="relative group/row">
+      {/* 왼쪽 화살표 */}
+      {canScrollLeft && (
+        <button
+          onClick={() => scroll("left")}
+          className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-white/90 hover:bg-white border border-gray-200 shadow-md rounded-full items-center justify-center text-gray-600 hover:text-black transition-all -translate-x-3"
+          aria-label="이전"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+      )}
+
+      {/* 오른쪽 화살표 */}
+      {canScrollRight && (
+        <button
+          onClick={() => scroll("right")}
+          className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-white/90 hover:bg-white border border-gray-200 shadow-md rounded-full items-center justify-center text-gray-600 hover:text-black transition-all translate-x-3"
+          aria-label="다음"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      )}
+
+      {/* 스크롤 행 */}
+      <div
+        ref={rowRef}
+        className="flex gap-3 md:gap-4 overflow-x-auto pb-3 select-none"
+        style={{
+          WebkitOverflowScrolling: "touch",
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          cursor: "grab",
+        }}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
+      >
+        {products.map((product: any) => {
+          const hasDiscount = product.discountPercent && product.discountPercent > 0;
+          const discountedPrice = hasDiscount
+            ? Math.round(Number(product.price) * (100 - product.discountPercent) / 100 / 1000) * 1000
+            : Number(product.price);
+
+          return (
+            <Link
+              key={product.id}
+              href={`/product/${product.id}`}
+              draggable={false}
+              className="block group flex-shrink-0 w-[140px] md:w-[180px] lg:w-[200px]"
+              data-testid={`section-product-${product.id}`}
+              onClick={(e) => { if (hasDragged.current) e.preventDefault(); }}
+            >
+              <div className="aspect-square bg-gray-50 overflow-hidden mb-2 rounded-lg pointer-events-none">
+                <img
+                  src={getProxiedImageUrl(product.imageUrl, "medium")}
+                  alt={product.name}
+                  draggable={false}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  loading="lazy"
+                  onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                />
+              </div>
+              <p className="text-[10px] md:text-xs text-gray-400 uppercase font-semibold tracking-wide pointer-events-none">{getBrandName(product.brandId)}</p>
+              <p className="text-xs md:text-sm text-gray-700 line-clamp-2 leading-snug mt-0.5 pointer-events-none">{product.name}</p>
+              {product.originalPrice && Number(product.originalPrice) > 0 && (
+                <p className="text-[10px] md:text-xs text-gray-400 mt-1 pointer-events-none">매장가 {Math.round(Number(product.originalPrice) / 10000)}만원</p>
+              )}
+              <div className="mt-0.5 flex items-center gap-1.5 pointer-events-none">
+                {hasDiscount && (
+                  <span className="text-xs md:text-sm font-bold text-red-500">{product.discountPercent}%</span>
+                )}
+                <p className="text-xs md:text-sm font-bold text-gray-900">{discountedPrice.toLocaleString()}원</p>
+              </div>
+              <div className="flex gap-1 mt-1.5 pointer-events-none">
+                <span className="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded font-medium">적립</span>
+                <span className="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-green-50 text-green-600 rounded font-medium">무료배송</span>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* 모바일 스크롤 힌트 (처음 한 번만) */}
+      {canScrollRight && (
+        <div className="md:hidden absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-white/80 to-transparent pointer-events-none" />
+      )}
+    </div>
+  );
+}
+
 function DynamicHomeSections() {
   const { data: sections } = useQuery({
     queryKey: ['/api/content-sections', 'homepage_product'],
@@ -434,48 +580,7 @@ function DynamicHomeSections() {
                 </Link>
               </div>
 
-              <div className="flex gap-3 md:gap-4 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory" style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-                {section.products.map((product: any) => {
-                  const hasDiscount = product.discountPercent && product.discountPercent > 0;
-                  const discountedPrice = hasDiscount
-                    ? Math.round(Number(product.price) * (100 - product.discountPercent) / 100 / 1000) * 1000
-                    : Number(product.price);
-
-                  return (
-                    <Link
-                      key={product.id}
-                      href={`/product/${product.id}`}
-                      className="block group flex-shrink-0 w-[140px] md:w-[180px] lg:w-[200px] snap-start"
-                      data-testid={`section-product-${product.id}`}
-                    >
-                      <div className="aspect-square bg-gray-50 overflow-hidden mb-2 rounded-lg">
-                        <img
-                          src={getProxiedImageUrl(product.imageUrl, "medium")}
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          loading="lazy"
-                          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-                        />
-                      </div>
-                      <p className="text-[10px] md:text-xs text-gray-400 uppercase font-semibold tracking-wide">{getBrandName(product.brandId)}</p>
-                      <p className="text-xs md:text-sm text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
-                      {product.originalPrice && Number(product.originalPrice) > 0 && (
-                        <p className="text-[10px] md:text-xs text-gray-400 mt-1">매장가 {Math.round(Number(product.originalPrice) / 10000)}만원</p>
-                      )}
-                      <div className="mt-0.5 flex items-center gap-1.5">
-                        {hasDiscount && (
-                          <span className="text-xs md:text-sm font-bold text-red-500">{product.discountPercent}%</span>
-                        )}
-                        <p className="text-xs md:text-sm font-bold text-gray-900">{discountedPrice.toLocaleString()}원</p>
-                      </div>
-                      <div className="flex gap-1 mt-1.5">
-                        <span className="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded font-medium">적립</span>
-                        <span className="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-green-50 text-green-600 rounded font-medium">무료배송</span>
-                      </div>
-                    </Link>
-                  );
-                })}
-              </div>
+              <ProductScrollRow products={section.products} getBrandName={getBrandName} />
             </div>
           )}
         </section>
