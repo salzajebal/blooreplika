@@ -5677,24 +5677,36 @@ export default function Admin() {
                     </div>
                   ) : (
                     <div className="divide-y divide-gray-100">
-                      {chatConversations.map((conv) => (
+                      {chatConversations.map((conv) => {
+                        const isGuest = !conv.memberId && !!conv.guestName;
+                        const displayName = conv.guestName
+                          ? conv.guestName
+                          : conv.subject
+                            ? conv.subject.replace("님의 1:1 상담", "").trim()
+                            : "회원";
+                        return (
                         <div
                           key={conv.id}
                           data-testid={`chat-conversation-${conv.id}`}
                           onClick={() => selectConversation(conv)}
                           className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                            selectedConversation?.id === conv.id ? "bg-yellow-50 border-l-4 border-yellow-500" : ""
+                            selectedConversation?.id === conv.id ? "bg-blue-50 border-l-4 border-blue-500" : ""
                           }`}
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <span className="font-medium text-gray-900 truncate">
-                                  {conv.guestName || conv.memberId || "익명"}
+                                  {displayName}
                                 </span>
-                                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                                  conv.status === "open" 
-                                    ? "bg-green-100 text-green-700" 
+                                {isGuest && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-600 font-medium flex-shrink-0">
+                                    비회원
+                                  </span>
+                                )}
+                                <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${
+                                  conv.status === "open"
+                                    ? "bg-green-100 text-green-700"
                                     : conv.status === "pending"
                                     ? "bg-yellow-100 text-yellow-700"
                                     : "bg-gray-100 text-gray-600"
@@ -5709,7 +5721,8 @@ export default function Admin() {
                             </div>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -5719,10 +5732,22 @@ export default function Admin() {
                     <>
                       <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
                         <div>
-                          <h4 className="font-semibold text-gray-900">
-                            {selectedConversation.guestName || selectedConversation.memberId || "익명"}
-                          </h4>
-                          <p className="text-sm text-gray-600">{selectedConversation.subject}</p>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-gray-900">
+                              {selectedConversation.guestName
+                                ? selectedConversation.guestName
+                                : selectedConversation.subject
+                                  ? selectedConversation.subject.replace("님의 1:1 상담", "").trim()
+                                  : "회원"}
+                            </h4>
+                            {!selectedConversation.memberId && selectedConversation.guestName && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 font-medium">비회원</span>
+                            )}
+                            {selectedConversation.memberId && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-600 font-medium">회원</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-500 mt-0.5">{selectedConversation.subject}</p>
                         </div>
                         {selectedConversation.status !== "closed" && (
                           <Button

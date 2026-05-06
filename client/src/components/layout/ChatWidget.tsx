@@ -1,13 +1,25 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Send, Minimize2, LogIn } from "lucide-react";
+import { X, Send, Minimize2, LogIn, UserCheck, ChevronRight } from "lucide-react";
 import { useLocation } from "wouter";
 import type { ChatConversation, ChatMessage } from "@shared/schema";
+
+type ChatMode = "member" | "guest";
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [chatMode, setChatMode] = useState<ChatMode | null>(null);
+
+  // 비회원 상태
+  const [guestNameInput, setGuestNameInput] = useState("");
+  const [guestNameError, setGuestNameError] = useState("");
+  const [guestStarting, setGuestStarting] = useState(false);
+  const [guestName, setGuestName] = useState<string>(() => sessionStorage.getItem("guestChatName") || "");
+  const [guestConversationId, setGuestConversationId] = useState<string>(() => sessionStorage.getItem("guestChatConvId") || "");
+
+  // 공통 채팅 상태
   const [conversation, setConversation] = useState<ChatConversation | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -23,12 +35,20 @@ export function ChatWidget() {
   const memberId = localStorage.getItem("memberId");
   const isLoggedIn = !!memberToken && !!memberName && !!memberId;
 
+  // 비회원 세션 복구: 기존 세션이 있으면 바로 guest 모드로
+  useEffect(() => {
+    if (guestConversationId && guestName && !isLoggedIn) {
+      setChatMode("guest");
+    }
+  }, []);
+
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
+  // ── 회원 채팅 히스토리 로드 ──
   const loadChatHistory = useCallback(async () => {
     if (!isLoggedIn || historyLoaded) return;
     setLoading(true);
@@ -50,6 +70,26 @@ export function ChatWidget() {
     }
   }, [isLoggedIn, memberToken, memberName, historyLoaded]);
 
+  // ── 비회원 채팅 히스토리 로드 ──
+  const loadGuestChatHistory = useCallback(async (convId: string, name: string) => {
+    if (historyLoaded) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/chat/conversations/${convId}`);
+      const data = await res.json();
+      if (data.success) {
+        setConversation(data.data.conversation);
+        setMessages(data.data.messages || []);
+        setHistoryLoaded(true);
+        connectWebSocket(convId, name);
+      }
+    } catch (error) {
+      console.error("Error loading guest chat history:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [historyLoaded]);
+
   const connectWebSocket = useCallback((conversationId: string, userName: string) => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(`${protocol}//${window.location.host}/ws/chat`);
@@ -66,36 +106,88 @@ export function ChatWidget() {
     ws.onclose = () => {
       setIsConnected(false);
       setTimeout(() => {
-        if (conversation) connectWebSocket(conversationId, userName);
+        if (conversationId) connectWebSocket(conversationId, userName);
       }, 3000);
     };
     ws.onerror = () => setIsConnected(false);
     setSocket(ws);
-  }, [conversation]);
+  }, []);
 
   useEffect(() => {
-    if (isOpen && isLoggedIn && !historyLoaded) loadChatHistory();
-  }, [isOpen, isLoggedIn, historyLoaded, loadChatHistory]);
+    if (!isOpen) return;
+    if (chatMode === "member" && isLoggedIn && !historyLoaded) {
+      loadChatHistory();
+    } else if (chatMode === "guest" && guestConversationId && !historyLoaded) {
+      loadGuestChatHistory(guestConversationId, guestName);
+    }
+  }, [isOpen, chatMode, isLoggedIn, historyLoaded, guestConversationId]);
 
+  // ── 비회원 채팅 시작 ──
+  const startGuestChat = async () => {
+    const name = guestNameInput.trim();
+    if (!name) { setGuestNameError("이름을 입력해주세요."); return; }
+    if (name.length < 2) { setGuestNameError("이름은 2자 이상 입력해주세요."); return; }
+    setGuestNameError("");
+    setGuestStarting(true);
+    try {
+      const res = await fetch("/api/chat/guest/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guestName: name }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const { conversationId, guestName: savedName } = data.data;
+        sessionStorage.setItem("guestChatConvId", conversationId);
+        sessionStorage.setItem("guestChatName", savedName);
+        setGuestConversationId(conversationId);
+        setGuestName(savedName);
+        setChatMode("guest");
+        setConversation(data.data.conversation);
+        setMessages([]);
+        connectWebSocket(conversationId, savedName);
+        setHistoryLoaded(true);
+      } else {
+        setGuestNameError(data.error || "상담을 시작할 수 없습니다.");
+      }
+    } catch {
+      setGuestNameError("네트워크 오류가 발생했습니다.");
+    } finally {
+      setGuestStarting(false);
+    }
+  };
+
+  // ── 메시지 전송 ──
   const sendMessage = async () => {
     if (!newMessage.trim() || !conversation || !socket) return;
     const messageText = newMessage.trim();
     setNewMessage("");
+
     if (socket.readyState === WebSocket.OPEN) {
+      const senderName = chatMode === "guest" ? guestName : memberName;
       socket.send(JSON.stringify({
         type: "message",
         conversationId: conversation.id,
         senderType: "user",
-        senderName: memberName,
+        senderName,
         message: messageText,
       }));
     }
+
     try {
-      await fetch("/api/chat/member/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${memberToken}` },
-        body: JSON.stringify({ message: messageText }),
-      });
+      if (chatMode === "guest") {
+        await fetch("/api/chat/guest/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ conversationId: conversation.id, guestName, message: messageText }),
+        });
+      } else {
+        await fetch("/api/chat/member/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${memberToken}` },
+          body: JSON.stringify({ message: messageText }),
+        });
+      }
     } catch (error) {
       console.error("Error saving message:", error);
     }
@@ -108,11 +200,31 @@ export function ChatWidget() {
     setSocket(null);
     setIsConnected(false);
     setHistoryLoaded(false);
+    setMessages([]);
+    setConversation(null);
+    // 비회원 세션은 sessionStorage에 유지 (새로고침해도 이어서 상담 가능)
+  };
+
+  const resetGuestSession = () => {
+    sessionStorage.removeItem("guestChatConvId");
+    sessionStorage.removeItem("guestChatName");
+    setGuestConversationId("");
+    setGuestName("");
+    setGuestNameInput("");
+    setChatMode(null);
+    setHistoryLoaded(false);
+    setMessages([]);
+    setConversation(null);
   };
 
   const goToLogin = () => { setIsOpen(false); navigate("/login"); };
 
-  // ── 닫힌 상태: 1:1 상담 플로팅 버튼 ──
+  // 상담원 표시 이름
+  const displayName = chatMode === "guest" ? guestName : memberName;
+
+  // ─────────────────────────────────────────────────
+  // 닫힌 상태: 플로팅 버튼
+  // ─────────────────────────────────────────────────
   if (!isOpen) {
     return (
       <div className="fixed bottom-4 right-3 sm:bottom-6 sm:right-6 z-50 flex flex-col items-center gap-1.5 safe-area-bottom">
@@ -122,11 +234,9 @@ export function ChatWidget() {
           className="relative w-14 h-14 sm:w-16 sm:h-16 bg-gray-900 hover:bg-gray-800 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center group touch-manipulation"
           aria-label="1:1 실시간 상담 열기"
         >
-          {/* 채팅 아이콘 */}
           <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" viewBox="0 0 24 24" fill="currentColor">
             <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
           </svg>
-          {/* 온라인 표시 점 */}
           <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white shadow-sm" />
         </button>
         <div className="text-center">
@@ -137,7 +247,9 @@ export function ChatWidget() {
     );
   }
 
-  // ── 최소화 상태 ──
+  // ─────────────────────────────────────────────────
+  // 최소화 상태
+  // ─────────────────────────────────────────────────
   if (isMinimized) {
     return (
       <div className="fixed bottom-4 right-3 sm:bottom-6 sm:right-6 z-50 safe-area-bottom">
@@ -159,15 +271,18 @@ export function ChatWidget() {
     );
   }
 
-  // ── 로그인 필요 ──
-  if (!isLoggedIn) {
+  // ─────────────────────────────────────────────────
+  // 로그인 필요 / 방법 선택 화면
+  // ─────────────────────────────────────────────────
+  if (!isLoggedIn && !chatMode) {
     return (
       <div
         data-testid="chat-widget-login-required"
-        className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[360px] sm:max-w-[calc(100vw-48px)] bg-white sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col safe-area-bottom"
-        style={{ height: "min(60vh, 420px)", maxHeight: "100dvh" }}
+        className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] sm:max-w-[calc(100vw-48px)] bg-white sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col safe-area-bottom"
+        style={{ height: "min(65vh, 480px)", maxHeight: "100dvh" }}
       >
-        <div className="bg-gray-900 p-4 flex items-center justify-between">
+        {/* 헤더 */}
+        <div className="bg-gray-900 p-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center">
               <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -176,35 +291,59 @@ export function ChatWidget() {
             </div>
             <div>
               <h3 className="font-bold text-white text-sm sm:text-base">1:1 실시간 상담</h3>
-              <p className="text-xs text-white/60">velour 고객 전용 서비스</p>
+              <p className="text-xs text-white/60">velour 고객 서비스</p>
             </div>
           </div>
-          <button
-            data-testid="button-close-chat"
-            onClick={closeChat}
-            className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors touch-manipulation"
-          >
+          <button data-testid="button-close-chat" onClick={closeChat}
+            className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors touch-manipulation">
             <X className="w-4 h-4 text-white" />
           </button>
         </div>
 
-        <div className="flex-1 p-6 flex flex-col items-center justify-center text-center">
-          <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mb-5">
-            <LogIn className="w-10 h-10 text-gray-600" />
+        <div className="flex-1 p-6 flex flex-col items-center justify-center gap-4">
+          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-1">
+            <svg className="w-9 h-9 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+            </svg>
           </div>
-          <h4 className="font-bold text-gray-900 text-xl mb-2">로그인이 필요합니다</h4>
-          <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-            1:1 실시간 상담은 회원 전용 서비스입니다.<br />
-            로그인 후 상담 내역도 확인하실 수 있어요.
-          </p>
-          <Button
+          <div className="text-center mb-2">
+            <h4 className="font-bold text-gray-900 text-lg mb-1">상담 방법을 선택해주세요</h4>
+            <p className="text-sm text-gray-500">회원 로그인 또는 비회원으로도 상담하실 수 있습니다</p>
+          </div>
+
+          {/* 회원 로그인 버튼 */}
+          <button
             data-testid="button-go-to-login"
             onClick={goToLogin}
-            className="bg-gray-900 hover:bg-gray-800 text-white font-medium px-8 py-3 rounded-xl touch-manipulation"
+            className="w-full flex items-center justify-between bg-gray-900 hover:bg-gray-800 text-white px-5 py-4 rounded-xl transition-colors touch-manipulation"
           >
-            로그인 하러 가기
-          </Button>
-          <p className="text-xs text-gray-400 mt-4">
+            <div className="flex items-center gap-3">
+              <LogIn className="w-5 h-5" />
+              <div className="text-left">
+                <p className="font-semibold text-sm">회원 로그인 후 상담</p>
+                <p className="text-xs text-white/60">상담 내역 저장 및 이어서 상담</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-white/60" />
+          </button>
+
+          {/* 비회원 상담 버튼 */}
+          <button
+            data-testid="button-guest-chat"
+            onClick={() => setChatMode("guest")}
+            className="w-full flex items-center justify-between bg-white border-2 border-gray-200 hover:border-gray-400 text-gray-800 px-5 py-4 rounded-xl transition-colors touch-manipulation"
+          >
+            <div className="flex items-center gap-3">
+              <UserCheck className="w-5 h-5 text-gray-600" />
+              <div className="text-left">
+                <p className="font-semibold text-sm">비회원 상담</p>
+                <p className="text-xs text-gray-400">이름만 입력하고 바로 상담 시작</p>
+              </div>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-400" />
+          </button>
+
+          <p className="text-xs text-gray-400 mt-1">
             아직 회원이 아니신가요?{" "}
             <button onClick={() => { setIsOpen(false); navigate("/signup"); }} className="text-gray-700 underline">
               회원가입
@@ -215,12 +354,79 @@ export function ChatWidget() {
     );
   }
 
-  // ── 상담 창 ──
+  // ─────────────────────────────────────────────────
+  // 비회원 이름 입력 화면
+  // ─────────────────────────────────────────────────
+  if (!isLoggedIn && chatMode === "guest" && !guestConversationId) {
+    return (
+      <div
+        data-testid="chat-widget-guest-name"
+        className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] sm:max-w-[calc(100vw-48px)] bg-white sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col safe-area-bottom"
+        style={{ height: "min(55vh, 420px)", maxHeight: "100dvh" }}
+      >
+        <div className="bg-gray-900 p-4 flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setChatMode(null)} className="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <div>
+              <h3 className="font-bold text-white text-sm sm:text-base">비회원 상담</h3>
+              <p className="text-xs text-white/60">이름을 입력해주세요</p>
+            </div>
+          </div>
+          <button data-testid="button-close-chat" onClick={closeChat}
+            className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors touch-manipulation">
+            <X className="w-4 h-4 text-white" />
+          </button>
+        </div>
+
+        <div className="flex-1 p-6 flex flex-col items-center justify-center gap-5">
+          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center">
+            <UserCheck className="w-9 h-9 text-gray-600" />
+          </div>
+          <div className="text-center">
+            <h4 className="font-bold text-gray-900 text-lg mb-1">비회원 상담 시작</h4>
+            <p className="text-sm text-gray-500">상담에 사용할 이름을 입력해주세요</p>
+          </div>
+
+          <div className="w-full space-y-3">
+            <Input
+              data-testid="input-guest-name"
+              placeholder="이름을 입력하세요 (예: 홍길동)"
+              value={guestNameInput}
+              onChange={(e) => { setGuestNameInput(e.target.value); setGuestNameError(""); }}
+              onKeyDown={(e) => { if (e.key === "Enter") startGuestChat(); }}
+              className="w-full rounded-xl border-gray-200 focus-visible:ring-gray-900 text-center text-base"
+              autoFocus
+              maxLength={20}
+            />
+            {guestNameError && (
+              <p className="text-xs text-red-500 text-center">{guestNameError}</p>
+            )}
+            <Button
+              data-testid="button-start-guest-chat"
+              onClick={startGuestChat}
+              disabled={guestStarting || !guestNameInput.trim()}
+              className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-12 font-semibold touch-manipulation"
+            >
+              {guestStarting ? "상담 시작 중..." : "상담 시작하기"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─────────────────────────────────────────────────
+  // 채팅 창 (회원 / 비회원 공통)
+  // ─────────────────────────────────────────────────
   return (
     <div
       data-testid="chat-widget"
-      className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[360px] sm:max-w-[calc(100vw-48px)] bg-white sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col safe-area-bottom"
-      style={{ height: "min(100vh, 520px)", maxHeight: "100dvh" }}
+      className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] sm:max-w-[calc(100vw-48px)] bg-white sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col safe-area-bottom"
+      style={{ height: "min(100vh, 540px)", maxHeight: "100dvh" }}
     >
       {/* 헤더 */}
       <div className="bg-gray-900 p-3 sm:p-4 flex items-center justify-between flex-shrink-0">
@@ -239,28 +445,29 @@ export function ChatWidget() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button
-            data-testid="button-minimize-chat"
-            onClick={() => setIsMinimized(true)}
-            className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors touch-manipulation"
-          >
+          <button data-testid="button-minimize-chat" onClick={() => setIsMinimized(true)}
+            className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors touch-manipulation">
             <Minimize2 className="w-4 h-4 text-white" />
           </button>
-          <button
-            data-testid="button-close-chat"
-            onClick={closeChat}
-            className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors touch-manipulation"
-          >
+          <button data-testid="button-close-chat" onClick={closeChat}
+            className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors touch-manipulation">
             <X className="w-4 h-4 text-white" />
           </button>
         </div>
       </div>
 
-      {/* 회원 안내 바 */}
-      <div className="bg-gray-50 px-4 py-2 border-b border-gray-100 flex-shrink-0">
-        <p className="text-xs text-gray-500 text-center">
-          <span className="font-semibold text-gray-900">{memberName}</span>님, 무엇을 도와드릴까요?
+      {/* 사용자 안내 바 */}
+      <div className="bg-gray-50 px-4 py-2 border-b border-gray-100 flex-shrink-0 flex items-center justify-between">
+        <p className="text-xs text-gray-500">
+          <span className="font-semibold text-gray-900">{displayName}</span>
+          {chatMode === "guest" && <span className="ml-1 text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-medium">비회원</span>}
+          님, 무엇을 도와드릴까요?
         </p>
+        {chatMode === "guest" && (
+          <button onClick={resetGuestSession} className="text-[10px] text-gray-400 hover:text-gray-600 underline">
+            상담 초기화
+          </button>
+        )}
       </div>
 
       {/* 메시지 영역 */}
@@ -279,11 +486,8 @@ export function ChatWidget() {
         )}
 
         {messages.map((msg) => (
-          <div
-            key={msg.id}
-            data-testid={`user-chat-message-${msg.id}`}
-            className={`flex ${msg.senderType === "user" ? "justify-end" : "justify-start"}`}
-          >
+          <div key={msg.id} data-testid={`user-chat-message-${msg.id}`}
+            className={`flex ${msg.senderType === "user" ? "justify-end" : "justify-start"}`}>
             <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 shadow-sm ${
               msg.senderType === "user"
                 ? "bg-gray-900 text-white rounded-tr-sm"
@@ -307,9 +511,7 @@ export function ChatWidget() {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="메시지를 입력하세요..."
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-            }}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
             className="flex-1 text-sm rounded-xl border-gray-200 focus-visible:ring-gray-900"
           />
           <Button

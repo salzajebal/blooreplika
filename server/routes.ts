@@ -2240,6 +2240,54 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== GUEST CHAT API ====================
+
+  app.post("/api/chat/guest/start", async (req: Request, res: Response) => {
+    try {
+      const { guestName } = req.body;
+      if (!guestName || typeof guestName !== "string" || !guestName.trim()) {
+        return res.status(400).json({ success: false, error: "이름을 입력해주세요." });
+      }
+      const name = guestName.trim().substring(0, 30);
+      const conversation = await storage.createConversation({
+        guestName: name,
+        subject: `[비회원] ${name}님의 상담`,
+        status: "open",
+      });
+      res.status(201).json({ success: true, data: { conversationId: conversation.id, guestName: name, conversation } });
+    } catch (error) {
+      console.error("Error starting guest chat:", error);
+      res.status(500).json({ success: false, error: "상담을 시작할 수 없습니다." });
+    }
+  });
+
+  app.post("/api/chat/guest/messages", async (req: Request, res: Response) => {
+    try {
+      const { conversationId, guestName, message } = req.body;
+      if (!conversationId || !guestName || !message) {
+        return res.status(400).json({ success: false, error: "필수 정보가 누락되었습니다." });
+      }
+      const conversation = await storage.getConversation(conversationId);
+      if (!conversation) {
+        return res.status(404).json({ success: false, error: "상담을 찾을 수 없습니다." });
+      }
+      if (conversation.guestName !== guestName.trim()) {
+        return res.status(403).json({ success: false, error: "권한이 없습니다." });
+      }
+      const chatMessage = await storage.createMessage({
+        conversationId,
+        senderType: "user",
+        senderName: guestName.trim(),
+        message: message.trim(),
+      });
+      await storage.updateChatConversation(conversationId, { updatedAt: new Date() });
+      res.status(201).json({ success: true, data: chatMessage });
+    } catch (error) {
+      console.error("Error sending guest message:", error);
+      res.status(500).json({ success: false, error: "메시지 전송에 실패했습니다." });
+    }
+  });
+
   // ==================== Site Settings API (Marketing Pixels) ====================
   
   app.get("/api/site-settings/pixels", async (req: Request, res: Response) => {
