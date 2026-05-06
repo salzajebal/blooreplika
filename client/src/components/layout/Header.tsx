@@ -217,9 +217,6 @@ function generateMonths(): { label: string; value: string }[] {
 const MONTHS = generateMonths();
 
 const sideMenuLinks = [
-  { name: "이달의 혜택", path: "/benefits" },
-  { name: "매거진", path: "/magazine" },
-  { name: "velour 랩스", path: "https://xn--oi2bw61awb384c.kr/labs", external: true },
   { name: "구매 후기", path: "/reviews" },
   { name: "공지사항", path: "/notices" },
   { name: "고객센터", path: "/support" },
