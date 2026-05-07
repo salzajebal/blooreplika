@@ -1564,8 +1564,15 @@ export class DatabaseStorage implements IStorage {
   async applyCategoryDiscount(categoryId: string, discountPercent: number): Promise<number> {
     const result = await db.execute(sql`
       UPDATE products 
-      SET discount_percent = ${discountPercent}
+      SET 
+        original_price = CASE 
+          WHEN original_price IS NULL OR original_price = 0 THEN price 
+          ELSE original_price 
+        END,
+        price = ROUND(price * (1 - ${discountPercent}::numeric / 100)),
+        discount_percent = ${discountPercent}
       WHERE category_id = ${categoryId}
+        AND price > 0
     `);
     return Number(result.rowCount) || 0;
   }
