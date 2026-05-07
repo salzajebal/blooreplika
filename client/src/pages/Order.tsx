@@ -1026,30 +1026,10 @@ export default function Order() {
 
               {paymentMethod === "bank" && (
                 <div className="bg-[#E5EFF5] border border-[#BDCFDB] rounded-lg p-4">
-                  <h3 className="font-semibold text-[#1C3047] mb-2 flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 text-[#5E9DC0]" />
-                    계좌이체 안내
-                  </h3>
-                  {depositAccount ? (
-                    <div className="text-[#3D6080] text-sm space-y-2">
-                      <p>주문서 작성 완료 후, 아래 계좌로 입금해주세요.</p>
-                      <div className="bg-white rounded-lg p-3 border border-[#BDCFDB]">
-                        <div className="grid grid-cols-[80px_1fr] gap-1">
-                          <span className="text-[#7A9CB5]">은행명:</span>
-                          <span className="font-bold text-[#1C3047]">{depositAccount.bankName}</span>
-                          <span className="text-[#7A9CB5]">계좌번호:</span>
-                          <span className="font-bold text-[#1C3047]">{depositAccount.accountNumber}</span>
-                          <span className="text-[#7A9CB5]">예금주:</span>
-                          <span className="font-bold text-[#1C3047]">{depositAccount.accountHolder}</span>
-                        </div>
-                      </div>
-                      <p className="text-xs text-[#7A9CB5]">※ 입금 시 주문자명으로 입금해주세요.</p>
-                    </div>
-                  ) : (
-                    <p className="text-[#3D6080] text-sm">
-                      주문서 작성 완료 후 주문 완료 페이지에서 <strong className="text-[#1C3047]">결제계좌 정보</strong>를 확인하실 수 있습니다.
-                    </p>
-                  )}
+                  <p className="text-[#3D6080] text-sm flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4 text-[#5E9DC0] shrink-0" />
+                    주문 완료 후 결제계좌 정보가 안내됩니다. 해당 계좌로 입금해주세요.
+                  </p>
                 </div>
               )}
             </div>
