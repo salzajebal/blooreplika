@@ -64,6 +64,7 @@ const CATEGORY_OPTIONS = [
   { id: "bags", name: "가방" },
   { id: "wallets", name: "지갑" },
   { id: "shoes", name: "신발" },
+  { id: "watches", name: "시계" },
   { id: "golf", name: "골프" },
   { id: "jewelry", name: "쥬얼리/잡화" },
   { id: "sale", name: "할인상품" },
