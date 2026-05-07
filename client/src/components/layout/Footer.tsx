@@ -6,7 +6,7 @@ export function Footer() {
       <div className="max-w-[1200px] mx-auto px-4 py-10 md:py-12">
         <div className="mb-8">
           <p className="text-[#E5EFF5] text-sm font-medium mb-2 tracking-widest uppercase" style={{ letterSpacing: "0.12em", fontSize: "11px" }}>고객센터</p>
-          <p className="text-lg md:text-xl text-[#E5EFF5] font-light mb-1" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400 }}>카카오톡으로 문의 바랍니다</p>
+          <p className="text-lg md:text-xl text-[#E5EFF5] font-light mb-1" style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 400 }}>실시간 채팅 상담으로 문의바랍니다</p>
           <div className="text-xs text-[#4A7A9B] leading-relaxed">
             <p>10:00 - 20:00 (점심 12:00 - 13:00)</p>
             <p>일요일 휴무</p>
