@@ -479,10 +479,10 @@ export default function ProductList() {
               className={cn(
                 "flex items-center gap-1.5 px-4 py-2 text-sm rounded-full border transition-colors",
                 subnameParam
-                  ? "bg-black text-white border-black"
+                  ? "bg-[#1C3047] text-[#E5EFF5] border-[#1C3047]"
                   : openDropdown === "category"
-                    ? "border-black text-black"
-                    : "border-gray-300 text-gray-600 hover:border-gray-500"
+                    ? "border-[#1C3047] text-[#1C3047]"
+                    : "border-[#BDCFDB] text-[#3D6080] hover:border-[#7A9CB5]"
               )}
               data-testid="button-filter-category"
             >
@@ -535,10 +535,10 @@ export default function ProductList() {
           className={cn(
             "flex items-center gap-1.5 px-4 py-2 text-sm rounded-full border transition-colors",
             selectedBrand
-              ? "bg-black text-white border-black"
+              ? "bg-[#1C3047] text-[#E5EFF5] border-[#1C3047]"
               : openDropdown === "brand"
-                ? "border-black text-black"
-                : "border-gray-300 text-gray-600 hover:border-gray-500"
+                ? "border-[#1C3047] text-[#1C3047]"
+                : "border-[#BDCFDB] text-[#3D6080] hover:border-[#7A9CB5]"
           )}
           data-testid="button-filter-brand"
         >
@@ -610,10 +610,10 @@ export default function ProductList() {
           className={cn(
             "flex items-center gap-1.5 px-4 py-2 text-sm rounded-full border transition-colors",
             (selectedGender || genderFromCategory || golfSubGender)
-              ? "bg-black text-white border-black"
+              ? "bg-[#1C3047] text-[#E5EFF5] border-[#1C3047]"
               : openDropdown === "gender"
-                ? "border-black text-black"
-                : "border-gray-300 text-gray-600 hover:border-gray-500"
+                ? "border-[#1C3047] text-[#1C3047]"
+                : "border-[#BDCFDB] text-[#3D6080] hover:border-[#7A9CB5]"
           )}
           data-testid="button-filter-gender"
         >
