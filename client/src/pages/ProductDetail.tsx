@@ -800,6 +800,9 @@ export default function ProductDetail() {
                             <span className="text-xs text-gray-400">{review.authorName}</span>
                             <span className="text-xs text-gray-300">{review.displayDate ? new Date(review.displayDate).toLocaleDateString('ko-KR') : ''}</span>
                           </div>
+                          {review.title && (
+                            <p className="text-sm font-semibold text-gray-900 mb-0.5">{review.title}</p>
+                          )}
                           {review.content && (
                             <p className="text-sm text-gray-700 leading-relaxed">{review.content}</p>
                           )}
