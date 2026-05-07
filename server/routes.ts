@@ -2222,7 +2222,10 @@ export async function registerRoutes(
     }
     
     try {
+      const existingConv = await storage.getConversationByMemberId(session.memberId);
       const conversation = await storage.getOrCreateConversationForMember(session.memberId, session.name);
+      const isNew = !existingConv;
+      if (isNew) sendChatAutoReply(conversation.id, true).catch(() => {});
       const messages = await storage.getMessagesByConversation(conversation.id);
       res.json({ success: true, data: { conversation, messages } });
     } catch (error) {
@@ -2540,6 +2543,7 @@ export async function registerRoutes(
         subject: `[비회원] ${name}님의 상담`,
         status: "open",
       });
+      sendChatAutoReply(conversation.id, true).catch(() => {});
       res.status(201).json({ success: true, data: { conversationId: conversation.id, guestName: name, conversation } });
     } catch (error) {
       console.error("Error starting guest chat:", error);
@@ -2574,6 +2578,84 @@ export async function registerRoutes(
       res.status(500).json({ success: false, error: "메시지 전송에 실패했습니다." });
     }
   });
+
+  // ==================== Chat Auto-Reply Settings ====================
+
+  app.get("/api/chat-settings", async (req: Request, res: Response) => {
+    try {
+      const settings = await storage.getAllSiteSettings();
+      res.json({
+        success: true,
+        data: {
+          welcomeEnabled: settings.find(s => s.key === 'chat_welcome_enabled')?.value === 'true',
+          welcomeMessage: settings.find(s => s.key === 'chat_welcome_message')?.value || '',
+          offhoursEnabled: settings.find(s => s.key === 'chat_offhours_enabled')?.value === 'true',
+          offhoursMessage: settings.find(s => s.key === 'chat_offhours_message')?.value || '',
+          offhoursStart: settings.find(s => s.key === 'chat_offhours_start')?.value || '20:00',
+          offhoursEnd: settings.find(s => s.key === 'chat_offhours_end')?.value || '10:00',
+        }
+      });
+    } catch (error) {
+      res.status(500).json({ success: false });
+    }
+  });
+
+  app.post("/api/admin/chat-settings", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { welcomeEnabled, welcomeMessage, offhoursEnabled, offhoursMessage, offhoursStart, offhoursEnd } = req.body;
+      await Promise.all([
+        storage.setSiteSetting('chat_welcome_enabled', String(!!welcomeEnabled), '채팅 환영 메시지 활성화'),
+        storage.setSiteSetting('chat_welcome_message', welcomeMessage || '', '채팅 환영 메시지'),
+        storage.setSiteSetting('chat_offhours_enabled', String(!!offhoursEnabled), '운영시간 외 자동응답 활성화'),
+        storage.setSiteSetting('chat_offhours_message', offhoursMessage || '', '운영시간 외 자동응답 메시지'),
+        storage.setSiteSetting('chat_offhours_start', offhoursStart || '20:00', '운영시간 종료'),
+        storage.setSiteSetting('chat_offhours_end', offhoursEnd || '10:00', '운영시간 시작'),
+      ]);
+      res.json({ success: true });
+    } catch (error) {
+      res.status(500).json({ success: false });
+    }
+  });
+
+  // Helper: send auto-reply message if settings require it
+  async function sendChatAutoReply(conversationId: string, isNewConversation: boolean): Promise<void> {
+    try {
+      const settings = await storage.getAllSiteSettings();
+      const welcomeEnabled = settings.find(s => s.key === 'chat_welcome_enabled')?.value === 'true';
+      const welcomeMessage = settings.find(s => s.key === 'chat_welcome_message')?.value || '';
+      const offhoursEnabled = settings.find(s => s.key === 'chat_offhours_enabled')?.value === 'true';
+      const offhoursMessage = settings.find(s => s.key === 'chat_offhours_message')?.value || '';
+      const offhoursStart = settings.find(s => s.key === 'chat_offhours_start')?.value || '20:00';
+      const offhoursEnd = settings.find(s => s.key === 'chat_offhours_end')?.value || '10:00';
+
+      if (!isNewConversation) return;
+
+      // Check off-hours first (takes priority)
+      if (offhoursEnabled && offhoursMessage) {
+        const now = new Date();
+        const kstOffset = 9 * 60;
+        const kstMinutes = (now.getUTCHours() * 60 + now.getUTCMinutes() + kstOffset) % (24 * 60);
+        const [sh, sm] = offhoursStart.split(':').map(Number);
+        const [eh, em] = offhoursEnd.split(':').map(Number);
+        const startMin = sh * 60 + sm;
+        const endMin = eh * 60 + em;
+        const isOffhours = startMin > endMin
+          ? (kstMinutes >= startMin || kstMinutes < endMin)
+          : (kstMinutes >= startMin && kstMinutes < endMin);
+        if (isOffhours) {
+          await storage.createMessage({ conversationId, senderType: 'admin', senderName: 'velour', message: offhoursMessage });
+          return;
+        }
+      }
+
+      // Send welcome message
+      if (welcomeEnabled && welcomeMessage) {
+        await storage.createMessage({ conversationId, senderType: 'admin', senderName: 'velour', message: welcomeMessage });
+      }
+    } catch (e) {
+      console.error('Auto-reply error:', e);
+    }
+  }
 
   // ==================== Site Settings API (Marketing Pixels) ====================
   

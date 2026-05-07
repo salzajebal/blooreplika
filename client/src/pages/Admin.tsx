@@ -11,7 +11,7 @@ import {
   Star, FileText, Bell, Calendar, Tag,
   Clock, Snowflake, Unlock, Settings, Link2, Upload,
   MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2, Search, Shield, Image, Globe, Gift,
-  ChevronUp, ChevronDown, Type, Minus, MousePointer, Palette, GripVertical
+  ChevronUp, ChevronDown, Type, Minus, MousePointer, Palette, GripVertical, Bot
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage, Order, CouponPayment } from "@shared/schema";
@@ -78,6 +78,126 @@ interface AdminStats {
   productsByCategory: { id: string; name: string; count: number }[];
 }
 
+
+// ─── 채팅 자동응답 설정 컴포넌트 ─────────────────────────────────────────────
+function ChatAutoReplySettings({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, opts?: RequestInit) => Promise<Response>; toast: any }) {
+  const [welcomeEnabled, setWelcomeEnabled] = useState(false);
+  const [welcomeMessage, setWelcomeMessage] = useState("");
+  const [offhoursEnabled, setOffhoursEnabled] = useState(false);
+  const [offhoursMessage, setOffhoursMessage] = useState("");
+  const [offhoursStart, setOffhoursStart] = useState("20:00");
+  const [offhoursEnd, setOffhoursEnd] = useState("10:00");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/chat-settings").then(r => r.json()).then(d => {
+      if (d.success) {
+        setWelcomeEnabled(d.data.welcomeEnabled);
+        setWelcomeMessage(d.data.welcomeMessage);
+        setOffhoursEnabled(d.data.offhoursEnabled);
+        setOffhoursMessage(d.data.offhoursMessage);
+        setOffhoursStart(d.data.offhoursStart);
+        setOffhoursEnd(d.data.offhoursEnd);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetchWithAuth("/api/admin/chat-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ welcomeEnabled, welcomeMessage, offhoursEnabled, offhoursMessage, offhoursStart, offhoursEnd }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "저장 완료", description: "자동응답 설정이 저장되었습니다." });
+      } else {
+        toast({ title: "오류", description: "저장에 실패했습니다.", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "저장 중 오류가 발생했습니다.", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="p-4 md:p-6 border-b border-gray-100">
+        <h3 className="text-lg font-bold flex items-center gap-2">
+          <Bot className="w-5 h-5 text-blue-500" />
+          채팅 자동응답 설정
+        </h3>
+        <p className="text-sm text-gray-500 mt-1">채팅이 시작될 때 자동으로 발송되는 메시지를 설정합니다.</p>
+      </div>
+      <div className="p-4 md:p-6 space-y-6">
+        {/* 환영 메시지 */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="font-semibold text-gray-800">환영 메시지</p>
+              <p className="text-xs text-gray-500 mt-0.5">채팅 시작 시 자동으로 발송됩니다.</p>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={welcomeEnabled} onChange={e => setWelcomeEnabled(e.target.checked)} className="w-4 h-4 accent-blue-600" />
+              <span className="text-sm font-medium text-gray-700">{welcomeEnabled ? "켜짐" : "꺼짐"}</span>
+            </label>
+          </div>
+          <Textarea
+            value={welcomeMessage}
+            onChange={e => setWelcomeMessage(e.target.value)}
+            placeholder="예) 안녕하세요! velour입니다. 무엇이든 편하게 문의해 주세요 😊"
+            className="text-sm resize-none"
+            rows={3}
+            disabled={!welcomeEnabled}
+          />
+        </div>
+
+        {/* 운영시간 외 자동응답 */}
+        <div className="border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="font-semibold text-gray-800">운영시간 외 자동응답</p>
+              <p className="text-xs text-gray-500 mt-0.5">설정한 시간 외에 채팅 시 자동 발송됩니다 (환영 메시지 대신).</p>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={offhoursEnabled} onChange={e => setOffhoursEnabled(e.target.checked)} className="w-4 h-4 accent-blue-600" />
+              <span className="text-sm font-medium text-gray-700">{offhoursEnabled ? "켜짐" : "꺼짐"}</span>
+            </label>
+          </div>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="flex-1">
+              <p className="text-xs text-gray-500 mb-1">운영 종료 시각</p>
+              <input type="time" value={offhoursStart} onChange={e => setOffhoursStart(e.target.value)} disabled={!offhoursEnabled}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm disabled:opacity-50" />
+            </div>
+            <span className="text-gray-400 mt-5">~</span>
+            <div className="flex-1">
+              <p className="text-xs text-gray-500 mb-1">운영 시작 시각</p>
+              <input type="time" value={offhoursEnd} onChange={e => setOffhoursEnd(e.target.value)} disabled={!offhoursEnabled}
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm disabled:opacity-50" />
+            </div>
+          </div>
+          <Textarea
+            value={offhoursMessage}
+            onChange={e => setOffhoursMessage(e.target.value)}
+            placeholder={`예) 현재 운영시간(10:00~20:00)이 아닙니다. 운영시간에 다시 문의해 주세요.`}
+            className="text-sm resize-none"
+            rows={3}
+            disabled={!offhoursEnabled}
+          />
+        </div>
+
+        <Button onClick={handleSave} disabled={saving} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+          저장하기
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export default function Admin() {
   const { toast } = useToast();
@@ -5830,6 +5950,10 @@ export default function Admin() {
 
         {activeTab === "chat" && (
           <div className="space-y-6">
+
+            {/* ── 자동응답 설정 ── */}
+            <ChatAutoReplySettings fetchWithAuth={fetchWithAuth} toast={toast} />
+
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
               <div className="p-4 md:p-6 border-b border-gray-100">
                 <div className="flex items-center justify-between">
