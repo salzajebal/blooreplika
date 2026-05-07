@@ -857,7 +857,7 @@ export default function ProductDetail() {
               <button
                 onClick={handleAddToCart}
                 disabled={!!product.isSoldOut}
-                className="flex-1 h-14 sm:h-16 text-base sm:text-lg font-bold text-white bg-[#F97066] hover:bg-[#E8605A] active:bg-[#D5524D] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="flex-1 h-14 sm:h-16 text-base sm:text-lg font-bold text-[#1C3047] bg-[#E5EFF5] hover:bg-[#BDCFDB] active:bg-[#A8C0D0] disabled:bg-gray-200 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 data-testid="button-add-cart-bottom"
               >
                 장바구니
@@ -865,7 +865,7 @@ export default function ProductDetail() {
               <button
                 onClick={handleBuyNow}
                 disabled={!!product.isSoldOut}
-                className="flex-1 h-14 sm:h-16 text-base sm:text-lg font-bold text-white bg-[#16A34A] hover:bg-[#15803D] active:bg-[#166534] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="flex-1 h-14 sm:h-16 text-base sm:text-lg font-bold text-white bg-[#1C3047] hover:bg-[#2A4560] active:bg-[#152435] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 data-testid="button-buy-now-bottom"
               >
                 구매하기
