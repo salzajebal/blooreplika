@@ -225,7 +225,7 @@ const sideMenuLinks = [
 const popularSearches = ["샤넬", "루이비통", "디올", "에르메스", "셀린느", "롤렉스", "자켓", "숄더백", "까르띠에", "후드"];
 
 // ─── Main Nav item types ──────────────────────────────────────────────────────
-type NavKey = "신상품" | "브랜드" | "성별" | "의류" | "가방" | "지갑" | "신발" | "시계" | "골프" | "쥬얼리" | "당일배송" | "할인상품" | "베스트상품";
+type NavKey = "신상품" | "브랜드" | "성별" | "의류" | "가방" | "지갑" | "신발" | "시계" | "골프" | "쥬얼리" | "할인상품";
 
 const SIMPLE_NAV = [
   { key: "신상품" as NavKey, label: "신상품", path: "/products/new" },
@@ -238,9 +238,7 @@ const SIMPLE_NAV = [
   { key: "시계" as NavKey, label: "시계", path: "/products/watches" },
   { key: "골프" as NavKey, label: "골프", path: "/products/golf" },
   { key: "쥬얼리" as NavKey, label: "쥬얼리/잡화", path: "/products/jewelry" },
-  { key: "당일배송" as NavKey, label: "당일배송", path: "/products/sameday" },
   { key: "할인상품" as NavKey, label: "할인상품", path: "/products/discount" },
-  { key: "베스트상품" as NavKey, label: "베스트상품", path: "/products/best" },
 ];
 
 export function Header() {
@@ -402,9 +400,7 @@ export function Header() {
 
   // Special labels for certain items
   const getNavLabel = (label: string) => {
-    if (label === "당일배송") return { label, cls: "text-blue-600" };
     if (label === "할인상품") return { label, cls: "text-red-500" };
-    if (label === "베스트상품") return { label, cls: "text-amber-600" };
     return { label, cls: "" };
   };
 
@@ -968,13 +964,6 @@ export function Header() {
                           {BELTS_ALL.map((s) => <Link key={s.sub} href={`/products/belts?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{s.name}</Link>)}
                         </MobileAccordion>
 
-                        {/* 당일배송 */}
-                        <MobileAccordion title="당일배송" isOpen={mobileExpanded === "당일배송"} onToggle={() => setMobileExpanded(mobileExpanded === "당일배송" ? null : "당일배송")} special="blue">
-                          {SAMEDAY_LINKS.map((link) => (
-                            <Link key={link.path} href={link.path} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{link.name}</Link>
-                          ))}
-                        </MobileAccordion>
-
                         {/* 할인상품 */}
                         <MobileAccordion title="할인상품" isOpen={mobileExpanded === "할인상품"} onToggle={() => setMobileExpanded(mobileExpanded === "할인상품" ? null : "할인상품")} special="red">
                           {DISCOUNT_LINKS.map((link) => (
@@ -982,12 +971,6 @@ export function Header() {
                           ))}
                         </MobileAccordion>
 
-                        {/* 베스트상품 */}
-                        <MobileAccordion title="베스트상품" isOpen={mobileExpanded === "베스트상품"} onToggle={() => setMobileExpanded(mobileExpanded === "베스트상품" ? null : "베스트상품")} special="amber">
-                          {BEST_LINKS.map((link) => (
-                            <Link key={link.path} href={link.path} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{link.name}</Link>
-                          ))}
-                        </MobileAccordion>
                       </nav>
                     </div>
 
@@ -1089,9 +1072,7 @@ export function Header() {
                     {item.key === "시계" && navOpen === "시계" && <QuickLinksDropdown links={[{ name: "전체 시계", path: "/products/watches" }, ...brands.filter((b: any) => b.productCount > 0).slice(0, 20).map((b: any) => ({ name: b.name, path: `/products/watches?brand=${b.id}` }))]} />}
                     {item.key === "골프" && navOpen === "골프" && <GolfDropdown />}
                     {item.key === "쥬얼리" && navOpen === "쥬얼리" && <JewelryMergedDropdown />}
-                    {item.key === "당일배송" && navOpen === "당일배송" && <QuickLinksDropdown links={SAMEDAY_LINKS} />}
                     {item.key === "할인상품" && navOpen === "할인상품" && <QuickLinksDropdown links={DISCOUNT_LINKS} />}
-                    {item.key === "베스트상품" && navOpen === "베스트상품" && <QuickLinksDropdown links={BEST_LINKS} />}
                   </li>
                 );
               })}
