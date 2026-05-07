@@ -43,19 +43,31 @@ export default function ProductDetail() {
   const [kakaoLink, setKakaoLink] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"detail" | "review" | "shipping">("detail");
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [showAllReviews, setShowAllReviews] = useState(false);
+  const [reviewPage, setReviewPage] = useState(1);
+  const [reviewTotal, setReviewTotal] = useState(0);
+  const [loadingMoreReviews, setLoadingMoreReviews] = useState(false);
+  const REVIEWS_PER_PAGE = 10;
   const touchStartX = useRef<number>(0);
 
-  const fetchProductReviews = async () => {
+  const fetchProductReviews = async (page = 1, append = false) => {
     try {
-      const res = await fetch(`/api/reviews?productId=${id}&limit=100`);
+      const offset = (page - 1) * REVIEWS_PER_PAGE;
+      const res = await fetch(`/api/reviews?limit=${REVIEWS_PER_PAGE}&offset=${offset}`);
       const data = await res.json();
       if (data.success) {
-        setReviews(data.data);
+        setReviews(prev => append ? [...prev, ...data.data] : data.data);
+        setReviewTotal(data.total || 0);
+        setReviewPage(page);
       }
     } catch (error) {
       console.error("Error fetching reviews:", error);
     }
+  };
+
+  const loadMoreReviews = async () => {
+    setLoadingMoreReviews(true);
+    await fetchProductReviews(reviewPage + 1, true);
+    setLoadingMoreReviews(false);
   };
 
   useEffect(() => {
@@ -609,7 +621,7 @@ export default function ProductDetail() {
                 className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${activeTab === "review" ? "border-black text-black" : "border-transparent text-gray-400 hover:text-gray-600"}`}
                 data-testid="tab-review"
               >
-                구매후기 ({reviews.length})
+                구매후기 ({reviewTotal})
               </button>
               <button
                 onClick={() => setActiveTab("shipping")}
@@ -740,7 +752,7 @@ export default function ProductDetail() {
           {activeTab === "review" && (
             <div className="pt-6 sm:pt-8">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-sm text-gray-500">구매후기 {reviews.length}건</span>
+                <span className="text-sm text-gray-500">구매후기 {reviewTotal}건</span>
                 <Button size="sm" onClick={() => setShowReviewForm(!showReviewForm)} className="bg-black hover:bg-gray-800 text-xs h-8" data-testid="btn-write-review-product">
                   <Pencil className="w-3 h-3 mr-1" />
                   후기 작성
@@ -754,71 +766,86 @@ export default function ProductDetail() {
                   onClose={() => setShowReviewForm(false)}
                   onSuccess={() => {
                     setShowReviewForm(false);
-                    fetchProductReviews();
+                    fetchProductReviews(1, false);
                   }}
                 />
               )}
 
               {reviews.length > 0 ? (
                 <div className="divide-y divide-gray-100">
-                  {reviews.slice(0, showAllReviews ? reviews.length : 5).map((review) => {
-                    const hasPhoto = (review.imageUrls && review.imageUrls.length > 0) || !!review.imageUrl;
-                    const thumbUrl = hasPhoto ? (review.imageUrls?.[0] || review.imageUrl) : null;
+                  {reviews.map((review) => {
+                    const photoList = (review.imageUrls && review.imageUrls.length > 0)
+                      ? review.imageUrls
+                      : review.imageUrl ? [review.imageUrl] : [];
+                    const hasPhoto = photoList.length > 0;
 
                     return (
-                      <div key={review.id} className="flex gap-3 py-4" data-testid={`review-${review.id}`}>
-                        <div className="w-14 h-14 flex-shrink-0 rounded overflow-hidden bg-gray-100">
-                          {thumbUrl ? (
-                            <img
-                              src={thumbUrl.startsWith("/api/") ? thumbUrl : getProxiedImageUrl(thumbUrl, "thumb")}
-                              alt=""
-                              className="w-full h-full object-cover"
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-300">
-                              <Image className="w-5 h-5" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className="flex items-center">
-                              {[...Array(5)].map((_, i) => (
-                                <Star key={i} className={`w-3 h-3 ${i < (review.rating || 5) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`} />
-                              ))}
-                            </div>
-                            <span className="text-xs text-gray-400">{review.authorName}</span>
-                            <span className="text-xs text-gray-300">{review.displayDate ? new Date(review.displayDate).toLocaleDateString('ko-KR') : ''}</span>
+                      <div key={review.id} className="py-5" data-testid={`review-${review.id}`}>
+                        <div className="flex gap-3">
+                          <div className="w-14 h-14 flex-shrink-0 rounded overflow-hidden bg-gray-100">
+                            {hasPhoto ? (
+                              <img
+                                src={photoList[0].startsWith("/objects/") || photoList[0].startsWith("/api/") ? photoList[0] : getProxiedImageUrl(photoList[0], "thumb")}
+                                alt=""
+                                className="w-full h-full object-cover"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                <Image className="w-5 h-5" />
+                              </div>
+                            )}
                           </div>
-                          {review.title && (
-                            <p className="text-sm font-semibold text-gray-900 mb-0.5">{review.title}</p>
-                          )}
-                          {review.content && (
-                            <p className="text-sm text-gray-700 leading-relaxed">{review.content}</p>
-                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="flex items-center">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star key={i} className={`w-3 h-3 ${i < (review.rating || 5) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`} />
+                                ))}
+                              </div>
+                              <span className="text-xs font-medium text-gray-600">{review.authorName}</span>
+                              <span className="text-xs text-gray-300">{review.displayDate ? new Date(review.displayDate).toLocaleDateString('ko-KR') : ''}</span>
+                            </div>
+                            {review.title && (
+                              <p className="text-sm font-semibold text-gray-900 mb-1">{review.title}</p>
+                            )}
+                            {review.content && (
+                              <p className="text-sm text-gray-700 leading-relaxed">{review.content}</p>
+                            )}
+                          </div>
                         </div>
+                        {photoList.length > 1 && (
+                          <div className="flex gap-2 mt-3 pl-[68px] flex-wrap">
+                            {photoList.slice(1).map((url, idx) => (
+                              <div key={idx} className="w-16 h-16 rounded overflow-hidden bg-gray-100 flex-shrink-0">
+                                <img
+                                  src={url.startsWith("/objects/") || url.startsWith("/api/") ? url : getProxiedImageUrl(url, "thumb")}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
-                  <div className="text-center pt-4 pb-2 space-y-2">
-                    {!showAllReviews && reviews.length > 5 && (
+                  {reviews.length < reviewTotal && (
+                    <div className="text-center pt-4 pb-2">
                       <button
-                        onClick={() => setShowAllReviews(true)}
-                        className="block w-full py-2.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50"
+                        onClick={loadMoreReviews}
+                        disabled={loadingMoreReviews}
+                        className="w-full py-3 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center justify-center gap-2"
+                        data-testid="btn-load-more-reviews"
                       >
-                        후기 더보기 ({reviews.length - 5}개 더)
+                        {loadingMoreReviews ? (
+                          <span className="inline-block w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                        ) : null}
+                        후기 더보기 ({reviewTotal - reviews.length}개 더)
                       </button>
-                    )}
-                    {showAllReviews && (
-                      <button
-                        onClick={() => setShowAllReviews(false)}
-                        className="block w-full py-2.5 text-sm text-gray-400 hover:text-gray-600"
-                      >
-                        접기 ↑
-                      </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-gray-400 text-center py-8 text-sm">
