@@ -57,7 +57,7 @@ export default function Order() {
   const [submitting, setSubmitting] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("bank");
   const [completedPaymentMethod, setCompletedPaymentMethod] = useState<PaymentMethod>(null);
   const [memberPointBalance, setMemberPointBalance] = useState(0);
   const [pointsToUse, setPointsToUse] = useState(0);
@@ -1035,43 +1035,15 @@ export default function Order() {
                 결제 방법
               </h2>
               
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <button
-                  type="button"
-                  onClick={() => { setPaymentMethod("card"); setPendingOrderNumber(""); }}
-                  className={cn(
-                    "p-4 border-2 rounded-lg flex flex-col items-center gap-2 transition-all",
-                    paymentMethod === "card"
-                      ? "border-[#1C3047] bg-[#E5EFF5] text-[#1C3047]"
-                      : "border-[#BDCFDB] hover:border-[#7A9CB5] text-[#7A9CB5]"
-                  )}
-                  data-testid="button-payment-card"
-                >
-                  <CreditCard className="w-8 h-8" />
-                  <span className="font-medium">카드결제</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setPaymentMethod("bank"); setPendingOrderNumber(""); }}
-                  className={cn(
-                    "p-4 border-2 rounded-lg flex flex-col items-center gap-2 transition-all",
-                    paymentMethod === "bank"
-                      ? "border-[#1C3047] bg-[#E5EFF5] text-[#1C3047]"
-                      : "border-[#BDCFDB] hover:border-[#7A9CB5] text-[#7A9CB5]"
-                  )}
+              <div className="mb-4">
+                <div
+                  className="p-4 border-2 rounded-lg flex flex-col items-center gap-2 border-[#1C3047] bg-[#E5EFF5] text-[#1C3047]"
                   data-testid="button-payment-bank"
                 >
                   <Building2 className="w-8 h-8" />
                   <span className="font-medium">계좌이체</span>
-                </button>
-              </div>
-
-              {paymentMethod === "card" && (
-                <div className="bg-[#E5EFF5] border border-[#BDCFDB] rounded-lg p-4 text-sm text-[#3D6080]">
-                  <CreditCard className="w-5 h-5 inline mr-1 text-[#5E9DC0]" />
-                  주문 완료 후 <strong className="text-[#1C3047]">카카오톡 상담</strong>을 통해 카드결제 안내를 받으실 수 있습니다.
                 </div>
-              )}
+              </div>
 
               {paymentMethod === "bank" && (
                 <div className="bg-[#E5EFF5] border border-[#BDCFDB] rounded-lg p-4">
