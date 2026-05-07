@@ -626,7 +626,10 @@ export default function Order() {
                   홈으로 돌아가기
                 </Button>
                 <Button
-                  onClick={() => setLocation("/profile")}
+                  onClick={() => isLoggedIn
+                    ? setLocation("/profile")
+                    : setLocation(`/orders?orderNumber=${encodeURIComponent(orderNumber)}`)
+                  }
                   className="sm:w-auto bg-[#1C3047] hover:bg-[#2C4A65] text-[#E5EFF5]"
                 >
                   주문 내역 확인

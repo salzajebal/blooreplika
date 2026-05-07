@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,12 @@ export default function OrderInquiry() {
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState<OrderInfo | null>(null);
   const [searched, setSearched] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const on = params.get("orderNumber");
+    if (on) setOrderNumber(on);
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -244,7 +250,7 @@ export default function OrderInquiry() {
                       <div>
                         <h4 className="font-bold text-amber-900">결제 대기중</h4>
                         <p className="text-amber-800 text-sm mt-1">
-                          카카오톡 상담을 통해 결제계좌를 안내받으신 후 입금해주세요.
+                          주문 완료 페이지에 안내된 계좌로 입금해주세요.
                           입금 확인 후 상품이 발송됩니다.
                         </p>
                       </div>
