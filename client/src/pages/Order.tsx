@@ -562,35 +562,11 @@ export default function Order() {
                         <br />
                         입금 확인 후 상품이 발송됩니다.
                       </p>
-                      <a
-                        href={kakaoLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-bold py-3 px-6 rounded-lg transition-colors"
-                        data-testid="link-kakao-inquiry"
-                      >
-                        <KakaoIcon className="w-5 h-5" />
-                        카카오톡 문의하기
-                      </a>
                     </div>
                   ) : (
-                    <>
-                      <p className="text-[#3D6080] mb-4">
-                        결제계좌 정보는 <strong>카카오톡 상담</strong>을 통해 안내받으실 수 있습니다.
-                        <br />
-                        아래 버튼을 눌러 카카오톡으로 이동해주세요.
-                      </p>
-                      <a
-                        href={kakaoLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-bold py-4 px-8 rounded-lg text-lg transition-colors"
-                        data-testid="link-kakao-payment"
-                      >
-                        <KakaoIcon className="w-6 h-6" />
-                        카카오톡으로 결제계좌 안내받기
-                      </a>
-                    </>
+                    <p className="text-[#3D6080] text-sm">
+                      결제계좌 정보를 불러오는 중입니다. 잠시 후 다시 확인해주세요.
+                    </p>
                   )}
                 </div>
               )}
@@ -1068,9 +1044,7 @@ export default function Order() {
                     </div>
                   ) : (
                     <p className="text-[#3D6080] text-sm">
-                      주문서 작성 완료 후, <strong className="text-[#1C3047]">결제계좌 정보</strong>는 카카오톡 상담을 통해 안내받으실 수 있습니다.
-                      <br />
-                      주문 완료 페이지에서 카카오톡 링크를 클릭해주세요.
+                      주문서 작성 완료 후 주문 완료 페이지에서 <strong className="text-[#1C3047]">결제계좌 정보</strong>를 확인하실 수 있습니다.
                     </p>
                   )}
                 </div>
