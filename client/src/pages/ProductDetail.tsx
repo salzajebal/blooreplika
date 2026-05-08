@@ -290,9 +290,6 @@ export default function ProductDetail() {
       <Header />
       
       <main className="flex-1 pb-20">
-        <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-2.5 text-center">
-          <p className="text-xs md:text-sm tracking-wider">velour 정품보증 | 무료검수 | 전상품 무료배송 | 카카오톡 실시간 상담</p>
-        </div>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
           <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-500 mb-4 sm:mb-8 overflow-x-auto whitespace-nowrap">
             <Link href="/" className="hover:text-primary shrink-0">홈</Link>
