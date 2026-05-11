@@ -3,7 +3,7 @@ import { useParams, Link, useLocation } from "wouter";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart, ChevronLeft, ChevronRight, Truck, Shield, ShoppingBag, Star, Package, AlertTriangle, MessageCircle, RefreshCw, Smartphone, Pencil, Image } from "lucide-react";
+import { ShoppingCart, Heart, ChevronLeft, ChevronRight, Truck, ShoppingBag, Star, Package, AlertTriangle, MessageCircle, Search, Smartphone, Pencil, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useGlobalSale } from "@/hooks/use-global-sale";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -508,7 +508,7 @@ export default function ProductDetail() {
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
-                      <Shield className="w-5 h-5 text-gray-600" />
+                      <Search className="w-5 h-5 text-gray-600" />
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">무료 검수 제공</p>
@@ -517,7 +517,7 @@ export default function ProductDetail() {
                   </div>
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
-                      <RefreshCw className="w-5 h-5 text-gray-600" />
+                      <Package className="w-5 h-5 text-gray-600" />
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">교환/환불 7일내 신청시 무료</p>
