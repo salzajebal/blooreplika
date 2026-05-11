@@ -11,7 +11,7 @@ import {
   Star, FileText, Bell, Calendar, Tag,
   Clock, Snowflake, Unlock, Settings, Link2, Upload,
   MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2, Search, Shield, Image, Globe, Gift,
-  ChevronUp, ChevronDown, Type, Minus, MousePointer, Palette, GripVertical, Bot
+  ChevronUp, ChevronDown, Type, Minus, MousePointer, Palette, GripVertical, Bot, LayoutGrid
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage, Order, CouponPayment } from "@shared/schema";
@@ -1021,7 +1021,7 @@ export default function Admin() {
     if (allSelected) {
       setSelectedBagstyleSubcats(prev => prev.filter(id => !catSubcatIds.includes(id)));
     } else {
-      setSelectedBagstyleSubcats(prev => [...new Set([...prev, ...catSubcatIds])]);
+      setSelectedBagstyleSubcats(prev => Array.from(new Set([...prev, ...catSubcatIds])));
     }
   };
 
@@ -8905,8 +8905,93 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
     }
   };
 
+  const quickAddSection = (cat: any) => {
+    resetForm();
+    setForm({
+      sectionType: "homepage_product",
+      title: cat.name,
+      description: "",
+      imageUrl: "",
+      linkUrl: "",
+      celebrity: "",
+      categorySlug: cat.id,
+      brandName: "",
+      maxProducts: 8,
+      sortOrder: 0,
+      isActive: true,
+    });
+    setShowForm(true);
+    setTimeout(() => {
+      document.getElementById("content-section-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  };
+
+  const homeSections = items.filter(i => i.sectionType === "homepage_product");
+  const activeCatIds: string[] = homeSections.map((s: any) => s.categorySlug).filter(Boolean);
+
   return (
     <div className="space-y-6">
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="p-5 border-b border-gray-100">
+          <h3 className="text-base font-bold flex items-center gap-2 mb-1">
+            <LayoutGrid className="w-4 h-4 text-blue-600" />
+            홈 상품 섹션 빠른 추가
+          </h3>
+          <p className="text-xs text-gray-400 mb-4">카테고리를 클릭하면 해당 카테고리의 상품 섹션이 홈에 추가됩니다.</p>
+          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+            {categories.map((cat: any) => {
+              const isActive = activeCatIds.includes(cat.id);
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  data-testid={`quick-add-cat-${cat.id}`}
+                  onClick={() => quickAddSection(cat)}
+                  className={`relative p-3 rounded-xl border-2 text-center transition-all hover:shadow-md ${
+                    isActive
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-blue-300 bg-white"
+                  }`}
+                >
+                  {isActive && (
+                    <span className="absolute top-1 right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5 text-white" />
+                    </span>
+                  )}
+                  <div className={`text-sm font-semibold truncate ${isActive ? "text-blue-700" : "text-gray-800"}`}>
+                    {cat.name}
+                  </div>
+                  {cat.count > 0 && (
+                    <div className="text-[10px] text-gray-400 mt-0.5">{cat.count.toLocaleString()}개</div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {homeSections.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <p className="text-xs text-gray-500 mb-2 font-medium">현재 활성 홈 상품 섹션 ({homeSections.length}개)</p>
+              <div className="flex flex-wrap gap-2">
+                {homeSections.map((s: any) => (
+                  <span key={s.id} className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-700">
+                    {s.title}
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(s.id)}
+                      className="ml-1 text-red-400 hover:text-red-600"
+                      title="삭제"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
           <div>
@@ -8949,7 +9034,7 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
         </div>
 
         {showForm && (
-          <div className="p-6 border-b border-gray-100 bg-gray-50">
+          <div id="content-section-form" className="p-6 border-b border-gray-100 bg-gray-50">
             <h4 className="font-semibold mb-4">{editingId ? "콘텐츠 수정" : "새 콘텐츠 추가"}</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -9052,19 +9137,44 @@ function ContentSectionsTab({ authToken }: { authToken: string }) {
               )}
               {form.sectionType === "homepage_product" && (
                 <>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">카테고리 (선택)</label>
-                    <select
-                      data-testid="input-categorySlug"
-                      className="w-full border rounded-lg px-3 py-2 text-sm"
-                      value={form.categorySlug}
-                      onChange={e => setForm({ ...form, categorySlug: e.target.value })}
-                    >
-                      <option value="">전체 (카테고리 필터 없음)</option>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium mb-2">카테고리 선택</label>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2">
+                      <button
+                        type="button"
+                        data-testid="input-categorySlug-all"
+                        onClick={() => setForm({ ...form, categorySlug: "" })}
+                        className={`p-3 rounded-xl border-2 text-sm font-medium text-center transition-all ${
+                          !form.categorySlug
+                            ? "border-blue-500 bg-blue-50 text-blue-700"
+                            : "border-gray-200 hover:border-blue-300 bg-white text-gray-700"
+                        }`}
+                      >
+                        전체
+                      </button>
                       {categories.map((c: any) => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
+                        <button
+                          key={c.id}
+                          type="button"
+                          data-testid={`input-categorySlug-${c.id}`}
+                          onClick={() => setForm({
+                            ...form,
+                            categorySlug: c.id,
+                            title: form.title || c.name,
+                          })}
+                          className={`p-3 rounded-xl border-2 text-center transition-all ${
+                            form.categorySlug === c.id
+                              ? "border-blue-500 bg-blue-50 text-blue-700"
+                              : "border-gray-200 hover:border-blue-300 bg-white text-gray-700"
+                          }`}
+                        >
+                          <div className="text-sm font-semibold truncate">{c.name}</div>
+                          {c.count > 0 && (
+                            <div className="text-[10px] text-gray-400 mt-0.5">{c.count.toLocaleString()}개</div>
+                          )}
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </div>
                   <div className="relative">
                     <label className="block text-sm font-medium mb-1">브랜드 (선택)</label>
