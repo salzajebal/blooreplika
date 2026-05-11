@@ -616,11 +616,11 @@ function DynamicHomeSections({ brands }: { brands: any[] }) {
 
   const getMoreLink = (section: any) => {
     if (section.linkUrl) return section.linkUrl;
+    if (section.categorySlug) return `/products/${section.categorySlug}`;
     if (section.brandName) {
       const brand = brands.find((b: any) => b.name?.toLowerCase() === section.brandName?.toLowerCase());
       if (brand) return `/products?brand=${encodeURIComponent(brand.id)}`;
     }
-    if (section.categorySlug) return `/products/${section.categorySlug}`;
     return "/products";
   };
 

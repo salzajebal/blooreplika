@@ -6248,7 +6248,7 @@ export async function registerRoutes(
         }
         if (item.sectionType === "homepage_product" && (item.categorySlug || item.brandName)) {
           try {
-            const maxCount = item.maxProducts || 6;
+            const maxCount = Math.min(item.maxProducts || 8, 8);
             let brandId: string | undefined;
             if (item.brandName) {
               const allBrands = await storage.getAllBrands();
