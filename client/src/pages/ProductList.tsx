@@ -874,113 +874,112 @@ export default function ProductList() {
                 </div>
               )}
               <div className={cn(
-                "gap-4 md:gap-6",
-                viewMode === "grid" 
-                  ? "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4" 
+                "gap-3 md:gap-4",
+                viewMode === "grid"
+                  ? "grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4"
                   : "flex flex-col",
                 showLoadingOverlay && "opacity-60 pointer-events-none"
               )}>
-                {filteredProducts.map((product) => (
-                  <Link 
+                {filteredProducts.map((product) => {
+                  const discountPct = (product.discountPercent && product.discountPercent > 0)
+                    ? product.discountPercent
+                    : hasSale ? salePercent : 0;
+                  const salePrice = discountPct > 0
+                    ? (product.discountPercent && product.discountPercent > 0
+                        ? Math.round(Number(product.price) * (100 - product.discountPercent) / 100 / 1000) * 1000
+                        : calculateSalePrice(Number(product.price)))
+                    : null;
+                  return (
+                  <Link
                     key={product.id}
                     href={`/product/${product.id}`}
                     className={cn(
-                      "group bg-white border border-gray-200 hover:shadow-md transition-all rounded-lg overflow-hidden",
-                      viewMode === "list" && "flex gap-4 p-4"
+                      "group bg-white border border-gray-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden",
+                      viewMode === "list" && "flex gap-4"
                     )}
                     data-testid={`card-product-${product.id}`}
                   >
                     <div className={cn(
                       "bg-gray-50 relative overflow-hidden",
-                      viewMode === "grid" ? "aspect-square rounded-lg" : "w-32 h-32 flex-shrink-0"
+                      viewMode === "grid" ? "aspect-[4/5]" : "w-32 h-36 flex-shrink-0"
                     )}>
                       <LazyProductImage
                         src={getProxiedImageUrl(product.imageUrl)}
                         alt={product.name}
                       />
-                      
+
                       {product.isSoldOut && (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
                           <span className="text-white text-xs font-bold px-3 py-1 bg-black/60">SOLD OUT</span>
                         </div>
                       )}
-                      
-                      <div className="absolute top-2 left-2 flex flex-col gap-1">
-                        {(product.viewCount ?? 0) > 0 && (
-                          <span className="bg-black/70 text-white text-[10px] px-2 py-0.5 rounded font-medium">
-                            조회 {(product.viewCount ?? 0).toLocaleString()}
-                          </span>
-                        )}
-                        {product.isNew && (
-                          <span className="bg-red-500 text-white text-[10px] px-2.5 py-1 font-bold">NEW</span>
-                        )}
-                      </div>
-                      
-                      <button 
-                        onClick={(e) => handleWishlistToggle(e, product)}
-                        className={cn(
-                          "absolute top-2 right-2 w-9 h-9 bg-white flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-all rounded-sm",
-                          isInWishlist(String(product.id)) && "opacity-100"
-                        )}
-                        data-testid={`button-wishlist-${product.id}`}
-                      >
-                        <Heart className={cn("w-4.5 h-4.5", isInWishlist(String(product.id)) ? "fill-red-500 text-red-500" : "text-gray-400")} />
-                      </button>
+
+                      {viewMode === "grid" && (
+                        <div className="absolute top-0 right-0 flex flex-col">
+                          {product.isBest && (
+                            <span className="bg-[#1C3047] text-white text-[9px] px-1.5 py-1 font-bold text-center leading-none">세트</span>
+                          )}
+                          {discountPct > 0 && (
+                            <span className="bg-[#5E9DC0] text-white text-[9px] px-1.5 py-1 font-bold text-center leading-none">주간</span>
+                          )}
+                          {product.isNew && (
+                            <span className="bg-red-500 text-white text-[9px] px-1.5 py-1 font-bold text-center leading-none">신상</span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    
-                    
+
                     <div className={cn(
-                      viewMode === "grid" ? "p-4" : "flex-1 flex flex-col justify-center"
+                      viewMode === "grid" ? "p-3" : "flex-1 flex flex-col justify-center p-3"
                     )}>
-                      <p className="text-xs text-gray-500 mb-1 font-medium tracking-wide">
-                        {brands.find(b => b.id === product.brandId)?.name?.toUpperCase() || ""}
+                      <p className="text-[10px] text-gray-400 mb-0.5 font-medium tracking-wide uppercase truncate">
+                        {brands.find(b => b.id === product.brandId)?.name || ""}
                       </p>
                       <h3 className={cn(
-                        "font-medium text-sm md:text-base mb-2.5 group-hover:text-gray-600 transition-colors",
+                        "font-bold text-sm text-gray-900 mb-2 leading-snug",
                         viewMode === "grid" && "line-clamp-2"
                       )}>
                         {decodeHtml(product.name)}
                       </h3>
-                      <div>
-                        {hasSale ? (
-                          <>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs text-gray-400 line-through">
-                                {Number(product.price).toLocaleString()}원
-                              </span>
-                              <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 font-bold">
-                                {salePercent}%
-                              </span>
-                            </div>
-                            <span className="text-base md:text-lg font-extrabold text-red-500" data-testid={`price-product-${product.id}`}>
-                              {calculateSalePrice(Number(product.price)).toLocaleString()}원
-                            </span>
-                            <p className="text-xs text-gray-400 mt-1">즉시구매가</p>
-                          </>
-                        ) : (
-                          <>
-                            <span className="text-base md:text-lg font-extrabold text-gray-900" data-testid={`price-product-${product.id}`}>
+
+                      <div className="mb-2">
+                        {salePrice ? (
+                          <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                            <span className="text-xs text-gray-400 line-through">
                               {Number(product.price).toLocaleString()}원
                             </span>
-                            <p className="text-xs text-gray-400 mt-1">즉시구매가</p>
-                          </>
+                            <span className="text-sm font-extrabold text-gray-900" data-testid={`price-product-${product.id}`}>
+                              {salePrice.toLocaleString()}원
+                            </span>
+                            <span className="text-xs text-red-500 font-bold">{discountPct}%</span>
+                          </div>
+                        ) : (
+                          <span className="text-sm font-extrabold text-gray-900" data-testid={`price-product-${product.id}`}>
+                            {Number(product.price).toLocaleString()}원
+                          </span>
                         )}
                       </div>
-                      {product.viewCount && product.viewCount > 0 && (
-                        <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
-                          <span>조회 {product.viewCount}</span>
-                        </div>
-                      )}
-                      {(product.reviewCount || 0) > 0 && (
-                        <div className="flex items-center gap-1 mt-1.5 text-sm text-gray-500">
-                          <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                          <span>{Number(product.avgRating || 0).toFixed(1)}</span>
-                          <span>({product.reviewCount})</span>
-                        </div>
-                      )}
+
+                      <div className="flex items-center justify-between mt-auto pt-1 border-t border-gray-100">
+                        <button
+                          onClick={(e) => handleWishlistToggle(e, product)}
+                          className="flex items-center gap-1 text-gray-400 hover:text-red-500 transition-colors"
+                          data-testid={`button-wishlist-${product.id}`}
+                        >
+                          <Heart className={cn("w-4 h-4", isInWishlist(String(product.id)) ? "fill-red-500 text-red-500" : "")} />
+                        </button>
+                        {(product.reviewCount || 0) > 0 && (
+                          <div className="flex items-center gap-0.5">
+                            {[1,2,3,4,5].map(s => (
+                              <Star key={s} className={cn("w-2.5 h-2.5", s <= Math.round(Number(product.avgRating || 0)) ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200")} />
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </Link>
-                ))}
+                  );
+                })}
               </div>
               
               {totalPages > 1 && (

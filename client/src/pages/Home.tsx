@@ -6,6 +6,22 @@ import { ChevronLeft, ChevronRight, Search, ArrowUp, Star, Camera } from "lucide
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { useState, useEffect, useRef, useCallback } from "react";
 
+function useScrollReveal(threshold = 0.12) {
+  const ref = useRef<HTMLElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      { threshold }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [threshold]);
+  return { ref, visible };
+}
+
 function FloatingButtons() {
   const [showScrollTop, setShowScrollTop] = useState(false);
 
@@ -214,57 +230,43 @@ function HomeReviewsSection() {
   if (reviews.length === 0) return null;
 
   return (
-    <section className="bg-white border-b border-gray-100 py-6 md:py-8" data-testid="home-reviews-section">
+    <section className="bg-[#f8f8f8] py-10 md:py-16" data-testid="home-reviews-section">
       <div className="max-w-[1200px] mx-auto px-4">
-        {/* 헤더 */}
-        <div className="flex items-end justify-between mb-4 md:mb-5">
-          <div className="flex items-center gap-2">
-            <Camera className="w-4 h-4 text-gray-500" />
-            <h2 className="text-base md:text-lg font-bold tracking-wide text-gray-900" style={{ fontFamily: "'Playfair Display', serif" }}>
-              실제구매후기
-            </h2>
-            <span className="text-xs text-gray-400 font-normal ml-1">고객님들의 솔직한 후기</span>
-          </div>
-          <Link
-            href="/reviews"
-            className="text-xs text-gray-400 hover:text-black transition-colors flex items-center gap-0.5"
-            data-testid="home-reviews-more"
-          >
-            더보기 <ChevronRight className="w-3 h-3" />
-          </Link>
-        </div>
+        <h2 className="text-center text-2xl md:text-3xl font-bold tracking-widest uppercase mb-2 text-gray-900">
+          REVIEW
+        </h2>
+        <p className="text-center text-sm text-gray-400 mb-6 md:mb-10">고객님들의 솔직한 후기</p>
 
-        {/* 가로 스크롤 */}
-        <div className="relative group/reviews">
+        <div className="relative">
           {canScrollLeft && (
             <button
               onClick={() => scroll("left")}
-              className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 hover:bg-white border border-gray-200 shadow-md rounded-full items-center justify-center text-gray-600 hover:text-black transition-all -translate-x-3"
+              className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-300 shadow items-center justify-center text-gray-700 hover:bg-gray-50 transition-all -translate-x-5"
               aria-label="이전"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
           )}
           {canScrollRight && (
             <button
               onClick={() => scroll("right")}
-              className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white/90 hover:bg-white border border-gray-200 shadow-md rounded-full items-center justify-center text-gray-600 hover:text-black transition-all translate-x-3"
+              className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-300 shadow items-center justify-center text-gray-700 hover:bg-gray-50 transition-all translate-x-5"
               aria-label="다음"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-5 h-5" />
             </button>
           )}
 
           <div
             ref={rowRef}
-            className="flex gap-3 overflow-x-auto pb-2 select-none"
+            className="flex gap-4 md:gap-5 overflow-x-auto pb-2 select-none"
             style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", cursor: "grab" }}
             onMouseDown={onMouseDown}
             onMouseMove={onMouseMove}
             onMouseUp={onMouseUp}
             onMouseLeave={onMouseUp}
           >
-            {reviews.map((review: any) => {
+            {reviews.map((review: any, idx: number) => {
               const thumb = review.imageUrls?.length > 0
                 ? toReviewProxyUrl(review.imageUrls[0])
                 : review.imageUrl
@@ -277,11 +279,10 @@ function HomeReviewsSection() {
                   href="/reviews"
                   draggable={false}
                   onClick={(e) => { if (hasDragged.current) e.preventDefault(); }}
-                  className="flex-shrink-0 w-[140px] md:w-[160px] group block"
+                  className="flex-shrink-0 w-[220px] md:w-[260px] group block bg-white border border-gray-200 hover:shadow-md transition-all duration-200"
                   data-testid={`home-review-${review.id}`}
                 >
-                  {/* 사진 */}
-                  <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 mb-2">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
                     {thumb ? (
                       <img
                         src={thumb}
@@ -293,32 +294,44 @@ function HomeReviewsSection() {
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                        <Camera className="w-6 h-6 text-gray-300" />
+                        <Camera className="w-8 h-8 text-gray-300" />
                       </div>
                     )}
-                    {/* 별점 뱃지 */}
-                    <div className="absolute bottom-1.5 left-1.5 flex items-center gap-0.5 bg-black/60 rounded px-1.5 py-0.5">
-                      <Star className="w-2.5 h-2.5 text-yellow-400 fill-yellow-400" />
-                      <span className="text-[10px] text-white font-medium">{review.rating || 5}</span>
+                    <div className="absolute bottom-2 left-2">
+                      <span className="text-4xl font-black text-white/80 leading-none" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>
+                        {idx + 1}
+                      </span>
                     </div>
                   </div>
-
-                  {/* 작성자 + 상품명 */}
-                  <p className="text-[10px] text-gray-400 font-medium">{maskName(review.authorName)}</p>
-                  {review.productName && (
-                    <p className="text-[10px] text-gray-500 line-clamp-1 mt-0.5">{review.productName}</p>
-                  )}
-                  {/* 내용 미리보기 */}
-                  <p className="text-xs text-gray-700 line-clamp-2 mt-1 leading-snug">{review.content || review.title}</p>
+                  <div className="p-3">
+                    {review.productName && (
+                      <p className="text-[10px] text-gray-400 mb-0.5 truncate">({review.productName})</p>
+                    )}
+                    <p className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug">{review.content || review.title}</p>
+                    <div className="flex items-center gap-0.5 mt-2">
+                      {[1,2,3,4,5].map(s => (
+                        <Star key={s} className={`w-3 h-3 ${s <= (review.rating || 5) ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"}`} />
+                      ))}
+                    </div>
+                  </div>
                 </Link>
               );
             })}
           </div>
-
-          {/* 모바일 페이드 힌트 */}
           {canScrollRight && (
-            <div className="md:hidden absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-white/80 to-transparent pointer-events-none" />
+            <div className="md:hidden absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-[#f8f8f8]/80 to-transparent pointer-events-none" />
           )}
+        </div>
+
+        <p className="text-center text-xs text-gray-400 mt-4">↔ 손가락으로 좌우 스크롤해 주세요.</p>
+        <div className="text-center mt-6">
+          <Link
+            href="/reviews"
+            className="inline-block px-10 py-2.5 bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 transition-colors"
+            data-testid="home-reviews-more"
+          >
+            More view
+          </Link>
         </div>
       </div>
     </section>
@@ -554,149 +567,49 @@ function ForYouSection({ products, brands }: { products: any[]; brands: any[] })
 }
 
 
-function ProductScrollRow({ products, getBrandName }: { products: any[]; getBrandName: (id: string) => string }) {
-  const rowRef = useRef<HTMLDivElement>(null);
-  const isDragging = useRef(false);
-  const startX = useRef(0);
-  const scrollLeft = useRef(0);
-  const hasDragged = useRef(false);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-
-  const updateArrows = useCallback(() => {
-    const el = rowRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 8);
-    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
-  }, []);
-
-  useEffect(() => {
-    const el = rowRef.current;
-    if (!el) return;
-    updateArrows();
-    el.addEventListener("scroll", updateArrows, { passive: true });
-    const ro = new ResizeObserver(updateArrows);
-    ro.observe(el);
-    return () => { el.removeEventListener("scroll", updateArrows); ro.disconnect(); };
-  }, [updateArrows]);
-
-  const onMouseDown = (e: React.MouseEvent) => {
-    if (!rowRef.current) return;
-    isDragging.current = true;
-    hasDragged.current = false;
-    startX.current = e.pageX - rowRef.current.offsetLeft;
-    scrollLeft.current = rowRef.current.scrollLeft;
-    rowRef.current.style.cursor = "grabbing";
-  };
-
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging.current || !rowRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - rowRef.current.offsetLeft;
-    const walk = (x - startX.current) * 1.2;
-    if (Math.abs(walk) > 4) hasDragged.current = true;
-    rowRef.current.scrollLeft = scrollLeft.current - walk;
-  };
-
-  const onMouseUp = () => {
-    isDragging.current = false;
-    if (rowRef.current) rowRef.current.style.cursor = "grab";
-  };
-
-  const scroll = (dir: "left" | "right") => {
-    if (!rowRef.current) return;
-    rowRef.current.scrollBy({ left: dir === "right" ? 320 : -320, behavior: "smooth" });
-  };
+function SectionProductCard({ product, getBrandName }: { product: any; getBrandName: (id: string) => string }) {
+  const hasDiscount = product.discountPercent && product.discountPercent > 0;
+  const discountedPrice = hasDiscount
+    ? Math.round(Number(product.price) * (100 - product.discountPercent) / 100 / 1000) * 1000
+    : Number(product.price);
 
   return (
-    <div className="relative group/row">
-      {/* 왼쪽 화살표 */}
-      {canScrollLeft && (
-        <button
-          onClick={() => scroll("left")}
-          className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-white/90 hover:bg-white border border-gray-200 shadow-md rounded-full items-center justify-center text-gray-600 hover:text-black transition-all -translate-x-3"
-          aria-label="이전"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-      )}
-
-      {/* 오른쪽 화살표 */}
-      {canScrollRight && (
-        <button
-          onClick={() => scroll("right")}
-          className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-white/90 hover:bg-white border border-gray-200 shadow-md rounded-full items-center justify-center text-gray-600 hover:text-black transition-all translate-x-3"
-          aria-label="다음"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
-      )}
-
-      {/* 스크롤 행 */}
-      <div
-        ref={rowRef}
-        className="flex gap-3 md:gap-4 overflow-x-auto pb-3 select-none"
-        style={{
-          WebkitOverflowScrolling: "touch",
-          scrollbarWidth: "none",
-          msOverflowStyle: "none",
-          cursor: "grab",
-        }}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseUp}
-      >
-        {products.map((product: any) => {
-          const hasDiscount = product.discountPercent && product.discountPercent > 0;
-          const discountedPrice = hasDiscount
-            ? Math.round(Number(product.price) * (100 - product.discountPercent) / 100 / 1000) * 1000
-            : Number(product.price);
-
-          return (
-            <Link
-              key={product.id}
-              href={`/product/${product.id}`}
-              draggable={false}
-              className="block group flex-shrink-0 w-[140px] md:w-[180px] lg:w-[200px]"
-              data-testid={`section-product-${product.id}`}
-              onClick={(e) => { if (hasDragged.current) e.preventDefault(); }}
-            >
-              <div className="aspect-square bg-gray-50 overflow-hidden mb-2 rounded-lg pointer-events-none">
-                <img
-                  src={getProxiedImageUrl(product.imageUrl, "medium")}
-                  alt={product.name}
-                  draggable={false}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  loading="lazy"
-                  onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-                />
-              </div>
-              <p className="text-[10px] md:text-xs text-gray-400 uppercase font-semibold tracking-wide pointer-events-none">{getBrandName(product.brandId)}</p>
-              <p className="text-xs md:text-sm text-gray-700 line-clamp-2 leading-snug mt-0.5 pointer-events-none">{product.name}</p>
-              {product.originalPrice && Number(product.originalPrice) > 0 && (
-                <p className="text-[10px] md:text-xs text-gray-400 mt-1 pointer-events-none">매장가 {Math.round(Number(product.originalPrice) / 10000)}만원</p>
-              )}
-              <div className="mt-0.5 flex items-center gap-1.5 pointer-events-none">
-                {hasDiscount && (
-                  <span className="text-xs md:text-sm font-bold text-red-500">{product.discountPercent}%</span>
-                )}
-                <p className="text-xs md:text-sm font-bold text-gray-900">{discountedPrice.toLocaleString()}원</p>
-              </div>
-              <div className="flex gap-1 mt-1.5 pointer-events-none">
-                <span className="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded font-medium">적립</span>
-                <span className="text-[9px] md:text-[10px] px-1.5 py-0.5 bg-green-50 text-green-600 rounded font-medium">무료배송</span>
-              </div>
-            </Link>
-          );
-        })}
+    <Link
+      href={`/product/${product.id}`}
+      className="group block bg-white border border-gray-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
+      data-testid={`section-product-${product.id}`}
+    >
+      <div className="relative aspect-[4/5] bg-gray-50 overflow-hidden">
+        <img
+          src={getProxiedImageUrl(product.imageUrl, "medium")}
+          alt={product.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          loading="lazy"
+          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+        />
+        <div className="absolute top-0 right-0 flex flex-col">
+          {hasDiscount && (
+            <span className="bg-[#5E9DC0] text-white text-[9px] px-1.5 py-1 font-bold leading-none">주간</span>
+          )}
+          {product.isNew && (
+            <span className="bg-red-500 text-white text-[9px] px-1.5 py-1 font-bold leading-none">신상</span>
+          )}
+        </div>
       </div>
-
-      {/* 모바일 스크롤 힌트 (처음 한 번만) */}
-      {canScrollRight && (
-        <div className="md:hidden absolute right-0 top-0 h-full w-12 bg-gradient-to-l from-white/80 to-transparent pointer-events-none" />
-      )}
-    </div>
+      <div className="p-3">
+        <p className="text-[10px] text-gray-400 uppercase font-medium tracking-wide truncate mb-0.5">{getBrandName(product.brandId)}</p>
+        <p className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug mb-2">{product.name}</p>
+        <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+          {hasDiscount && (
+            <span className="text-xs text-gray-400 line-through">{Number(product.price).toLocaleString()}원</span>
+          )}
+          <span className="text-sm font-extrabold text-gray-900">{discountedPrice.toLocaleString()}원</span>
+          {hasDiscount && (
+            <span className="text-xs text-red-500 font-bold">{product.discountPercent}%</span>
+          )}
+        </div>
+      </div>
+    </Link>
   );
 }
 
@@ -740,42 +653,60 @@ function DynamicHomeSections() {
   return (
     <>
       {sections.map((section: any) => (
-        <section key={section.id} className="bg-white border-b border-gray-100" data-testid={`home-section-${section.id}`}>
-          {section.imageUrl && (
-            <Link href={getMoreLink(section)} className="block w-full">
-              <img
-                src={section.imageUrl}
-                alt={section.title}
-                className="w-full object-cover"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-              />
-            </Link>
-          )}
-
-          {section.products && section.products.length > 0 && (
-            <div className="max-w-[1200px] mx-auto px-4 py-6 md:py-10">
-              <div className="flex items-end justify-between mb-4 md:mb-6">
-                <div>
-                  <h2 className="text-base md:text-xl font-bold tracking-wide uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>{section.title}</h2>
-                  {section.description && (
-                    <p className="text-xs md:text-sm text-gray-500 mt-1">{section.description}</p>
-                  )}
-                </div>
-                <Link
-                  href={getMoreLink(section)}
-                  className="text-xs md:text-sm text-gray-400 hover:text-black transition-colors flex-shrink-0"
-                  data-testid={`section-more-${section.id}`}
-                >
-                  더보기
-                </Link>
-              </div>
-
-              <ProductScrollRow products={section.products} getBrandName={getBrandName} />
-            </div>
-          )}
-        </section>
+        <SectionBlock key={section.id} section={section} getMoreLink={getMoreLink} getBrandName={getBrandName} />
       ))}
     </>
+  );
+}
+
+function SectionBlock({ section, getMoreLink, getBrandName }: { section: any; getMoreLink: (s: any) => string; getBrandName: (id: string) => string }) {
+  const { ref, visible } = useScrollReveal();
+  return (
+    <section
+      ref={ref}
+      className="bg-white border-b border-gray-100"
+      style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(32px)", transition: "opacity 0.6s ease, transform 0.6s ease" }}
+      data-testid={`home-section-${section.id}`}
+    >
+      {section.imageUrl && (
+        <Link href={getMoreLink(section)} className="block w-full">
+          <img
+            src={section.imageUrl}
+            alt={section.title}
+            className="w-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        </Link>
+      )}
+
+      {section.products && section.products.length > 0 && (
+        <div className="max-w-[1200px] mx-auto px-4 py-10 md:py-16">
+          <h2 className="text-center text-2xl md:text-3xl font-bold tracking-widest uppercase mb-2 text-gray-900">
+            {section.title}
+          </h2>
+          {section.description && (
+            <p className="text-center text-sm text-gray-400 mb-8">{section.description}</p>
+          )}
+          {!section.description && <div className="mb-8" />}
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
+            {section.products.slice(0, 8).map((product: any) => (
+              <SectionProductCard key={product.id} product={product} getBrandName={getBrandName} />
+            ))}
+          </div>
+
+          <div className="text-center mt-10">
+            <Link
+              href={getMoreLink(section)}
+              className="inline-block px-12 py-2.5 bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 transition-colors"
+              data-testid={`section-more-${section.id}`}
+            >
+              More view
+            </Link>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
