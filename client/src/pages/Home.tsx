@@ -338,23 +338,8 @@ function HomeReviewsSection() {
   );
 }
 
-function useSectionTitle(key: string, defaultTitle: string, defaultSubtitle: string) {
-  const { data } = useQuery({
-    queryKey: [`/api/settings/${key}`],
-    queryFn: async () => {
-      const res = await fetch(`/api/settings/${key}`);
-      const data = await res.json();
-      if (data.success && data.data?.value) {
-        try { return JSON.parse(data.data.value); } catch { return null; }
-      }
-      return null;
-    },
-    staleTime: 60000,
-  });
-  return {
-    title: data?.title || defaultTitle,
-    subtitle: data?.subtitle || defaultSubtitle,
-  };
+function useSectionTitle(_key: string, defaultTitle: string, defaultSubtitle: string) {
+  return { title: defaultTitle, subtitle: defaultSubtitle };
 }
 
 function TopBrandSection() {
@@ -365,7 +350,8 @@ function TopBrandSection() {
       const res = await fetch('/api/brands/top?limit=15');
       const data = await res.json();
       return data.success ? data.data : [];
-    }
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   const brandDisplayData = (topBrandsData || []).map((brand: any) => ({
@@ -613,26 +599,16 @@ function SectionProductCard({ product, getBrandName }: { product: any; getBrandN
   );
 }
 
-function DynamicHomeSections() {
+function DynamicHomeSections({ brands }: { brands: any[] }) {
   const { data: sections } = useQuery({
     queryKey: ['/api/content-sections', 'homepage_product'],
     queryFn: async () => {
       const res = await fetch('/api/content-sections?sectionType=homepage_product');
       const data = await res.json();
       return data.success ? data.data : [];
-    }
+    },
+    staleTime: 5 * 60 * 1000,
   });
-
-  const { data: brandsData } = useQuery({
-    queryKey: ['/api/brands'],
-    queryFn: async () => {
-      const res = await fetch('/api/brands');
-      const data = await res.json();
-      return data.success ? data.data : [];
-    }
-  });
-
-  const brands = brandsData || [];
   const getBrandName = (brandId: string) => {
     const brand = brands.find((b: any) => b.id === brandId);
     return brand?.name?.toUpperCase() || '';
@@ -714,10 +690,11 @@ export default function Home() {
   const { data: productsData } = useQuery({
     queryKey: ['/api/products/home'],
     queryFn: async () => {
-      const res = await fetch('/api/products?limit=60');
+      const res = await fetch('/api/products?limit=24');
       const data = await res.json();
       return data.success ? data.data : [];
-    }
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   const { data: brandsData } = useQuery({
@@ -726,7 +703,8 @@ export default function Home() {
       const res = await fetch('/api/brands');
       const data = await res.json();
       return data.success ? data.data : [];
-    }
+    },
+    staleTime: 5 * 60 * 1000,
   });
 
   const products = productsData || [];
@@ -739,7 +717,7 @@ export default function Home() {
       <main>
         <TopBrandSection />
         <HomeReviewsSection />
-        <DynamicHomeSections />
+        <DynamicHomeSections brands={brands} />
         <ForYouSection products={products} brands={brands} />
       </main>
       

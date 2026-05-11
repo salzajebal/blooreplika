@@ -371,6 +371,8 @@ export async function registerRoutes(
   // Separate brands cache with longer TTL (10 minutes)
   const brandsCache = new Map<string, { data: unknown[]; timestamp: number }>();
   const BRANDS_CACHE_TTL = 60000; // 1 minute
+  const topBrandsCache = new Map<string, { data: unknown[]; timestamp: number }>();
+  const TOP_BRANDS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   
   // Separate counts cache with medium TTL (5 minutes)
   const countsCache = new Map<string, { total: number; timestamp: number }>();
@@ -799,6 +801,14 @@ export async function registerRoutes(
   app.get("/api/brands/top", async (req: Request, res: Response) => {
     try {
       const limit = parseInt(req.query.limit as string) || 15;
+      const cacheKey = `top:${limit}`;
+      const cached = topBrandsCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp) < TOP_BRANDS_CACHE_TTL) {
+        res.setHeader("X-Cache", "HIT");
+        res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=600");
+        return res.json({ success: true, data: cached.data });
+      }
+
       const allBrands = await storage.getBrandsWithProductCount();
       const rolexEntry = allBrands.find(b => b.brand.name === '롤렉스');
       const sorted = allBrands
@@ -813,7 +823,6 @@ export async function registerRoutes(
 
       const result = await Promise.all(sorted.map(async (entry) => {
         let selectedImage: string | null = null;
-
         for (const cat of priorityCategories) {
           const { products } = await storage.getProductsPaginated(1, 0, cat, undefined, undefined, entry.brand.id);
           if (products.length > 0 && products[0].imageUrl) {
@@ -821,14 +830,10 @@ export async function registerRoutes(
             break;
           }
         }
-
         if (!selectedImage) {
           const { products } = await storage.getProductsPaginated(1, 0, undefined, undefined, undefined, entry.brand.id);
-          if (products.length > 0) {
-            selectedImage = products[0].imageUrl;
-          }
+          if (products.length > 0) selectedImage = products[0].imageUrl;
         }
-
         return {
           id: entry.brand.id,
           name: entry.brand.name,
@@ -838,6 +843,9 @@ export async function registerRoutes(
         };
       }));
 
+      topBrandsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+      res.setHeader("X-Cache", "MISS");
+      res.setHeader("Cache-Control", "public, max-age=300, stale-while-revalidate=600");
       res.json({ success: true, data: result });
     } catch (error) {
       console.error("Error fetching top brands:", error);
@@ -2822,6 +2830,7 @@ export async function registerRoutes(
         })
       );
       
+      res.setHeader("Cache-Control", "public, max-age=120, stale-while-revalidate=300");
       res.json({ success: true, data: reviewsWithProduct, total });
     } catch (error) {
       console.error("Error fetching reviews:", error);
@@ -6263,6 +6272,7 @@ export async function registerRoutes(
         }
         return { ...item, products: [] };
       }));
+      res.setHeader("Cache-Control", "public, max-age=60, stale-while-revalidate=120");
       res.json({ success: true, data: enriched });
     } catch (error) {
       res.status(500).json({ success: false, error: "Failed to fetch content sections" });
