@@ -304,7 +304,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
+    <div className="min-h-screen bg-[#FAF8F4] font-sans">
       <Header />
 
       <main className="container-custom py-6 md:py-12 px-4 pb-24 md:pb-12">
@@ -322,24 +322,26 @@ export default function Profile() {
             </div>
           )}
 
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="bg-gradient-to-r from-amber-500 to-yellow-500 p-4 md:p-8 text-white">
-              <div className="flex items-center gap-3 md:gap-4">
-                <div className="w-14 h-14 md:w-20 md:h-20 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
-                  <User className="w-7 h-7 md:w-10 md:h-10" />
+          <div className="bg-white border border-gray-100 overflow-hidden">
+            <div className="bg-[#1C3047] p-5 md:p-8 text-white">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 md:w-16 md:h-16 bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0">
+                  <User className="w-6 h-6 md:w-8 md:h-8 text-white/80" />
                 </div>
                 <div className="min-w-0 flex-1">
                   {isLoggedIn ? (
                     <>
-                      <h1 className="text-lg md:text-2xl font-bold truncate" data-testid="text-profile-name">
+                      <p className="text-white/50 text-[10px] tracking-[0.2em] uppercase mb-0.5">Member</p>
+                      <h1 className="text-lg md:text-2xl font-bold truncate" style={{ fontFamily: "'Playfair Display', serif" }} data-testid="text-profile-name">
                         {memberInfo?.name || localStorage.getItem("memberName") || "회원"}님
                       </h1>
-                      <p className="text-white/80 text-xs md:text-sm mt-1 truncate">{memberInfo?.email || localStorage.getItem("memberEmail")}</p>
+                      <p className="text-white/60 text-xs mt-1 truncate">{memberInfo?.email || localStorage.getItem("memberEmail")}</p>
                     </>
                   ) : (
                     <>
-                      <h1 className="text-lg md:text-2xl font-bold">로그인이 필요합니다</h1>
-                      <p className="text-white/80 text-xs md:text-sm mt-1">로그인하시면 더 많은 혜택을 받으실 수 있습니다</p>
+                      <p className="text-white/50 text-[10px] tracking-[0.2em] uppercase mb-0.5">VELOUR</p>
+                      <h1 className="text-lg md:text-xl font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>로그인이 필요합니다</h1>
+                      <p className="text-white/60 text-xs mt-1">로그인하시면 더 많은 혜택을 받으실 수 있습니다</p>
                     </>
                   )}
                 </div>
@@ -347,20 +349,20 @@ export default function Profile() {
             </div>
 
             {!isLoggedIn ? (
-              <div className="p-8 text-center">
-                <p className="text-gray-500 mb-6">
-                  로그인하여 주문 내역, 찜 목록 등 다양한 서비스를 이용해보세요.
+              <div className="p-8 md:p-12 text-center border-b border-gray-100">
+                <p className="text-gray-500 text-sm mb-8 leading-relaxed">
+                  로그인하여 주문 내역, 찜 목록 등<br />다양한 서비스를 이용해보세요.
                 </p>
-                <div className="flex gap-4 justify-center">
+                <div className="flex gap-3 justify-center">
                   <Link href="/login">
-                    <Button className="bg-primary hover:bg-primary/90">
+                    <button className="px-8 py-2.5 bg-[#1C3047] hover:bg-black text-white text-sm tracking-widest transition-colors">
                       로그인
-                    </Button>
+                    </button>
                   </Link>
                   <Link href="/signup">
-                    <Button variant="outline">
+                    <button className="px-8 py-2.5 border border-[#1C3047] text-[#1C3047] hover:bg-[#1C3047] hover:text-white text-sm tracking-widest transition-colors">
                       회원가입
-                    </Button>
+                    </button>
                   </Link>
                 </div>
               </div>
