@@ -737,10 +737,9 @@ export default function Home() {
       <Header />
       
       <main>
-        <MainBannerSlider />
+        <TopBrandSection />
         <HomeReviewsSection />
         <DynamicHomeSections />
-        <TopBrandSection />
         <ForYouSection products={products} brands={brands} />
       </main>
       
