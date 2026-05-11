@@ -6261,7 +6261,9 @@ export async function registerRoutes(
               undefined,
               undefined,
               brandId,
-              undefined
+              undefined,
+              undefined,
+              item.subcategoryName || undefined
             );
             const prods = (result.products || []).map((p: any) => ({
               id: p.id, name: p.name, price: p.price, originalPrice: p.originalPrice,

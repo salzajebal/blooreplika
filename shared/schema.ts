@@ -673,6 +673,7 @@ export const contentSections = pgTable("content_sections", {
   productIds: text("product_ids").array().default([]),
   categorySlug: text("category_slug"),
   brandName: text("brand_name"),
+  subcategoryName: text("subcategory_name"),
   maxProducts: integer("max_products").default(6),
   contentBlocks: text("content_blocks"),
   sortOrder: integer("sort_order").default(0),
