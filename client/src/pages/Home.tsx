@@ -590,7 +590,7 @@ function SectionProductCard({ product, getBrandName }: { product: any; getBrandN
             <span className="text-xs text-gray-400 line-through">{Number(product.price).toLocaleString()}원</span>
           )}
           <span className="text-sm font-extrabold text-gray-900">{discountedPrice.toLocaleString()}원</span>
-          {hasDiscount && (
+          {hasDiscount && product.discountPercent > 0 && (
             <span className="text-xs text-red-500 font-bold">{product.discountPercent}%</span>
           )}
         </div>

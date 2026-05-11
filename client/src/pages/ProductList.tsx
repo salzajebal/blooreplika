@@ -951,7 +951,7 @@ export default function ProductList() {
                             <span className="text-sm font-extrabold text-gray-900" data-testid={`price-product-${product.id}`}>
                               {salePrice.toLocaleString()}원
                             </span>
-                            <span className="text-xs text-red-500 font-bold">{discountPct}%</span>
+                            {discountPct > 0 && <span className="text-xs text-red-500 font-bold">{discountPct}%</span>}
                           </div>
                         ) : (
                           <span className="text-sm font-extrabold text-gray-900" data-testid={`price-product-${product.id}`}>
