@@ -920,7 +920,7 @@ export default function ProductList() {
                             <span className="bg-[#1C3047] text-white text-[9px] px-1.5 py-1 font-bold text-center leading-none">세트</span>
                           )}
                           {discountPct > 0 && (
-                            <span className="bg-[#5E9DC0] text-white text-[9px] px-1.5 py-1 font-bold text-center leading-none">할인</span>
+                            <span className="bg-red-500 text-white text-[10px] px-2 py-1 font-bold text-center leading-none">할인</span>
                           )}
                           {product.isNew && (
                             <span className="bg-red-500 text-white text-[9px] px-1.5 py-1 font-bold text-center leading-none">신상</span>

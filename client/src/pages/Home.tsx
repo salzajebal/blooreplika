@@ -575,7 +575,7 @@ function SectionProductCard({ product, getBrandName }: { product: any; getBrandN
         />
         <div className="absolute top-0 right-0 flex flex-col">
           {hasDiscount && (
-            <span className="bg-[#5E9DC0] text-white text-[9px] px-1.5 py-1 font-bold leading-none">할인</span>
+            <span className="bg-red-500 text-white text-[10px] px-2 py-1 font-bold leading-none">할인</span>
           )}
           {product.isNew && (
             <span className="bg-red-500 text-white text-[9px] px-1.5 py-1 font-bold leading-none">신상</span>
