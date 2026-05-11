@@ -227,7 +227,7 @@ export function ChatWidget() {
   // ─────────────────────────────────────────────────
   if (!isOpen) {
     return (
-      <div className="fixed bottom-4 right-3 sm:bottom-6 sm:right-6 z-50 flex flex-col items-center gap-1.5 safe-area-bottom">
+      <div className="fixed bottom-20 right-3 sm:bottom-6 sm:right-6 z-50 flex flex-col items-center gap-1.5">
         <button
           data-testid="button-open-chat"
           onClick={() => setIsOpen(true)}
@@ -252,7 +252,7 @@ export function ChatWidget() {
   // ─────────────────────────────────────────────────
   if (isMinimized) {
     return (
-      <div className="fixed bottom-4 right-3 sm:bottom-6 sm:right-6 z-50 safe-area-bottom">
+      <div className="fixed bottom-20 right-3 sm:bottom-6 sm:right-6 z-50">
         <div
           onClick={() => setIsMinimized(false)}
           className="bg-gray-900 rounded-2xl px-4 py-3 shadow-xl cursor-pointer flex items-center gap-2.5 hover:bg-gray-800 transition-all touch-manipulation"
