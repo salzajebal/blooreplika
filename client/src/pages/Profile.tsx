@@ -802,10 +802,6 @@ export default function Profile() {
                 <span>운영시간</span>
                 <span>평일 09:00 - 18:00</span>
               </div>
-              <div className="flex justify-between">
-                <span>이메일</span>
-                <span>support@cheongdam-edition.com</span>
-              </div>
             </div>
             <Link href="/support">
               <Button variant="outline" className="w-full mt-4">
