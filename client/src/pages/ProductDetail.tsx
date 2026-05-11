@@ -401,58 +401,6 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              <div className="bg-gray-50 p-4 rounded">
-                <p className="text-sm text-gray-700 mb-3">
-                  velour만의 특별한 고객 등급혜택<br/>
-                  <span className="text-xs text-gray-500">구매실적에 따라 다양한 혜택을 드립니다.</span>
-                </p>
-                <table className="w-full text-sm border-collapse">
-                  <thead>
-                    <tr className="border-b border-gray-300">
-                      <th className="text-left py-2 text-gray-600 font-medium">등급</th>
-                      <th className="text-left py-2 text-gray-600 font-medium">혜택</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-gray-200">
-                      <td className="py-2">
-                        <span className="inline-flex items-center">
-                          <span className="bg-purple-600 text-white text-[10px] px-1 rounded mr-1 font-bold">V</span>
-                          <span className="text-purple-600 font-bold">VVIP</span>
-                        </span>
-                      </td>
-                      <td className="py-2 text-gray-700">3% 할인</td>
-                    </tr>
-                    <tr className="border-b border-gray-200">
-                      <td className="py-2">
-                        <span className="inline-flex items-center">
-                          <span className="bg-red-500 text-white text-[10px] px-1 rounded mr-1 font-bold">V</span>
-                          <span className="text-red-500 font-bold">VIP</span>
-                        </span>
-                      </td>
-                      <td className="py-2 text-gray-700">2% 할인</td>
-                    </tr>
-                    <tr className="border-b border-gray-200">
-                      <td className="py-2">
-                        <span className="inline-flex items-center">
-                          <span className="bg-amber-500 text-white text-[10px] px-1 rounded mr-1 font-bold">G</span>
-                          <span className="text-amber-600 font-bold">GOLD</span>
-                        </span>
-                      </td>
-                      <td className="py-2 text-gray-700">1% 할인</td>
-                    </tr>
-                    <tr>
-                      <td className="py-2">
-                        <span className="inline-flex items-center">
-                          <span className="bg-gray-400 text-white text-[10px] px-1 rounded mr-1 font-bold">S</span>
-                          <span className="text-gray-500 font-bold">SILVER</span>
-                        </span>
-                      </td>
-                      <td className="py-2 text-gray-700">0% 할인</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
 
               <div className="space-y-2 text-sm">
                 <div className="flex items-center">
