@@ -79,7 +79,7 @@ export default function Support() {
     <div className="min-h-screen bg-white font-sans">
       <Header />
       
-      <main className="container-custom py-12">
+      <main className="container-custom py-8 sm:py-12 pb-24 md:pb-12">
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-gray-900 mb-4" data-testid="text-support-title">고객센터</h1>
           <p className="text-gray-500">velour에 대해 궁금한 점을 확인하세요</p>

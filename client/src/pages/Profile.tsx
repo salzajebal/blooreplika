@@ -307,7 +307,7 @@ export default function Profile() {
     <div className="min-h-screen bg-gray-50 font-sans">
       <Header />
 
-      <main className="container-custom py-6 md:py-12 px-4">
+      <main className="container-custom py-6 md:py-12 px-4 pb-24 md:pb-12">
         <div className="max-w-2xl mx-auto">
           {memberInfo?.isFrozen && (
             <div className="mb-4 md:mb-6 p-3 md:p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">

@@ -91,7 +91,7 @@ export default function Cart() {
     <div className="min-h-screen bg-[#FAF8F4] font-sans">
       <Header />
 
-      <main className="container-custom py-12">
+      <main className="container-custom py-6 sm:py-12 pb-24 md:pb-12">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-3 mb-8">
             <Heart className="w-8 h-8 text-primary" />
@@ -138,7 +138,7 @@ export default function Cart() {
                     data-testid={`cart-item-${item.id}`}
                   >
                     <Link href={`/product/${item.id}`}>
-                      <div className="w-24 h-24 bg-[#E5EFF5] rounded-lg overflow-hidden flex-shrink-0">
+                      <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[#E5EFF5] rounded-lg overflow-hidden flex-shrink-0">
                         <img 
                           src={getProxiedImageUrl(item.imageUrl) || DEFAULT_IMAGE} 
                           alt={item.name}
@@ -173,7 +173,7 @@ export default function Cart() {
                         <span className="text-sm text-[#7A9CB5]">원</span>
                       </div>
                       {productOptionsMap[item.id]?.categoryId !== 'watches' && (
-                      <div className="mt-2 grid grid-cols-2 gap-2">
+                      <div className="mt-2 grid grid-cols-1 xs:grid-cols-2 gap-2">
                         {(productOptionsMap[item.id]?.sizes?.length ?? 0) > 0 ? (
                           <select
                             value={itemOptions[item.id]?.size || ""}

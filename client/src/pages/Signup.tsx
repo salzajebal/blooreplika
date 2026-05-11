@@ -162,7 +162,7 @@ export default function Signup() {
     <div className="min-h-screen bg-gray-50 font-sans">
       <Header />
       
-      <main className="container-custom py-16">
+      <main className="container-custom py-10 sm:py-16 pb-24 md:pb-16">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">회원가입</h1>

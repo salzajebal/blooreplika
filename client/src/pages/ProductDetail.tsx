@@ -313,6 +313,7 @@ export default function ProductDetail() {
                   <>
                     <div
                       className="relative overflow-hidden rounded-lg border border-gray-100 max-w-md mx-auto lg:max-w-none"
+                      style={{ touchAction: 'pan-y' }}
                       onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
                       onTouchEnd={(e) => {
                         const delta = touchStartX.current - e.changedTouches[0].clientX;
