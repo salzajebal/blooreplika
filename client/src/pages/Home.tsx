@@ -235,7 +235,7 @@ function HomeReviewsSection() {
         <h2 className="text-center text-2xl md:text-3xl font-bold tracking-widest uppercase mb-2 text-white">
           REVIEW
         </h2>
-        <p className="text-center text-sm text-[#555555] mb-6 md:mb-10">고객님들의 솔직한 후기</p>
+        <p className="text-center text-sm text-[#999999] mb-6 md:mb-10">고객님들의 솔직한 후기</p>
 
         <div className="relative">
           {canScrollLeft && (
@@ -305,7 +305,7 @@ function HomeReviewsSection() {
                   </div>
                   <div className="p-3">
                     {review.productName && (
-                      <p className="text-[10px] text-[#555555] mb-0.5 truncate">({review.productName})</p>
+                      <p className="text-[10px] text-[#999999] mb-0.5 truncate">({review.productName})</p>
                     )}
                     <p className="text-sm font-bold text-[#f0f0f0] line-clamp-2 leading-snug">{review.content || review.title}</p>
                     <div className="flex items-center gap-0.5 mt-2">
@@ -469,11 +469,11 @@ function ForYouSection({ products, brands }: { products: any[]; brands: any[] })
         <div className="flex items-end justify-between mb-6 md:mb-8 pb-5 border-b border-[#1a1a1a]">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-white">{sectionTitle}</h2>
-            <p className="text-sm md:text-base text-[#555555] mt-1.5">{sectionSubtitle}</p>
+            <p className="text-sm md:text-base text-[#999999] mt-1.5">{sectionSubtitle}</p>
           </div>
           {totalPages > 1 && (
             <div className="flex items-center gap-3">
-              <span className="text-sm text-[#555555]">{currentPage + 1} / {totalPages}</span>
+              <span className="text-sm text-[#999999]">{currentPage + 1} / {totalPages}</span>
               <div className="flex items-center gap-1">
                 <button
                   onClick={goToPrev}
@@ -501,7 +501,7 @@ function ForYouSection({ products, brands }: { products: any[]; brands: any[] })
               <div key={brandId} className="border border-[#2a2a2a] bg-[#1a1a1a] p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <Search className="w-4 h-4 text-[#555555]" />
+                    <Search className="w-4 h-4 text-[#999999]" />
                     <span className="text-sm md:text-base text-[#888888]">지금 뜨는 <span className="text-[#c9a96e] font-bold">{brandName}</span> 의 인기상품</span>
                   </div>
                 </div>
@@ -660,7 +660,7 @@ function SectionBlock({ section, getMoreLink, getBrandName }: { section: any; ge
             {section.title}
           </h2>
           {section.description && (
-            <p className="text-center text-sm text-[#555555] mb-8">{section.description}</p>
+            <p className="text-center text-sm text-[#999999] mb-8">{section.description}</p>
           )}
           {!section.description && <div className="mb-8" />}
 
