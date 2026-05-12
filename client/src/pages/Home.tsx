@@ -41,7 +41,7 @@ function FloatingButtons() {
     <div className="fixed right-3 md:right-5 bottom-32 md:bottom-28 z-40 flex flex-col gap-2.5">
       <button
         onClick={scrollToTop}
-        className="w-11 h-11 md:w-12 md:h-12 bg-white border border-gray-200 rounded-full shadow-lg flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-all hover:scale-105"
+        className="w-11 h-11 md:w-12 md:h-12 bg-[#1a1a1a] border border-[#333333] rounded-full shadow-lg flex items-center justify-center text-[#888888] hover:text-white hover:border-[#c9a96e] transition-all hover:scale-105"
         data-testid="floating-scroll-top"
         aria-label="맨 위로"
       >
@@ -131,14 +131,14 @@ function MainBannerSlider() {
         <>
           <button 
             onClick={() => setCurrentSlide((prev) => (prev === 0 ? bannerList.length - 1 : prev - 1))}
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 md:w-10 md:h-10 bg-white/70 hover:bg-white rounded-full flex items-center justify-center text-gray-800 shadow-sm z-10"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 md:w-10 md:h-10 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white shadow-sm z-10"
             aria-label="이전"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button 
             onClick={() => setCurrentSlide((prev) => (prev + 1) % bannerList.length)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 md:w-10 md:h-10 bg-white/70 hover:bg-white rounded-full flex items-center justify-center text-gray-800 shadow-sm z-10"
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 md:w-10 md:h-10 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white shadow-sm z-10"
             aria-label="다음"
           >
             <ChevronRight className="w-5 h-5" />
@@ -230,18 +230,18 @@ function HomeReviewsSection() {
   if (reviews.length === 0) return null;
 
   return (
-    <section className="bg-[#f8f8f8] py-10 md:py-16" data-testid="home-reviews-section">
+    <section className="bg-[#0a0a0a] py-10 md:py-16" data-testid="home-reviews-section">
       <div className="max-w-[1200px] mx-auto px-4">
-        <h2 className="text-center text-2xl md:text-3xl font-bold tracking-widest uppercase mb-2 text-gray-900">
+        <h2 className="text-center text-2xl md:text-3xl font-bold tracking-widest uppercase mb-2 text-white">
           REVIEW
         </h2>
-        <p className="text-center text-sm text-gray-400 mb-6 md:mb-10">고객님들의 솔직한 후기</p>
+        <p className="text-center text-sm text-[#555555] mb-6 md:mb-10">고객님들의 솔직한 후기</p>
 
         <div className="relative">
           {canScrollLeft && (
             <button
               onClick={() => scroll("left")}
-              className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-300 shadow items-center justify-center text-gray-700 hover:bg-gray-50 transition-all -translate-x-5"
+              className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-[#1a1a1a] border border-[#333333] shadow items-center justify-center text-[#888888] hover:text-white hover:border-[#c9a96e] transition-all -translate-x-5"
               aria-label="이전"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -250,7 +250,7 @@ function HomeReviewsSection() {
           {canScrollRight && (
             <button
               onClick={() => scroll("right")}
-              className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-white border border-gray-300 shadow items-center justify-center text-gray-700 hover:bg-gray-50 transition-all translate-x-5"
+              className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-[#1a1a1a] border border-[#333333] shadow items-center justify-center text-[#888888] hover:text-white hover:border-[#c9a96e] transition-all translate-x-5"
               aria-label="다음"
             >
               <ChevronRight className="w-5 h-5" />
@@ -279,10 +279,10 @@ function HomeReviewsSection() {
                   href="/reviews"
                   draggable={false}
                   onClick={(e) => { if (hasDragged.current) e.preventDefault(); }}
-                  className="flex-shrink-0 w-[220px] md:w-[260px] group block bg-white border border-gray-200 hover:shadow-md transition-all duration-200"
+                  className="flex-shrink-0 w-[220px] md:w-[260px] group block bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#c9a96e] transition-all duration-200"
                   data-testid={`home-review-${review.id}`}
                 >
-                  <div className="relative aspect-[4/3] overflow-hidden bg-gray-100">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-[#111111]">
                     {thumb ? (
                       <img
                         src={thumb}
@@ -293,8 +293,8 @@ function HomeReviewsSection() {
                         loading="lazy"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                        <Camera className="w-8 h-8 text-gray-300" />
+                      <div className="w-full h-full flex items-center justify-center bg-[#111111]">
+                        <Camera className="w-8 h-8 text-[#333333]" />
                       </div>
                     )}
                     <div className="absolute bottom-2 left-2">
@@ -305,12 +305,12 @@ function HomeReviewsSection() {
                   </div>
                   <div className="p-3">
                     {review.productName && (
-                      <p className="text-[10px] text-gray-400 mb-0.5 truncate">({review.productName})</p>
+                      <p className="text-[10px] text-[#555555] mb-0.5 truncate">({review.productName})</p>
                     )}
-                    <p className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug">{review.content || review.title}</p>
+                    <p className="text-sm font-bold text-[#f0f0f0] line-clamp-2 leading-snug">{review.content || review.title}</p>
                     <div className="flex items-center gap-0.5 mt-2">
                       {[1,2,3,4,5].map(s => (
-                        <Star key={s} className={`w-3 h-3 ${s <= (review.rating || 5) ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200"}`} />
+                        <Star key={s} className={`w-3 h-3 ${s <= (review.rating || 5) ? "fill-yellow-400 text-yellow-400" : "fill-[#333333] text-[#333333]"}`} />
                       ))}
                     </div>
                   </div>
@@ -319,15 +319,15 @@ function HomeReviewsSection() {
             })}
           </div>
           {canScrollRight && (
-            <div className="md:hidden absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-[#f8f8f8]/80 to-transparent pointer-events-none" />
+            <div className="md:hidden absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-[#0a0a0a]/80 to-transparent pointer-events-none" />
           )}
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-4">↔ 손가락으로 좌우 스크롤해 주세요.</p>
+        <p className="text-center text-xs text-[#444444] mt-4">↔ 손가락으로 좌우 스크롤해 주세요.</p>
         <div className="text-center mt-6">
           <Link
             href="/reviews"
-            className="inline-block px-10 py-2.5 bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 transition-colors"
+            className="inline-block px-10 py-2.5 border border-[#c9a96e] text-[#c9a96e] text-sm font-medium hover:bg-[#c9a96e] hover:text-black transition-colors tracking-widest"
             data-testid="home-reviews-more"
           >
             More view
@@ -362,11 +362,11 @@ function TopBrandSection() {
   }));
 
   return (
-    <section className="bg-white py-6 md:py-8 border-b border-gray-100" data-testid="top-brand-section">
+    <section className="bg-[#0f0f0f] py-6 md:py-8 border-b border-[#1a1a1a]" data-testid="top-brand-section">
       <div className="max-w-[1200px] mx-auto px-4">
         <div className="mb-4">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-900">{title}</h2>
-          <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+          <h2 className="text-xl md:text-2xl font-bold text-white">{title}</h2>
+          <p className="text-sm text-[#555555] mt-1">{subtitle}</p>
         </div>
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 md:gap-3">
           {brandDisplayData.slice(0, 15).map((brand: any) => (
@@ -376,7 +376,7 @@ function TopBrandSection() {
               className="flex flex-col items-center group"
               data-testid={`top-brand-${brand.name}`}
             >
-              <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center p-2">
+              <div className="w-full aspect-square overflow-hidden bg-[#1a1a1a] flex items-center justify-center p-2 border border-[#2a2a2a] group-hover:border-[#c9a96e] transition-colors">
                 {brand.displayImage ? (
                   <img
                     src={brand.displayImage}
@@ -386,10 +386,10 @@ function TopBrandSection() {
                     loading="lazy"
                   />
                 ) : (
-                  <span className="text-gray-300 text-xs text-center">{brand.name}</span>
+                  <span className="text-[#444444] text-xs text-center">{brand.name}</span>
                 )}
               </div>
-              <span className="text-[10px] md:text-xs text-gray-600 mt-1.5 text-center group-hover:text-black transition-colors">{brand.name}</span>
+              <span className="text-[10px] md:text-xs text-[#666666] mt-1.5 text-center group-hover:text-[#c9a96e] transition-colors">{brand.name}</span>
             </Link>
           ))}
         </div>
@@ -464,30 +464,30 @@ function ForYouSection({ products, brands }: { products: any[]; brands: any[] })
   const currentPairs = brandPairs[currentPage] || [];
 
   return (
-    <section className="bg-white py-10 md:py-14">
+    <section className="bg-[#0f0f0f] py-10 md:py-14">
       <div className="max-w-[1200px] mx-auto px-4">
-        <div className="flex items-end justify-between mb-6 md:mb-8 pb-5 border-b border-gray-200">
+        <div className="flex items-end justify-between mb-6 md:mb-8 pb-5 border-b border-[#1a1a1a]">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">{sectionTitle}</h2>
-            <p className="text-sm md:text-base text-gray-500 mt-1.5">{sectionSubtitle}</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-white">{sectionTitle}</h2>
+            <p className="text-sm md:text-base text-[#555555] mt-1.5">{sectionSubtitle}</p>
           </div>
           {totalPages > 1 && (
             <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-500">{currentPage + 1} / {totalPages}</span>
+              <span className="text-sm text-[#555555]">{currentPage + 1} / {totalPages}</span>
               <div className="flex items-center gap-1">
                 <button
                   onClick={goToPrev}
-                  className="w-8 h-8 border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  className="w-8 h-8 border border-[#333333] flex items-center justify-center hover:border-[#c9a96e] hover:text-[#c9a96e] transition-colors text-[#888888]"
                   data-testid="foryou-prev"
                 >
-                  <ChevronLeft className="w-4 h-4 text-gray-600" />
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
                   onClick={goToNext}
-                  className="w-8 h-8 border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  className="w-8 h-8 border border-[#333333] flex items-center justify-center hover:border-[#c9a96e] hover:text-[#c9a96e] transition-colors text-[#888888]"
                   data-testid="foryou-next"
                 >
-                  <ChevronRight className="w-4 h-4 text-gray-600" />
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
@@ -498,46 +498,41 @@ function ForYouSection({ products, brands }: { products: any[]; brands: any[] })
           {currentPairs.map(([brandId, items]) => {
             const brandName = getBrandName(brandId);
             return (
-              <div key={brandId} className="border border-gray-100 rounded-sm p-5">
+              <div key={brandId} className="border border-[#2a2a2a] bg-[#1a1a1a] p-5">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <Search className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm md:text-base text-gray-600">지금 뜨는 <span className="text-black font-bold underline underline-offset-4">{brandName}</span> 의 인기상품</span>
+                    <Search className="w-4 h-4 text-[#555555]" />
+                    <span className="text-sm md:text-base text-[#888888]">지금 뜨는 <span className="text-[#c9a96e] font-bold">{brandName}</span> 의 인기상품</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
-                  {items.slice(0, 6).map((product: any, idx: number) => (
+                  {items.slice(0, 6).map((product: any) => (
                     <div
                       key={product.id}
                       data-testid={`foryou-product-${product.id}`}
                     >
-                      <Link href={`/product/${product.id}`} className="block">
-                        <div className="relative aspect-square bg-gray-50 overflow-hidden mb-2">
-                          <div className="absolute top-1.5 right-1.5 z-10">
-                            {product.viewCount > 0 && (
-                              <span className="text-[10px] text-gray-500 bg-white/80 px-1.5 py-0.5 rounded">조회 {Number(product.viewCount).toLocaleString()}</span>
-                            )}
-                          </div>
+                      <Link href={`/product/${product.id}`} className="block group">
+                        <div className="relative aspect-square bg-[#111111] overflow-hidden mb-2">
                           <img
                             src={getProxiedImageUrl(product.imageUrl, "medium")}
                             alt={product.name}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                             onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
                           />
                         </div>
-                        <p className="text-[11px] text-gray-400 uppercase font-medium tracking-wide">{brandName}</p>
-                        <p className="text-xs text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
-                        <p className="text-sm font-bold text-gray-900 mt-1">{Number(product.price).toLocaleString()}원</p>
+                        <p className="text-[11px] text-[#c9a96e] uppercase font-medium tracking-wide">{brandName}</p>
+                        <p className="text-xs text-[#aaaaaa] line-clamp-2 leading-snug mt-0.5">{product.name}</p>
+                        <p className="text-sm font-bold text-white mt-1">{Number(product.price).toLocaleString()}원</p>
                       </Link>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-gray-100 text-center">
+                <div className="mt-4 pt-3 border-t border-[#2a2a2a] text-center">
                   <Link
                     href={`/products?brand=${encodeURIComponent(brandId)}`}
-                    className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-black transition-colors border border-gray-200 px-6 py-2 rounded-sm hover:border-gray-400"
+                    className="inline-flex items-center gap-1 text-sm text-[#888888] hover:text-white transition-colors border border-[#333333] px-6 py-2 hover:border-[#c9a96e]"
                     data-testid={`foryou-more-${brandId}`}
                   >
                     더보기
@@ -562,36 +557,40 @@ function SectionProductCard({ product, getBrandName }: { product: any; getBrandN
   return (
     <Link
       href={`/product/${product.id}`}
-      className="group block bg-white border border-gray-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
+      className="group block relative overflow-hidden"
       data-testid={`section-product-${product.id}`}
     >
-      <div className="relative aspect-[4/5] bg-gray-50 overflow-hidden">
+      <div className="relative aspect-[4/5] bg-[#1a1a1a] overflow-hidden">
         <img
           src={getProxiedImageUrl(product.imageUrl, "medium")}
           alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           loading="lazy"
           onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden md:flex flex-col justify-end p-3">
+          <p className="text-[10px] text-[#c9a96e] uppercase font-medium tracking-widest truncate mb-0.5">{getBrandName(product.brandId)}</p>
+          <p className="text-xs font-bold text-white line-clamp-2 leading-snug mb-1.5">{product.name}</p>
+          <div className="flex flex-wrap items-baseline gap-x-1.5">
+            {hasDiscount && (
+              <span className="text-[10px] text-white/50 line-through">{Number(product.price).toLocaleString()}원</span>
+            )}
+            <span className="text-sm font-extrabold text-[#c9a96e]">{discountedPrice.toLocaleString()}원</span>
+            {hasDiscount && product.discountPercent > 0 && (
+              <span className="text-[10px] text-red-400 font-bold">{product.discountPercent}%</span>
+            )}
+          </div>
+        </div>
+        <div className="md:hidden absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-2.5">
+          <p className="text-[9px] text-[#c9a96e] uppercase font-medium tracking-wide truncate">{getBrandName(product.brandId)}</p>
+          <span className="text-xs font-extrabold text-white">{discountedPrice.toLocaleString()}원</span>
+        </div>
         <div className="absolute top-0 right-0 flex flex-col">
           {hasDiscount && (
             <span className="bg-red-500 text-white text-[10px] px-2 py-1 font-bold leading-none">할인</span>
           )}
           {product.isNew && (
             <span className="bg-red-500 text-white text-[9px] px-1.5 py-1 font-bold leading-none">신상</span>
-          )}
-        </div>
-      </div>
-      <div className="p-3">
-        <p className="text-[10px] text-gray-400 uppercase font-medium tracking-wide truncate mb-0.5">{getBrandName(product.brandId)}</p>
-        <p className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug mb-2">{product.name}</p>
-        <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-          {hasDiscount && (
-            <span className="text-xs text-gray-400 line-through">{Number(product.price).toLocaleString()}원</span>
-          )}
-          <span className="text-sm font-extrabold text-gray-900">{discountedPrice.toLocaleString()}원</span>
-          {hasDiscount && product.discountPercent > 0 && (
-            <span className="text-xs text-red-500 font-bold">{product.discountPercent}%</span>
           )}
         </div>
       </div>
@@ -640,7 +639,7 @@ function SectionBlock({ section, getMoreLink, getBrandName }: { section: any; ge
   return (
     <section
       ref={ref}
-      className="bg-white border-b border-gray-100"
+      className="bg-[#0f0f0f] border-b border-[#1a1a1a]"
       style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(32px)", transition: "opacity 0.6s ease, transform 0.6s ease" }}
       data-testid={`home-section-${section.id}`}
     >
@@ -657,11 +656,11 @@ function SectionBlock({ section, getMoreLink, getBrandName }: { section: any; ge
 
       {section.products && section.products.length > 0 && (
         <div className="max-w-[1200px] mx-auto px-4 py-10 md:py-16">
-          <h2 className="text-center text-2xl md:text-3xl font-bold tracking-widest uppercase mb-2 text-gray-900">
+          <h2 className="text-center text-2xl md:text-3xl font-bold tracking-widest uppercase mb-2 text-white">
             {section.title}
           </h2>
           {section.description && (
-            <p className="text-center text-sm text-gray-400 mb-8">{section.description}</p>
+            <p className="text-center text-sm text-[#555555] mb-8">{section.description}</p>
           )}
           {!section.description && <div className="mb-8" />}
 
@@ -674,7 +673,7 @@ function SectionBlock({ section, getMoreLink, getBrandName }: { section: any; ge
           <div className="text-center mt-10">
             <Link
               href={getMoreLink(section)}
-              className="inline-block px-12 py-2.5 bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 transition-colors"
+              className="inline-block px-12 py-2.5 border border-[#c9a96e] text-[#c9a96e] text-sm font-medium hover:bg-[#c9a96e] hover:text-black transition-colors tracking-widest"
               data-testid={`section-more-${section.id}`}
             >
               More view
@@ -711,7 +710,7 @@ export default function Home() {
   const brands = brandsData || [];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#0f0f0f]">
       <Header />
       
       <main className="pb-16 md:pb-0">

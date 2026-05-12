@@ -82,26 +82,26 @@ function MagazineList() {
   const categoryKeys = Object.keys(groupedByCategory);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#0f0f0f]">
       <Header />
 
       <main>
         <div className="max-w-[640px] mx-auto px-4 pt-8 pb-2">
-          <h1 className="text-[20px] font-bold text-gray-900 tracking-tight">매거진</h1>
+          <h1 className="text-[20px] font-bold text-[#f0f0f0] tracking-tight">매거진</h1>
         </div>
 
         <div className="max-w-[640px] mx-auto px-4 pb-16">
           {categoryKeys.length === 0 ? (
-            <div className="text-center py-24 text-gray-400">
+            <div className="text-center py-24 text-[#555555]">
               <p className="text-base mb-2">등록된 매거진이 없습니다.</p>
-              <p className="text-xs text-gray-300">관리자가 매거진을 등록하면 여기에 표시됩니다.</p>
+              <p className="text-xs text-[#444444]">관리자가 매거진을 등록하면 여기에 표시됩니다.</p>
             </div>
           ) : (
             <div className="space-y-10 mt-4">
               {categoryKeys.map((category) => (
                 <section key={category}>
                   <ScrollReveal>
-                    <h2 className="text-[15px] font-bold text-gray-800 mb-3 tracking-tight border-b border-gray-100 pb-2">
+                    <h2 className="text-[15px] font-bold text-[#888888] mb-3 tracking-tight border-b border-[#2a2a2a] pb-2">
                       {category}
                     </h2>
                   </ScrollReveal>
@@ -136,25 +136,25 @@ function MagazineDetail({ id }: { id: string }) {
   });
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#0f0f0f]">
       <Header />
 
       <main className="max-w-[640px] mx-auto px-4 py-6">
-        <Link href="/magazine" className="inline-flex items-center gap-1 text-[13px] text-gray-400 hover:text-gray-900 transition-colors mb-6" data-testid="btn-back-magazine">
+        <Link href="/magazine" className="inline-flex items-center gap-1 text-[13px] text-[#888888] hover:text-[#c9a96e] transition-colors mb-6" data-testid="btn-back-magazine">
           <ArrowLeft className="w-3.5 h-3.5" />
           매거진 목록
         </Link>
 
         {isLoading && (
           <div className="text-center py-20">
-            <div className="w-6 h-6 border-2 border-gray-200 border-t-gray-500 rounded-full animate-spin mx-auto" />
+            <div className="w-6 h-6 border-2 border-[#333333] border-t-[#c9a96e] rounded-full animate-spin mx-auto" />
           </div>
         )}
 
         {error && (
-          <div className="text-center py-20 text-gray-400">
+          <div className="text-center py-20 text-[#555555]">
             <p className="text-base mb-3">매거진을 찾을 수 없습니다.</p>
-            <Link href="/magazine" className="text-sm text-gray-500 underline underline-offset-4 hover:text-gray-900">목록으로 돌아가기</Link>
+            <Link href="/magazine" className="text-sm text-[#888888] underline underline-offset-4 hover:text-[#c9a96e]">목록으로 돌아가기</Link>
           </div>
         )}
 
@@ -167,43 +167,43 @@ function MagazineDetail({ id }: { id: string }) {
             )}
 
             <div className="flex items-center gap-2.5 mb-3">
-              <span className="text-[11px] px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 font-medium">
+              <span className="text-[11px] px-2.5 py-1 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#888888] font-medium">
                 {article.category}
               </span>
               {article.createdAt && (
-                <span className="flex items-center gap-1 text-[11px] text-gray-300">
+                <span className="flex items-center gap-1 text-[11px] text-[#555555]">
                   <Calendar className="w-3 h-3" />
                   {new Date(article.createdAt).toLocaleDateString("ko-KR")}
                 </span>
               )}
               {article.viewCount > 0 && (
-                <span className="flex items-center gap-1 text-[11px] text-gray-300">
+                <span className="flex items-center gap-1 text-[11px] text-[#555555]">
                   <Eye className="w-3 h-3" />
                   {article.viewCount.toLocaleString()}
                 </span>
               )}
             </div>
 
-            <h1 className="text-[22px] md:text-[26px] font-bold text-gray-900 leading-tight mb-1.5 tracking-tight" data-testid="text-magazine-title">
+            <h1 className="text-[22px] md:text-[26px] font-bold text-[#f0f0f0] leading-tight mb-1.5 tracking-tight" data-testid="text-magazine-title">
               {article.title}
             </h1>
 
             {article.subtitle && (
-              <p className="text-[14px] text-gray-400 mb-8 leading-relaxed" data-testid="text-magazine-subtitle">
+              <p className="text-[14px] text-[#888888] mb-8 leading-relaxed" data-testid="text-magazine-subtitle">
                 {article.subtitle}
               </p>
             )}
 
             {article.content && (
-              <div className="text-[14px] text-gray-600 leading-[1.85] whitespace-pre-wrap" data-testid="text-magazine-content">
+              <div className="text-[14px] text-[#aaaaaa] leading-[1.85] whitespace-pre-wrap" data-testid="text-magazine-content">
                 {article.content}
               </div>
             )}
 
-            <div className="mt-12 pt-6 border-t border-gray-100">
+            <div className="mt-12 pt-6 border-t border-[#2a2a2a]">
               <Link
                 href="/magazine"
-                className="inline-flex items-center gap-1.5 text-[13px] text-gray-400 hover:text-gray-900 transition-colors"
+                className="inline-flex items-center gap-1.5 text-[13px] text-[#888888] hover:text-[#c9a96e] transition-colors"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 목록으로

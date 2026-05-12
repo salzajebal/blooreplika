@@ -258,7 +258,7 @@ export default function ProductDetail() {
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">상품을 찾을 수 없습니다</h1>
+            <h1 className="text-2xl font-bold text-[#f0f0f0] mb-4">상품을 찾을 수 없습니다</h1>
             <Link href="/products" className="text-primary hover:underline">
               상품 목록으로 돌아가기
             </Link>
@@ -286,17 +286,17 @@ export default function ProductDetail() {
   const hasAnyOptions = hasColorOptions || hasSizeOptions || hasExtraOptions;
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-[#0f0f0f]">
       <Header />
       
       <main className="flex-1 pb-20">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
-          <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-500 mb-4 sm:mb-8 overflow-x-auto whitespace-nowrap">
-            <Link href="/" className="hover:text-primary shrink-0">홈</Link>
+          <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-[#555555] mb-4 sm:mb-8 overflow-x-auto whitespace-nowrap">
+            <Link href="/" className="hover:text-[#c9a96e] shrink-0">홈</Link>
             <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-            <Link href="/products" className="hover:text-primary shrink-0">상품</Link>
+            <Link href="/products" className="hover:text-[#c9a96e] shrink-0">상품</Link>
             <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-            <span className="text-gray-900 truncate">{decodeHtml(product.name)}</span>
+            <span className="text-[#888888] truncate">{decodeHtml(product.name)}</span>
           </nav>
 
           <div className="grid lg:grid-cols-2 gap-6 lg:gap-12">
@@ -312,7 +312,7 @@ export default function ProductDetail() {
                 return (
                   <>
                     <div
-                      className="relative overflow-hidden rounded-lg border border-gray-100 max-w-md mx-auto lg:max-w-none"
+                      className="relative overflow-hidden border border-[#2a2a2a] max-w-md mx-auto lg:max-w-none bg-[#1a1a1a]"
                       style={{ touchAction: 'pan-y' }}
                       onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
                       onTouchEnd={(e) => {
@@ -334,7 +334,7 @@ export default function ProductDetail() {
                         style={{ transform: `translateX(-${selectedImageIndex * 100}%)` }}
                       >
                         {images.map((url, index) => (
-                          <div key={index} className="w-full flex-shrink-0 aspect-square bg-gray-50">
+                          <div key={index} className="w-full flex-shrink-0 aspect-square bg-[#1a1a1a]">
                             <img
                               src={getProxiedImageUrl(url, "large")}
                               alt={`${product.name} ${index + 1}`}
@@ -348,7 +348,7 @@ export default function ProductDetail() {
                       {images.length > 1 && (
                         <>
                           <button
-                            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 bg-white/80 hover:bg-white shadow-md rounded-full flex items-center justify-center text-gray-700 border border-gray-200 disabled:opacity-30"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 bg-black/80 hover:bg-black shadow-md rounded-full flex items-center justify-center text-white border border-[#444444] disabled:opacity-30"
                             onClick={() => setSelectedImageIndex(Math.max(0, selectedImageIndex - 1))}
                             disabled={selectedImageIndex === 0}
                             data-testid="btn-carousel-prev"
@@ -356,7 +356,7 @@ export default function ProductDetail() {
                             <ChevronLeft className="w-5 h-5" />
                           </button>
                           <button
-                            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 bg-white/80 hover:bg-white shadow-md rounded-full flex items-center justify-center text-gray-700 border border-gray-200 disabled:opacity-30"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 bg-black/80 hover:bg-black shadow-md rounded-full flex items-center justify-center text-white border border-[#444444] disabled:opacity-30"
                             onClick={() => setSelectedImageIndex(Math.min(images.length - 1, selectedImageIndex + 1))}
                             disabled={selectedImageIndex === images.length - 1}
                             data-testid="btn-carousel-next"
@@ -373,14 +373,14 @@ export default function ProductDetail() {
                             <button
                               key={index}
                               className={`rounded-full transition-all duration-200 ${
-                                selectedImageIndex === index ? 'bg-gray-900 w-6 h-2.5' : 'bg-gray-300 w-2.5 h-2.5'
+                                selectedImageIndex === index ? 'bg-[#c9a96e] w-6 h-2.5' : 'bg-[#333333] w-2.5 h-2.5'
                               }`}
                               onClick={() => setSelectedImageIndex(index)}
                               data-testid={`dot-indicator-${index}`}
                             />
                           ))}
                         </div>
-                        <p className="text-xs text-gray-400">{selectedImageIndex + 1} / {images.length}</p>
+                        <p className="text-xs text-[#555555]">{selectedImageIndex + 1} / {images.length}</p>
                       </div>
                     )}
                   </>
@@ -390,14 +390,14 @@ export default function ProductDetail() {
 
             <div className="space-y-4 px-1">
               <div>
-                <h1 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 break-keep" data-testid="text-product-name">
+                <h1 className="text-lg sm:text-xl font-bold text-white mb-3 break-keep" data-testid="text-product-name">
                   {decodeHtml(product.name)}
                 </h1>
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="bg-blue-600 text-white text-xs px-2 py-0.5 rounded">국내배송</span>
-                  <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded">하이엔드급</span>
+                  <span className="bg-[#1a3a5c] text-blue-300 text-xs px-2 py-0.5">국내배송</span>
+                  <span className="bg-[#5c1a1a] text-red-300 text-xs px-2 py-0.5">하이엔드급</span>
                   {product.isSoldOut && (
-                    <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">SOLD OUT</span>
+                    <span className="bg-[#333333] text-[#888888] text-xs px-2 py-0.5">SOLD OUT</span>
                   )}
                 </div>
               </div>
@@ -405,44 +405,44 @@ export default function ProductDetail() {
 
               <div className="space-y-2 text-sm">
                 <div className="flex items-center">
-                  <span className="text-gray-500 w-24">판매가격</span>
+                  <span className="text-[#888888] w-24">판매가격</span>
                   {hasSale ? (
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-gray-400 line-through">{Number(product.price).toLocaleString()}원</span>
-                      <span className="font-bold text-red-500 text-lg" data-testid="price-product-detail">{calculateSalePrice(Number(product.price)).toLocaleString()}원</span>
-                      <span className="text-xs bg-red-500 text-white px-1.5 py-0.5 rounded font-bold">{salePercent}% OFF</span>
+                      <span className="text-[#555555] line-through">{Number(product.price).toLocaleString()}원</span>
+                      <span className="font-bold text-[#c9a96e] text-lg" data-testid="price-product-detail">{calculateSalePrice(Number(product.price)).toLocaleString()}원</span>
+                      <span className="text-xs bg-red-900/60 text-red-300 px-1.5 py-0.5 font-bold">{salePercent}% OFF</span>
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-gray-900" data-testid="price-product-detail">{Number(product.price).toLocaleString()}원</span>
+                      <span className="font-bold text-[#c9a96e] text-lg" data-testid="price-product-detail">{Number(product.price).toLocaleString()}원</span>
                     </div>
                   )}
                 </div>
                 <div className="flex">
-                  <span className="text-gray-500 w-24">포인트</span>
-                  <span className="text-gray-700">{Math.floor(finalPrice * 0.03).toLocaleString()}점</span>
+                  <span className="text-[#888888] w-24">포인트</span>
+                  <span className="text-[#aaaaaa]">{Math.floor(finalPrice * 0.03).toLocaleString()}점</span>
                 </div>
                 <div className="flex">
-                  <span className="text-gray-500 w-24">배송비결제</span>
-                  <span className="text-gray-700">무료배송</span>
+                  <span className="text-[#888888] w-24">배송비결제</span>
+                  <span className="text-[#aaaaaa]">무료배송</span>
                 </div>
                 <div className="flex">
-                  <span className="text-gray-500 w-24">최대구매수량</span>
-                  <span className="text-gray-700">3 개</span>
+                  <span className="text-[#888888] w-24">최대구매수량</span>
+                  <span className="text-[#aaaaaa]">3 개</span>
                 </div>
               </div>
 
               {hasAnyOptions && (
-                <div className="border-t border-gray-200 pt-4">
-                  <h3 className="text-xs text-gray-500 mb-3">선택옵션</h3>
+                <div className="border-t border-[#2a2a2a] pt-4">
+                  <h3 className="text-xs text-[#888888] mb-3">선택옵션</h3>
 
                   {hasColorOptions && (
                     <div className="mb-3">
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">컬러</label>
+                      <label className="block text-sm font-medium text-[#aaaaaa] mb-1.5">컬러</label>
                       <select
                         value={selectedColor}
                         onChange={(e) => setSelectedColor(e.target.value)}
-                        className="w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-black"
+                        className="w-full h-10 px-3 border border-[#333333] bg-[#1a1a1a] text-[#f0f0f0] text-sm focus:outline-none focus:border-[#c9a96e]"
                         data-testid="select-color"
                       >
                         <option value="">선택</option>
@@ -455,11 +455,11 @@ export default function ProductDetail() {
 
                   {hasSizeOptions && (
                     <div className="mb-3">
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">사이즈</label>
+                      <label className="block text-sm font-medium text-[#aaaaaa] mb-1.5">사이즈</label>
                       <select
                         value={selectedSize}
                         onChange={(e) => setSelectedSize(e.target.value)}
-                        className="w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-black"
+                        className="w-full h-10 px-3 border border-[#333333] bg-[#1a1a1a] text-[#f0f0f0] text-sm focus:outline-none focus:border-[#c9a96e]"
                         data-testid="select-size"
                       >
                         <option value="">선택</option>
@@ -472,11 +472,11 @@ export default function ProductDetail() {
 
                   {productExtras.map((extra) => (
                     <div key={extra.label} className="mb-3">
-                      <label className="block text-sm font-medium text-gray-700 mb-1.5">{extra.label}</label>
+                      <label className="block text-sm font-medium text-[#aaaaaa] mb-1.5">{extra.label}</label>
                       <select
                         value={selectedExtras[extra.label] || ""}
                         onChange={(e) => setSelectedExtras(prev => ({ ...prev, [extra.label]: e.target.value }))}
-                        className="w-full h-10 px-3 border border-gray-300 rounded text-sm bg-white focus:outline-none focus:border-black"
+                        className="w-full h-10 px-3 border border-[#333333] bg-[#1a1a1a] text-[#f0f0f0] text-sm focus:outline-none focus:border-[#c9a96e]"
                         data-testid={`select-extra-${extra.label}`}
                       >
                         <option value="">선택</option>
@@ -488,41 +488,41 @@ export default function ProductDetail() {
                   ))}
 
                   {(selectedColor || selectedSize || Object.values(selectedExtras).some(Boolean)) && (
-                    <div className="bg-gray-50 rounded p-3 text-sm">
+                    <div className="bg-[#1a1a1a] border border-[#2a2a2a] p-3 text-sm">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-600">
+                        <span className="text-[#aaaaaa]">
                           {[
                             selectedColor && `컬러:${selectedColor}`,
                             selectedSize && `사이즈:${selectedSize}`,
                             ...Object.entries(selectedExtras).filter(([, v]) => v).map(([k, v]) => `${k}:${v}`)
                           ].filter(Boolean).join(' / ')}
                         </span>
-                        <span className="font-bold">+0원</span>
+                        <span className="font-bold text-[#f0f0f0]">+0원</span>
                       </div>
                     </div>
                   )}
                 </div>
               )}
 
-              <div className="border-t border-gray-200 pt-4">
-                <h3 className="font-bold text-gray-900 mb-3">배송정보</h3>
+              <div className="border-t border-[#2a2a2a] pt-4">
+                <h3 className="font-bold text-white mb-3">배송정보</h3>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
-                      <Search className="w-5 h-5 text-gray-600" />
+                    <div className="w-10 h-10 bg-[#1c1c1c] rounded-full flex items-center justify-center shrink-0">
+                      <Search className="w-5 h-5 text-[#c9a96e]" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">무료 검수 제공</p>
-                      <p className="text-xs text-gray-500">프리미엄 검수 무료 제공! (의류 제외)</p>
+                      <p className="font-medium text-[#f0f0f0]">무료 검수 제공</p>
+                      <p className="text-xs text-[#888888]">프리미엄 검수 무료 제공! (의류 제외)</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center shrink-0">
-                      <Package className="w-5 h-5 text-gray-600" />
+                    <div className="w-10 h-10 bg-[#1c1c1c] rounded-full flex items-center justify-center shrink-0">
+                      <Package className="w-5 h-5 text-[#c9a96e]" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">교환/환불 7일내 신청시 무료</p>
-                      <p className="text-xs text-gray-500">상품 수령 후 7일 이내 교환/환불 무료 지원</p>
+                      <p className="font-medium text-[#f0f0f0]">교환/환불 7일내 신청시 무료</p>
+                      <p className="text-xs text-[#888888]">상품 수령 후 7일 이내 교환/환불 무료 지원</p>
                     </div>
                   </div>
                 </div>
@@ -553,25 +553,25 @@ export default function ProductDetail() {
           </div>
 
           <div className="mt-8 sm:mt-12">
-            <div className="border-t border-gray-200">
-            <div className="flex border-b border-gray-200">
+            <div className="border-t border-[#2a2a2a]">
+            <div className="flex border-b border-[#2a2a2a]">
               <button
                 onClick={() => setActiveTab("detail")}
-                className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${activeTab === "detail" ? "border-black text-black" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+                className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${activeTab === "detail" ? "border-[#c9a96e] text-[#c9a96e]" : "border-transparent text-[#555555] hover:text-[#888888]"}`}
                 data-testid="tab-detail"
               >
                 상품상세
               </button>
               <button
                 onClick={() => setActiveTab("review")}
-                className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${activeTab === "review" ? "border-black text-black" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+                className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${activeTab === "review" ? "border-[#c9a96e] text-[#c9a96e]" : "border-transparent text-[#555555] hover:text-[#888888]"}`}
                 data-testid="tab-review"
               >
                 구매후기 ({reviewTotal})
               </button>
               <button
                 onClick={() => setActiveTab("shipping")}
-                className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${activeTab === "shipping" ? "border-black text-black" : "border-transparent text-gray-400 hover:text-gray-600"}`}
+                className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${activeTab === "shipping" ? "border-[#c9a96e] text-[#c9a96e]" : "border-transparent text-[#555555] hover:text-[#888888]"}`}
                 data-testid="tab-shipping"
               >
                 배송/교환
@@ -718,7 +718,7 @@ export default function ProductDetail() {
               )}
 
               {reviews.length > 0 ? (
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-[#1e1e1e]">
                   {reviews.map((review) => {
                     const photoList = (review.imageUrls && review.imageUrls.length > 0)
                       ? review.imageUrls
@@ -728,7 +728,7 @@ export default function ProductDetail() {
                     return (
                       <div key={review.id} className="py-5" data-testid={`review-${review.id}`}>
                         <div className="flex gap-3">
-                          <div className="w-14 h-14 flex-shrink-0 rounded overflow-hidden bg-gray-100">
+                          <div className="w-14 h-14 flex-shrink-0 rounded overflow-hidden bg-[#1a1a1a]">
                             {hasPhoto ? (
                               <img
                                 src={photoList[0].startsWith("/objects/") || photoList[0].startsWith("/api/") ? photoList[0] : getProxiedImageUrl(photoList[0], "thumb")}
@@ -737,7 +737,7 @@ export default function ProductDetail() {
                                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                               />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-gray-300">
+                              <div className="w-full h-full flex items-center justify-center text-[#444444]">
                                 <Image className="w-5 h-5" />
                               </div>
                             )}
@@ -746,24 +746,24 @@ export default function ProductDetail() {
                             <div className="flex items-center gap-2 mb-1">
                               <div className="flex items-center">
                                 {[...Array(5)].map((_, i) => (
-                                  <Star key={i} className={`w-3 h-3 ${i < (review.rating || 5) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`} />
+                                  <Star key={i} className={`w-3 h-3 ${i < (review.rating || 5) ? 'text-yellow-400 fill-yellow-400' : 'text-[#333333]'}`} />
                                 ))}
                               </div>
-                              <span className="text-xs font-medium text-gray-600">{review.authorName}</span>
-                              <span className="text-xs text-gray-300">{review.displayDate ? new Date(review.displayDate).toLocaleDateString('ko-KR') : ''}</span>
+                              <span className="text-xs font-medium text-[#aaaaaa]">{review.authorName}</span>
+                              <span className="text-xs text-[#555555]">{review.displayDate ? new Date(review.displayDate).toLocaleDateString('ko-KR') : ''}</span>
                             </div>
                             {review.title && (
-                              <p className="text-sm font-semibold text-gray-900 mb-1">{review.title}</p>
+                              <p className="text-sm font-semibold text-[#f0f0f0] mb-1">{review.title}</p>
                             )}
                             {review.content && (
-                              <p className="text-sm text-gray-700 leading-relaxed">{review.content}</p>
+                              <p className="text-sm text-[#aaaaaa] leading-relaxed">{review.content}</p>
                             )}
                           </div>
                         </div>
                         {photoList.length > 1 && (
                           <div className="flex gap-2 mt-3 pl-[68px] flex-wrap">
                             {photoList.slice(1).map((url, idx) => (
-                              <div key={idx} className="w-16 h-16 rounded overflow-hidden bg-gray-100 flex-shrink-0">
+                              <div key={idx} className="w-16 h-16 rounded overflow-hidden bg-[#1a1a1a] flex-shrink-0">
                                 <img
                                   src={url.startsWith("/objects/") || url.startsWith("/api/") ? url : getProxiedImageUrl(url, "thumb")}
                                   alt=""
@@ -782,11 +782,11 @@ export default function ProductDetail() {
                       <button
                         onClick={loadMoreReviews}
                         disabled={loadingMoreReviews}
-                        className="w-full py-3 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="w-full py-3 text-sm text-[#888888] border border-[#2a2a2a] hover:bg-[#1a1a1a] hover:text-[#c9a96e] disabled:opacity-50 flex items-center justify-center gap-2 transition-colors"
                         data-testid="btn-load-more-reviews"
                       >
                         {loadingMoreReviews ? (
-                          <span className="inline-block w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          <span className="inline-block w-4 h-4 border-2 border-[#555555] border-t-transparent rounded-full animate-spin" />
                         ) : null}
                         후기 더보기 ({reviewTotal - reviews.length}개 더)
                       </button>
@@ -794,7 +794,7 @@ export default function ProductDetail() {
                   )}
                 </div>
               ) : (
-                <div className="text-gray-400 text-center py-8 text-sm">
+                <div className="text-[#555555] text-center py-8 text-sm">
                   아직 작성된 후기가 없습니다. 첫 번째 후기를 남겨주세요!
                 </div>
               )}
@@ -803,11 +803,11 @@ export default function ProductDetail() {
 
           {activeTab === "shipping" && (
             <div className="pt-8 sm:pt-12">
-              <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
-                <h3 className="font-bold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">배송 및 교환/반품 안내</h3>
-                <div className="grid md:grid-cols-2 gap-4 sm:gap-6 text-xs sm:text-sm text-gray-600">
+              <div className="bg-[#161616] border border-[#2a2a2a] p-4 sm:p-6">
+                <h3 className="font-bold text-[#f0f0f0] mb-3 sm:mb-4 text-sm sm:text-base">배송 및 교환/반품 안내</h3>
+                <div className="grid md:grid-cols-2 gap-4 sm:gap-6 text-xs sm:text-sm text-[#888888]">
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-2">배송 안내</h4>
+                    <h4 className="font-medium text-[#c9a96e] mb-2">배송 안내</h4>
                     <ul className="space-y-1">
                       <li>• 배송비: 전 상품 무료 배송</li>
                       <li>• 배송 기간: 결제 확인 후 1~3일 이내</li>
@@ -815,7 +815,7 @@ export default function ProductDetail() {
                     </ul>
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-2">교환/반품 안내</h4>
+                    <h4 className="font-medium text-[#c9a96e] mb-2">교환/반품 안내</h4>
                     <ul className="space-y-1">
                       <li>• 상품 수령 후 7일 이내 교환/반품 가능</li>
                       <li>• 단순 변심 시 왕복 배송비 고객 부담</li>
@@ -827,12 +827,12 @@ export default function ProductDetail() {
             </div>
           )}
 
-          <div className="fixed bottom-14 md:bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-[45]" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+          <div className="fixed bottom-14 md:bottom-0 left-0 right-0 bg-[#0a0a0a] border-t border-[#2a2a2a] z-[45]" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
             <div className="flex gap-0 max-w-7xl mx-auto">
               <button
                 onClick={handleAddToCart}
                 disabled={!!product.isSoldOut}
-                className="flex-1 h-14 sm:h-16 text-base sm:text-lg font-bold text-gray-900 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 disabled:bg-gray-200 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="flex-1 h-14 sm:h-16 text-base sm:text-lg font-bold text-[#f0f0f0] bg-[#1a1a1a] hover:bg-[#222222] active:bg-[#2a2a2a] disabled:bg-[#111111] disabled:text-[#444444] disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 data-testid="button-add-cart-bottom"
               >
                 장바구니
@@ -840,7 +840,7 @@ export default function ProductDetail() {
               <button
                 onClick={handleBuyNow}
                 disabled={!!product.isSoldOut}
-                className="flex-1 h-14 sm:h-16 text-base sm:text-lg font-bold text-white bg-black hover:bg-gray-800 active:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="flex-1 h-14 sm:h-16 text-base sm:text-lg font-bold text-black bg-[#c9a96e] hover:bg-[#b8955a] active:bg-[#a07848] disabled:bg-[#333333] disabled:text-[#555555] disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 data-testid="button-buy-now-bottom"
               >
                 구매하기

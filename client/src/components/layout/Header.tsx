@@ -407,7 +407,7 @@ export function Header() {
   // ── Dropdown Panels ──────────────────────────────────────────────────────────
   const DropdownPanel = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
     <div
-      className={`absolute top-full left-1/2 -translate-x-1/2 bg-white border border-gray-200 shadow-xl z-[200] rounded-b-md ${className}`}
+      className={`absolute top-full left-1/2 -translate-x-1/2 bg-[#111111] border border-[#2a2a2a] shadow-xl shadow-black/50 z-[200] rounded-b-md ${className}`}
       onMouseEnter={keepNavOpen}
       onMouseLeave={closeNav}
     >
@@ -419,13 +419,9 @@ export function Header() {
   const MonthsDropdown = () => (
     <DropdownPanel className="min-w-[160px]">
       {MONTHS.map((m) => (
-        <Link
-          key={m.value}
-          href={`/products/new?month=${m.value}`}
-          className="block px-5 py-2.5 text-[13px] text-gray-700 hover:bg-gray-50 hover:text-black whitespace-nowrap"
-          onClick={() => setNavOpen(null)}
-          data-testid={`nav-month-${m.value}`}
-        >
+        <Link key={m.value} href={`/products/new?month=${m.value}`}
+          className="block px-5 py-2.5 text-[13px] text-[#aaaaaa] hover:bg-[#1a1a1a] hover:text-[#c9a96e] whitespace-nowrap"
+          onClick={() => setNavOpen(null)} data-testid={`nav-month-${m.value}`}>
           {m.label}
         </Link>
       ))}
@@ -436,21 +432,13 @@ export function Header() {
   const BrandsDropdown = () => (
     <DropdownPanel className="w-[600px] max-h-[480px] overflow-y-auto p-4">
       <div className="columns-4 gap-2">
-        <Link
-          href="/brands"
-          className="block py-1.5 px-2 text-[13px] font-semibold text-black hover:underline mb-2"
-          onClick={() => setNavOpen(null)}
-        >
+        <Link href="/brands" className="block py-1.5 px-2 text-[13px] font-semibold text-[#c9a96e] hover:underline mb-2" onClick={() => setNavOpen(null)}>
           전체 브랜드
         </Link>
         {brands.map((b: any) => (
-          <Link
-            key={b.id}
-            href={`/brands?brand=${b.id}`}
-            className="block py-1.5 px-2 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 rounded truncate"
-            onClick={() => setNavOpen(null)}
-            data-testid={`nav-brand-${b.id}`}
-          >
+          <Link key={b.id} href={`/brands?brand=${b.id}`}
+            className="block py-1.5 px-2 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a] rounded truncate"
+            onClick={() => setNavOpen(null)} data-testid={`nav-brand-${b.id}`}>
             {b.name}
           </Link>
         ))}
@@ -463,21 +451,15 @@ export function Header() {
     const selectedCat = GENDER_CATS.find((c) => c.id === genderL3);
     const l3subcats = genderL2 === "남성" ? selectedCat?.menSubcats : selectedCat?.womenSubcats;
     return (
-      <div
-        className="absolute top-full left-1/2 -translate-x-1/2 flex z-[200] shadow-xl border border-gray-200 bg-white rounded-b-md"
-        onMouseEnter={keepNavOpen}
-        onMouseLeave={closeNav}
-      >
+      <div className="absolute top-full left-1/2 -translate-x-1/2 flex z-[200] shadow-xl shadow-black/50 border border-[#2a2a2a] bg-[#111111] rounded-b-md"
+        onMouseEnter={keepNavOpen} onMouseLeave={closeNav}>
         {/* Column 1: 남성/여성 */}
-        <div className="border-r border-gray-100 min-w-[100px]">
+        <div className="border-r border-[#1a1a1a] min-w-[100px]">
           {(["남성", "여성"] as const).map((g) => (
-            <div
-              key={g}
-              className={`flex items-center justify-between px-5 py-3 text-[13px] cursor-pointer transition-colors ${genderL2 === g ? "bg-gray-50 font-semibold text-black" : "text-gray-700 hover:bg-gray-50 hover:text-black"}`}
-              onMouseEnter={() => openGenderL2(g)}
-              onMouseLeave={closeGenderL2}
-              onClick={() => setLocation(g === "남성" ? "/products/men" : "/products/women")}
-            >
+            <div key={g}
+              className={`flex items-center justify-between px-5 py-3 text-[13px] cursor-pointer transition-colors ${genderL2 === g ? "bg-[#1a1a1a] font-semibold text-[#c9a96e]" : "text-[#aaaaaa] hover:bg-[#1a1a1a] hover:text-[#c9a96e]"}`}
+              onMouseEnter={() => openGenderL2(g)} onMouseLeave={closeGenderL2}
+              onClick={() => setLocation(g === "남성" ? "/products/men" : "/products/women")}>
               <span>{g}</span>
               <ChevronRight className="w-3 h-3 ml-2 opacity-40" />
             </div>
@@ -486,23 +468,12 @@ export function Header() {
 
         {/* Column 2: categories */}
         {genderL2 && (
-          <div
-            className="border-r border-gray-100 min-w-[130px]"
-            onMouseEnter={keepGenderL2}
-            onMouseLeave={closeGenderL2}
-          >
+          <div className="border-r border-[#1a1a1a] min-w-[130px]" onMouseEnter={keepGenderL2} onMouseLeave={closeGenderL2}>
             {GENDER_CATS.map((cat) => (
-              <div
-                key={cat.id}
-                className={`flex items-center justify-between px-5 py-3 text-[13px] cursor-pointer transition-colors ${genderL3 === cat.id ? "bg-gray-50 font-semibold text-black" : "text-gray-700 hover:bg-gray-50 hover:text-black"}`}
-                onMouseEnter={() => openGenderL3(cat.id)}
-                onMouseLeave={closeGenderL3}
-                onClick={() => {
-                  const gender = genderL2 === "남성" ? "남성" : "여성";
-                  setLocation(`${cat.path}?gender=${encodeURIComponent(gender)}`);
-                  setNavOpen(null);
-                }}
-              >
+              <div key={cat.id}
+                className={`flex items-center justify-between px-5 py-3 text-[13px] cursor-pointer transition-colors ${genderL3 === cat.id ? "bg-[#1a1a1a] font-semibold text-[#c9a96e]" : "text-[#aaaaaa] hover:bg-[#1a1a1a] hover:text-[#c9a96e]"}`}
+                onMouseEnter={() => openGenderL3(cat.id)} onMouseLeave={closeGenderL3}
+                onClick={() => { const gender = genderL2 === "남성" ? "남성" : "여성"; setLocation(`${cat.path}?gender=${encodeURIComponent(gender)}`); setNavOpen(null); }}>
                 <span>{cat.name}</span>
                 {((genderL2 === "남성" ? cat.menSubcats : cat.womenSubcats).length > 0) && (
                   <ChevronRight className="w-3 h-3 ml-2 opacity-40" />
@@ -514,26 +485,16 @@ export function Header() {
 
         {/* Column 3: subcategories */}
         {genderL3 && l3subcats && l3subcats.length > 0 && (
-          <div
-            className="min-w-[140px] max-h-[320px] overflow-y-auto"
-            onMouseEnter={keepGenderL3}
-            onMouseLeave={closeGenderL3}
-          >
-            <Link
-              href={`${selectedCat?.path}?gender=${encodeURIComponent(genderL2 === "남성" ? "남성" : "여성")}`}
-              className="block px-5 py-3 text-[13px] text-gray-500 hover:text-black hover:bg-gray-50 border-b border-gray-100 font-medium"
-              onClick={() => setNavOpen(null)}
-            >
+          <div className="min-w-[140px] max-h-[320px] overflow-y-auto" onMouseEnter={keepGenderL3} onMouseLeave={closeGenderL3}>
+            <Link href={`${selectedCat?.path}?gender=${encodeURIComponent(genderL2 === "남성" ? "남성" : "여성")}`}
+              className="block px-5 py-3 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a] border-b border-[#1a1a1a] font-medium"
+              onClick={() => setNavOpen(null)}>
               전체보기
             </Link>
             {l3subcats.map((sub) => (
-              <Link
-                key={sub.sub}
-                href={`${selectedCat?.path}?sub=${sub.sub}&gender=${encodeURIComponent(genderL2 === "남성" ? "남성" : "여성")}`}
-                className="block px-5 py-3 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50"
-                onClick={() => setNavOpen(null)}
-                data-testid={`nav-gender-sub-${sub.sub}`}
-              >
+              <Link key={sub.sub} href={`${selectedCat?.path}?sub=${sub.sub}&gender=${encodeURIComponent(genderL2 === "남성" ? "남성" : "여성")}`}
+                className="block px-5 py-3 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]"
+                onClick={() => setNavOpen(null)} data-testid={`nav-gender-sub-${sub.sub}`}>
                 {sub.name}
               </Link>
             ))}
@@ -549,21 +510,13 @@ export function Header() {
     if (!cat) return null;
     return (
       <DropdownPanel className="min-w-[150px]">
-        <Link
-          href={cat.path}
-          className="block px-5 py-3 text-[13px] font-medium text-black border-b border-gray-100 hover:bg-gray-50"
-          onClick={() => setNavOpen(null)}
-        >
+        <Link href={cat.path} className="block px-5 py-3 text-[13px] font-medium text-[#c9a96e] border-b border-[#1a1a1a] hover:bg-[#1a1a1a]" onClick={() => setNavOpen(null)}>
           전체보기
         </Link>
         {cat.items.map((sub) => (
-          <Link
-            key={sub.sub}
-            href={`${cat.path}?subname=${encodeURIComponent(sub.name)}`}
-            className="block px-5 py-2.5 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap"
-            onClick={() => setNavOpen(null)}
-            data-testid={`nav-sub-${sub.sub}`}
-          >
+          <Link key={sub.sub} href={`${cat.path}?subname=${encodeURIComponent(sub.name)}`}
+            className="block px-5 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a] whitespace-nowrap"
+            onClick={() => setNavOpen(null)} data-testid={`nav-sub-${sub.sub}`}>
             {sub.name}
           </Link>
         ))}
@@ -575,55 +528,34 @@ export function Header() {
   const GolfDropdown = () => {
     const selectedSection = GOLF_L1.find((s) => s.id === golfL2);
     return (
-      <div
-        className="absolute top-full left-1/2 -translate-x-1/2 flex z-[200] shadow-xl border border-gray-200 bg-white rounded-b-md"
-        onMouseEnter={keepNavOpen}
-        onMouseLeave={closeNav}
-      >
+      <div className="absolute top-full left-1/2 -translate-x-1/2 flex z-[200] shadow-xl shadow-black/50 border border-[#2a2a2a] bg-[#111111] rounded-b-md"
+        onMouseEnter={keepNavOpen} onMouseLeave={closeNav}>
         {/* Column 1: golf sections */}
-        <div className="border-r border-gray-100 min-w-[120px]">
-          <Link
-            href="/products/golf"
-            className="block px-5 py-3 text-[13px] font-medium text-black border-b border-gray-100 hover:bg-gray-50"
-            onClick={() => setNavOpen(null)}
-          >
+        <div className="border-r border-[#1a1a1a] min-w-[120px]">
+          <Link href="/products/golf" className="block px-5 py-3 text-[13px] font-medium text-[#c9a96e] border-b border-[#1a1a1a] hover:bg-[#1a1a1a]" onClick={() => setNavOpen(null)}>
             전체보기
           </Link>
           {GOLF_L1.map((section) => (
-            <div
-              key={section.id}
-              className={`flex items-center justify-between px-5 py-3 text-[13px] cursor-pointer transition-colors ${golfL2 === section.id ? "bg-gray-50 font-semibold text-black" : "text-gray-700 hover:bg-gray-50 hover:text-black"}`}
-              onMouseEnter={() => openGolfL2(section.id)}
-              onMouseLeave={closeGolfL2}
-              onClick={() => { setLocation(`${section.path}${section.query}`); setNavOpen(null); }}
-            >
+            <div key={section.id}
+              className={`flex items-center justify-between px-5 py-3 text-[13px] cursor-pointer transition-colors ${golfL2 === section.id ? "bg-[#1a1a1a] font-semibold text-[#c9a96e]" : "text-[#aaaaaa] hover:bg-[#1a1a1a] hover:text-[#c9a96e]"}`}
+              onMouseEnter={() => openGolfL2(section.id)} onMouseLeave={closeGolfL2}
+              onClick={() => { setLocation(`${section.path}${section.query}`); setNavOpen(null); }}>
               <span>{section.name}</span>
               {section.items.length > 0 && <ChevronRight className="w-3 h-3 ml-2 opacity-40" />}
             </div>
           ))}
         </div>
-
-        {/* Column 2: section items */}
         {golfL2 && selectedSection && selectedSection.items.length > 0 && (
-          <div
-            className="min-w-[130px]"
-            onMouseEnter={keepGolfL2}
-            onMouseLeave={closeGolfL2}
-          >
-            <Link
-              href={`${selectedSection.path}${selectedSection.query}`}
-              className="block px-5 py-3 text-[13px] font-medium text-gray-500 border-b border-gray-100 hover:text-black hover:bg-gray-50"
-              onClick={() => setNavOpen(null)}
-            >
+          <div className="min-w-[130px]" onMouseEnter={keepGolfL2} onMouseLeave={closeGolfL2}>
+            <Link href={`${selectedSection.path}${selectedSection.query}`}
+              className="block px-5 py-3 text-[13px] font-medium text-[#888888] border-b border-[#1a1a1a] hover:text-[#c9a96e] hover:bg-[#1a1a1a]"
+              onClick={() => setNavOpen(null)}>
               전체보기
             </Link>
             {selectedSection.items.map((item) => (
-              <Link
-                key={item.sub}
-                href={`${selectedSection.path}?sub=${item.sub}`}
-                className="block px-5 py-3 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50"
-                onClick={() => setNavOpen(null)}
-              >
+              <Link key={item.sub} href={`${selectedSection.path}?sub=${item.sub}`}
+                className="block px-5 py-3 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]"
+                onClick={() => setNavOpen(null)}>
                 {item.name}
               </Link>
             ))}
@@ -637,71 +569,57 @@ export function Header() {
   const QuickLinksDropdown = ({ links }: { links: { name: string; path: string }[] }) => (
     <DropdownPanel className="min-w-[140px]">
       {links.map((link) => (
-        <Link
-          key={link.path}
-          href={link.path}
-          className="block px-5 py-2.5 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap"
-          onClick={() => setNavOpen(null)}
-        >
+        <Link key={link.path} href={link.path}
+          className="block px-5 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a] whitespace-nowrap"
+          onClick={() => setNavOpen(null)}>
           {link.name}
         </Link>
       ))}
     </DropdownPanel>
   );
 
-  // Sunglasses/Belts simple dropdown
   const SimpleSubDropdown = ({ items, path }: { items: { name: string; sub: string }[]; path: string }) => (
     <DropdownPanel className="min-w-[140px]">
-      <Link href={path} className="block px-5 py-3 text-[13px] font-medium text-black border-b border-gray-100 hover:bg-gray-50" onClick={() => setNavOpen(null)}>전체보기</Link>
+      <Link href={path} className="block px-5 py-3 text-[13px] font-medium text-[#c9a96e] border-b border-[#1a1a1a] hover:bg-[#1a1a1a]" onClick={() => setNavOpen(null)}>전체보기</Link>
       {items.map((sub) => (
-        <Link key={sub.sub} href={`${path}?sub=${sub.sub}`} className="block px-5 py-2.5 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>{sub.name}</Link>
+        <Link key={sub.sub} href={`${path}?sub=${sub.sub}`} className="block px-5 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a] whitespace-nowrap" onClick={() => setNavOpen(null)}>{sub.name}</Link>
       ))}
     </DropdownPanel>
   );
 
-  // Jewelry + Sunglasses + Belts merged dropdown
   const JewelryMergedDropdown = () => {
     const cat = CATEGORY_SUBCATS["jewelry"];
     if (!cat) return null;
     return (
       <DropdownPanel className="w-[520px]">
-        <div className="flex divide-x divide-gray-100">
-          {/* 좌측: 쥬얼리/잡화 전체 + 2열 그리드 */}
+        <div className="flex divide-x divide-[#1a1a1a]">
           <div className="flex-1 py-2 min-w-0">
-            <Link
-              href={cat.path}
-              className="block px-4 py-2.5 text-[13px] font-semibold text-black border-b border-gray-100 hover:bg-gray-50"
-              onClick={() => setNavOpen(null)}
-            >
+            <Link href={cat.path} className="block px-4 py-2.5 text-[13px] font-semibold text-[#c9a96e] border-b border-[#1a1a1a] hover:bg-[#1a1a1a]" onClick={() => setNavOpen(null)}>
               쥬얼리/잡화 전체
             </Link>
             <div className="grid grid-cols-2 px-2 py-1">
               {cat.items.map((sub) => (
-                <Link
-                  key={sub.sub}
-                  href={`${cat.path}?subname=${encodeURIComponent(sub.name)}`}
-                  className="block px-3 py-2 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap rounded"
-                  onClick={() => setNavOpen(null)}
-                >
+                <Link key={sub.sub} href={`${cat.path}?subname=${encodeURIComponent(sub.name)}`}
+                  className="block px-3 py-2 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a] whitespace-nowrap rounded"
+                  onClick={() => setNavOpen(null)}>
                   {sub.name}
                 </Link>
               ))}
             </div>
           </div>
-          {/* 우측: 선글라스 + 벨트 */}
           <div className="w-[150px] flex-shrink-0 py-2">
             <div>
-              <span className="block px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide border-b border-gray-100">선글라스</span>
-              <Link href="/products/sunglasses" className="block px-4 py-2.5 text-[13px] font-medium text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>전체보기</Link>
+              <span className="block px-4 py-2 text-[11px] font-semibold text-[#555555] uppercase tracking-wide border-b border-[#1a1a1a]">선글라스</span>
+              <Link href="/products/sunglasses" className="block px-4 py-2.5 text-[13px] font-medium text-[#aaaaaa] hover:text-[#c9a96e] hover:bg-[#1a1a1a] whitespace-nowrap" onClick={() => setNavOpen(null)}>전체보기</Link>
               {SUNGLASSES_ALL.map((sub) => (
-                <Link key={sub.sub} href={`/products/sunglasses?sub=${sub.sub}`} className="block px-4 py-2.5 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>{sub.name}</Link>
+                <Link key={sub.sub} href={`/products/sunglasses?sub=${sub.sub}`} className="block px-4 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a] whitespace-nowrap" onClick={() => setNavOpen(null)}>{sub.name}</Link>
               ))}
             </div>
-            <div className="border-t border-gray-100 mt-1 pt-1">
-              <span className="block px-4 py-2 text-[11px] font-semibold text-gray-400 uppercase tracking-wide border-b border-gray-100">벨트</span>
-              <Link href="/products/belts" className="block px-4 py-2.5 text-[13px] font-medium text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>전체보기</Link>
+            <div className="border-t border-[#1a1a1a] mt-1 pt-1">
+              <span className="block px-4 py-2 text-[11px] font-semibold text-[#555555] uppercase tracking-wide border-b border-[#1a1a1a]">벨트</span>
+              <Link href="/products/belts" className="block px-4 py-2.5 text-[13px] font-medium text-[#aaaaaa] hover:text-[#c9a96e] hover:bg-[#1a1a1a] whitespace-nowrap" onClick={() => setNavOpen(null)}>전체보기</Link>
               {BELTS_ALL.map((sub) => (
-                <Link key={sub.sub} href={`/products/belts?sub=${sub.sub}`} className="block px-4 py-2.5 text-[13px] text-gray-700 hover:text-black hover:bg-gray-50 whitespace-nowrap" onClick={() => setNavOpen(null)}>{sub.name}</Link>
+                <Link key={sub.sub} href={`/products/belts?sub=${sub.sub}`} className="block px-4 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a] whitespace-nowrap" onClick={() => setNavOpen(null)}>{sub.name}</Link>
               ))}
             </div>
           </div>
@@ -713,106 +631,106 @@ export function Header() {
   // ── Mobile accordion helpers ─────────────────────────────────────────────────
   const MobileAccordion = ({ title, isOpen, onToggle, href, children, special }: { title: string; isOpen: boolean; onToggle: () => void; href?: string; children?: React.ReactNode; special?: string }) => (
     <div>
-      <div className={`flex items-center border-b border-gray-50 ${special === "blue" ? "text-blue-600" : special === "red" ? "text-red-500" : special === "amber" ? "text-amber-600" : ""}`}>
+      <div className={`flex items-center border-b border-[#1a1a1a] ${special === "blue" ? "text-blue-400" : special === "red" ? "text-red-400" : special === "amber" ? "text-amber-400" : "text-[#cccccc]"}`}>
         {href ? (
-          <Link href={href} className="flex-1 px-4 py-3.5 text-sm font-medium" onClick={closeMobileMenu}>{title}</Link>
+          <Link href={href} className="flex-1 px-4 py-3.5 text-sm font-medium hover:text-[#c9a96e]" onClick={closeMobileMenu}>{title}</Link>
         ) : (
-          <button className="flex-1 text-left px-4 py-3.5 text-sm font-medium" onClick={onToggle}>{title}</button>
+          <button className="flex-1 text-left px-4 py-3.5 text-sm font-medium hover:text-[#c9a96e]" onClick={onToggle}>{title}</button>
         )}
         {children && (
-          <button onClick={onToggle} className="px-4 py-3.5 text-gray-400 hover:text-black">
+          <button onClick={onToggle} className="px-4 py-3.5 text-[#555555] hover:text-[#c9a96e]">
             <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
           </button>
         )}
       </div>
-      {children && isOpen && <div className="bg-gray-50">{children}</div>}
+      {children && isOpen && <div className="bg-[#0d0d0d]">{children}</div>}
     </div>
   );
 
   return (
     <>
-      <header className={`w-full sticky top-0 z-50 bg-white transition-shadow ${scrolled ? "shadow-sm" : ""}`}>
+      <header className={`w-full sticky top-0 z-50 bg-[#0a0a0a] transition-shadow ${scrolled ? "shadow-lg shadow-black/50" : ""}`}>
         {/* Top utility bar (desktop only) */}
-        <div className="hidden md:block bg-gray-100 border-b border-gray-200">
-          <div className="max-w-[1200px] mx-auto px-4 h-9 flex items-center justify-end text-[12px] text-gray-500 gap-3" style={{ letterSpacing: "0.03em" }}>
+        <div className="hidden md:block bg-[#050505] border-b border-[#1a1a1a]">
+          <div className="max-w-[1200px] mx-auto px-4 h-9 flex items-center justify-end text-[12px] text-[#555555] gap-3" style={{ letterSpacing: "0.03em" }}>
             {memberName ? (
               <>
-                <span className="text-gray-900 font-medium">{memberName}님</span>
-                <span className="text-gray-300">|</span>
-                <span className="text-gray-500">{pointBalance.toLocaleString()}P</span>
-                <span className="text-gray-300">|</span>
-                <button onClick={handleLogout} className="hover:text-black" data-testid="button-logout">로그아웃</button>
+                <span className="text-[#c9a96e] font-medium">{memberName}님</span>
+                <span className="text-[#2a2a2a]">|</span>
+                <span className="text-[#888888]">{pointBalance.toLocaleString()}P</span>
+                <span className="text-[#2a2a2a]">|</span>
+                <button onClick={handleLogout} className="hover:text-red-400" data-testid="button-logout">로그아웃</button>
               </>
             ) : (
               <>
-                <Link href="/login" className="hover:text-black" data-testid="link-login">로그인</Link>
-                <span className="text-gray-300">|</span>
-                <Link href="/signup" className="hover:text-black" data-testid="link-signup">회원가입</Link>
+                <Link href="/login" className="hover:text-[#c9a96e]" data-testid="link-login">로그인</Link>
+                <span className="text-[#2a2a2a]">|</span>
+                <Link href="/signup" className="hover:text-[#c9a96e]" data-testid="link-signup">회원가입</Link>
               </>
             )}
-            <span className="text-gray-300">|</span>
-            <Link href="/orders" className="hover:text-black">주문조회</Link>
-            <span className="text-gray-300">|</span>
-            <Link href="/profile" className="hover:text-black">마이페이지</Link>
+            <span className="text-[#2a2a2a]">|</span>
+            <Link href="/orders" className="hover:text-[#c9a96e]">주문조회</Link>
+            <span className="text-[#2a2a2a]">|</span>
+            <Link href="/profile" className="hover:text-[#c9a96e]">마이페이지</Link>
           </div>
         </div>
 
         {/* Main header row */}
-        <div className="bg-white border-b border-gray-200">
+        <div className="bg-[#0a0a0a] border-b border-[#1a1a1a]">
           <div className="max-w-[1200px] mx-auto px-4 py-4 md:py-5">
             <div className="flex items-center justify-between">
               {/* Left: hamburger + logo */}
               <div className="flex items-center gap-3">
                 <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                   <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="w-10 h-10 p-0" data-testid="button-mobile-menu">
-                      <Menu className="w-6 h-6 text-gray-700" />
+                    <Button variant="ghost" size="icon" className="w-10 h-10 p-0 hover:bg-[#1a1a1a]" data-testid="button-mobile-menu">
+                      <Menu className="w-6 h-6 text-[#cccccc]" />
                     </Button>
                   </SheetTrigger>
 
-                  <SheetContent side="left" className="w-[320px] overflow-y-auto p-0" hideCloseButton>
+                  <SheetContent side="left" className="w-[320px] overflow-y-auto p-0 bg-[#0f0f0f] border-r border-[#1a1a1a]" hideCloseButton>
                     {/* Sheet header */}
-                    <div className="bg-black p-4 flex items-center justify-between">
+                    <div className="bg-[#0a0a0a] border-b border-[#1a1a1a] p-4 flex items-center justify-between">
                       <Link href="/" onClick={closeMobileMenu}>
-                        <span style={{ letterSpacing: "0.45em", fontWeight: 500, fontSize: "1.4rem", color: "#ffffff", textTransform: "uppercase" }}>velour</span>
+                        <span style={{ letterSpacing: "0.45em", fontWeight: 500, fontSize: "1.4rem", color: "#c9a96e", textTransform: "uppercase" }}>velour</span>
                       </Link>
                       <SheetClose asChild>
-                        <Button variant="ghost" size="icon" className="text-white hover:text-gray-300 p-0">
+                        <Button variant="ghost" size="icon" className="text-[#888888] hover:text-white hover:bg-[#1a1a1a] p-0">
                           <X className="w-5 h-5" />
                         </Button>
                       </SheetClose>
                     </div>
 
                     {/* Member info */}
-                    <div className="p-4 border-b bg-gray-100">
+                    <div className="p-4 border-b border-[#1a1a1a] bg-[#161616]">
                       {memberName ? (
                         <div className="flex items-center justify-between">
                           <div>
-                            <div className="font-semibold text-sm">{memberName}님</div>
-                            <span className="text-xs text-gray-500">{pointBalance.toLocaleString()}P</span>
+                            <div className="font-semibold text-sm text-white">{memberName}님</div>
+                            <span className="text-xs text-[#c9a96e]">{pointBalance.toLocaleString()}P</span>
                           </div>
-                          <button onClick={() => { handleLogout(); closeMobileMenu(); }} className="text-xs text-gray-400 hover:text-black">로그아웃</button>
+                          <button onClick={() => { handleLogout(); closeMobileMenu(); }} className="text-xs text-[#555555] hover:text-red-400">로그아웃</button>
                         </div>
                       ) : (
                         <div className="flex gap-4">
-                          <Link href="/login" className="text-sm font-medium hover:text-black" onClick={closeMobileMenu}>로그인</Link>
-                          <Link href="/signup" className="text-sm text-gray-500 hover:text-black" onClick={closeMobileMenu}>회원가입</Link>
+                          <Link href="/login" className="text-sm font-medium text-[#c9a96e] hover:text-white" onClick={closeMobileMenu}>로그인</Link>
+                          <Link href="/signup" className="text-sm text-[#888888] hover:text-white" onClick={closeMobileMenu}>회원가입</Link>
                         </div>
                       )}
                     </div>
 
                     {/* Search */}
-                    <div className="p-4 border-b">
+                    <div className="p-4 border-b border-[#1a1a1a]">
                       <form onSubmit={handleSearch}>
-                        <div className="flex border border-gray-200 overflow-hidden bg-white">
+                        <div className="flex border border-[#2a2a2a] overflow-hidden bg-[#1a1a1a]">
                           <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="검색어를 입력해주세요"
-                            className="flex-1 px-3 py-2.5 text-sm focus:outline-none bg-transparent text-gray-900 placeholder:text-gray-400"
+                            className="flex-1 px-3 py-2.5 text-sm focus:outline-none bg-transparent text-[#f0f0f0] placeholder:text-[#444444]"
                           />
-                          <button type="submit" className="px-3 bg-black text-white">
+                          <button type="submit" className="px-3 bg-[#c9a96e] text-black hover:bg-[#b8945f]">
                             <Search className="w-4 h-4" />
                           </button>
                         </div>
@@ -820,8 +738,8 @@ export function Header() {
                     </div>
 
                     {/* Category accordion */}
-                    <div className="border-b">
-                      <div className="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-widest" style={{ letterSpacing: "0.12em" }}>카테고리</div>
+                    <div className="border-b border-[#1a1a1a]">
+                      <div className="px-4 py-3 text-xs font-medium text-[#555555] uppercase tracking-widest" style={{ letterSpacing: "0.12em" }}>카테고리</div>
                       <nav>
                         {/* 신상품 */}
                         <MobileAccordion
@@ -830,7 +748,7 @@ export function Header() {
                           onToggle={() => setMobileExpanded(mobileExpanded === "신상품" ? null : "신상품")}
                         >
                           {MONTHS.slice(0, 8).map((m) => (
-                            <Link key={m.value} href={`/products/new?month=${m.value}`} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{m.label}</Link>
+                            <Link key={m.value} href={`/products/new?month=${m.value}`} className="block px-8 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>{m.label}</Link>
                           ))}
                         </MobileAccordion>
 
@@ -840,12 +758,12 @@ export function Header() {
                           isOpen={mobileExpanded === "브랜드"}
                           onToggle={() => setMobileExpanded(mobileExpanded === "브랜드" ? null : "브랜드")}
                         >
-                          <Link href="/brands" className="block px-8 py-2.5 text-[13px] font-semibold text-black hover:bg-gray-100" onClick={closeMobileMenu}>전체 브랜드</Link>
+                          <Link href="/brands" className="block px-8 py-2.5 text-[13px] font-semibold text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>전체 브랜드</Link>
                           {brands.slice(0, 30).map((b: any) => (
-                            <Link key={b.id} href={`/brands?brand=${b.id}`} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{b.name}</Link>
+                            <Link key={b.id} href={`/brands?brand=${b.id}`} className="block px-8 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>{b.name}</Link>
                           ))}
                           {brands.length > 30 && (
-                            <Link href="/brands" className="block px-8 py-2.5 text-[13px] text-blue-500 hover:bg-gray-100" onClick={closeMobileMenu}>전체 브랜드 보기 ({brands.length})</Link>
+                            <Link href="/brands" className="block px-8 py-2.5 text-[13px] text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>전체 브랜드 보기 ({brands.length})</Link>
                           )}
                         </MobileAccordion>
 
@@ -857,44 +775,38 @@ export function Header() {
                         >
                           {(["남성", "여성"] as const).map((g) => (
                             <div key={g}>
-                              <div className="flex items-center border-b border-gray-100">
-                                <Link
-                                  href={g === "남성" ? "/products/men" : "/products/women"}
-                                  className="flex-1 px-8 py-2.5 text-[13px] text-gray-700"
-                                  onClick={closeMobileMenu}
-                                >{g}</Link>
-                                <button
-                                  onClick={() => { setMobileGenderExpanded(mobileGenderExpanded === g ? null : g); setMobileGenderCatExpanded(null); }}
-                                  className="px-4 py-2.5 text-gray-400"
-                                >
+                              <div className="flex items-center border-b border-[#1a1a1a]">
+                                <Link href={g === "남성" ? "/products/men" : "/products/women"}
+                                  className="flex-1 px-8 py-2.5 text-[13px] text-[#aaaaaa] hover:text-[#c9a96e]"
+                                  onClick={closeMobileMenu}>{g}</Link>
+                                <button onClick={() => { setMobileGenderExpanded(mobileGenderExpanded === g ? null : g); setMobileGenderCatExpanded(null); }}
+                                  className="px-4 py-2.5 text-[#555555]">
                                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${mobileGenderExpanded === g ? "rotate-180" : ""}`} />
                                 </button>
                               </div>
                               {mobileGenderExpanded === g && (
-                                <div className="bg-gray-100">
+                                <div className="bg-[#0a0a0a]">
                                   {GENDER_CATS.map((cat) => {
                                     const subcats = g === "남성" ? cat.menSubcats : cat.womenSubcats;
                                     return (
                                       <div key={cat.id}>
-                                        <div className="flex items-center border-b border-gray-200">
-                                          <Link
-                                            href={`${cat.path}?gender=${encodeURIComponent(g)}`}
-                                            className="flex-1 px-10 py-2.5 text-[13px] text-gray-600"
-                                            onClick={closeMobileMenu}
-                                          >{cat.name}</Link>
+                                        <div className="flex items-center border-b border-[#1a1a1a]">
+                                          <Link href={`${cat.path}?gender=${encodeURIComponent(g)}`}
+                                            className="flex-1 px-10 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e]"
+                                            onClick={closeMobileMenu}>{cat.name}</Link>
                                           {subcats.length > 0 && (
-                                            <button
-                                              onClick={() => setMobileGenderCatExpanded(mobileGenderCatExpanded === `${g}-${cat.id}` ? null : `${g}-${cat.id}`)}
-                                              className="px-4 py-2.5 text-gray-400"
-                                            >
+                                            <button onClick={() => setMobileGenderCatExpanded(mobileGenderCatExpanded === `${g}-${cat.id}` ? null : `${g}-${cat.id}`)}
+                                              className="px-4 py-2.5 text-[#555555]">
                                               <ChevronDown className={`w-3 h-3 transition-transform ${mobileGenderCatExpanded === `${g}-${cat.id}` ? "rotate-180" : ""}`} />
                                             </button>
                                           )}
                                         </div>
                                         {mobileGenderCatExpanded === `${g}-${cat.id}` && (
-                                          <div className="bg-white">
+                                          <div className="bg-[#050505]">
                                             {subcats.map((sub) => (
-                                              <Link key={sub.sub} href={`${cat.path}?sub=${sub.sub}&gender=${encodeURIComponent(g)}`} className="block px-12 py-2 text-[12px] text-gray-500 hover:text-black border-b border-gray-50" onClick={closeMobileMenu}>{sub.name}</Link>
+                                              <Link key={sub.sub} href={`${cat.path}?sub=${sub.sub}&gender=${encodeURIComponent(g)}`}
+                                                className="block px-12 py-2 text-[12px] text-[#666666] hover:text-[#c9a96e] border-b border-[#111111]"
+                                                onClick={closeMobileMenu}>{sub.name}</Link>
                                             ))}
                                           </div>
                                         )}
@@ -909,44 +821,44 @@ export function Header() {
 
                         {/* 의류 */}
                         <MobileAccordion title="의류" isOpen={mobileExpanded === "의류"} onToggle={() => setMobileExpanded(mobileExpanded === "의류" ? null : "의류")}>
-                          <Link href="/products/clothing" className="block px-8 py-2.5 text-[13px] font-medium text-black hover:bg-gray-100" onClick={closeMobileMenu}>전체보기</Link>
-                          {CLOTHING_MEN.map((s) => <Link key={s.sub} href={`/products/clothing?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{s.name}</Link>)}
+                          <Link href="/products/clothing" className="block px-8 py-2.5 text-[13px] font-medium text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>전체보기</Link>
+                          {CLOTHING_MEN.map((s) => <Link key={s.sub} href={`/products/clothing?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>{s.name}</Link>)}
                         </MobileAccordion>
 
                         {/* 가방 */}
                         <MobileAccordion title="가방" isOpen={mobileExpanded === "가방"} onToggle={() => setMobileExpanded(mobileExpanded === "가방" ? null : "가방")}>
-                          <Link href="/products/bags" className="block px-8 py-2.5 text-[13px] font-medium text-black hover:bg-gray-100" onClick={closeMobileMenu}>전체보기</Link>
-                          {BAGS_MEN.map((s) => <Link key={s.sub} href={`/products/bags?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{s.name}</Link>)}
+                          <Link href="/products/bags" className="block px-8 py-2.5 text-[13px] font-medium text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>전체보기</Link>
+                          {BAGS_MEN.map((s) => <Link key={s.sub} href={`/products/bags?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>{s.name}</Link>)}
                         </MobileAccordion>
 
                         {/* 지갑 */}
                         <MobileAccordion title="지갑" isOpen={mobileExpanded === "지갑"} onToggle={() => setMobileExpanded(mobileExpanded === "지갑" ? null : "지갑")}>
-                          <Link href="/products/wallets" className="block px-8 py-2.5 text-[13px] font-medium text-black hover:bg-gray-100" onClick={closeMobileMenu}>전체보기</Link>
-                          {WALLETS_MEN.map((s) => <Link key={s.sub} href={`/products/wallets?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{s.name}</Link>)}
+                          <Link href="/products/wallets" className="block px-8 py-2.5 text-[13px] font-medium text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>전체보기</Link>
+                          {WALLETS_MEN.map((s) => <Link key={s.sub} href={`/products/wallets?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>{s.name}</Link>)}
                         </MobileAccordion>
 
                         {/* 신발 */}
                         <MobileAccordion title="신발" isOpen={mobileExpanded === "신발"} onToggle={() => setMobileExpanded(mobileExpanded === "신발" ? null : "신발")}>
-                          <Link href="/products/shoes" className="block px-8 py-2.5 text-[13px] font-medium text-black hover:bg-gray-100" onClick={closeMobileMenu}>전체보기</Link>
-                          {SHOES_MEN.map((s) => <Link key={s.sub} href={`/products/shoes?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{s.name}</Link>)}
+                          <Link href="/products/shoes" className="block px-8 py-2.5 text-[13px] font-medium text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>전체보기</Link>
+                          {SHOES_MEN.map((s) => <Link key={s.sub} href={`/products/shoes?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>{s.name}</Link>)}
                         </MobileAccordion>
 
                         {/* 시계 */}
                         <MobileAccordion title="시계" isOpen={mobileExpanded === "시계"} onToggle={() => setMobileExpanded(mobileExpanded === "시계" ? null : "시계")}>
-                          <Link href="/products/watches" className="block px-8 py-2.5 text-[13px] font-medium text-black hover:bg-gray-100" onClick={closeMobileMenu}>전체 시계</Link>
+                          <Link href="/products/watches" className="block px-8 py-2.5 text-[13px] font-medium text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>전체 시계</Link>
                           {brands.slice(0, 20).map((b: any) => (
-                            <Link key={b.id} href={`/products/watches?brand=${b.id}`} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{b.name}</Link>
+                            <Link key={b.id} href={`/products/watches?brand=${b.id}`} className="block px-8 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>{b.name}</Link>
                           ))}
                         </MobileAccordion>
 
                         {/* 골프 */}
                         <MobileAccordion title="골프" isOpen={mobileExpanded === "골프"} onToggle={() => setMobileExpanded(mobileExpanded === "골프" ? null : "골프")}>
-                          <Link href="/products/golf" className="block px-8 py-2.5 text-[13px] font-medium text-black hover:bg-gray-100" onClick={closeMobileMenu}>전체보기</Link>
+                          <Link href="/products/golf" className="block px-8 py-2.5 text-[13px] font-medium text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>전체보기</Link>
                           {GOLF_L1.map((section) => (
                             <div key={section.id}>
-                              <Link href={`${section.path}${section.query}`} className="block px-8 py-2.5 text-[13px] font-medium text-gray-700 hover:bg-gray-100" onClick={closeMobileMenu}>{section.name}</Link>
+                              <Link href={`${section.path}${section.query}`} className="block px-8 py-2.5 text-[13px] font-medium text-[#aaaaaa] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>{section.name}</Link>
                               {section.items.map((item) => (
-                                <Link key={item.sub} href={`${section.path}?sub=${item.sub}`} className="block px-10 py-2 text-[12px] text-gray-500 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{item.name}</Link>
+                                <Link key={item.sub} href={`${section.path}?sub=${item.sub}`} className="block px-10 py-2 text-[12px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>{item.name}</Link>
                               ))}
                             </div>
                           ))}
@@ -954,20 +866,20 @@ export function Header() {
 
                         {/* 쥬얼리 + 선글라스 + 벨트 */}
                         <MobileAccordion title="쥬얼리/잡화" isOpen={mobileExpanded === "쥬얼리"} onToggle={() => setMobileExpanded(mobileExpanded === "쥬얼리" ? null : "쥬얼리")}>
-                          <Link href="/products/jewelry" className="block px-8 py-2.5 text-[13px] font-medium text-black hover:bg-gray-100" onClick={closeMobileMenu}>쥬얼리/잡화 전체</Link>
-                          {JEWELRY_MEN.map((s) => <Link key={s.sub} href={`/products/jewelry?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{s.name}</Link>)}
-                          <div className="px-8 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide border-t border-gray-100 mt-1">선글라스</div>
-                          <Link href="/products/sunglasses" className="block px-8 py-2.5 text-[13px] font-medium text-gray-700 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>전체보기</Link>
-                          {SUNGLASSES_ALL.map((s) => <Link key={s.sub} href={`/products/sunglasses?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{s.name}</Link>)}
-                          <div className="px-8 py-1.5 text-[11px] font-semibold text-gray-400 uppercase tracking-wide border-t border-gray-100 mt-1">벨트</div>
-                          <Link href="/products/belts" className="block px-8 py-2.5 text-[13px] font-medium text-gray-700 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>전체보기</Link>
-                          {BELTS_ALL.map((s) => <Link key={s.sub} href={`/products/belts?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{s.name}</Link>)}
+                          <Link href="/products/jewelry" className="block px-8 py-2.5 text-[13px] font-medium text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>쥬얼리/잡화 전체</Link>
+                          {JEWELRY_MEN.map((s) => <Link key={s.sub} href={`/products/jewelry?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>{s.name}</Link>)}
+                          <div className="px-8 py-1.5 text-[11px] font-semibold text-[#555555] uppercase tracking-wide border-t border-[#1a1a1a] mt-1">선글라스</div>
+                          <Link href="/products/sunglasses" className="block px-8 py-2.5 text-[13px] font-medium text-[#aaaaaa] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>전체보기</Link>
+                          {SUNGLASSES_ALL.map((s) => <Link key={s.sub} href={`/products/sunglasses?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>{s.name}</Link>)}
+                          <div className="px-8 py-1.5 text-[11px] font-semibold text-[#555555] uppercase tracking-wide border-t border-[#1a1a1a] mt-1">벨트</div>
+                          <Link href="/products/belts" className="block px-8 py-2.5 text-[13px] font-medium text-[#aaaaaa] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>전체보기</Link>
+                          {BELTS_ALL.map((s) => <Link key={s.sub} href={`/products/belts?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>{s.name}</Link>)}
                         </MobileAccordion>
 
                         {/* 할인상품 */}
                         <MobileAccordion title="할인상품" isOpen={mobileExpanded === "할인상품"} onToggle={() => setMobileExpanded(mobileExpanded === "할인상품" ? null : "할인상품")} special="red">
                           {DISCOUNT_LINKS.map((link) => (
-                            <Link key={link.path} href={link.path} className="block px-8 py-2.5 text-[13px] text-gray-600 hover:text-black hover:bg-gray-100" onClick={closeMobileMenu}>{link.name}</Link>
+                            <Link key={link.path} href={link.path} className="block px-8 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>{link.name}</Link>
                           ))}
                         </MobileAccordion>
 
@@ -976,15 +888,15 @@ export function Header() {
 
                     {/* More links */}
                     <div className="p-4">
-                      <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">더보기</div>
+                      <div className="text-xs font-bold text-[#555555] uppercase tracking-wider mb-3">더보기</div>
                       {sideMenuLinks.map((item) =>
                         item.external ? (
-                          <a key={item.name} href={item.path} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between py-2.5 text-sm text-gray-600 hover:text-black" onClick={closeMobileMenu}>
-                            <span>{item.name}</span><ChevronRight className="w-3.5 h-3.5 text-gray-300" />
+                          <a key={item.name} href={item.path} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between py-2.5 text-sm text-[#888888] hover:text-[#c9a96e]" onClick={closeMobileMenu}>
+                            <span>{item.name}</span><ChevronRight className="w-3.5 h-3.5 text-[#333333]" />
                           </a>
                         ) : (
-                          <Link key={item.name} href={item.path} className="flex items-center justify-between py-2.5 text-sm text-gray-600 hover:text-black" onClick={closeMobileMenu}>
-                            <span>{item.name}</span><ChevronRight className="w-3.5 h-3.5 text-gray-300" />
+                          <Link key={item.name} href={item.path} className="flex items-center justify-between py-2.5 text-sm text-[#888888] hover:text-[#c9a96e]" onClick={closeMobileMenu}>
+                            <span>{item.name}</span><ChevronRight className="w-3.5 h-3.5 text-[#333333]" />
                           </Link>
                         )
                       )}
@@ -993,43 +905,43 @@ export function Header() {
                 </Sheet>
 
                 <Link href="/" className="flex items-center" data-testid="link-home">
-                  <span style={{ letterSpacing: "0.5em", fontWeight: 500, fontSize: "clamp(1.3rem, 2vw, 1.65rem)", color: "#111111", textTransform: "uppercase" }}>velour</span>
+                  <span style={{ letterSpacing: "0.5em", fontWeight: 500, fontSize: "clamp(1.3rem, 2vw, 1.65rem)", color: "#c9a96e", textTransform: "uppercase" }}>velour</span>
                 </Link>
               </div>
 
               {/* Right: icons */}
               <div className="flex flex-col items-end md:flex-row md:items-center gap-0 md:gap-4">
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 text-gray-600 hover:text-black" data-testid="button-search-toggle">
+                  <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 text-[#888888] hover:text-[#c9a96e]" data-testid="button-search-toggle">
                     <Search className="w-5 h-5" />
                   </button>
-                  <Link href="/profile" className="hidden md:block p-2 text-gray-600 hover:text-black" data-testid="link-profile">
+                  <Link href="/profile" className="hidden md:block p-2 text-[#888888] hover:text-[#c9a96e]" data-testid="link-profile">
                     <User className="w-5 h-5" />
                   </Link>
-                  <Link href="/cart" className="relative p-2 text-gray-600 hover:text-black hidden md:block" data-testid="button-cart">
+                  <Link href="/cart" className="relative p-2 text-[#888888] hover:text-[#c9a96e] hidden md:block" data-testid="button-cart">
                     <ShoppingBag className="w-5 h-5" />
                     {count > 0 && (
-                      <span className="absolute top-0 right-0 bg-red-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
+                      <span className="absolute top-0 right-0 bg-[#c9a96e] text-black text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
                         {count > 9 ? "9+" : count}
                       </span>
                     )}
                   </Link>
                 </div>
                 {/* Mobile quick links */}
-                <div className="md:hidden flex items-center gap-1 text-[11px] text-gray-700 pb-1 pr-2">
+                <div className="md:hidden flex items-center gap-1 text-[11px] text-[#888888] pb-1 pr-2">
                   {memberName ? (
-                    <Link href="/profile" className="hover:opacity-70" data-testid="mobile-link-profile">마이페이지</Link>
+                    <Link href="/profile" className="hover:text-[#c9a96e]" data-testid="mobile-link-profile">마이페이지</Link>
                   ) : (
                     <>
-                      <Link href="/login" className="hover:opacity-70" data-testid="mobile-link-login">로그인</Link>
-                      <span className="text-gray-300">|</span>
-                      <Link href="/signup" className="hover:opacity-70" data-testid="mobile-link-signup">회원가입</Link>
-                      <span className="text-gray-300">|</span>
+                      <Link href="/login" className="hover:text-[#c9a96e]" data-testid="mobile-link-login">로그인</Link>
+                      <span className="text-[#333333]">|</span>
+                      <Link href="/signup" className="hover:text-[#c9a96e]" data-testid="mobile-link-signup">회원가입</Link>
+                      <span className="text-[#333333]">|</span>
                     </>
                   )}
-                  <Link href="/cart" className="hover:opacity-70 flex items-center gap-0.5" data-testid="mobile-link-cart">
+                  <Link href="/cart" className="hover:text-[#c9a96e] flex items-center gap-0.5" data-testid="mobile-link-cart">
                     장바구니
-                    {count > 0 && <span className="bg-black text-white text-[9px] w-3.5 h-3.5 flex items-center justify-center rounded-full font-bold">{count > 9 ? "9+" : count}</span>}
+                    {count > 0 && <span className="bg-[#c9a96e] text-black text-[9px] w-3.5 h-3.5 flex items-center justify-center rounded-full font-bold">{count > 9 ? "9+" : count}</span>}
                   </Link>
                 </div>
               </div>
@@ -1038,7 +950,7 @@ export function Header() {
         </div>
 
         {/* ── Desktop mega nav ────────────────────────────────────────────────── */}
-        <nav className="hidden md:block bg-white border-b border-gray-200">
+        <nav className="hidden md:block bg-[#0a0a0a] border-b border-[#1a1a1a]">
           <div className="max-w-[1200px] mx-auto px-4">
             <ul className="flex items-center justify-center gap-0">
               {SIMPLE_NAV.map((item, idx) => {
@@ -1054,7 +966,7 @@ export function Header() {
                   >
                     <Link
                       href={item.path}
-                      className={`flex items-center gap-0.5 px-3 lg:px-4 py-3.5 text-[13px] transition-colors whitespace-nowrap ${specialCls || (active ? "text-black font-semibold" : "text-gray-500 hover:text-black hover:font-medium")}`}
+                      className={`flex items-center gap-0.5 px-3 lg:px-4 py-3.5 text-[13px] transition-colors whitespace-nowrap ${specialCls || (active ? "text-[#c9a96e] font-semibold" : "text-[#888888] hover:text-white hover:font-medium")}`}
                       data-testid={`nav-${item.label}`}
                     >
                       {item.label}
@@ -1081,7 +993,7 @@ export function Header() {
         </nav>
 
         {/* ── Mobile horizontal scroll nav ────────────────────────────────────── */}
-        <div className="md:hidden bg-white border-b border-gray-200 overflow-x-auto scrollbar-hide">
+        <div className="md:hidden bg-[#0a0a0a] border-b border-[#1a1a1a] overflow-x-auto scrollbar-hide">
           <div className="flex items-center px-2 py-2 gap-0 min-w-max">
             {SIMPLE_NAV.map((item, idx) => {
               const { cls: specialCls } = getNavLabel(item.label);
@@ -1089,7 +1001,7 @@ export function Header() {
                 <Link
                   key={idx}
                   href={item.path}
-                  className={`px-3 py-1.5 text-[12px] whitespace-nowrap ${specialCls || (isActive(item.path) ? "text-black font-semibold" : "text-gray-500 hover:text-black")}`}
+                  className={`px-3 py-1.5 text-[12px] whitespace-nowrap ${specialCls || (isActive(item.path) ? "text-[#c9a96e] font-semibold" : "text-[#666666] hover:text-[#c9a96e]")}`}
                   data-testid={`nav-mobile-${item.label}`}
                 >
                   {item.label}
@@ -1101,41 +1013,41 @@ export function Header() {
 
         {/* ── Search overlay ──────────────────────────────────────────────────── */}
         {searchOpen && (
-          <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-md z-50">
+          <div className="absolute top-full left-0 right-0 bg-[#0d0d0d] border-b border-[#1a1a1a] shadow-xl shadow-black/60 z-50">
             <div className="max-w-[600px] mx-auto px-4 py-6">
               <form onSubmit={handleSearch} className="mb-4">
-                <div className="flex border-b-2 border-black">
+                <div className="flex border-b-2 border-[#c9a96e]">
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="검색어를 입력해주세요"
-                    className="flex-1 py-3 text-base focus:outline-none bg-transparent text-gray-900 placeholder:text-gray-400"
+                    className="flex-1 py-3 text-base focus:outline-none bg-transparent text-[#f0f0f0] placeholder:text-[#444444]"
                     autoFocus
                     data-testid="input-search"
                   />
                   <button type="submit" className="px-3">
-                    <Search className="w-5 h-5 text-gray-500" />
+                    <Search className="w-5 h-5 text-[#888888]" />
                   </button>
                 </div>
               </form>
               <div>
-                <p className="text-xs text-gray-400 mb-3 font-medium tracking-widest uppercase">인기 검색어</p>
+                <p className="text-xs text-[#555555] mb-3 font-medium tracking-widest uppercase">인기 검색어</p>
                 <div className="grid grid-cols-2 gap-x-8 gap-y-0">
                   {popularSearches.map((term, i) => (
                     <button
                       key={term}
                       onClick={() => { setLocation(`/search?q=${encodeURIComponent(term)}`); setSearchOpen(false); }}
-                      className="flex items-center gap-3 py-2.5 text-sm text-gray-500 hover:text-black text-left border-b border-gray-100"
+                      className="flex items-center gap-3 py-2.5 text-sm text-[#888888] hover:text-[#c9a96e] text-left border-b border-[#1a1a1a]"
                       data-testid={`search-popular-${i}`}
                     >
-                      <span className="text-sm text-gray-400 font-bold w-5 text-center">{i + 1}</span>
+                      <span className="text-sm text-[#555555] font-bold w-5 text-center">{i + 1}</span>
                       <span>{term}</span>
                     </button>
                   ))}
                 </div>
               </div>
-              <button onClick={() => setSearchOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-black">
+              <button onClick={() => setSearchOpen(false)} className="absolute top-4 right-4 text-[#555555] hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>

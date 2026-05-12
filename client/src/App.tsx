@@ -34,6 +34,7 @@ import OrderInquiry from "@/pages/OrderInquiry";
 import ContentPage from "@/pages/ContentPage";
 import Magazine from "@/pages/Magazine";
 import Labs from "@/pages/Labs";
+import Inspection from "@/pages/Inspection";
 
 function BestPage() { return <ContentPage sectionType="best" />; }
 function LivePage() { return <ContentPage sectionType="live" />; }
@@ -116,6 +117,7 @@ function Router() {
       <Route path="/magazine/:id" component={Magazine} />
       <Route path="/magazine" component={Magazine} />
       <Route path="/labs" component={Labs} />
+      <Route path="/inspection" component={Inspection} />
       <Route component={NotFound} />
     </Switch>
   );

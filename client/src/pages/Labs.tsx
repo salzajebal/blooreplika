@@ -80,7 +80,7 @@ export default function Labs() {
   const contentBlocks = blocks.filter((b: any) => b.blockType !== "hero");
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#0f0f0f]">
       <Header />
       <main>
         {heroBlock ? (
@@ -212,7 +212,7 @@ function ContentBlock({ block }: { block: any }) {
     return (
       <div
         data-testid={`labs-block-${block.id}`}
-        style={{ backgroundColor: block.bgColor || "#ffffff" }}
+        style={{ backgroundColor: block.bgColor || "#0f0f0f" }}
       >
         <div className="max-w-[640px] mx-auto px-5 pt-14 pb-10 md:pt-20 md:pb-14">
           {block.title && (
@@ -256,7 +256,7 @@ function ContentBlock({ block }: { block: any }) {
     <div
       className="py-14 md:py-20"
       style={{
-        backgroundColor: block.bgColor || "#ffffff",
+        backgroundColor: block.bgColor || "#0f0f0f",
         color: txtColor,
       }}
       data-testid={`labs-block-${block.id}`}
@@ -296,12 +296,12 @@ function DefaultContent() {
   return (
     <>
       <div className="max-w-[640px] mx-auto px-5 py-14 md:py-20">
-        <h2 className="text-[20px] md:text-[24px] font-bold text-gray-900 leading-[1.4] tracking-tight mb-1.5">
+        <h2 className="text-[20px] md:text-[24px] font-bold text-[#f0f0f0] leading-[1.4] tracking-tight mb-1.5">
           모든 시작은
           <br />
           <span style={{ color: "#C8A97E" }}>velour LABS</span>에서
         </h2>
-        <p className="text-[13px] md:text-[14px] text-gray-500 leading-[1.9] mt-5">
+        <p className="text-[13px] md:text-[14px] text-[#888888] leading-[1.9] mt-5">
           velour에서 거래되는 모든 상품은 velour LABS를 거쳐갑니다.
           <br /><br />
           최근 업계에서는 상품 사진과 다른 상품들을 보내는 업체들이 많아졌습니다.

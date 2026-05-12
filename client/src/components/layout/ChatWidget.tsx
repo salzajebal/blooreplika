@@ -231,7 +231,7 @@ export function ChatWidget() {
         <button
           data-testid="button-open-chat"
           onClick={() => setIsOpen(true)}
-          className="relative w-14 h-14 sm:w-16 sm:h-16 bg-gray-900 hover:bg-gray-800 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center group touch-manipulation"
+          className="relative w-14 h-14 sm:w-16 sm:h-16 bg-[#1a1a1a] hover:bg-[#222222] border border-[#333333] hover:border-[#c9a96e] rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center group touch-manipulation"
           aria-label="1:1 실시간 상담 열기"
         >
           <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" viewBox="0 0 24 24" fill="currentColor">
@@ -240,8 +240,8 @@ export function ChatWidget() {
           <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white shadow-sm" />
         </button>
         <div className="text-center">
-          <p className="text-[11px] sm:text-xs font-bold text-gray-800 leading-tight whitespace-nowrap">1:1 실시간 상담</p>
-          <p className="text-[10px] text-gray-500 leading-tight whitespace-nowrap">눌러서 상담 시작</p>
+          <p className="text-[11px] sm:text-xs font-bold text-[#c9a96e] leading-tight whitespace-nowrap">1:1 실시간 상담</p>
+          <p className="text-[10px] text-[#555555] leading-tight whitespace-nowrap">눌러서 상담 시작</p>
         </div>
       </div>
     );
@@ -255,7 +255,7 @@ export function ChatWidget() {
       <div className="fixed bottom-20 right-3 sm:bottom-6 sm:right-6 z-50">
         <div
           onClick={() => setIsMinimized(false)}
-          className="bg-gray-900 rounded-2xl px-4 py-3 shadow-xl cursor-pointer flex items-center gap-2.5 hover:bg-gray-800 transition-all touch-manipulation"
+          className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-4 py-3 shadow-xl cursor-pointer flex items-center gap-2.5 hover:border-[#c9a96e] transition-all touch-manipulation"
         >
           <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
             <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
@@ -278,74 +278,74 @@ export function ChatWidget() {
     return (
       <div
         data-testid="chat-widget-login-required"
-        className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] sm:max-w-[calc(100vw-48px)] bg-white sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col safe-area-bottom"
+        className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] sm:max-w-[calc(100vw-48px)] bg-[#111111] sm:rounded-2xl shadow-2xl shadow-black/60 overflow-hidden flex flex-col safe-area-bottom border border-[#2a2a2a]"
         style={{ height: "min(65vh, 480px)", maxHeight: "100dvh" }}
       >
         {/* 헤더 */}
-        <div className="bg-gray-900 p-4 flex items-center justify-between flex-shrink-0">
+        <div className="bg-[#0a0a0a] p-4 flex items-center justify-between flex-shrink-0 border-b border-[#2a2a2a]">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center">
-              <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+            <div className="w-9 h-9 bg-[#c9a96e]/10 rounded-xl flex items-center justify-center">
+              <svg className="w-5 h-5 text-[#c9a96e]" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
               </svg>
             </div>
             <div>
-              <h3 className="font-bold text-white text-sm sm:text-base">1:1 실시간 상담</h3>
-              <p className="text-xs text-white/60">velour 고객 서비스</p>
+              <h3 className="font-bold text-[#f0f0f0] text-sm sm:text-base">1:1 실시간 상담</h3>
+              <p className="text-xs text-[#555555]">velour 고객 서비스</p>
             </div>
           </div>
           <button data-testid="button-close-chat" onClick={closeChat}
-            className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors touch-manipulation">
-            <X className="w-4 h-4 text-white" />
+            className="w-8 h-8 rounded-lg hover:bg-[#1a1a1a] flex items-center justify-center transition-colors touch-manipulation">
+            <X className="w-4 h-4 text-[#888888]" />
           </button>
         </div>
 
         <div className="flex-1 p-6 flex flex-col items-center justify-center gap-4">
-          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mb-1">
-            <svg className="w-9 h-9 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+          <div className="w-16 h-16 bg-[#1a1a1a] rounded-2xl flex items-center justify-center mb-1">
+            <svg className="w-9 h-9 text-[#c9a96e]" viewBox="0 0 24 24" fill="currentColor">
               <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
             </svg>
           </div>
           <div className="text-center mb-2">
-            <h4 className="font-bold text-gray-900 text-lg mb-1">상담 방법을 선택해주세요</h4>
-            <p className="text-sm text-gray-500">회원 로그인 또는 비회원으로도 상담하실 수 있습니다</p>
+            <h4 className="font-bold text-[#f0f0f0] text-lg mb-1">상담 방법을 선택해주세요</h4>
+            <p className="text-sm text-[#888888]">회원 로그인 또는 비회원으로도 상담하실 수 있습니다</p>
           </div>
 
           {/* 회원 로그인 버튼 */}
           <button
             data-testid="button-go-to-login"
             onClick={goToLogin}
-            className="w-full flex items-center justify-between bg-gray-900 hover:bg-gray-800 text-white px-5 py-4 rounded-xl transition-colors touch-manipulation"
+            className="w-full flex items-center justify-between bg-[#c9a96e] hover:bg-[#b8955a] text-black px-5 py-4 rounded-xl transition-colors touch-manipulation"
           >
             <div className="flex items-center gap-3">
               <LogIn className="w-5 h-5" />
               <div className="text-left">
                 <p className="font-semibold text-sm">회원 로그인 후 상담</p>
-                <p className="text-xs text-white/60">상담 내역 저장 및 이어서 상담</p>
+                <p className="text-xs text-black/60">상담 내역 저장 및 이어서 상담</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-white/60" />
+            <ChevronRight className="w-4 h-4 text-black/60" />
           </button>
 
           {/* 비회원 상담 버튼 */}
           <button
             data-testid="button-guest-chat"
             onClick={() => setChatMode("guest")}
-            className="w-full flex items-center justify-between bg-white border-2 border-gray-200 hover:border-gray-400 text-gray-800 px-5 py-4 rounded-xl transition-colors touch-manipulation"
+            className="w-full flex items-center justify-between bg-[#1a1a1a] border border-[#333333] hover:border-[#c9a96e] text-[#f0f0f0] px-5 py-4 rounded-xl transition-colors touch-manipulation"
           >
             <div className="flex items-center gap-3">
-              <UserCheck className="w-5 h-5 text-gray-600" />
+              <UserCheck className="w-5 h-5 text-[#c9a96e]" />
               <div className="text-left">
                 <p className="font-semibold text-sm">비회원 상담</p>
-                <p className="text-xs text-gray-400">이름만 입력하고 바로 상담 시작</p>
+                <p className="text-xs text-[#888888]">이름만 입력하고 바로 상담 시작</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
+            <ChevronRight className="w-4 h-4 text-[#555555]" />
           </button>
 
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-[#555555] mt-1">
             아직 회원이 아니신가요?{" "}
-            <button onClick={() => { setIsOpen(false); navigate("/signup"); }} className="text-gray-700 underline">
+            <button onClick={() => { setIsOpen(false); navigate("/signup"); }} className="text-[#c9a96e] underline">
               회원가입
             </button>
           </p>
@@ -361,34 +361,34 @@ export function ChatWidget() {
     return (
       <div
         data-testid="chat-widget-guest-name"
-        className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] sm:max-w-[calc(100vw-48px)] bg-white sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col safe-area-bottom"
+        className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] sm:max-w-[calc(100vw-48px)] bg-[#111111] sm:rounded-2xl shadow-2xl shadow-black/60 overflow-hidden flex flex-col safe-area-bottom border border-[#2a2a2a]"
         style={{ height: "min(55vh, 420px)", maxHeight: "100dvh" }}
       >
-        <div className="bg-gray-900 p-4 flex items-center justify-between flex-shrink-0">
+        <div className="bg-[#0a0a0a] p-4 flex items-center justify-between flex-shrink-0 border-b border-[#2a2a2a]">
           <div className="flex items-center gap-3">
-            <button onClick={() => setChatMode(null)} className="w-7 h-7 rounded-lg hover:bg-white/10 flex items-center justify-center">
-              <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <button onClick={() => setChatMode(null)} className="w-7 h-7 rounded-lg hover:bg-[#1a1a1a] flex items-center justify-center">
+              <svg className="w-4 h-4 text-[#888888]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <div>
-              <h3 className="font-bold text-white text-sm sm:text-base">비회원 상담</h3>
-              <p className="text-xs text-white/60">이름을 입력해주세요</p>
+              <h3 className="font-bold text-[#f0f0f0] text-sm sm:text-base">비회원 상담</h3>
+              <p className="text-xs text-[#555555]">이름을 입력해주세요</p>
             </div>
           </div>
           <button data-testid="button-close-chat" onClick={closeChat}
-            className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors touch-manipulation">
-            <X className="w-4 h-4 text-white" />
+            className="w-8 h-8 rounded-lg hover:bg-[#1a1a1a] flex items-center justify-center transition-colors touch-manipulation">
+            <X className="w-4 h-4 text-[#888888]" />
           </button>
         </div>
 
         <div className="flex-1 p-6 flex flex-col items-center justify-center gap-5">
-          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center">
-            <UserCheck className="w-9 h-9 text-gray-600" />
+          <div className="w-16 h-16 bg-[#1a1a1a] rounded-2xl flex items-center justify-center">
+            <UserCheck className="w-9 h-9 text-[#c9a96e]" />
           </div>
           <div className="text-center">
-            <h4 className="font-bold text-gray-900 text-lg mb-1">비회원 상담 시작</h4>
-            <p className="text-sm text-gray-500">상담에 사용할 이름을 입력해주세요</p>
+            <h4 className="font-bold text-[#f0f0f0] text-lg mb-1">비회원 상담 시작</h4>
+            <p className="text-sm text-[#888888]">상담에 사용할 이름을 입력해주세요</p>
           </div>
 
           <div className="w-full space-y-3">
@@ -398,18 +398,18 @@ export function ChatWidget() {
               value={guestNameInput}
               onChange={(e) => { setGuestNameInput(e.target.value); setGuestNameError(""); }}
               onKeyDown={(e) => { if (e.key === "Enter") startGuestChat(); }}
-              className="w-full rounded-xl border-gray-200 focus-visible:ring-gray-900 text-center text-base"
+              className="w-full rounded-xl border-[#333333] bg-[#0f0f0f] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0 text-center text-base"
               autoFocus
               maxLength={20}
             />
             {guestNameError && (
-              <p className="text-xs text-red-500 text-center">{guestNameError}</p>
+              <p className="text-xs text-red-400 text-center">{guestNameError}</p>
             )}
             <Button
               data-testid="button-start-guest-chat"
               onClick={startGuestChat}
               disabled={guestStarting || !guestNameInput.trim()}
-              className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-xl h-12 font-semibold touch-manipulation"
+              className="w-full bg-[#c9a96e] hover:bg-[#b8955a] text-black rounded-xl h-12 font-semibold touch-manipulation disabled:opacity-50"
             >
               {guestStarting ? "상담 시작 중..." : "상담 시작하기"}
             </Button>
@@ -425,76 +425,76 @@ export function ChatWidget() {
   return (
     <div
       data-testid="chat-widget"
-      className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] sm:max-w-[calc(100vw-48px)] bg-white sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col safe-area-bottom"
+      className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] sm:max-w-[calc(100vw-48px)] bg-[#111111] sm:rounded-2xl shadow-2xl shadow-black/60 overflow-hidden flex flex-col safe-area-bottom border border-[#2a2a2a]"
       style={{ height: "min(100vh, 540px)", maxHeight: "100dvh" }}
     >
       {/* 헤더 */}
-      <div className="bg-gray-900 p-3 sm:p-4 flex items-center justify-between flex-shrink-0">
+      <div className="bg-[#0a0a0a] p-3 sm:p-4 flex items-center justify-between flex-shrink-0 border-b border-[#2a2a2a]">
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="relative w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center">
-            <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+          <div className="relative w-9 h-9 bg-[#c9a96e]/10 rounded-xl flex items-center justify-center">
+            <svg className="w-5 h-5 text-[#c9a96e]" viewBox="0 0 24 24" fill="currentColor">
               <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
             </svg>
-            <span className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-gray-900 ${isConnected ? "bg-green-400" : "bg-gray-400"}`} />
+            <span className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0a0a0a] ${isConnected ? "bg-green-400" : "bg-[#555555]"}`} />
           </div>
           <div>
-            <h3 className="font-bold text-white text-sm sm:text-base">1:1 실시간 상담</h3>
-            <p className="text-xs text-white/60">
+            <h3 className="font-bold text-[#f0f0f0] text-sm sm:text-base">1:1 실시간 상담</h3>
+            <p className="text-xs text-[#555555]">
               {isConnected ? "상담원 연결됨" : loading ? "연결 중..." : "대기 중"}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-1">
           <button data-testid="button-minimize-chat" onClick={() => setIsMinimized(true)}
-            className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors touch-manipulation">
-            <Minimize2 className="w-4 h-4 text-white" />
+            className="w-8 h-8 rounded-lg hover:bg-[#1a1a1a] flex items-center justify-center transition-colors touch-manipulation">
+            <Minimize2 className="w-4 h-4 text-[#888888]" />
           </button>
           <button data-testid="button-close-chat" onClick={closeChat}
-            className="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center transition-colors touch-manipulation">
-            <X className="w-4 h-4 text-white" />
+            className="w-8 h-8 rounded-lg hover:bg-[#1a1a1a] flex items-center justify-center transition-colors touch-manipulation">
+            <X className="w-4 h-4 text-[#888888]" />
           </button>
         </div>
       </div>
 
       {/* 사용자 안내 바 */}
-      <div className="bg-gray-50 px-4 py-2 border-b border-gray-100 flex-shrink-0 flex items-center justify-between">
-        <p className="text-xs text-gray-500">
-          <span className="font-semibold text-gray-900">{displayName}</span>
-          {chatMode === "guest" && <span className="ml-1 text-[10px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-medium">비회원</span>}
+      <div className="bg-[#0d0d0d] px-4 py-2 border-b border-[#1e1e1e] flex-shrink-0 flex items-center justify-between">
+        <p className="text-xs text-[#888888]">
+          <span className="font-semibold text-[#c9a96e]">{displayName}</span>
+          {chatMode === "guest" && <span className="ml-1 text-[10px] bg-orange-900/30 text-orange-400 px-1.5 py-0.5 rounded font-medium">비회원</span>}
           님, 무엇을 도와드릴까요?
         </p>
         {chatMode === "guest" && (
-          <button onClick={resetGuestSession} className="text-[10px] text-gray-400 hover:text-gray-600 underline">
+          <button onClick={resetGuestSession} className="text-[10px] text-[#555555] hover:text-[#888888] underline">
             상담 초기화
           </button>
         )}
       </div>
 
       {/* 메시지 영역 */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 bg-[#0d0d0d]">
         <div className="flex justify-start">
-          <div className="max-w-[85%] bg-white rounded-2xl rounded-tl-sm px-4 py-2.5 shadow-sm border border-gray-100">
-            <p className="text-sm text-gray-900">안녕하세요! velour 상담원입니다. 무엇을 도와드릴까요?</p>
-            <p className="text-[10px] text-gray-400 mt-1">자동응답</p>
+          <div className="max-w-[85%] bg-[#1a1a1a] rounded-2xl rounded-tl-sm px-4 py-2.5 border border-[#2a2a2a]">
+            <p className="text-sm text-[#f0f0f0]">안녕하세요! velour 상담원입니다. 무엇을 도와드릴까요?</p>
+            <p className="text-[10px] text-[#555555] mt-1">자동응답</p>
           </div>
         </div>
 
         {loading && messages.length === 0 && (
           <div className="flex justify-center py-4">
-            <div className="animate-spin w-5 h-5 border-2 border-gray-600 border-t-transparent rounded-full" />
+            <div className="animate-spin w-5 h-5 border-2 border-[#c9a96e] border-t-transparent rounded-full" />
           </div>
         )}
 
         {messages.map((msg) => (
           <div key={msg.id} data-testid={`user-chat-message-${msg.id}`}
             className={`flex ${msg.senderType === "user" ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 shadow-sm ${
+            <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
               msg.senderType === "user"
-                ? "bg-gray-900 text-white rounded-tr-sm"
-                : "bg-white text-gray-900 border border-gray-100 rounded-tl-sm"
+                ? "bg-[#c9a96e] text-black rounded-tr-sm"
+                : "bg-[#1a1a1a] text-[#f0f0f0] border border-[#2a2a2a] rounded-tl-sm"
             }`}>
               <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-              <p className={`text-[10px] mt-1 ${msg.senderType === "user" ? "text-white/50" : "text-gray-400"}`}>
+              <p className={`text-[10px] mt-1 ${msg.senderType === "user" ? "text-black/50" : "text-[#555555]"}`}>
                 {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString("ko-KR") : ""}
               </p>
             </div>
@@ -504,7 +504,7 @@ export function ChatWidget() {
       </div>
 
       {/* 입력창 */}
-      <div className="p-3 sm:p-4 border-t border-gray-200 bg-white flex-shrink-0">
+      <div className="p-3 sm:p-4 border-t border-[#2a2a2a] bg-[#0a0a0a] flex-shrink-0">
         <div className="flex gap-2">
           <Input
             data-testid="input-user-message"
@@ -512,18 +512,18 @@ export function ChatWidget() {
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="메시지를 입력하세요..."
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-            className="flex-1 text-sm rounded-xl border-gray-200 focus-visible:ring-gray-900"
+            className="flex-1 text-sm rounded-xl border-[#333333] bg-[#1a1a1a] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0"
           />
           <Button
             data-testid="button-send-user-message"
             onClick={sendMessage}
             disabled={!newMessage.trim() || !isConnected}
-            className="bg-gray-900 hover:bg-gray-800 text-white rounded-xl touch-manipulation px-3 sm:px-4"
+            className="bg-[#c9a96e] hover:bg-[#b8955a] text-black rounded-xl touch-manipulation px-3 sm:px-4 disabled:opacity-50"
           >
             <Send className="w-4 h-4" />
           </Button>
         </div>
-        <p className="text-[10px] text-gray-400 text-center mt-2">
+        <p className="text-[10px] text-[#444444] text-center mt-2">
           상담 운영시간: 평일 10:00 ~ 18:00
         </p>
       </div>

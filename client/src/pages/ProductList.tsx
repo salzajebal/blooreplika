@@ -33,13 +33,13 @@ function LazyProductImage({ src, alt }: { src: string; alt: string }) {
 
 function ProductSkeleton() {
   return (
-    <div className="bg-white border border-gray-200 animate-pulse">
-      <div className="aspect-square bg-gray-200" />
+    <div className="bg-[#161616] border border-[#2a2a2a] animate-pulse">
+      <div className="aspect-square bg-[#1a1a1a]" />
       <div className="p-3">
-        <div className="h-3 bg-gray-200 rounded w-16 mb-2" />
-        <div className="h-4 bg-gray-200 rounded w-full mb-2" />
-        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-        <div className="h-5 bg-gray-200 rounded w-24" />
+        <div className="h-3 bg-[#222222] rounded w-16 mb-2" />
+        <div className="h-4 bg-[#222222] rounded w-full mb-2" />
+        <div className="h-4 bg-[#222222] rounded w-3/4 mb-2" />
+        <div className="h-5 bg-[#222222] rounded w-24" />
       </div>
     </div>
   );
@@ -477,12 +477,12 @@ export default function ProductList() {
             <button
               onClick={() => toggleDropdown("category")}
               className={cn(
-                "flex items-center gap-1.5 px-4 py-2 text-sm rounded-full border transition-colors",
+                "flex items-center gap-1.5 px-4 py-2 text-sm border transition-colors",
                 subnameParam
-                  ? "bg-black text-white border-black"
+                  ? "bg-[#c9a96e] text-black border-[#c9a96e]"
                   : openDropdown === "category"
-                    ? "border-black text-black"
-                    : "border-gray-200 text-gray-500 hover:border-gray-400"
+                    ? "border-[#c9a96e] text-[#c9a96e] bg-transparent"
+                    : "border-[#2a2a2a] text-[#888888] bg-transparent hover:border-[#555555]"
               )}
               data-testid="button-filter-category"
             >
@@ -493,32 +493,21 @@ export default function ProductList() {
 
             {openDropdown === "category" && (
               <div
-                className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-[200] min-w-[200px] max-h-[60vh] overflow-y-auto scroll-smooth"
-                style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin", scrollbarColor: "#ccc transparent", touchAction: "pan-y" }}
+                className="absolute top-full left-0 mt-2 bg-[#111111] border border-[#2a2a2a] shadow-xl shadow-black/50 z-[200] min-w-[200px] max-h-[60vh] overflow-y-auto scroll-smooth"
+                style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin", scrollbarColor: "#333 transparent", touchAction: "pan-y" }}
                 onTouchStart={(e) => e.stopPropagation()}
                 onTouchMove={(e) => e.stopPropagation()}
               >
-                <button
-                  onClick={clearSubname}
-                  className={cn(
-                    "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
-                    !subnameParam && "font-bold text-black"
-                  )}
-                  data-testid="button-subcat-all"
-                >
+                <button onClick={clearSubname}
+                  className={cn("w-full text-left px-4 py-2.5 text-sm hover:bg-[#1a1a1a] flex items-center justify-between", !subnameParam ? "font-bold text-[#c9a96e]" : "text-[#888888]")}
+                  data-testid="button-subcat-all">
                   전체
                   {!subnameParam && <Check className="w-4 h-4" />}
                 </button>
                 {dedupedSubcats.map((sub: any) => (
-                  <button
-                    key={sub.slug || sub.id}
-                    onClick={() => setSubname(sub.name)}
-                    className={cn(
-                      "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
-                      subnameParam === sub.name && "font-bold text-black"
-                    )}
-                    data-testid={`button-subcat-${sub.slug || sub.id}`}
-                  >
+                  <button key={sub.slug || sub.id} onClick={() => setSubname(sub.name)}
+                    className={cn("w-full text-left px-4 py-2.5 text-sm hover:bg-[#1a1a1a] flex items-center justify-between", subnameParam === sub.name ? "font-bold text-[#c9a96e]" : "text-[#888888]")}
+                    data-testid={`button-subcat-${sub.slug || sub.id}`}>
                     {sub.name}
                     {subnameParam === sub.name && <Check className="w-4 h-4" />}
                   </button>
@@ -533,12 +522,12 @@ export default function ProductList() {
         <button
           onClick={() => toggleDropdown("brand")}
           className={cn(
-            "flex items-center gap-1.5 px-4 py-2 text-sm rounded-full border transition-colors",
+            "flex items-center gap-1.5 px-4 py-2 text-sm border transition-colors",
             selectedBrand
-              ? "bg-black text-white border-black"
+              ? "bg-[#c9a96e] text-black border-[#c9a96e]"
               : openDropdown === "brand"
-                ? "border-black text-black"
-                : "border-gray-200 text-gray-500 hover:border-gray-400"
+                ? "border-[#c9a96e] text-[#c9a96e] bg-transparent"
+                : "border-[#2a2a2a] text-[#888888] bg-transparent hover:border-[#555555]"
           )}
           data-testid="button-filter-brand"
         >
@@ -548,53 +537,34 @@ export default function ProductList() {
         </button>
 
         {openDropdown === "brand" && (
-          <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[260px] max-h-[400px] overflow-hidden flex flex-col">
-            <div className="p-3 border-b">
+          <div className="absolute top-full left-0 mt-2 bg-[#111111] border border-[#2a2a2a] shadow-xl shadow-black/50 z-50 min-w-[260px] max-h-[400px] overflow-hidden flex flex-col">
+            <div className="p-3 border-b border-[#1a1a1a]">
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="브랜드 검색..."
-                  value={brandSearch}
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#555555]" />
+                <input type="text" placeholder="브랜드 검색..." value={brandSearch}
                   onChange={(e) => setBrandSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-black"
-                  data-testid="input-brand-search"
-                  autoFocus
-                />
+                  className="w-full pl-8 pr-3 py-2 text-sm border border-[#333333] bg-[#0d0d0d] text-[#f0f0f0] placeholder:text-[#444444] focus:outline-none focus:border-[#c9a96e]"
+                  data-testid="input-brand-search" autoFocus />
               </div>
             </div>
-            <div
-              className="overflow-y-auto max-h-[320px] scroll-smooth"
-              style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin", scrollbarColor: "#ccc transparent", touchAction: "pan-y" }}
-              onTouchStart={(e) => e.stopPropagation()}
-              onTouchMove={(e) => e.stopPropagation()}
-            >
+            <div className="overflow-y-auto max-h-[320px] scroll-smooth"
+              style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch", scrollbarWidth: "thin", scrollbarColor: "#333 transparent", touchAction: "pan-y" }}
+              onTouchStart={(e) => e.stopPropagation()} onTouchMove={(e) => e.stopPropagation()}>
               {!brandSearch && (
-                <button
-                  onClick={() => { setSelectedBrand(null); setOpenDropdown(null); setBrandSearch(""); }}
-                  className={cn(
-                    "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
-                    !selectedBrand && "font-bold text-black"
-                  )}
-                  data-testid="button-brand-all"
-                >
+                <button onClick={() => { setSelectedBrand(null); setOpenDropdown(null); setBrandSearch(""); }}
+                  className={cn("w-full text-left px-4 py-2.5 text-sm hover:bg-[#1a1a1a] flex items-center justify-between", !selectedBrand ? "font-bold text-[#c9a96e]" : "text-[#888888]")}
+                  data-testid="button-brand-all">
                   전체
                   {!selectedBrand && <Check className="w-4 h-4" />}
                 </button>
               )}
               {brandsWithProducts.map((brand: any) => (
-                <button
-                  key={brand.id}
-                  onClick={() => { setSelectedBrand(brand.id); setOpenDropdown(null); setBrandSearch(""); }}
-                  className={cn(
-                    "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
-                    selectedBrand === brand.id && "font-bold text-black"
-                  )}
-                  data-testid={`button-brand-${brand.id}`}
-                >
+                <button key={brand.id} onClick={() => { setSelectedBrand(brand.id); setOpenDropdown(null); setBrandSearch(""); }}
+                  className={cn("w-full text-left px-4 py-2.5 text-sm hover:bg-[#1a1a1a] flex items-center justify-between", selectedBrand === brand.id ? "font-bold text-[#c9a96e]" : "text-[#888888]")}
+                  data-testid={`button-brand-${brand.id}`}>
                   <span className="flex items-center gap-1">
                     {brand.name}
-                    {brand.productCount > 0 && <span className="text-xs text-gray-400">({brand.productCount})</span>}
+                    {brand.productCount > 0 && <span className="text-xs text-[#555555]">({brand.productCount})</span>}
                   </span>
                   {selectedBrand === brand.id && <Check className="w-4 h-4" />}
                 </button>
@@ -608,12 +578,12 @@ export default function ProductList() {
         <button
           onClick={() => toggleDropdown("gender")}
           className={cn(
-            "flex items-center gap-1.5 px-4 py-2 text-sm rounded-full border transition-colors",
+            "flex items-center gap-1.5 px-4 py-2 text-sm border transition-colors",
             (selectedGender || genderFromCategory || golfSubGender)
-              ? "bg-black text-white border-black"
+              ? "bg-[#c9a96e] text-black border-[#c9a96e]"
               : openDropdown === "gender"
-                ? "border-black text-black"
-                : "border-gray-200 text-gray-500 hover:border-gray-400"
+                ? "border-[#c9a96e] text-[#c9a96e] bg-transparent"
+                : "border-[#2a2a2a] text-[#888888] bg-transparent hover:border-[#555555]"
           )}
           data-testid="button-filter-gender"
         >
@@ -623,36 +593,25 @@ export default function ProductList() {
         </button>
 
         {openDropdown === "gender" && (
-          <div className="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 min-w-[140px]">
+          <div className="absolute top-full left-0 mt-2 bg-[#111111] border border-[#2a2a2a] shadow-xl shadow-black/50 z-50 min-w-[140px]">
             {GENDER_OPTIONS.map(opt => {
               const effectiveGenderVal = selectedGender !== null ? selectedGender : (golfSubGender || genderFromCategory);
               const isActive = effectiveGenderVal === opt.value;
               return (
-                <button
-                  key={opt.label}
+                <button key={opt.label}
                   onClick={() => {
                     if (opt.value === null && isGenderCategory) {
                       navigate("/products");
                     } else if (isGolfGenderSub(subcategoryId)) {
-                      // 골프 성별 전용 sub: URL의 sub 코드를 매핑하여 이동
                       const currentPath = location.split('?')[0];
                       const currentParams = new URLSearchParams(searchString);
                       if (opt.value === '여성') {
                         const mapped = GOLF_MEN_TO_WOMEN[subcategoryId!];
-                        if (mapped !== undefined && mapped !== null) {
-                          currentParams.set('sub', mapped);
-                        } else {
-                          currentParams.delete('sub');
-                        }
+                        if (mapped !== undefined && mapped !== null) { currentParams.set('sub', mapped); } else { currentParams.delete('sub'); }
                       } else if (opt.value === '남성') {
                         const mapped = GOLF_WOMEN_TO_MEN[subcategoryId!];
-                        if (mapped !== undefined && mapped !== null) {
-                          currentParams.set('sub', mapped);
-                        } else {
-                          currentParams.delete('sub');
-                        }
+                        if (mapped !== undefined && mapped !== null) { currentParams.set('sub', mapped); } else { currentParams.delete('sub'); }
                       } else {
-                        // 전체: 현재 섹션 prefix로 이동 (701xxx→7010, 702xxx→7020)
                         if (subcategoryId!.startsWith('701')) currentParams.set('sub', '7010');
                         else if (subcategoryId!.startsWith('702')) currentParams.set('sub', '7020');
                         else currentParams.delete('sub');
@@ -670,12 +629,8 @@ export default function ProductList() {
                     }
                     setOpenDropdown(null);
                   }}
-                  className={cn(
-                    "w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 flex items-center justify-between",
-                    isActive && "font-bold text-black"
-                  )}
-                  data-testid={`button-gender-${opt.label}`}
-                >
+                  className={cn("w-full text-left px-4 py-2.5 text-sm hover:bg-[#1a1a1a] flex items-center justify-between", isActive ? "font-bold text-[#c9a96e]" : "text-[#888888]")}
+                  data-testid={`button-gender-${opt.label}`}>
                   {opt.label}
                   {isActive && <Check className="w-4 h-4" />}
                 </button>
@@ -703,7 +658,7 @@ export default function ProductList() {
               navigate(`${currentPath}${currentParams.toString() ? '?' + currentParams.toString() : ''}`);
             }
           }}
-          className="flex items-center gap-1 px-3 py-2 text-sm text-gray-500 hover:text-black transition-colors"
+          className="flex items-center gap-1 px-3 py-2 text-sm text-[#888888] hover:text-white transition-colors"
           data-testid="button-clear-filters"
         >
           <X className="w-3.5 h-3.5" />
@@ -714,7 +669,7 @@ export default function ProductList() {
   );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#0f0f0f]">
       <Header />
       
       <main className="container mx-auto px-4 py-8 pb-24 md:pb-8">
@@ -749,7 +704,7 @@ export default function ProductList() {
 
         {/* Simple filter bar */}
         <div className="mb-4">
-          <div className="flex items-center gap-2 pb-3 border-b flex-wrap">
+          <div className="flex items-center gap-2 pb-3 border-b border-[#2a2a2a] flex-wrap">
             <FilterDropdownButtons />
           </div>
 
@@ -757,7 +712,7 @@ export default function ProductList() {
           {(selectedBrandName || selectedGender || subnameParam || golfSubGender) && (
             <div className="flex items-center gap-2 mt-3 flex-wrap">
               {subnameParam && (
-                <span className="inline-flex items-center gap-1.5 bg-gray-100 text-sm px-3 py-1.5 rounded-full">
+                <span className="inline-flex items-center gap-1.5 bg-[#1c1c1c] text-[#f0f0f0] border border-[#333333] text-sm px-3 py-1.5">
                   소분류: {subnameParam}
                   <button
                     onClick={() => {
@@ -766,30 +721,30 @@ export default function ProductList() {
                       p.delete('subname');
                       navigate(`${base}${p.toString() ? '?' + p.toString() : ''}`);
                     }}
-                    className="hover:text-black"
+                    className="hover:text-[#c9a96e]"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </span>
               )}
               {selectedBrandName && (
-                <span className="inline-flex items-center gap-1.5 bg-gray-100 text-sm px-3 py-1.5 rounded-full">
+                <span className="inline-flex items-center gap-1.5 bg-[#1c1c1c] text-[#f0f0f0] border border-[#333333] text-sm px-3 py-1.5">
                   브랜드: {selectedBrandName}
-                  <button onClick={() => setSelectedBrand(null)} className="hover:text-black">
+                  <button onClick={() => setSelectedBrand(null)} className="hover:text-[#c9a96e]">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </span>
               )}
               {selectedGender && (
-                <span className="inline-flex items-center gap-1.5 bg-gray-100 text-sm px-3 py-1.5 rounded-full">
+                <span className="inline-flex items-center gap-1.5 bg-[#1c1c1c] text-[#f0f0f0] border border-[#333333] text-sm px-3 py-1.5">
                   성별: {selectedGender}
-                  <button onClick={() => setSelectedGender(null)} className="hover:text-black">
+                  <button onClick={() => setSelectedGender(null)} className="hover:text-[#c9a96e]">
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </span>
               )}
               {golfSubGender && !selectedGender && (
-                <span className="inline-flex items-center gap-1.5 bg-gray-100 text-sm px-3 py-1.5 rounded-full">
+                <span className="inline-flex items-center gap-1.5 bg-[#1c1c1c] text-[#f0f0f0] border border-[#333333] text-sm px-3 py-1.5">
                   성별: {golfSubGender}
                   <button
                     onClick={() => {
@@ -798,7 +753,7 @@ export default function ProductList() {
                       currentParams.delete('sub');
                       navigate(`${currentPath}${currentParams.toString() ? '?' + currentParams.toString() : ''}`);
                     }}
-                    className="hover:text-black"
+                    className="hover:text-[#c9a96e]"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -811,12 +766,12 @@ export default function ProductList() {
         <div>
           <div>
 
-            <div className="flex items-center justify-between mb-6 pb-4 border-b">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#2a2a2a]">
               <div className="flex items-center gap-4">
-                <span className="text-sm text-gray-500">
-                  총 <span className="font-bold text-black" data-testid="text-product-count">{total.toLocaleString()}</span>개
+                <span className="text-sm text-[#888888]">
+                  총 <span className="font-bold text-white" data-testid="text-product-count">{total.toLocaleString()}</span>개
                   {totalPages > 1 && (
-                    <span className="ml-1 text-gray-400">(페이지 {currentPage}/{totalPages})</span>
+                    <span className="ml-1 text-[#555555]">(페이지 {currentPage}/{totalPages})</span>
                   )}
                 </span>
               </div>
@@ -825,7 +780,7 @@ export default function ProductList() {
                 <select 
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortOption)}
-                  className="text-sm border rounded-md px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-black"
+                  className="text-sm border border-[#333333] bg-[#1a1a1a] text-[#aaaaaa] px-3 py-1.5 focus:outline-none focus:border-[#c9a96e]"
                   data-testid="select-sort"
                 >
                   <option value="newest">신상품순</option>
@@ -834,17 +789,17 @@ export default function ProductList() {
                   <option value="popular">인기순</option>
                 </select>
                 
-                <div className="hidden sm:flex items-center gap-1 border rounded-md">
+                <div className="hidden sm:flex items-center gap-1 border border-[#333333]">
                   <button 
                     onClick={() => setViewMode("grid")}
-                    className={cn("p-1.5", viewMode === "grid" ? "bg-black text-white" : "text-gray-400")}
+                    className={cn("p-1.5", viewMode === "grid" ? "bg-[#c9a96e] text-black" : "text-[#555555] hover:text-white")}
                     data-testid="button-view-grid"
                   >
                     <Grid className="w-4 h-4" />
                   </button>
                   <button 
                     onClick={() => setViewMode("list")}
-                    className={cn("p-1.5", viewMode === "list" ? "bg-black text-white" : "text-gray-400")}
+                    className={cn("p-1.5", viewMode === "list" ? "bg-[#c9a96e] text-black" : "text-[#555555] hover:text-white")}
                     data-testid="button-view-list"
                   >
                     <List className="w-4 h-4" />
@@ -869,8 +824,8 @@ export default function ProductList() {
               <>
               {showLoadingOverlay && (
                 <div className="flex items-center justify-center py-2 mb-4">
-                  <div className="animate-spin w-5 h-5 border-2 border-black border-t-transparent rounded-full mr-2"></div>
-                  <span className="text-sm text-gray-500">불러오는 중...</span>
+                  <div className="animate-spin w-5 h-5 border-2 border-[#c9a96e] border-t-transparent rounded-full mr-2"></div>
+                  <span className="text-sm text-[#888888]">불러오는 중...</span>
                 </div>
               )}
               <div className={cn(
@@ -894,13 +849,13 @@ export default function ProductList() {
                     key={product.id}
                     href={`/product/${product.id}`}
                     className={cn(
-                      "group bg-white border border-gray-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden",
-                      viewMode === "list" && "flex gap-4"
+                      "group relative overflow-hidden block",
+                      viewMode === "list" && "flex bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#c9a96e] transition-colors"
                     )}
                     data-testid={`card-product-${product.id}`}
                   >
                     <div className={cn(
-                      "bg-gray-50 relative overflow-hidden",
+                      "relative overflow-hidden bg-[#1a1a1a]",
                       viewMode === "grid" ? "aspect-[4/5]" : "w-32 h-36 flex-shrink-0"
                     )}>
                       <LazyProductImage
@@ -909,13 +864,53 @@ export default function ProductList() {
                       />
 
                       {product.isSoldOut && (
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
-                          <span className="text-white text-xs font-bold px-3 py-1 bg-black/60">SOLD OUT</span>
+                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-20">
+                          <span className="text-white text-xs font-bold px-3 py-1 border border-white/50 tracking-widest">SOLD OUT</span>
+                        </div>
+                      )}
+
+                      {viewMode === "grid" && !product.isSoldOut && (
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 hidden md:flex flex-col justify-end p-3">
+                          <p className="text-[10px] text-[#c9a96e] uppercase font-medium tracking-widest truncate mb-0.5">
+                            {brands.find(b => b.id === product.brandId)?.name || ""}
+                          </p>
+                          <h3 className="font-bold text-xs text-white leading-snug line-clamp-2 mb-1.5">
+                            {decodeHtml(product.name)}
+                          </h3>
+                          {salePrice ? (
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="text-[10px] text-white/50 line-through">{Number(product.price).toLocaleString()}원</span>
+                              <span className="text-sm font-extrabold text-[#c9a96e]" data-testid={`price-product-${product.id}`}>{salePrice.toLocaleString()}원</span>
+                              {discountPct > 0 && <span className="text-[10px] text-red-400 font-bold">{discountPct}%</span>}
+                            </div>
+                          ) : (
+                            <span className="text-sm font-extrabold text-white" data-testid={`price-product-${product.id}`}>{Number(product.price).toLocaleString()}원</span>
+                          )}
+                          <button
+                            onClick={(e) => handleWishlistToggle(e, product)}
+                            className="mt-2 text-white/60 hover:text-red-400 transition-colors"
+                            data-testid={`button-wishlist-${product.id}`}
+                          >
+                            <Heart className={cn("w-4 h-4", isInWishlist(String(product.id)) ? "fill-red-500 text-red-500" : "")} />
+                          </button>
                         </div>
                       )}
 
                       {viewMode === "grid" && (
-                        <div className="absolute top-0 right-0 flex flex-col">
+                        <div className="md:hidden absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-2.5 z-10">
+                          <p className="text-[9px] text-[#c9a96e] uppercase font-medium tracking-wide truncate">
+                            {brands.find(b => b.id === product.brandId)?.name || ""}
+                          </p>
+                          {salePrice ? (
+                            <span className="text-xs font-extrabold text-white" data-testid={`price-product-${product.id}`}>{salePrice.toLocaleString()}원</span>
+                          ) : (
+                            <span className="text-xs font-extrabold text-white" data-testid={`price-product-${product.id}`}>{Number(product.price).toLocaleString()}원</span>
+                          )}
+                        </div>
+                      )}
+
+                      {viewMode === "grid" && (
+                        <div className="absolute top-0 right-0 flex flex-col z-20">
                           {product.isBest && (
                             <span className="bg-black text-white text-[9px] px-1.5 py-1 font-bold text-center leading-none">세트</span>
                           )}
@@ -929,54 +924,43 @@ export default function ProductList() {
                       )}
                     </div>
 
-                    <div className={cn(
-                      viewMode === "grid" ? "p-3" : "flex-1 flex flex-col justify-center p-3"
-                    )}>
-                      <p className="text-[10px] text-gray-400 mb-0.5 font-medium tracking-wide uppercase truncate">
-                        {brands.find(b => b.id === product.brandId)?.name || ""}
-                      </p>
-                      <h3 className={cn(
-                        "font-bold text-sm text-gray-900 mb-2 leading-snug",
-                        viewMode === "grid" && "line-clamp-2"
-                      )}>
-                        {decodeHtml(product.name)}
-                      </h3>
-
-                      <div className="mb-2">
-                        {salePrice ? (
-                          <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-                            <span className="text-xs text-gray-400 line-through">
-                              {Number(product.price).toLocaleString()}원
-                            </span>
-                            <span className="text-sm font-extrabold text-gray-900" data-testid={`price-product-${product.id}`}>
-                              {salePrice.toLocaleString()}원
-                            </span>
-                            {discountPct > 0 && <span className="text-xs text-red-500 font-bold">{discountPct}%</span>}
-                          </div>
-                        ) : (
-                          <span className="text-sm font-extrabold text-gray-900" data-testid={`price-product-${product.id}`}>
-                            {Number(product.price).toLocaleString()}원
-                          </span>
-                        )}
+                    {viewMode === "list" && (
+                      <div className="flex-1 flex flex-col justify-center p-3">
+                        <p className="text-[10px] text-[#c9a96e] mb-0.5 font-medium tracking-wide uppercase truncate">
+                          {brands.find(b => b.id === product.brandId)?.name || ""}
+                        </p>
+                        <h3 className="font-bold text-sm text-[#f0f0f0] mb-2 leading-snug">
+                          {decodeHtml(product.name)}
+                        </h3>
+                        <div className="mb-2">
+                          {salePrice ? (
+                            <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
+                              <span className="text-xs text-[#555555] line-through">{Number(product.price).toLocaleString()}원</span>
+                              <span className="text-sm font-extrabold text-[#c9a96e]" data-testid={`price-product-${product.id}`}>{salePrice.toLocaleString()}원</span>
+                              {discountPct > 0 && <span className="text-xs text-red-400 font-bold">{discountPct}%</span>}
+                            </div>
+                          ) : (
+                            <span className="text-sm font-extrabold text-[#f0f0f0]" data-testid={`price-product-${product.id}`}>{Number(product.price).toLocaleString()}원</span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between mt-auto pt-1 border-t border-[#2a2a2a]">
+                          <button
+                            onClick={(e) => handleWishlistToggle(e, product)}
+                            className="flex items-center gap-1 text-[#555555] hover:text-red-500 transition-colors"
+                            data-testid={`button-wishlist-${product.id}`}
+                          >
+                            <Heart className={cn("w-4 h-4", isInWishlist(String(product.id)) ? "fill-red-500 text-red-500" : "")} />
+                          </button>
+                          {(product.reviewCount || 0) > 0 && (
+                            <div className="flex items-center gap-0.5">
+                              {[1,2,3,4,5].map(s => (
+                                <Star key={s} className={cn("w-2.5 h-2.5", s <= Math.round(Number(product.avgRating || 0)) ? "fill-yellow-400 text-yellow-400" : "fill-[#333333] text-[#333333]")} />
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-
-                      <div className="flex items-center justify-between mt-auto pt-1 border-t border-gray-100">
-                        <button
-                          onClick={(e) => handleWishlistToggle(e, product)}
-                          className="flex items-center gap-1 text-gray-400 hover:text-red-500 transition-colors"
-                          data-testid={`button-wishlist-${product.id}`}
-                        >
-                          <Heart className={cn("w-4 h-4", isInWishlist(String(product.id)) ? "fill-red-500 text-red-500" : "")} />
-                        </button>
-                        {(product.reviewCount || 0) > 0 && (
-                          <div className="flex items-center gap-0.5">
-                            {[1,2,3,4,5].map(s => (
-                              <Star key={s} className={cn("w-2.5 h-2.5", s <= Math.round(Number(product.avgRating || 0)) ? "fill-yellow-400 text-yellow-400" : "fill-gray-200 text-gray-200")} />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    )}
                   </Link>
                   );
                 })}

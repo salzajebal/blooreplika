@@ -129,22 +129,22 @@ export default function Reviews() {
     return (
       <div className="flex items-center justify-center gap-1 mt-6 flex-wrap">
         <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}
-          className="px-2.5 py-1.5 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50 text-sm" data-testid="button-prev-page">
+          className="px-2.5 py-1.5 border border-[#333333] hover:border-[#c9a96e] text-[#888888] hover:text-white disabled:opacity-30 text-sm transition-colors" data-testid="button-prev-page">
           <ChevronLeft className="w-4 h-4" />
         </button>
         {pages.map((page, idx) =>
           page === '...' ? (
-            <span key={`e-${idx}`} className="px-2 text-gray-400">...</span>
+            <span key={`e-${idx}`} className="px-2 text-[#444444]">...</span>
           ) : (
             <button key={page} onClick={() => handlePageChange(page as number)}
-              className={`min-w-[36px] px-2.5 py-1.5 rounded text-sm font-medium ${currentPage === page ? 'bg-black text-white' : 'border border-gray-300 hover:bg-gray-100'}`}
+              className={`min-w-[36px] px-2.5 py-1.5 text-sm font-medium transition-colors ${currentPage === page ? 'bg-[#c9a96e] text-black border border-[#c9a96e]' : 'border border-[#333333] text-[#888888] hover:border-[#c9a96e] hover:text-white'}`}
               data-testid={`button-page-${page}`}>
               {page}
             </button>
           )
         )}
         <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}
-          className="px-2.5 py-1.5 rounded border border-gray-300 hover:bg-gray-100 disabled:opacity-50 text-sm" data-testid="button-next-page">
+          className="px-2.5 py-1.5 border border-[#333333] hover:border-[#c9a96e] text-[#888888] hover:text-white disabled:opacity-30 text-sm transition-colors" data-testid="button-next-page">
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
@@ -152,25 +152,25 @@ export default function Reviews() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-[#0f0f0f] flex flex-col">
       <Header />
       <main className="flex-1">
         <div className="max-w-[900px] mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <h1 className="text-base md:text-lg font-bold text-gray-900">실제 구매후기</h1>
-              <span className="text-sm text-gray-500">{totalReviews.toLocaleString()}</span>
+              <h1 className="text-base md:text-lg font-bold text-white">실제 구매후기</h1>
+              <span className="text-sm text-[#888888]">{totalReviews.toLocaleString()}</span>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => { setPhotoOnly(!photoOnly); setCurrentPage(1); }}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs border transition-colors ${photoOnly ? 'bg-black text-white border-black' : 'border-gray-300 text-gray-600 hover:border-gray-500'}`}
+                className={`flex items-center gap-1 px-3 py-1.5 text-xs border transition-colors ${photoOnly ? 'bg-[#c9a96e] text-black border-[#c9a96e]' : 'border-[#333333] text-[#888888] hover:border-[#c9a96e] hover:text-white'}`}
                 data-testid="btn-photo-filter"
               >
                 <Camera className="w-3 h-3" />
                 포토 구매평
               </button>
-              <Button size="sm" onClick={() => setShowWriteForm(!showWriteForm)} className="bg-green-500 hover:bg-green-600 text-xs h-8" data-testid="btn-write-review-page">
+              <Button size="sm" onClick={() => setShowWriteForm(!showWriteForm)} className="bg-[#1a1a1a] border border-[#333333] hover:border-[#c9a96e] text-[#888888] hover:text-white text-xs h-8" data-testid="btn-write-review-page">
                 <Pencil className="w-3 h-3 mr-1" />
                 후기 작성
               </Button>
@@ -183,10 +183,10 @@ export default function Reviews() {
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               placeholder="상품명, 후기 내용 검색"
-              className="pr-10 h-10 text-sm"
+              className="pr-10 h-10 text-sm bg-[#1a1a1a] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e]"
               data-testid="input-review-search"
             />
-            <button onClick={handleSearch} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <button onClick={handleSearch} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#555555] hover:text-[#c9a96e]">
               <Search className="w-5 h-5" />
             </button>
           </div>
@@ -205,30 +205,29 @@ export default function Reviews() {
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex gap-3 p-3 animate-pulse">
-                  <div className="w-16 h-16 bg-gray-200 rounded flex-shrink-0" />
+                  <div className="w-16 h-16 bg-[#222222] flex-shrink-0" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-3 bg-gray-200 rounded w-3/4" />
-                    <div className="h-3 bg-gray-200 rounded w-1/2" />
-                    <div className="h-3 bg-gray-200 rounded w-1/4" />
+                    <div className="h-3 bg-[#222222] rounded w-3/4" />
+                    <div className="h-3 bg-[#1a1a1a] rounded w-1/2" />
+                    <div className="h-3 bg-[#1a1a1a] rounded w-1/4" />
                   </div>
                 </div>
               ))}
             </div>
           ) : reviews.length === 0 ? (
-            <div className="text-center py-16 text-gray-400">
-              <Star className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+            <div className="text-center py-16 text-[#555555]">
+              <Star className="w-12 h-12 mx-auto mb-3 text-[#333333]" />
               <p className="text-sm">등록된 구매후기가 없습니다.</p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-[#1e1e1e]">
               {reviews.map((review) => {
                 const thumbUrl = getThumbImage(review);
-                const isPhoto = (review.imageUrls && review.imageUrls.length > 0) || !!review.imageUrl;
                 const isNew = isNewReview(review.displayDate);
 
                 return (
                   <div key={review.id} className="flex gap-3 py-3" data-testid={`review-item-${review.id}`}>
-                    <div className="w-16 h-16 md:w-20 md:h-20 flex-shrink-0 rounded overflow-hidden bg-gray-100">
+                    <div className="w-16 h-16 md:w-20 md:h-20 flex-shrink-0 overflow-hidden bg-[#1a1a1a]">
                       {thumbUrl ? (
                         <img
                           src={thumbUrl.startsWith("/uploads/") || thumbUrl.startsWith("/api/") ? thumbUrl : getProxiedImageUrl(thumbUrl, "thumb")}
@@ -237,7 +236,7 @@ export default function Reviews() {
                           onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-300">
+                        <div className="w-full h-full flex items-center justify-center text-[#333333]">
                           <Image className="w-6 h-6" />
                         </div>
                       )}
@@ -245,30 +244,30 @@ export default function Reviews() {
 
                     <div className="flex-1 min-w-0">
                       {review.productName && (
-                        <p className="text-xs text-gray-500 mb-0.5 line-clamp-1">
+                        <p className="text-xs text-[#555555] mb-0.5 line-clamp-1">
                           {review.productName}
                         </p>
                       )}
                       {review.title && (
-                        <p className="text-sm font-semibold text-gray-900 mb-0.5">
+                        <p className="text-sm font-semibold text-[#f0f0f0] mb-0.5">
                           {review.title}
                           {isNew && (
-                            <span className="inline-block ml-1 text-[10px] bg-green-500 text-white px-1 py-0.5 rounded font-bold align-middle">N</span>
+                            <span className="inline-block ml-1 text-[10px] bg-green-700 text-white px-1 py-0.5 rounded font-bold align-middle">N</span>
                           )}
                         </p>
                       )}
-                      <p className="text-sm text-gray-800 leading-relaxed mb-1 whitespace-pre-line">
+                      <p className="text-sm text-[#aaaaaa] leading-relaxed mb-1 whitespace-pre-line">
                         {review.content}
                         {!review.title && isNew && (
-                          <span className="inline-block ml-1 text-[10px] bg-green-500 text-white px-1 py-0.5 rounded font-bold align-middle">N</span>
+                          <span className="inline-block ml-1 text-[10px] bg-green-700 text-white px-1 py-0.5 rounded font-bold align-middle">N</span>
                         )}
                       </p>
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <div className="flex items-center gap-2 text-xs text-[#555555]">
                         <span>{maskName(review.authorName)}</span>
                         <span>{timeAgo(review.displayDate)}</span>
                         <div className="flex items-center">
                           {[...Array(5)].map((_, i) => (
-                            <Star key={i} className={`w-3 h-3 ${i < (review.rating || 5) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`} />
+                            <Star key={i} className={`w-3 h-3 ${i < (review.rating || 5) ? 'text-yellow-400 fill-yellow-400' : 'text-[#333333] fill-[#333333]'}`} />
                           ))}
                         </div>
                       </div>
@@ -358,23 +357,23 @@ function ReviewWriteForm({ onClose, onSuccess, productId, productName }: {
   };
 
   return (
-    <div className="border border-gray-200 rounded-lg p-4 mb-4 bg-gray-50">
+    <div className="border border-[#2a2a2a] p-4 mb-4 bg-[#161616]">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-bold">구매후기 작성</h3>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+        <h3 className="text-sm font-bold text-[#f0f0f0]">구매후기 작성</h3>
+        <button onClick={onClose} className="text-[#555555] hover:text-[#aaaaaa]">
           <X className="w-4 h-4" />
         </button>
       </div>
 
       {productName && (
-        <p className="text-xs text-gray-500 mb-3 bg-white px-3 py-2 rounded border">상품: {productName}</p>
+        <p className="text-xs text-[#888888] mb-3 bg-[#1a1a1a] px-3 py-2 border border-[#333333]">상품: {productName}</p>
       )}
 
       <div className="flex items-center gap-1 mb-3">
-        <span className="text-xs text-gray-500 mr-2">평점</span>
+        <span className="text-xs text-[#888888] mr-2">평점</span>
         {[1, 2, 3, 4, 5].map(i => (
           <button key={i} onClick={() => setRating(i)} data-testid={`btn-star-${i}`}>
-            <Star className={`w-5 h-5 ${i <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
+            <Star className={`w-5 h-5 ${i <= rating ? 'text-yellow-400 fill-yellow-400' : 'text-[#333333]'}`} />
           </button>
         ))}
       </div>
@@ -383,7 +382,7 @@ function ReviewWriteForm({ onClose, onSuccess, productId, productName }: {
         value={authorName}
         onChange={(e) => setAuthorName(e.target.value)}
         placeholder="작성자명"
-        className="mb-2 h-9 text-sm"
+        className="mb-2 h-9 text-sm bg-[#0f0f0f] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0"
         data-testid="input-review-author"
       />
 
@@ -392,14 +391,14 @@ function ReviewWriteForm({ onClose, onSuccess, productId, productName }: {
         onChange={(e) => setContent(e.target.value)}
         placeholder="구매 후기를 작성해주세요"
         rows={3}
-        className="mb-2 text-sm"
+        className="mb-2 text-sm bg-[#0f0f0f] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0 resize-none"
         data-testid="input-review-content"
       />
 
       <div className="flex items-center gap-2 mb-3">
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-1 px-3 py-1.5 border border-gray-300 rounded text-xs text-gray-600 hover:bg-gray-100"
+          className="flex items-center gap-1 px-3 py-1.5 border border-[#333333] text-xs text-[#888888] hover:bg-[#1a1a1a] hover:text-[#c9a96e] transition-colors"
           data-testid="btn-attach-photo"
         >
           <Camera className="w-3.5 h-3.5" />

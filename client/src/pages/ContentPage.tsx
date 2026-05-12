@@ -93,25 +93,25 @@ function TextBlock({ block }: { block: ContentBlock }) {
   return (
     <div
       className="w-full py-10 md:py-16 px-4"
-      style={{ backgroundColor: block.bgColor || "#f8f8f8" }}
+      style={{ backgroundColor: block.bgColor || "#0f0f0f" }}
       data-testid="content-block-text"
     >
       <div className="max-w-[800px] mx-auto text-center">
         {block.subheading && (
-          <p className="text-xs uppercase tracking-[0.2em] text-gray-500 mb-3 font-medium">
+          <p className="text-xs uppercase tracking-[0.2em] text-[#888888] mb-3 font-medium">
             {block.subheading}
           </p>
         )}
         {block.heading && (
           <h2
-            className="text-xl md:text-3xl font-bold text-gray-900 mb-4 leading-snug"
+            className="text-xl md:text-3xl font-bold text-[#f0f0f0] mb-4 leading-snug"
             style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
           >
             {block.heading}
           </h2>
         )}
         {block.body && (
-          <p className="text-sm md:text-base text-gray-600 leading-relaxed whitespace-pre-line">
+          <p className="text-sm md:text-base text-[#aaaaaa] leading-relaxed whitespace-pre-line">
             {block.body}
           </p>
         )}
@@ -128,8 +128,8 @@ function ButtonsBlock({ block }: { block: ContentBlock }) {
         {block.buttons.map((btn, i) => {
           const isOutline = btn.style === "outline";
           const className = isOutline
-            ? "px-6 py-2.5 rounded-full border-2 border-gray-900 text-gray-900 text-sm font-semibold hover:bg-gray-900 hover:text-white transition-all duration-300"
-            : "px-6 py-2.5 rounded-full bg-gray-900 text-white text-sm font-semibold hover:bg-gray-700 transition-all duration-300 shadow-md hover:shadow-lg";
+            ? "px-6 py-2.5 rounded-full border-2 border-[#c9a96e] text-[#c9a96e] text-sm font-semibold hover:bg-[#c9a96e] hover:text-black transition-all duration-300"
+            : "px-6 py-2.5 rounded-full bg-[#c9a96e] text-black text-sm font-semibold hover:bg-[#b8955a] transition-all duration-300 shadow-md hover:shadow-lg";
 
           if (btn.linkUrl) {
             return (
@@ -164,12 +164,12 @@ function CouponBlock({ block }: { block: ContentBlock }) {
         {block.coupons.map((coupon, i) => (
           <div
             key={i}
-            className="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-dashed border-gray-400 rounded-full bg-white hover:border-gray-900 hover:shadow-md transition-all duration-300 cursor-default"
+            className="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-dashed border-[#555555] rounded-full bg-[#1a1a1a] hover:border-[#c9a96e] hover:shadow-md transition-all duration-300 cursor-default"
             data-testid={`content-block-coupon-${i}`}
           >
-            <span className="text-sm font-bold text-gray-900">{coupon.value}</span>
+            <span className="text-sm font-bold text-[#c9a96e]">{coupon.value}</span>
             {coupon.label && (
-              <span className="text-xs text-gray-500">{coupon.label}</span>
+              <span className="text-xs text-[#888888]">{coupon.label}</span>
             )}
           </div>
         ))}
@@ -182,7 +182,7 @@ function DividerBlock() {
   return (
     <div className="w-full py-4 px-4" data-testid="content-block-divider">
       <div className="max-w-[800px] mx-auto">
-        <hr className="border-gray-200" />
+        <hr className="border-[#2a2a2a]" />
       </div>
     </div>
   );
@@ -234,7 +234,7 @@ function ProductCard({ product }: { product: any }) {
       className="block group"
       data-testid={`product-card-${product.id}`}
     >
-      <div className="aspect-square bg-gray-50 overflow-hidden mb-2 rounded-lg">
+      <div className="aspect-square bg-[#1a1a1a] overflow-hidden mb-2 rounded-lg">
         <img
           src={getProxiedImageUrl(product.imageUrl || "")}
           alt={product.name}
@@ -243,9 +243,9 @@ function ProductCard({ product }: { product: any }) {
         />
       </div>
       <div className="px-1">
-        <p className="text-xs text-gray-800 line-clamp-2 leading-relaxed mb-1">{product.name}</p>
+        <p className="text-xs text-[#aaaaaa] line-clamp-2 leading-relaxed mb-1">{product.name}</p>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-gray-900">{Number(product.price).toLocaleString()}원</span>
+          <span className="text-sm font-bold text-[#f0f0f0]">{Number(product.price).toLocaleString()}원</span>
         </div>
       </div>
     </Link>
@@ -298,11 +298,11 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
     const contentBlocks = activeItem ? parseContentBlocks(activeItem.contentBlocks) : [];
 
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-[#0f0f0f]">
         <Header />
 
         <main>
-          <div className="relative w-full bg-gradient-to-b from-gray-900 to-gray-800 overflow-hidden">
+          <div className="relative w-full bg-gradient-to-b from-[#0a0a0a] to-[#111111] overflow-hidden">
             {heroImageUrl && heroImageUrl.trim() ? (
               <div className="relative">
                 <img
@@ -338,7 +338,7 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
           </div>
 
           {items.length > 0 && (
-            <div className="border-b border-gray-200 bg-white sticky top-0 z-20">
+            <div className="border-b border-[#2a2a2a] bg-[#0a0a0a] sticky top-0 z-20">
               <div className="max-w-[1200px] mx-auto px-2 md:px-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-0">
                   {items.map((item: any, index: number) => (
@@ -347,14 +347,14 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
                       onClick={() => handleTabSwitch(index)}
                       className={`relative py-3.5 md:py-4 text-xs md:text-sm text-center transition-all duration-300 ${
                         index === activeTab
-                          ? "font-bold text-gray-900 bg-white"
-                          : "font-medium text-gray-500 bg-gray-50 hover:text-gray-700 hover:bg-gray-100"
+                          ? "font-bold text-[#f0f0f0] bg-[#0a0a0a]"
+                          : "font-medium text-[#888888] bg-[#111111] hover:text-[#c9a96e] hover:bg-[#141414]"
                       }`}
                       data-testid={`benefit-tab-${index}`}
                     >
                       {item.title}
                       {index === activeTab && (
-                        <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-black" />
+                        <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#c9a96e]" />
                       )}
                     </button>
                   ))}
@@ -399,7 +399,7 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
                   {activeItem.description && (
                     <div className="max-w-[1200px] mx-auto px-4 py-8 md:py-12">
                       <div className="text-center">
-                        <p className="text-sm md:text-base text-gray-600 leading-relaxed whitespace-pre-line">{activeItem.description}</p>
+                        <p className="text-sm md:text-base text-[#aaaaaa] leading-relaxed whitespace-pre-line">{activeItem.description}</p>
                       </div>
                     </div>
                   )}
@@ -410,9 +410,9 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
                 <div className="max-w-[1200px] mx-auto px-4 pb-10 md:pb-16">
                   <ScrollRevealWrapper>
                     <div className="text-center mb-6 md:mb-8 pt-8">
-                      <p className="text-xs text-pink-500 uppercase tracking-widest font-medium mb-1">BENEFIT</p>
+                      <p className="text-xs text-[#c9a96e] uppercase tracking-widest font-medium mb-1">BENEFIT</p>
                       <h2
-                        className="text-lg md:text-2xl font-bold text-gray-900"
+                        className="text-lg md:text-2xl font-bold text-[#f0f0f0]"
                         style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
                       >
                         velour의 특별한 혜택
@@ -428,7 +428,7 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
               )}
             </div>
           ) : items.length === 0 ? (
-            <div className="text-center py-20 text-gray-400">
+            <div className="text-center py-20 text-[#555555]">
               <p className="text-lg mb-2">등록된 혜택이 없습니다.</p>
               <p className="text-sm">관리자가 혜택 콘텐츠를 등록하면 여기에 표시됩니다.</p>
             </div>
@@ -454,15 +454,15 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#0f0f0f]">
       <Header />
 
       <main>
-        <div className="bg-gray-100 py-4">
+        <div className="bg-[#111111] border-b border-[#2a2a2a] py-4">
           <div className="max-w-[1200px] mx-auto px-4">
-            <h1 className="text-lg font-bold text-gray-800">{config.title}</h1>
-            <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-              <Link href="/" className="hover:text-black">홈</Link>
+            <h1 className="text-lg font-bold text-[#f0f0f0]">{config.title}</h1>
+            <div className="flex items-center gap-2 text-sm text-[#888888] mt-1">
+              <Link href="/" className="hover:text-[#c9a96e]">홈</Link>
               <span>&gt;</span>
               <span>쇼핑몰</span>
               <span>&gt;</span>
@@ -474,7 +474,7 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
         <div className="max-w-[1200px] mx-auto px-4 py-8">
           <div className="flex-1">
             {items.length === 0 ? (
-              <div className="text-center py-16 text-gray-400">
+              <div className="text-center py-16 text-[#555555]">
                 <p className="text-lg mb-2">등록된 콘텐츠가 없습니다.</p>
                 <p className="text-sm">관리자가 콘텐츠를 등록하면 여기에 표시됩니다.</p>
               </div>
@@ -489,7 +489,7 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
                         rel="noopener noreferrer"
                         className="block mb-4"
                       >
-                        <div className="aspect-[21/9] bg-gray-100 overflow-hidden rounded-lg">
+                        <div className="aspect-[21/9] bg-[#1a1a1a] overflow-hidden rounded-lg">
                           <img
                             src={getProxiedImageUrl(item.imageUrl)}
                             alt={item.title}
@@ -499,9 +499,9 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
                         </div>
                       </a>
                     )}
-                    <h3 className="text-lg font-bold text-gray-900 mb-2">{item.title}</h3>
+                    <h3 className="text-lg font-bold text-[#f0f0f0] mb-2">{item.title}</h3>
                     {item.description && (
-                      <p className="text-sm text-gray-500 mb-4">{item.description}</p>
+                      <p className="text-sm text-[#888888] mb-4">{item.description}</p>
                     )}
                     {item.products && item.products.length > 0 && (
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

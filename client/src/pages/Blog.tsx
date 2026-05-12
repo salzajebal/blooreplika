@@ -188,17 +188,17 @@ export default function Blog() {
 
   if (currentItem) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-[#0f0f0f]">
         <Header />
         
         <main>
-          <div className="bg-gray-100 py-4">
+          <div className="bg-[#111111] border-b border-[#2a2a2a] py-4">
             <div className="max-w-[1200px] mx-auto px-4">
-              <h1 className="text-lg font-bold text-gray-800">블로그</h1>
-              <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                <Link href="/" className="hover:text-black">홈</Link>
+              <h1 className="text-lg font-bold text-[#f0f0f0]">블로그</h1>
+              <div className="flex items-center gap-2 text-sm text-[#888888] mt-1">
+                <Link href="/" className="hover:text-[#c9a96e]">홈</Link>
                 <span>&gt;</span>
-                <Link href="/blog" className="hover:text-black">블로그</Link>
+                <Link href="/blog" className="hover:text-[#c9a96e]">블로그</Link>
                 <span>&gt;</span>
                 <span className="truncate max-w-[200px]">{currentItem.title}</span>
               </div>
@@ -208,12 +208,12 @@ export default function Blog() {
           <div className="max-w-[1200px] mx-auto px-4 py-8">
             <div className="flex gap-8">
               <aside className="hidden md:block w-48 flex-shrink-0">
-                <nav className="border border-gray-200">
+                <nav className="border border-[#2a2a2a]">
                   {sideMenuItems.map((item, index) => (
                     <Link
                       key={index}
                       href={item.path}
-                      className="block px-4 py-3 text-sm border-b border-gray-200 last:border-b-0 text-gray-700 hover:bg-gray-50"
+                      className="block px-4 py-3 text-sm border-b border-[#2a2a2a] last:border-b-0 text-[#888888] hover:bg-[#1a1a1a] hover:text-[#f0f0f0]"
                     >
                       {item.name}
                     </Link>
@@ -222,14 +222,14 @@ export default function Blog() {
               </aside>
 
               <div className="flex-1">
-                <div className="border-b border-gray-200 pb-4 mb-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-2">{currentItem.title}</h2>
-                  <p className="text-sm text-gray-500">{currentItem.date}</p>
+                <div className="border-b border-[#2a2a2a] pb-4 mb-6">
+                  <h2 className="text-xl font-bold text-[#f0f0f0] mb-2">{currentItem.title}</h2>
+                  <p className="text-sm text-[#888888]">{currentItem.date}</p>
                 </div>
 
                 <div className="space-y-4 mb-8">
                   {currentItem.images.map((img, index) => (
-                    <div key={index} className="bg-gray-50 rounded overflow-hidden">
+                    <div key={index} className="bg-[#1a1a1a] rounded overflow-hidden">
                       <img
                         src={getProxiedImageUrl(img)}
                         alt={`${currentItem.title} - ${index + 1}`}
@@ -241,23 +241,23 @@ export default function Blog() {
                 </div>
 
                 <div className="prose prose-sm max-w-none mb-8">
-                  <p className="text-gray-700 leading-relaxed">{currentItem.content}</p>
+                  <p className="text-[#aaaaaa] leading-relaxed whitespace-pre-line">{currentItem.content}</p>
                 </div>
 
-                <div className="border-t border-gray-200 pt-4 flex justify-between items-center">
+                <div className="border-t border-[#2a2a2a] pt-4 flex justify-between items-center">
                   {prevItem ? (
-                    <Link href={`/blog/${prevItem.id}`} className="flex items-center gap-2 text-sm text-gray-600 hover:text-black">
+                    <Link href={`/blog/${prevItem.id}`} className="flex items-center gap-2 text-sm text-[#888888] hover:text-[#c9a96e]">
                       <ChevronLeft className="w-4 h-4" />
                       <span className="hidden sm:inline">이전글</span>
                     </Link>
                   ) : <div />}
                   
-                  <Link href="/blog" className="px-4 py-2 bg-gray-800 text-white text-sm rounded hover:bg-gray-700">
+                  <Link href="/blog" className="px-4 py-2 bg-[#c9a96e] text-black text-sm rounded hover:bg-[#b8925a]">
                     목록
                   </Link>
                   
                   {nextItem ? (
-                    <Link href={`/blog/${nextItem.id}`} className="flex items-center gap-2 text-sm text-gray-600 hover:text-black">
+                    <Link href={`/blog/${nextItem.id}`} className="flex items-center gap-2 text-sm text-[#888888] hover:text-[#c9a96e]">
                       <span className="hidden sm:inline">다음글</span>
                       <ChevronRight className="w-4 h-4" />
                     </Link>
@@ -274,15 +274,15 @@ export default function Blog() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#0f0f0f]">
       <Header />
       
       <main>
-        <div className="bg-gray-100 py-4">
+        <div className="bg-[#111111] border-b border-[#2a2a2a] py-4">
           <div className="max-w-[1200px] mx-auto px-4">
-            <h1 className="text-lg font-bold text-gray-800">블로그</h1>
-            <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-              <Link href="/" className="hover:text-black">홈</Link>
+            <h1 className="text-lg font-bold text-[#f0f0f0]">블로그</h1>
+            <div className="flex items-center gap-2 text-sm text-[#888888] mt-1">
+              <Link href="/" className="hover:text-[#c9a96e]">홈</Link>
               <span>&gt;</span>
               <span>쇼핑몰</span>
               <span>&gt;</span>
@@ -294,15 +294,15 @@ export default function Blog() {
         <div className="max-w-[1200px] mx-auto px-4 py-8">
           <div className="flex gap-8">
             <aside className="hidden md:block w-48 flex-shrink-0">
-              <nav className="border border-gray-200">
+              <nav className="border border-[#2a2a2a]">
                 {sideMenuItems.map((item, index) => (
                   <Link
                     key={index}
                     href={item.path}
-                    className={`block px-4 py-3 text-sm border-b border-gray-200 last:border-b-0 ${
+                    className={`block px-4 py-3 text-sm border-b border-[#2a2a2a] last:border-b-0 ${
                       location === item.path 
-                        ? 'bg-gray-900 text-white font-medium' 
-                        : 'text-gray-700 hover:bg-gray-50'
+                        ? 'bg-[#c9a96e] text-black font-medium' 
+                        : 'text-[#888888] hover:bg-[#1a1a1a] hover:text-[#f0f0f0]'
                     }`}
                   >
                     {item.name}
@@ -313,8 +313,8 @@ export default function Blog() {
 
             <div className="flex-1">
               <div className="flex items-center justify-between mb-6">
-                <p className="text-sm text-gray-600">
-                  Total : <strong>{filteredItems.length}</strong> items
+                <p className="text-sm text-[#888888]">
+                  Total : <strong className="text-[#f0f0f0]">{filteredItems.length}</strong> items
                 </p>
               </div>
 
@@ -323,10 +323,10 @@ export default function Blog() {
                   <Link
                     key={item.id}
                     href={`/blog/${item.id}`}
-                    className="block bg-white border border-gray-200 hover:border-gray-400 transition-colors"
+                    className="block bg-[#161616] border border-[#2a2a2a] hover:border-[#c9a96e] transition-colors"
                     data-testid={`blog-item-${item.id}`}
                   >
-                    <div className="aspect-square bg-gray-100 overflow-hidden">
+                    <div className="aspect-square bg-[#1a1a1a] overflow-hidden">
                       <img
                         src={getProxiedImageUrl(item.imageUrl)}
                         alt={item.title}
@@ -335,7 +335,7 @@ export default function Blog() {
                       />
                     </div>
                     <div className="p-3">
-                      <p className="text-xs text-gray-800 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-[#aaaaaa] line-clamp-2 leading-relaxed">
                         {item.title}
                       </p>
                     </div>
@@ -344,11 +344,11 @@ export default function Blog() {
               </div>
 
               <div className="flex justify-center">
-                <div className="flex items-center gap-2 border border-gray-300 rounded overflow-hidden">
+                <div className="flex items-center gap-2 border border-[#2a2a2a] rounded overflow-hidden">
                   <select 
                     value={searchType}
                     onChange={(e) => setSearchType(e.target.value)}
-                    className="px-3 py-2 text-sm bg-white border-r border-gray-300 outline-none"
+                    className="px-3 py-2 text-sm bg-[#161616] text-[#f0f0f0] border-r border-[#2a2a2a] outline-none"
                   >
                     <option value="title">제목</option>
                     <option value="content">내용</option>
@@ -359,9 +359,9 @@ export default function Blog() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="검색어 필수"
-                    className="px-3 py-2 text-sm outline-none w-40"
+                    className="px-3 py-2 text-sm bg-[#161616] text-[#f0f0f0] placeholder:text-[#444444] outline-none w-40"
                   />
-                  <button className="px-4 py-2 bg-gray-800 text-white text-sm hover:bg-gray-700">
+                  <button className="px-4 py-2 bg-[#c9a96e] text-black text-sm hover:bg-[#b8925a]">
                     <Search className="w-4 h-4" />
                   </button>
                 </div>

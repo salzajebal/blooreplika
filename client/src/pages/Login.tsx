@@ -3,7 +3,6 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { Header } from "@/components/layout/Header";
@@ -62,68 +61,64 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen flex flex-col bg-[#0f0f0f]">
       <Header />
       
-      <main className="flex-1 flex items-center justify-center py-12 px-4">
-        <Card className="w-full max-w-md shadow-xl border-gray-200">
-          <CardHeader className="text-center space-y-2">
-            <CardTitle className="text-2xl font-bold text-gray-900">로그인</CardTitle>
-            <CardDescription className="text-gray-600">
-              velour 회원 로그인
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="username" className="text-gray-700 font-medium">아이디</Label>
-                <Input
-                  id="username"
-                  type="text"
-                  placeholder="아이디를 입력하세요"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  required
-                  className="h-11"
-                  data-testid="input-username"
-                />
-              </div>
+      <main className="flex-1 flex items-center justify-center py-16 px-4">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-10">
+            <h1 className="text-2xl font-bold tracking-widest text-white uppercase mb-2">Login</h1>
+            <p className="text-[#555555] text-sm tracking-wider">velour 회원 로그인</p>
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-gray-700 font-medium">비밀번호</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="비밀번호를 입력하세요"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
-                  className="h-11"
-                  data-testid="input-password"
-                />
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full h-12 bg-black hover:bg-gray-800 text-white font-semibold"
-                disabled={loading}
-                data-testid="button-login"
-              >
-                {loading ? "로그인 중..." : "로그인"}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                아직 회원이 아니신가요?{" "}
-                <Link href={`/signup${window.location.search}`} className="text-primary hover:underline font-medium">
-                  회원가입
-                </Link>
-              </p>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-1.5">
+              <Label htmlFor="username" className="text-[#888888] text-xs tracking-widest uppercase">아이디</Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="아이디를 입력하세요"
+                value={formData.username}
+                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                required
+                className="h-12 bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder:text-[#444444] focus:border-[#c9a96e] focus:ring-0 rounded-none"
+                data-testid="input-username"
+              />
             </div>
-          </CardContent>
-        </Card>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-[#888888] text-xs tracking-widest uppercase">비밀번호</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="비밀번호를 입력하세요"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+                className="h-12 bg-[#1a1a1a] border-[#2a2a2a] text-white placeholder:text-[#444444] focus:border-[#c9a96e] focus:ring-0 rounded-none"
+                data-testid="input-password"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full h-12 bg-[#c9a96e] hover:bg-[#b8945f] text-black font-semibold tracking-widest uppercase rounded-none mt-2"
+              disabled={loading}
+              data-testid="button-login"
+            >
+              {loading ? "로그인 중..." : "로그인"}
+            </Button>
+          </form>
+
+          <div className="mt-8 text-center border-t border-[#222222] pt-8">
+            <p className="text-sm text-[#555555]">
+              아직 회원이 아니신가요?{" "}
+              <Link href={`/signup${window.location.search}`} className="text-[#c9a96e] hover:text-[#dbb97e] transition-colors font-medium">
+                회원가입
+              </Link>
+            </p>
+          </div>
+        </div>
       </main>
 
       <Footer />

@@ -88,26 +88,26 @@ export default function Cart() {
   }, 0);
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-[#0f0f0f] font-sans">
       <Header />
 
       <main className="max-w-3xl mx-auto px-4 py-8 sm:py-14 pb-24 md:pb-14">
 
-        <div className="mb-8 border-b border-gray-200 pb-4">
+        <div className="mb-8 border-b border-[#2a2a2a] pb-4">
           <div className="flex items-center gap-2 mb-1">
-            <Heart className="w-4 h-4 text-gray-700" />
-            <h1 className="text-xs tracking-[0.2em] uppercase text-gray-700 font-medium" data-testid="text-cart-title">Wishlist</h1>
+            <Heart className="w-4 h-4 text-[#c9a96e]" />
+            <h1 className="text-xs tracking-[0.2em] uppercase text-[#888888] font-medium" data-testid="text-cart-title">Wishlist</h1>
           </div>
-          <p className="text-2xl font-bold text-gray-900">찜 목록</p>
+          <p className="text-2xl font-bold text-white">찜 목록</p>
         </div>
 
         {items.length === 0 ? (
-          <div className="text-center py-24 bg-white border border-gray-100">
-            <Heart className="w-10 h-10 text-gray-200 mx-auto mb-4" />
-            <p className="text-gray-900 font-medium mb-1">찜한 상품이 없습니다</p>
-            <p className="text-gray-400 text-sm mb-8">하트 아이콘을 눌러 마음에 드는 상품을 담아보세요</p>
+          <div className="text-center py-24 bg-[#1a1a1a] border border-[#2a2a2a]">
+            <Heart className="w-10 h-10 text-[#333333] mx-auto mb-4" />
+            <p className="text-white font-medium mb-1">찜한 상품이 없습니다</p>
+            <p className="text-[#555555] text-sm mb-8">하트 아이콘을 눌러 마음에 드는 상품을 담아보세요</p>
             <Link href="/">
-              <Button className="bg-black hover:bg-gray-800 text-white text-xs tracking-widest h-11 px-8 rounded-none">
+              <Button className="bg-[#c9a96e] hover:bg-[#b8945f] text-black text-xs tracking-widest h-11 px-8 rounded-none">
                 SHOP NOW
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -116,11 +116,11 @@ export default function Cart() {
         ) : (
           <>
             <div className="flex justify-between items-center mb-5">
-              <p className="text-sm text-gray-500">
-                총 <span className="font-semibold text-gray-900">{items.length}</span>개 상품
+              <p className="text-sm text-[#888888]">
+                총 <span className="font-semibold text-white">{items.length}</span>개 상품
               </p>
               <button
-                className="text-xs text-gray-400 hover:text-gray-700 underline underline-offset-2 transition-colors"
+                className="text-xs text-[#555555] hover:text-[#888888] underline underline-offset-2 transition-colors"
                 onClick={() => {
                   clearWishlist();
                   toast({ title: "전체 삭제 완료", description: "찜 목록이 비워졌습니다." });
@@ -135,11 +135,11 @@ export default function Cart() {
               {items.map((item) => (
                 <div
                   key={item.id}
-                  className="flex gap-4 p-4 sm:p-5 bg-white border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all"
+                  className="flex gap-4 p-4 sm:p-5 bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#3a3a3a] transition-all"
                   data-testid={`cart-item-${item.id}`}
                 >
                   <Link href={`/product/${item.id}`} className="flex-shrink-0">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-50 overflow-hidden">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[#111111] overflow-hidden">
                       <img
                         src={getProxiedImageUrl(item.imageUrl) || DEFAULT_IMAGE}
                         alt={item.name}
@@ -152,13 +152,13 @@ export default function Cart() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <Link href={`/product/${item.id}`}>
-                        <h3 className="text-sm font-medium text-gray-900 hover:text-black transition-colors line-clamp-2 leading-snug">
+                        <h3 className="text-sm font-medium text-[#f0f0f0] hover:text-white transition-colors line-clamp-2 leading-snug">
                           {item.name}
                         </h3>
                       </Link>
                       <button
                         onClick={() => handleRemove(item.id, item.name)}
-                        className="text-gray-300 hover:text-gray-600 shrink-0 transition-colors mt-0.5"
+                        className="text-[#444444] hover:text-[#888888] shrink-0 transition-colors mt-0.5"
                         data-testid={`button-remove-${item.id}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -166,7 +166,7 @@ export default function Cart() {
                     </div>
 
                     <div className="mt-2 mb-3">
-                      <span className="text-base font-bold text-gray-900">{item.price.toLocaleString()}원</span>
+                      <span className="text-base font-bold text-[#c9a96e]">{item.price.toLocaleString()}원</span>
                     </div>
 
                     {productOptionsMap[item.id]?.categoryId !== 'watches' && (
@@ -175,7 +175,7 @@ export default function Cart() {
                           <select
                             value={itemOptions[item.id]?.size || ""}
                             onChange={(e) => updateItemOption(item.id, "size", e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-200 bg-white text-gray-700 focus:outline-none focus:border-black appearance-none cursor-pointer"
+                            className="w-full px-3 py-1.5 text-xs border border-[#333333] bg-[#111111] text-[#aaaaaa] focus:outline-none focus:border-[#c9a96e] appearance-none cursor-pointer"
                             data-testid={`select-size-${item.id}`}
                           >
                             <option value="">사이즈 선택</option>
@@ -189,7 +189,7 @@ export default function Cart() {
                             placeholder="사이즈"
                             value={itemOptions[item.id]?.size || ""}
                             onChange={(e) => updateItemOption(item.id, "size", e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-200 focus:outline-none focus:border-black"
+                            className="w-full px-3 py-1.5 text-xs border border-[#333333] bg-[#111111] text-[#aaaaaa] focus:outline-none focus:border-[#c9a96e] placeholder:text-[#444444]"
                             data-testid={`input-size-${item.id}`}
                           />
                         )}
@@ -197,7 +197,7 @@ export default function Cart() {
                           <select
                             value={itemOptions[item.id]?.color || ""}
                             onChange={(e) => updateItemOption(item.id, "color", e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-200 bg-white text-gray-700 focus:outline-none focus:border-black appearance-none cursor-pointer"
+                            className="w-full px-3 py-1.5 text-xs border border-[#333333] bg-[#111111] text-[#aaaaaa] focus:outline-none focus:border-[#c9a96e] appearance-none cursor-pointer"
                             data-testid={`select-color-${item.id}`}
                           >
                             <option value="">색상 선택</option>
@@ -211,7 +211,7 @@ export default function Cart() {
                             placeholder="색상"
                             value={itemOptions[item.id]?.color || ""}
                             onChange={(e) => updateItemOption(item.id, "color", e.target.value)}
-                            className="w-full px-3 py-1.5 text-xs border border-gray-200 focus:outline-none focus:border-black"
+                            className="w-full px-3 py-1.5 text-xs border border-[#333333] bg-[#111111] text-[#aaaaaa] focus:outline-none focus:border-[#c9a96e] placeholder:text-[#444444]"
                             data-testid={`input-color-${item.id}`}
                           />
                         )}
@@ -219,7 +219,7 @@ export default function Cart() {
                     )}
 
                     <button
-                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-black hover:bg-gray-800 text-white text-xs tracking-wider transition-colors"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#c9a96e] hover:bg-[#b8945f] text-black text-xs tracking-wider transition-colors font-semibold"
                       onClick={() => {
                         const params = new URLSearchParams();
                         if (itemOptions[item.id]?.size) params.append("size", itemOptions[item.id].size);
@@ -237,16 +237,16 @@ export default function Cart() {
               ))}
             </div>
 
-            <div className="mt-8 bg-white border border-gray-100 p-6">
+            <div className="mt-8 bg-[#1a1a1a] border border-[#2a2a2a] p-6">
               <div className="flex justify-between items-center mb-1">
-                <span className="text-xs tracking-widest text-gray-400 uppercase">Total</span>
-                <span className="text-2xl font-bold text-gray-900">
+                <span className="text-xs tracking-widest text-[#555555] uppercase">Total</span>
+                <span className="text-2xl font-bold text-[#c9a96e]">
                   {totalPrice.toLocaleString()}원
                 </span>
               </div>
-              <p className="text-xs text-gray-400 mb-5">총 {items.length}개 상품 합계</p>
+              <p className="text-xs text-[#555555] mb-5">총 {items.length}개 상품 합계</p>
               <button
-                className="w-full bg-black hover:bg-gray-800 text-white h-13 py-4 text-sm tracking-[0.15em] font-medium transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-[#c9a96e] hover:bg-[#b8955a] text-black h-13 py-4 text-sm tracking-[0.15em] font-semibold transition-colors flex items-center justify-center gap-2"
                 onClick={handleCheckout}
                 data-testid="button-checkout"
               >

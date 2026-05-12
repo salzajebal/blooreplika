@@ -23,17 +23,17 @@ interface OrderInfo {
 }
 
 const statusLabels: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  pending: { label: "주문접수", color: "text-yellow-600 bg-yellow-50", icon: <Clock className="w-4 h-4" /> },
-  confirmed: { label: "주문확인", color: "text-blue-600 bg-blue-50", icon: <CheckCircle className="w-4 h-4" /> },
-  shipped: { label: "배송중", color: "text-purple-600 bg-purple-50", icon: <Truck className="w-4 h-4" /> },
-  delivered: { label: "배송완료", color: "text-green-600 bg-green-50", icon: <CheckCircle className="w-4 h-4" /> },
-  cancelled: { label: "주문취소", color: "text-red-600 bg-red-50", icon: <XCircle className="w-4 h-4" /> },
+  pending: { label: "주문접수", color: "text-yellow-400 bg-yellow-900/30", icon: <Clock className="w-4 h-4" /> },
+  confirmed: { label: "주문확인", color: "text-blue-400 bg-blue-900/30", icon: <CheckCircle className="w-4 h-4" /> },
+  shipped: { label: "배송중", color: "text-purple-400 bg-purple-900/30", icon: <Truck className="w-4 h-4" /> },
+  delivered: { label: "배송완료", color: "text-green-400 bg-green-900/30", icon: <CheckCircle className="w-4 h-4" /> },
+  cancelled: { label: "주문취소", color: "text-red-400 bg-red-900/30", icon: <XCircle className="w-4 h-4" /> },
 };
 
 const paymentLabels: Record<string, { label: string; color: string }> = {
-  pending: { label: "결제대기", color: "text-yellow-600" },
-  paid: { label: "결제완료", color: "text-green-600" },
-  refunded: { label: "환불완료", color: "text-red-600" },
+  pending: { label: "결제대기", color: "text-yellow-400" },
+  paid: { label: "결제완료", color: "text-green-400" },
+  refunded: { label: "환불완료", color: "text-red-400" },
 };
 
 export default function OrderInquiry() {
@@ -54,20 +54,12 @@ export default function OrderInquiry() {
     e.preventDefault();
     
     if (!orderNumber.trim()) {
-      toast({
-        title: "입력 오류",
-        description: "주문번호를 입력해주세요.",
-        variant: "destructive",
-      });
+      toast({ title: "입력 오류", description: "주문번호를 입력해주세요.", variant: "destructive" });
       return;
     }
 
     if (!phone.trim()) {
-      toast({
-        title: "입력 오류",
-        description: "연락처를 입력해주세요.",
-        variant: "destructive",
-      });
+      toast({ title: "입력 오류", description: "연락처를 입력해주세요.", variant: "destructive" });
       return;
     }
 
@@ -82,20 +74,12 @@ export default function OrderInquiry() {
         setOrder(data.data);
       } else {
         setOrder(null);
-        toast({
-          title: "조회 결과 없음",
-          description: "주문번호와 연락처가 일치하는 주문이 없습니다.",
-          variant: "destructive",
-        });
+        toast({ title: "조회 결과 없음", description: "주문번호와 연락처가 일치하는 주문이 없습니다.", variant: "destructive" });
       }
     } catch (error) {
       console.error("Error fetching order:", error);
       setOrder(null);
-      toast({
-        title: "조회 오류",
-        description: "주문 조회 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
+      toast({ title: "조회 오류", description: "주문 조회 중 오류가 발생했습니다.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -103,83 +87,66 @@ export default function OrderInquiry() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "-";
-    const date = new Date(dateStr);
-    return date.toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    return new Date(dateStr).toLocaleDateString("ko-KR", {
+      year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit",
     });
   };
 
-  const getStatusInfo = (status: string | null) => {
-    return statusLabels[status || "pending"] || statusLabels.pending;
-  };
-
-  const getPaymentInfo = (status: string | null) => {
-    return paymentLabels[status || "pending"] || paymentLabels.pending;
-  };
+  const getStatusInfo = (status: string | null) => statusLabels[status || "pending"] || statusLabels.pending;
+  const getPaymentInfo = (status: string | null) => paymentLabels[status || "pending"] || paymentLabels.pending;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-[#0f0f0f]">
       <Header />
       
       <main className="flex-1 py-8">
         <div className="max-w-2xl mx-auto px-4">
           <div className="text-center mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">주문조회</h1>
-            <p className="text-gray-600">주문번호와 연락처를 입력하여 주문 상태를 확인하세요</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#f0f0f0] mb-2">주문조회</h1>
+            <p className="text-[#888888]">주문번호와 연락처를 입력하여 주문 상태를 확인하세요</p>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+          <div className="bg-[#161616] border border-[#2a2a2a] rounded-xl p-6 mb-6">
             <form onSubmit={handleSearch} className="space-y-4">
               <div>
-                <Label htmlFor="orderNumber">주문번호</Label>
+                <Label htmlFor="orderNumber" className="text-[#aaaaaa]">주문번호</Label>
                 <Input
                   id="orderNumber"
                   value={orderNumber}
                   onChange={(e) => setOrderNumber(e.target.value)}
                   placeholder="ORD-XXXXXXXX"
-                  className="mt-1"
+                  className="mt-1 bg-[#0f0f0f] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0"
                   data-testid="input-order-number"
                 />
               </div>
               <div>
-                <Label htmlFor="phone">연락처</Label>
+                <Label htmlFor="phone" className="text-[#aaaaaa]">연락처</Label>
                 <Input
                   id="phone"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="010-0000-0000"
-                  className="mt-1"
+                  className="mt-1 bg-[#0f0f0f] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0"
                   data-testid="input-phone"
                 />
               </div>
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 bg-gray-900 hover:bg-gray-800 text-white font-bold"
+                className="w-full h-12 bg-[#c9a96e] hover:bg-[#b8955a] text-black font-bold disabled:opacity-50"
                 data-testid="button-search-order"
               >
-                {loading ? (
-                  "조회 중..."
-                ) : (
-                  <>
-                    <Search className="w-4 h-4 mr-2" />
-                    주문 조회하기
-                  </>
-                )}
+                {loading ? "조회 중..." : <><Search className="w-4 h-4 mr-2" />주문 조회하기</>}
               </Button>
             </form>
           </div>
 
           {searched && order && (
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="bg-gray-900 text-white p-4">
+            <div className="bg-[#161616] border border-[#2a2a2a] rounded-xl overflow-hidden">
+              <div className="bg-[#0a0a0a] border-b border-[#2a2a2a] p-4">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Package className="w-5 h-5" />
+                  <div className="flex items-center gap-2 text-[#f0f0f0]">
+                    <Package className="w-5 h-5 text-[#c9a96e]" />
                     <span className="font-bold">주문번호: {order.orderNumber}</span>
                   </div>
                   <div className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${getStatusInfo(order.status).color}`}>
@@ -191,52 +158,52 @@ export default function OrderInquiry() {
 
               <div className="p-6 space-y-6">
                 <div>
-                  <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                    <Package className="w-4 h-4" />
+                  <h3 className="font-bold text-[#f0f0f0] mb-3 flex items-center gap-2">
+                    <Package className="w-4 h-4 text-[#c9a96e]" />
                     주문 상품
                   </h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="font-medium text-gray-900">{order.productName || "상품명 없음"}</p>
+                  <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg p-4">
+                    <p className="font-medium text-[#f0f0f0]">{order.productName || "상품명 없음"}</p>
                     <div className="flex justify-between items-center mt-2 text-sm">
-                      <span className="text-gray-500">수량: {order.quantity || 1}개</span>
-                      <span className="font-bold text-primary">{Number(order.totalAmount).toLocaleString()}원</span>
+                      <span className="text-[#888888]">수량: {order.quantity || 1}개</span>
+                      <span className="font-bold text-[#c9a96e]">{Number(order.totalAmount).toLocaleString()}원</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid sm:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-500">주문일시</span>
-                    <p className="font-medium text-gray-900 mt-1">{formatDate(order.createdAt)}</p>
+                    <span className="text-[#888888]">주문일시</span>
+                    <p className="font-medium text-[#f0f0f0] mt-1">{formatDate(order.createdAt)}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">결제상태</span>
+                    <span className="text-[#888888]">결제상태</span>
                     <p className={`font-medium mt-1 ${getPaymentInfo(order.paymentStatus).color}`}>
                       {getPaymentInfo(order.paymentStatus).label}
                     </p>
                   </div>
                   <div>
-                    <span className="text-gray-500">주문자</span>
-                    <p className="font-medium text-gray-900 mt-1">{order.memberName}</p>
+                    <span className="text-[#888888]">주문자</span>
+                    <p className="font-medium text-[#f0f0f0] mt-1">{order.memberName}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500">연락처</span>
-                    <p className="font-medium text-gray-900 mt-1">{order.memberPhone}</p>
+                    <span className="text-[#888888]">연락처</span>
+                    <p className="font-medium text-[#f0f0f0] mt-1">{order.memberPhone}</p>
                   </div>
                 </div>
 
                 <div>
-                  <span className="text-gray-500 text-sm">배송지</span>
-                  <p className="font-medium text-gray-900 mt-1">{order.shippingAddress}</p>
+                  <span className="text-[#888888] text-sm">배송지</span>
+                  <p className="font-medium text-[#f0f0f0] mt-1">{order.shippingAddress}</p>
                 </div>
 
                 {order.trackingNumber && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
+                  <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4">
+                    <h4 className="font-bold text-blue-400 mb-2 flex items-center gap-2">
                       <Truck className="w-4 h-4" />
                       배송 정보
                     </h4>
-                    <p className="text-blue-800 text-sm">
+                    <p className="text-blue-300 text-sm">
                       택배사: {order.shippingCompany || "미정"}<br />
                       운송장번호: {order.trackingNumber}
                     </p>
@@ -244,12 +211,12 @@ export default function OrderInquiry() {
                 )}
 
                 {!order.trackingNumber && order.status === "pending" && (
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="bg-amber-900/20 border border-amber-500/30 rounded-lg p-4">
                     <div className="flex items-start gap-2">
-                      <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                      <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
                       <div>
-                        <h4 className="font-bold text-amber-900">결제 대기중</h4>
-                        <p className="text-amber-800 text-sm mt-1">
+                        <h4 className="font-bold text-amber-400">결제 대기중</h4>
+                        <p className="text-amber-300/80 text-sm mt-1">
                           주문 완료 페이지에 안내된 계좌로 입금해주세요.
                           입금 확인 후 상품이 발송됩니다.
                         </p>
@@ -262,12 +229,12 @@ export default function OrderInquiry() {
           )}
 
           {searched && !order && !loading && (
-            <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Search className="w-8 h-8 text-gray-400" />
+            <div className="bg-[#161616] border border-[#2a2a2a] rounded-xl p-8 text-center">
+              <div className="w-16 h-16 bg-[#1a1a1a] rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search className="w-8 h-8 text-[#555555]" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">주문을 찾을 수 없습니다</h3>
-              <p className="text-gray-600 text-sm">
+              <h3 className="text-lg font-bold text-[#f0f0f0] mb-2">주문을 찾을 수 없습니다</h3>
+              <p className="text-[#888888] text-sm">
                 입력하신 정보와 일치하는 주문이 없습니다.<br />
                 주문번호와 연락처를 다시 확인해주세요.
               </p>

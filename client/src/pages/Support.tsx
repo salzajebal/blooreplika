@@ -76,103 +76,101 @@ export default function Support() {
   };
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-[#0f0f0f] font-sans">
       <Header />
       
       <main className="container-custom py-8 sm:py-12 pb-24 md:pb-12">
         <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4" data-testid="text-support-title">고객센터</h1>
-          <p className="text-gray-500">velour에 대해 궁금한 점을 확인하세요</p>
+          <h1 className="text-3xl font-bold text-white tracking-widest uppercase mb-4" data-testid="text-support-title">고객센터</h1>
+          <p className="text-[#555555] tracking-wider">velour에 대해 궁금한 점을 확인하세요</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
           <button 
             onClick={scrollToFaq}
-            className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer block w-full"
+            className="bg-[#1a1a1a] border border-[#2a2a2a] p-6 text-center hover:border-[#c9a96e] transition-colors cursor-pointer block w-full group"
             data-testid="button-faq-link"
           >
-            <HelpCircle className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-            <h3 className="font-bold text-gray-900 mb-2">자주묻는질문</h3>
-            <p className="text-sm text-gray-500">FAQ에서 빠르게 답변을 찾아보세요</p>
+            <HelpCircle className="w-10 h-10 text-[#c9a96e] mx-auto mb-3 group-hover:scale-110 transition-transform" />
+            <h3 className="font-bold text-white mb-2">자주묻는질문</h3>
+            <p className="text-sm text-[#555555]">FAQ에서 빠르게 답변을 찾아보세요</p>
           </button>
           <button 
             onClick={handleKakaoClick}
-            className="bg-yellow-50 border border-yellow-300 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer block w-full"
+            className="bg-[#1a1a1a] border border-[#2a2a2a] p-6 text-center hover:border-[#c9a96e] transition-colors cursor-pointer block w-full group"
             data-testid="button-kakao-support"
           >
-            <MessageCircle className="w-10 h-10 text-yellow-600 mx-auto mb-3" />
-            <h3 className="font-bold text-gray-900 mb-2">카카오톡 문의</h3>
-            <p className="text-sm text-gray-500">카카오톡으로 상담하세요</p>
+            <MessageCircle className="w-10 h-10 text-[#c9a96e] mx-auto mb-3 group-hover:scale-110 transition-transform" />
+            <h3 className="font-bold text-white mb-2">카카오톡 문의</h3>
+            <p className="text-sm text-[#555555]">카카오톡으로 상담하세요</p>
           </button>
           <Link 
             href="/notices"
-            className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer block"
+            className="bg-[#1a1a1a] border border-[#2a2a2a] p-6 text-center hover:border-[#c9a96e] transition-colors cursor-pointer block group"
             data-testid="button-notices-link"
           >
-            <FileText className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-            <h3 className="font-bold text-gray-900 mb-2">공지사항</h3>
-            <p className="text-sm text-gray-500">최신 소식과 이벤트를 확인하세요</p>
+            <FileText className="w-10 h-10 text-[#c9a96e] mx-auto mb-3 group-hover:scale-110 transition-transform" />
+            <h3 className="font-bold text-white mb-2">공지사항</h3>
+            <p className="text-sm text-[#555555]">최신 소식과 이벤트를 확인하세요</p>
           </Link>
           <Link 
             href="/guide"
-            className="bg-gray-50 border border-gray-200 p-6 rounded-lg text-center hover:shadow-lg transition-shadow cursor-pointer block"
+            className="bg-[#1a1a1a] border border-[#2a2a2a] p-6 text-center hover:border-[#c9a96e] transition-colors cursor-pointer block group"
             data-testid="button-guide-link"
           >
-            <Bell className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-            <h3 className="font-bold text-gray-900 mb-2">이용안내</h3>
-            <p className="text-sm text-gray-500">쇼핑 및 이용 방법을 안내합니다</p>
+            <Bell className="w-10 h-10 text-[#c9a96e] mx-auto mb-3 group-hover:scale-110 transition-transform" />
+            <h3 className="font-bold text-white mb-2">이용안내</h3>
+            <p className="text-sm text-[#555555]">쇼핑 및 이용 방법을 안내합니다</p>
           </Link>
         </div>
 
-        <div ref={faqSectionRef} className="bg-gray-50 rounded-lg p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">자주 묻는 질문 (FAQ)</h2>
+        <div ref={faqSectionRef} className="bg-[#161616] border border-[#2a2a2a] p-6 md:p-8">
+          <h2 className="text-xl font-bold text-white mb-6 tracking-widest uppercase">자주 묻는 질문</h2>
           
           <div className="flex flex-wrap gap-2 mb-8">
-            <Button
-              variant={activeCategory === "all" ? "default" : "outline"}
+            <button
               onClick={() => setActiveCategory("all")}
-              className={activeCategory === "all" ? "bg-black hover:bg-gray-800" : ""}
+              className={`px-4 py-2 text-sm font-medium transition-colors border ${activeCategory === "all" ? "bg-[#c9a96e] text-black border-[#c9a96e]" : "bg-transparent text-[#888888] border-[#333333] hover:border-[#c9a96e] hover:text-white"}`}
             >
               전체
-            </Button>
+            </button>
             {FAQ_CATEGORIES.map(cat => (
-              <Button
+              <button
                 key={cat.id}
-                variant={activeCategory === cat.id ? "default" : "outline"}
                 onClick={() => setActiveCategory(cat.id)}
-                className={activeCategory === cat.id ? "bg-black hover:bg-gray-800" : ""}
+                className={`px-4 py-2 text-sm font-medium transition-colors border ${activeCategory === cat.id ? "bg-[#c9a96e] text-black border-[#c9a96e]" : "bg-transparent text-[#888888] border-[#333333] hover:border-[#c9a96e] hover:text-white"}`}
               >
                 {cat.name}
-              </Button>
+              </button>
             ))}
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2">
             {filteredFaqs.map((faq) => (
               <div 
                 key={faq.id} 
-                className="bg-white border border-gray-200 rounded-lg overflow-hidden"
+                className="border border-[#2a2a2a] overflow-hidden"
                 data-testid={`faq-item-${faq.id}`}
               >
                 <button
                   onClick={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
-                  className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center justify-between p-4 text-left hover:bg-[#1c1c1c] transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-black font-bold">Q</span>
-                    <span className="font-medium text-gray-900">{faq.question}</span>
+                    <span className="text-[#c9a96e] font-bold text-sm">Q</span>
+                    <span className="font-medium text-[#f0f0f0] text-sm">{faq.question}</span>
                   </div>
                   {expandedFaq === faq.id ? (
-                    <ChevronUp className="w-5 h-5 text-gray-400" />
+                    <ChevronUp className="w-4 h-4 text-[#c9a96e] flex-shrink-0" />
                   ) : (
-                    <ChevronDown className="w-5 h-5 text-gray-400" />
+                    <ChevronDown className="w-4 h-4 text-[#555555] flex-shrink-0" />
                   )}
                 </button>
                 {expandedFaq === faq.id && (
-                  <div className="px-4 pb-4 border-t border-gray-100">
+                  <div className="px-4 pb-4 border-t border-[#2a2a2a] bg-[#111111]">
                     <div className="flex gap-3 pt-4">
-                      <span className="text-gray-500 font-bold">A</span>
-                      <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
+                      <span className="text-[#888888] font-bold text-sm">A</span>
+                      <p className="text-[#aaaaaa] leading-relaxed text-sm">{faq.answer}</p>
                     </div>
                   </div>
                 )}
@@ -181,7 +179,7 @@ export default function Support() {
           </div>
 
           {filteredFaqs.length === 0 && (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-[#555555]">
               해당 카테고리에 등록된 FAQ가 없습니다.
             </div>
           )}

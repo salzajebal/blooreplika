@@ -12,8 +12,8 @@ import { useGlobalSale } from "@/hooks/use-global-sale";
 function ProductImage({ src, alt, priority = false }: { src: string; alt: string; priority?: boolean }) {
   const [loaded, setLoaded] = useState(false);
   return (
-    <div className="absolute inset-0 bg-gray-200">
-      {!loaded && <div className="absolute inset-0 bg-gray-200 animate-pulse" />}
+    <div className="absolute inset-0 bg-[#1a1a1a]">
+      {!loaded && <div className="absolute inset-0 bg-[#1a1a1a] animate-pulse" />}
       <img
         src={src}
         alt={alt}
@@ -36,14 +36,14 @@ function ProductImage({ src, alt, priority = false }: { src: string; alt: string
 
 function ProductCardSkeleton() {
   return (
-    <div className="bg-white border border-gray-200 overflow-hidden flex flex-col animate-pulse">
-      <div className="aspect-square bg-gray-200" />
+    <div className="bg-[#161616] border border-[#2a2a2a] overflow-hidden flex flex-col animate-pulse">
+      <div className="aspect-square bg-[#1a1a1a]" />
       <div className="p-4 flex-1 flex flex-col gap-2.5">
-        <div className="h-3 bg-gray-200 rounded w-1/3" />
-        <div className="h-4 bg-gray-200 rounded w-full" />
-        <div className="h-4 bg-gray-200 rounded w-2/3" />
-        <div className="mt-auto pt-2.5 border-t border-gray-100">
-          <div className="h-5 bg-gray-200 rounded w-1/2" />
+        <div className="h-3 bg-[#222222] rounded w-1/3" />
+        <div className="h-4 bg-[#222222] rounded w-full" />
+        <div className="h-4 bg-[#222222] rounded w-2/3" />
+        <div className="mt-auto pt-2.5 border-t border-[#222222]">
+          <div className="h-5 bg-[#222222] rounded w-1/2" />
         </div>
       </div>
     </div>
@@ -176,10 +176,10 @@ export function ProductGrid() {
           <button 
             onClick={() => setActiveCategory("all")}
             className={cn(
-              "px-5 md:px-7 py-2.5 md:py-3 text-sm font-medium transition-all border rounded-full",
+              "px-5 md:px-7 py-2.5 md:py-3 text-sm font-medium transition-all border",
               activeCategory === "all" 
-                ? "bg-black text-white border-black" 
-                : "bg-white text-gray-600 border-gray-200 hover:border-black hover:text-black"
+                ? "bg-[#c9a96e] text-black border-[#c9a96e]" 
+                : "bg-transparent text-[#888888] border-[#2a2a2a] hover:border-[#c9a96e] hover:text-[#c9a96e]"
             )}
             data-testid="button-category-all"
           >
@@ -190,10 +190,10 @@ export function ProductGrid() {
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
               className={cn(
-                "px-5 md:px-7 py-2.5 md:py-3 text-sm font-medium transition-all border rounded-full",
+                "px-5 md:px-7 py-2.5 md:py-3 text-sm font-medium transition-all border",
                 activeCategory === cat.id 
-                  ? "bg-black text-white border-black" 
-                  : "bg-white text-gray-600 border-gray-200 hover:border-black hover:text-black"
+                  ? "bg-[#c9a96e] text-black border-[#c9a96e]" 
+                  : "bg-transparent text-[#888888] border-[#2a2a2a] hover:border-[#c9a96e] hover:text-[#c9a96e]"
               )}
               data-testid={`button-category-${cat.id}`}
             >
@@ -203,14 +203,14 @@ export function ProductGrid() {
         </div>
       </div>
 
-      <div className="flex justify-between items-end mb-6 pb-4 border-b border-gray-200">
+      <div className="flex justify-between items-end mb-6 pb-4 border-b border-[#2a2a2a]">
         <div>
-          <h2 className="text-xl md:text-2xl font-bold text-gray-900">
+          <h2 className="text-xl md:text-2xl font-bold text-[#f0f0f0]">
             {activeCategory === "all" ? "전체 상품" : DEFAULT_CATEGORIES.find(c => c.id === activeCategory)?.name}
           </h2>
         </div>
-        <div className="text-sm text-gray-500">
-          총 <span className="font-bold text-black" data-testid="text-product-count">{totalCount.toLocaleString()}</span>개
+        <div className="text-sm text-[#888888]">
+          총 <span className="font-bold text-[#c9a96e]" data-testid="text-product-count">{totalCount.toLocaleString()}</span>개
           {totalPages > 1 && (
             <span className="ml-2">
               ({currentPage} / {totalPages})
@@ -229,10 +229,10 @@ export function ProductGrid() {
             <Link 
               key={product.id} 
               href={`/product/${product.id}`}
-              className="group bg-white border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300 flex flex-col cursor-pointer"
+              className="group bg-[#161616] border border-[#2a2a2a] overflow-hidden hover:border-[#c9a96e] transition-all duration-300 flex flex-col cursor-pointer"
               data-testid={`card-product-${product.id}`}
             >
-              <div className="aspect-square bg-gray-100 relative overflow-hidden">
+              <div className="aspect-square bg-[#1a1a1a] relative overflow-hidden">
                 <ProductImage
                   src={getProxiedImageUrl(product.imageUrl, "medium")}
                   alt={product.name}
@@ -256,16 +256,16 @@ export function ProductGrid() {
                 <div className="absolute top-2 right-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button 
                     className={cn(
-                      "w-9 h-9 flex items-center justify-center shadow-sm bg-white rounded-sm",
+                      "w-9 h-9 flex items-center justify-center shadow-sm bg-black/80 border border-[#333333]",
                       isInWishlist(product.id) && "opacity-100"
                     )} 
                     onClick={(e) => handleWishlistToggle(e, product)}
                     data-testid={`button-wishlist-${product.id}`}
                   >
-                    <Heart className={cn("w-4.5 h-4.5", isInWishlist(product.id) ? "fill-red-500 text-red-500" : "text-gray-400")} />
+                    <Heart className={cn("w-4.5 h-4.5", isInWishlist(product.id) ? "fill-red-500 text-red-500" : "text-[#888888]")} />
                   </button>
                   <button 
-                    className="w-9 h-9 bg-white flex items-center justify-center text-gray-400 hover:text-gray-600 shadow-sm rounded-sm"
+                    className="w-9 h-9 bg-black/80 border border-[#333333] flex items-center justify-center text-[#888888] hover:text-[#c9a96e] shadow-sm"
                     onClick={(e) => {
                       e.preventDefault();
                       handleWishlistToggle(e, product);
@@ -278,40 +278,40 @@ export function ProductGrid() {
               </div>
               
               <div className="p-4 flex-1 flex flex-col">
-                <p className="text-xs text-gray-400 uppercase tracking-wider mb-1 font-medium">
+                <p className="text-xs text-[#555555] uppercase tracking-wider mb-1 font-medium">
                   {product.brandId || "BRAND"}
                 </p>
-                <h3 className="text-sm md:text-base text-gray-800 line-clamp-2 mb-2.5 leading-snug flex-1">
+                <h3 className="text-sm md:text-base text-[#cccccc] line-clamp-2 mb-2.5 leading-snug flex-1">
                   {product.name}
                 </h3>
                 
-                <div className="pt-2.5 border-t border-gray-100">
+                <div className="pt-2.5 border-t border-[#222222]">
                   {hasSale ? (
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs text-gray-400 line-through">
+                        <span className="text-xs text-[#555555] line-through">
                           {product.price.toLocaleString()}원
                         </span>
-                        <span className="text-[10px] bg-red-500 text-white px-2 py-0.5 font-bold">
+                        <span className="text-[10px] bg-red-600 text-white px-2 py-0.5 font-bold">
                           {salePercent}%
                         </span>
                       </div>
-                      <span className="text-base md:text-lg font-extrabold text-red-500" data-testid={`price-product-${product.id}`}>
+                      <span className="text-base md:text-lg font-extrabold text-red-400" data-testid={`price-product-${product.id}`}>
                         {calculateSalePrice(product.price).toLocaleString()}원
                       </span>
-                      <p className="text-xs text-gray-400 mt-1">즉시구매가</p>
+                      <p className="text-xs text-[#555555] mt-1">즉시구매가</p>
                     </div>
                   ) : (
                     <div>
-                      <span className="text-base md:text-lg font-extrabold text-gray-900" data-testid={`price-product-${product.id}`}>
+                      <span className="text-base md:text-lg font-extrabold text-[#f0f0f0]" data-testid={`price-product-${product.id}`}>
                         {product.price.toLocaleString()}원
                       </span>
-                      <p className="text-xs text-gray-400 mt-1">즉시구매가</p>
+                      <p className="text-xs text-[#555555] mt-1">즉시구매가</p>
                     </div>
                   )}
                 </div>
                 {(product as any).viewCount > 0 && (
-                  <div className="flex items-center gap-1 mt-2 text-xs text-gray-400">
+                  <div className="flex items-center gap-1 mt-2 text-xs text-[#555555]">
                     <Eye className="w-3.5 h-3.5" />
                     <span>조회 {(product as any).viewCount}</span>
                   </div>
@@ -321,10 +321,10 @@ export function ProductGrid() {
           ))}
         </div>
       ) : (
-        <div className="py-16 text-center bg-gray-50">
-          <p className="text-gray-500 mb-3 text-sm">해당 카테고리에 등록된 상품이 없습니다.</p>
-          <p className="text-xs text-gray-400">관리자 페이지에서 상품을 추가해주세요.</p>
-          <a href="/admin" className="inline-block mt-3 text-black hover:underline text-xs font-medium">
+        <div className="py-16 text-center bg-[#0f0f0f]">
+          <p className="text-[#555555] mb-3 text-sm">해당 카테고리에 등록된 상품이 없습니다.</p>
+          <p className="text-xs text-[#444444]">관리자 페이지에서 상품을 추가해주세요.</p>
+          <a href="/admin" className="inline-block mt-3 text-[#c9a96e] hover:underline text-xs font-medium">
             관리자 페이지 바로가기 →
           </a>
         </div>
@@ -348,17 +348,19 @@ export function ProductGrid() {
               <Button
                 key={index}
                 onClick={() => goToPage(page)}
-                variant={currentPage === page ? "default" : "outline"}
+                variant="outline"
                 className={cn(
-                  "h-9 w-9 text-sm",
-                  currentPage === page && "bg-black text-white hover:bg-gray-800"
+                  "h-9 w-9 text-sm border-[#333333] bg-transparent",
+                  currentPage === page
+                    ? "bg-[#c9a96e] text-black border-[#c9a96e] hover:bg-[#b8955a]"
+                    : "text-[#888888] hover:border-[#c9a96e] hover:text-[#c9a96e]"
                 )}
                 data-testid={`button-page-${page}`}
               >
                 {page}
               </Button>
             ) : (
-              <span key={index} className="px-1.5 text-gray-400 text-sm">...</span>
+              <span key={index} className="px-1.5 text-[#555555] text-sm">...</span>
             )
           ))}
           

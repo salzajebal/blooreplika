@@ -19,7 +19,7 @@ export function BottomNav() {
   };
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} data-testid="bottom-nav">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0a0a0a] border-t border-[#2a2a2a] z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }} data-testid="bottom-nav">
       <div className="flex items-center justify-around py-2">
         {navItems.map((item) => {
           const active = isActive(item.path, item.label);
@@ -28,7 +28,7 @@ export function BottomNav() {
             <Link
               key={item.label}
               href={item.path}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1 text-xs ${active ? 'text-black font-semibold' : 'text-gray-400'}`}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 text-xs transition-colors ${active ? 'text-[#c9a96e] font-semibold' : 'text-[#555555] hover:text-[#888888]'}`}
               data-testid={`bottom-nav-${item.label}`}
             >
               <IconComponent className="w-5 h-5" />
