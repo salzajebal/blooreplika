@@ -305,7 +305,7 @@ function HomeReviewsSection() {
                   </div>
                   <div className="p-3">
                     {review.productName && (
-                      <p className="text-[10px] text-[#999999] mb-0.5 truncate">({review.productName})</p>
+                      <p className="text-[11px] text-[#999999] mb-0.5 truncate">({review.productName})</p>
                     )}
                     <p className="text-sm font-bold text-[#f0f0f0] line-clamp-2 leading-snug">{review.content || review.title}</p>
                     <div className="flex items-center gap-0.5 mt-2">
@@ -582,15 +582,15 @@ function SectionProductCard({ product, getBrandName }: { product: any; getBrandN
           </div>
         </div>
         <div className="md:hidden absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-2.5">
-          <p className="text-[9px] text-[#c9a96e] uppercase font-medium tracking-wide truncate">{getBrandName(product.brandId)}</p>
+          <p className="text-[11px] text-[#c9a96e] uppercase font-medium tracking-wide truncate">{getBrandName(product.brandId)}</p>
           <span className="text-xs font-extrabold text-white">{discountedPrice.toLocaleString()}원</span>
         </div>
         <div className="absolute top-0 right-0 flex flex-col">
           {hasDiscount && (
-            <span className="bg-red-500 text-white text-[10px] px-2 py-1 font-bold leading-none">할인</span>
+            <span className="bg-red-500 text-white text-[11px] px-2 py-1 font-bold leading-none">할인</span>
           )}
           {product.isNew && (
-            <span className="bg-red-500 text-white text-[9px] px-1.5 py-1 font-bold leading-none">신상</span>
+            <span className="bg-red-500 text-white text-[11px] px-1.5 py-1 font-bold leading-none">신상</span>
           )}
         </div>
       </div>
