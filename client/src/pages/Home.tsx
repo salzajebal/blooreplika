@@ -376,7 +376,7 @@ function TopBrandSection() {
               className="flex flex-col items-center group"
               data-testid={`top-brand-${brand.name}`}
             >
-              <div className="w-full aspect-square overflow-hidden bg-[#1a1a1a] flex items-center justify-center p-2 border border-[#2a2a2a] group-hover:border-[#c9a96e] transition-colors">
+              <div className="w-full aspect-square overflow-hidden bg-[#f5f5f5] flex items-center justify-center p-3 border border-[#2a2a2a] group-hover:border-[#c9a96e] transition-colors">
                 {brand.displayImage ? (
                   <img
                     src={brand.displayImage}
@@ -386,7 +386,7 @@ function TopBrandSection() {
                     loading="lazy"
                   />
                 ) : (
-                  <span className="text-[#444444] text-xs text-center">{brand.name}</span>
+                  <span className="text-[#666666] text-xs text-center">{brand.name}</span>
                 )}
               </div>
               <span className="text-[10px] md:text-xs text-[#666666] mt-1.5 text-center group-hover:text-[#c9a96e] transition-colors">{brand.name}</span>
