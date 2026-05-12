@@ -366,7 +366,7 @@ function TopBrandSection() {
       <div className="max-w-[1200px] mx-auto px-4">
         <div className="mb-4">
           <h2 className="text-xl md:text-2xl font-bold text-white">{title}</h2>
-          <p className="text-sm text-[#555555] mt-1">{subtitle}</p>
+          <p className="text-sm text-[#999999] mt-1">{subtitle}</p>
         </div>
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 md:gap-3">
           {brandDisplayData.slice(0, 15).map((brand: any) => (
@@ -376,7 +376,7 @@ function TopBrandSection() {
               className="flex flex-col items-center group"
               data-testid={`top-brand-${brand.name}`}
             >
-              <div className="w-full aspect-square overflow-hidden bg-[#f5f5f5] flex items-center justify-center p-3 border border-[#2a2a2a] group-hover:border-[#c9a96e] transition-colors">
+              <div className="w-full aspect-square overflow-hidden bg-[#f5f5f5] flex items-center justify-center p-3 border-2 border-[#c9a96e]/30 group-hover:border-[#c9a96e] transition-colors">
                 {brand.displayImage ? (
                   <img
                     src={brand.displayImage}
