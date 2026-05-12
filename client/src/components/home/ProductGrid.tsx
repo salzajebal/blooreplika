@@ -246,17 +246,17 @@ export function ProductGrid() {
                 )}
                 <div className="absolute top-2 left-2 flex flex-col gap-1">
                   {product.isBest && (
-                    <span className="bg-black text-white text-[10px] px-2.5 py-1 font-bold">BEST</span>
+                    <span className="bg-black text-white text-[11px] px-2.5 py-1 font-bold">BEST</span>
                   )}
                   {product.isNew && (
-                    <span className="bg-red-500 text-white text-[10px] px-2.5 py-1 font-bold">NEW</span>
+                    <span className="bg-red-500 text-white text-[11px] px-2.5 py-1 font-bold">NEW</span>
                   )}
                 </div>
                 
                 <div className="absolute top-2 right-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button 
                     className={cn(
-                      "w-9 h-9 flex items-center justify-center shadow-sm bg-black/80 border border-[#333333]",
+                      "w-10 h-10 flex items-center justify-center shadow-sm bg-black/80 border border-[#333333] touch-manipulation",
                       isInWishlist(product.id) && "opacity-100"
                     )} 
                     onClick={(e) => handleWishlistToggle(e, product)}
@@ -265,7 +265,7 @@ export function ProductGrid() {
                     <Heart className={cn("w-4.5 h-4.5", isInWishlist(product.id) ? "fill-red-500 text-red-500" : "text-[#888888]")} />
                   </button>
                   <button 
-                    className="w-9 h-9 bg-black/80 border border-[#333333] flex items-center justify-center text-[#888888] hover:text-[#c9a96e] shadow-sm"
+                    className="w-10 h-10 bg-black/80 border border-[#333333] flex items-center justify-center text-[#888888] hover:text-[#c9a96e] shadow-sm touch-manipulation"
                     onClick={(e) => {
                       e.preventDefault();
                       handleWishlistToggle(e, product);

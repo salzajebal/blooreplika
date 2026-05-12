@@ -279,7 +279,7 @@ function HomeReviewsSection() {
                   href="/reviews"
                   draggable={false}
                   onClick={(e) => { if (hasDragged.current) e.preventDefault(); }}
-                  className="flex-shrink-0 w-[220px] md:w-[260px] group block bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#c9a96e] transition-all duration-200"
+                  className="flex-shrink-0 w-[170px] sm:w-[220px] md:w-[260px] group block bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#c9a96e] transition-all duration-200"
                   data-testid={`home-review-${review.id}`}
                 >
                   <div className="relative aspect-[4/3] overflow-hidden bg-[#111111]">

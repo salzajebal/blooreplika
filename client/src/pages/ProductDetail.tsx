@@ -338,7 +338,7 @@ export default function ProductDetail() {
                             <img
                               src={getProxiedImageUrl(url, "large")}
                               alt={`${product.name} ${index + 1}`}
-                              className="w-full h-full object-contain p-4 sm:p-8"
+                              className="w-full h-full object-contain p-2 sm:p-6"
                               data-testid={index === 0 ? "img-product-main" : `img-product-${index}`}
                               onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
                             />
@@ -348,7 +348,7 @@ export default function ProductDetail() {
                       {images.length > 1 && (
                         <>
                           <button
-                            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 bg-black/80 hover:bg-black shadow-md rounded-full flex items-center justify-center text-white border border-[#444444] disabled:opacity-30"
+                            className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 sm:w-10 sm:h-10 bg-black/80 hover:bg-black shadow-md rounded-full flex items-center justify-center text-white border border-[#444444] disabled:opacity-30 touch-manipulation"
                             onClick={() => setSelectedImageIndex(Math.max(0, selectedImageIndex - 1))}
                             disabled={selectedImageIndex === 0}
                             data-testid="btn-carousel-prev"
@@ -356,7 +356,7 @@ export default function ProductDetail() {
                             <ChevronLeft className="w-5 h-5" />
                           </button>
                           <button
-                            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 bg-black/80 hover:bg-black shadow-md rounded-full flex items-center justify-center text-white border border-[#444444] disabled:opacity-30"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-11 h-11 sm:w-10 sm:h-10 bg-black/80 hover:bg-black shadow-md rounded-full flex items-center justify-center text-white border border-[#444444] disabled:opacity-30 touch-manipulation"
                             onClick={() => setSelectedImageIndex(Math.min(images.length - 1, selectedImageIndex + 1))}
                             disabled={selectedImageIndex === images.length - 1}
                             data-testid="btn-carousel-next"
