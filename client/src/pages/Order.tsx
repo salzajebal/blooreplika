@@ -454,10 +454,10 @@ export default function Order() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#FAF8F4]">
+      <div className="min-h-screen flex flex-col bg-white">
         <Header />
         <main className="flex-1 flex items-center justify-center">
-          <div className="text-[#7A9CB5]">상품 정보를 불러오는 중...</div>
+          <div className="text-gray-400">상품 정보를 불러오는 중...</div>
         </main>
         <Footer />
       </div>
@@ -466,12 +466,12 @@ export default function Order() {
 
   if (!isCartOrder && !product) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#FAF8F4]">
+      <div className="min-h-screen flex flex-col bg-white">
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-[#1C3047] mb-4">상품을 찾을 수 없습니다</h1>
-            <Button className="bg-[#1C3047] hover:bg-[#2C4A65] text-[#E5EFF5]" onClick={() => setLocation("/products")}>상품 목록으로 돌아가기</Button>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">상품을 찾을 수 없습니다</h1>
+            <Button className="bg-black hover:bg-gray-800 text-white" onClick={() => setLocation("/products")}>상품 목록으로 돌아가기</Button>
           </div>
         </main>
         <Footer />
@@ -481,42 +481,42 @@ export default function Order() {
 
   if (orderComplete) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#FAF8F4]">
+      <div className="min-h-screen flex flex-col bg-white">
         <Header />
         <main className="flex-1 py-8 sm:py-12">
           <div className="max-w-2xl mx-auto px-4">
-            <div className="bg-white border border-[#BDCFDB] rounded-xl shadow-lg p-6 sm:p-10 text-center">
-              <div className="w-20 h-20 bg-[#E5EFF5] rounded-full flex items-center justify-center mx-auto mb-6">
-                <CheckCircle className="w-12 h-12 text-[#1C3047]" />
+            <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-6 sm:p-10 text-center">
+              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <CheckCircle className="w-12 h-12 text-gray-900" />
               </div>
               
-              <h1 className="text-2xl sm:text-3xl font-bold text-[#1C3047] mb-3">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
                 주문이 완료되었습니다
               </h1>
               
-              <p className="text-[#3D6080] mb-6">
+              <p className="text-gray-500 mb-6">
                 주문번호: <span className="font-bold text-primary">{orderNumber}</span>
               </p>
 
               {completedPaymentMethod === "card" ? (
-                <div className="bg-[#E5EFF5] border border-[#BDCFDB] rounded-lg p-4 sm:p-6 mb-6">
-                  <h2 className="font-bold text-[#1C3047] mb-3 flex items-center justify-center gap-2">
+                <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 sm:p-6 mb-6">
+                  <h2 className="font-bold text-gray-900 mb-3 flex items-center justify-center gap-2">
                     <CreditCard className="w-5 h-5" />
                     카드결제 안내
                   </h2>
-                  <div className="bg-white rounded-lg p-4 border border-[#BDCFDB]">
+                  <div className="bg-white rounded-lg p-4 border border-gray-200">
                     <div className="grid gap-2 text-left">
-                      <div className="flex justify-between items-center py-1 border-b border-[#E5EFF5]">
-                        <span className="text-[#3D6080] text-sm">결제수단</span>
-                        <span className="font-bold text-[#1C3047]">신용카드</span>
+                      <div className="flex justify-between items-center py-1 border-b border-gray-100">
+                        <span className="text-gray-500 text-sm">결제수단</span>
+                        <span className="font-bold text-gray-900">신용카드</span>
                       </div>
                       <div className="flex justify-between items-center py-1">
-                        <span className="text-[#3D6080] text-sm">결제금액</span>
-                        <span className="font-bold text-[#1C3047]">{calculateTotal()}원</span>
+                        <span className="text-gray-500 text-sm">결제금액</span>
+                        <span className="font-bold text-gray-900">{calculateTotal()}원</span>
                       </div>
                     </div>
                   </div>
-                  <p className="text-[#3D6080] text-sm mt-3">
+                  <p className="text-gray-500 text-sm mt-3">
                     카드결제 안내는 <strong>카카오톡 상담</strong>을 통해 받으실 수 있습니다.
                   </p>
                   {kakaoLink && (
@@ -533,51 +533,51 @@ export default function Order() {
                   )}
                 </div>
               ) : (
-                <div className="bg-[#E5EFF5] border border-[#BDCFDB] rounded-lg p-4 sm:p-6 mb-6">
-                  <h2 className="font-bold text-[#1C3047] mb-3 flex items-center justify-center gap-2">
+                <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 sm:p-6 mb-6">
+                  <h2 className="font-bold text-gray-900 mb-3 flex items-center justify-center gap-2">
                     <Building2 className="w-5 h-5" />
                     결제계좌 안내
                   </h2>
                   
                   {depositAccount ? (
                     <div className="space-y-4">
-                      <div className="bg-white rounded-lg p-4 border border-[#BDCFDB]">
+                      <div className="bg-white rounded-lg p-4 border border-gray-200">
                         <div className="grid gap-2 text-left">
-                          <div className="flex justify-between items-center py-1 border-b border-[#E5EFF5]">
-                            <span className="text-[#3D6080] text-sm">은행</span>
-                            <span className="font-bold text-[#1C3047]">{depositAccount.bankName}</span>
+                          <div className="flex justify-between items-center py-1 border-b border-gray-100">
+                            <span className="text-gray-500 text-sm">은행</span>
+                            <span className="font-bold text-gray-900">{depositAccount.bankName}</span>
                           </div>
-                          <div className="flex justify-between items-center py-1 border-b border-[#E5EFF5]">
-                            <span className="text-[#3D6080] text-sm">계좌번호</span>
-                            <span className="font-bold text-[#1C3047] font-mono">{depositAccount.accountNumber}</span>
+                          <div className="flex justify-between items-center py-1 border-b border-gray-100">
+                            <span className="text-gray-500 text-sm">계좌번호</span>
+                            <span className="font-bold text-gray-900 font-mono">{depositAccount.accountNumber}</span>
                           </div>
                           <div className="flex justify-between items-center py-1">
-                            <span className="text-[#3D6080] text-sm">예금주</span>
-                            <span className="font-bold text-[#1C3047]">{depositAccount.accountHolder}</span>
+                            <span className="text-gray-500 text-sm">예금주</span>
+                            <span className="font-bold text-gray-900">{depositAccount.accountHolder}</span>
                           </div>
                         </div>
                       </div>
-                      <p className="text-[#3D6080] text-sm">
+                      <p className="text-gray-500 text-sm">
                         위 계좌로 <strong>{calculateTotal()}원</strong>을 입금해 주세요.
                         <br />
                         입금 확인 후 상품이 발송됩니다.
                       </p>
                     </div>
                   ) : (
-                    <p className="text-[#3D6080] text-sm">
+                    <p className="text-gray-500 text-sm">
                       결제계좌 정보를 불러오는 중입니다. 잠시 후 다시 확인해주세요.
                     </p>
                   )}
                 </div>
               )}
 
-              <div className="bg-[#E5EFF5] border border-[#BDCFDB] rounded-lg p-4 mb-6 text-left">
-                <h3 className="font-bold text-[#1C3047] mb-3">주문 상품 정보</h3>
+              <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 mb-6 text-left">
+                <h3 className="font-bold text-gray-900 mb-3">주문 상품 정보</h3>
                 {isCartOrder ? (
                   <div className="space-y-3">
                     {cartItems.map((item, idx) => (
                       <div key={idx} className="flex gap-3 items-center">
-                        <div className="w-16 h-16 bg-white rounded border border-[#BDCFDB] overflow-hidden shrink-0">
+                        <div className="w-16 h-16 bg-white rounded border border-gray-200 overflow-hidden shrink-0">
                           <img
                             src={getProxiedImageUrl(item.imageUrl) || DEFAULT_IMAGE}
                             alt={item.name}
@@ -586,18 +586,18 @@ export default function Order() {
                           />
                         </div>
                         <div>
-                          <p className="font-medium text-[#1C3047] text-sm">{item.name}</p>
+                          <p className="font-medium text-gray-900 text-sm">{item.name}</p>
                           <p className="text-primary font-bold text-sm">{item.price.toLocaleString()}원</p>
                         </div>
                       </div>
                     ))}
-                    <div className="border-t border-[#BDCFDB] pt-2 mt-2">
+                    <div className="border-t border-gray-200 pt-2 mt-2">
                       <p className="text-primary font-bold">{calculateTotal()}원</p>
                     </div>
                   </div>
                 ) : product && (
                   <div className="flex gap-4">
-                    <div className="w-20 h-20 bg-white rounded border border-[#BDCFDB] overflow-hidden shrink-0">
+                    <div className="w-20 h-20 bg-white rounded border border-gray-200 overflow-hidden shrink-0">
                       <img
                         src={getProxiedImageUrl(product.imageUrl) || DEFAULT_IMAGE}
                         alt={product.name}
@@ -609,8 +609,8 @@ export default function Order() {
                       />
                     </div>
                     <div>
-                      <p className="font-medium text-[#1C3047]">{product.name}</p>
-                      <p className="text-sm text-[#3D6080]">수량: {quantity}개</p>
+                      <p className="font-medium text-gray-900">{product.name}</p>
+                      <p className="text-sm text-gray-500">수량: {quantity}개</p>
                       <p className="text-primary font-bold mt-1">{calculateTotal()}원</p>
                     </div>
                   </div>
@@ -621,7 +621,7 @@ export default function Order() {
                 <Button
                   variant="outline"
                   onClick={() => setLocation("/")}
-                  className="sm:w-auto border-[#BDCFDB] text-[#3D6080] hover:border-[#1C3047] hover:text-[#1C3047]"
+                  className="sm:w-auto border-gray-200 text-gray-500 hover:border-black hover:text-gray-900"
                 >
                   홈으로 돌아가기
                 </Button>
@@ -630,7 +630,7 @@ export default function Order() {
                     ? setLocation("/profile")
                     : setLocation(`/orders?orderNumber=${encodeURIComponent(orderNumber)}`)
                   }
-                  className="sm:w-auto bg-[#1C3047] hover:bg-[#2C4A65] text-[#E5EFF5]"
+                  className="sm:w-auto bg-black hover:bg-gray-800 text-white"
                 >
                   주문 내역 확인
                 </Button>
@@ -644,27 +644,27 @@ export default function Order() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF8F4]">
+    <div className="min-h-screen flex flex-col bg-white">
       <Header />
         
         <main className="flex-1 py-6 sm:py-10">
           <div className="max-w-4xl mx-auto px-4">
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#1C3047] mb-6 sm:mb-8 text-center" style={{ fontFamily: "'Cormorant Garamond', serif", letterSpacing: "0.04em", fontWeight: 400 }}>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8 text-center" style={{ letterSpacing: "0.04em" }}>
             주문서 작성
           </h1>
 
           {/* 비회원 안내 배너 */}
           {!isLoggedIn && (
-            <div className="bg-[#E5EFF5] border border-[#BDCFDB] rounded-lg p-4 flex items-start gap-3">
-              <LogIn className="w-5 h-5 text-[#5E9DC0] mt-0.5 flex-shrink-0" />
+            <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 flex items-start gap-3">
+              <LogIn className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[#1C3047]">비회원으로 주문하시나요?</p>
-                <p className="text-xs text-[#3D6080] mt-0.5">아래 주문자 정보를 직접 입력하시면 비회원 주문이 가능합니다. 회원 로그인 시 정보가 자동으로 입력되며 적립금도 받으실 수 있습니다.</p>
+                <p className="text-sm font-medium text-gray-900">비회원으로 주문하시나요?</p>
+                <p className="text-xs text-gray-500 mt-0.5">아래 주문자 정보를 직접 입력하시면 비회원 주문이 가능합니다. 회원 로그인 시 정보가 자동으로 입력되며 적립금도 받으실 수 있습니다.</p>
               </div>
               <button
                 type="button"
                 onClick={() => setLocation("/login")}
-                className="text-xs text-[#1C3047] underline underline-offset-2 whitespace-nowrap flex-shrink-0"
+                className="text-xs text-gray-900 underline underline-offset-2 whitespace-nowrap flex-shrink-0"
               >
                 로그인하기
               </button>
@@ -672,9 +672,9 @@ export default function Order() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="bg-white border border-[#BDCFDB] rounded-xl p-4 sm:p-6">
-              <h2 className="text-base font-semibold text-[#1C3047] mb-4 flex items-center gap-2 tracking-wide">
-                <Package className="w-4 h-4 text-[#5E9DC0]" />
+            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+              <h2 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2 tracking-wide">
+                <Package className="w-4 h-4 text-gray-400" />
                 주문 상품
               </h2>
               
@@ -811,9 +811,9 @@ export default function Order() {
               })()}
             </div>
 
-            <div className="bg-white border border-[#BDCFDB] rounded-xl p-4 sm:p-6">
-              <h2 className="text-base font-semibold text-[#1C3047] mb-4 flex items-center gap-2 tracking-wide">
-                <User className="w-4 h-4 text-[#5E9DC0]" />
+            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+              <h2 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2 tracking-wide">
+                <User className="w-4 h-4 text-gray-400" />
                 주문자 정보
               </h2>
               
@@ -858,18 +858,18 @@ export default function Order() {
               </div>
             </div>
 
-            <div className="bg-white border border-[#BDCFDB] rounded-xl p-4 sm:p-6">
+            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-semibold text-[#1C3047] flex items-center gap-2 tracking-wide">
-                  <MapPin className="w-4 h-4 text-[#5E9DC0]" />
+                <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2 tracking-wide">
+                  <MapPin className="w-4 h-4 text-gray-400" />
                   배송지 정보
                 </h2>
-                <label className="flex items-center gap-2 text-sm cursor-pointer text-[#3D6080]">
+                <label className="flex items-center gap-2 text-sm cursor-pointer text-gray-500">
                   <input
                     type="checkbox"
                     checked={formData.sameAsOrderer}
                     onChange={(e) => handleSameAsOrderer(e.target.checked)}
-                    className="w-4 h-4 rounded border-[#BDCFDB]"
+                    className="w-4 h-4 rounded border-gray-200"
                   />
                   <span>주문자 정보와 동일</span>
                 </label>
@@ -966,16 +966,16 @@ export default function Order() {
             </div>
 
             {memberPointBalance > 0 && (
-              <div className="bg-white border border-[#BDCFDB] rounded-xl p-4 sm:p-6">
-                <h2 className="text-base font-semibold text-[#1C3047] mb-4 flex items-center gap-2 tracking-wide">
-                  <Wallet className="w-4 h-4 text-[#5E9DC0]" />
+              <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+                <h2 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2 tracking-wide">
+                  <Wallet className="w-4 h-4 text-gray-400" />
                   포인트 사용
                 </h2>
                 
-                <div className="bg-[#E5EFF5] border border-[#BDCFDB] rounded-lg p-4 mb-4">
+                <div className="bg-gray-100 border border-gray-200 rounded-lg p-4 mb-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-[#3D6080]">보유 포인트</span>
-                    <span className="font-bold text-[#1C3047]">{memberPointBalance.toLocaleString()}P</span>
+                    <span className="text-gray-500">보유 포인트</span>
+                    <span className="font-bold text-gray-900">{memberPointBalance.toLocaleString()}P</span>
                   </div>
                 </div>
 
@@ -1001,22 +1001,22 @@ export default function Order() {
                 </div>
 
                 {pointsToUse > 0 && (
-                  <div className="mt-3 text-sm text-[#5E9DC0] font-medium">
+                  <div className="mt-3 text-sm text-gray-400 font-medium">
                     {pointsToUse.toLocaleString()}P 적용됨 (-{pointsToUse.toLocaleString()}원)
                   </div>
                 )}
               </div>
             )}
 
-            <div className="bg-white border border-[#BDCFDB] rounded-xl p-4 sm:p-6">
-              <h2 className="text-base font-semibold text-[#1C3047] mb-4 flex items-center gap-2 tracking-wide">
-                <CreditCard className="w-4 h-4 text-[#5E9DC0]" />
+            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
+              <h2 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2 tracking-wide">
+                <CreditCard className="w-4 h-4 text-gray-400" />
                 결제 방법
               </h2>
               
               <div className="mb-4">
                 <div
-                  className="p-4 border-2 rounded-lg flex flex-col items-center gap-2 border-[#1C3047] bg-[#E5EFF5] text-[#1C3047]"
+                  className="p-4 border-2 rounded-lg flex flex-col items-center gap-2 border-black bg-gray-100 text-gray-900"
                   data-testid="button-payment-bank"
                 >
                   <Building2 className="w-8 h-8" />
@@ -1025,29 +1025,29 @@ export default function Order() {
               </div>
 
               {paymentMethod === "bank" && (
-                <div className="bg-[#E5EFF5] border border-[#BDCFDB] rounded-lg p-4">
-                  <p className="text-[#3D6080] text-sm flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 text-[#5E9DC0] shrink-0" />
+                <div className="bg-gray-100 border border-gray-200 rounded-lg p-4">
+                  <p className="text-gray-500 text-sm flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4 text-gray-400 shrink-0" />
                     주문 완료 후 결제계좌 정보가 안내됩니다. 해당 계좌로 입금해주세요.
                   </p>
                 </div>
               )}
             </div>
 
-            <div className="bg-white border border-[#BDCFDB] rounded-xl p-4 sm:p-6">
+            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6">
               <div className="space-y-2">
-                <div className="flex justify-between items-center text-[#3D6080]">
+                <div className="flex justify-between items-center text-gray-500">
                   <span>상품금액</span>
                   <span>{calculateSubtotal().toLocaleString()}원</span>
                 </div>
                 {pointsToUse > 0 && (
-                  <div className="flex justify-between items-center text-[#5E9DC0]">
+                  <div className="flex justify-between items-center text-gray-400">
                     <span>포인트 할인</span>
                     <span>-{pointsToUse.toLocaleString()}원</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center text-lg font-bold pt-3 border-t border-[#BDCFDB]">
-                  <span className="text-[#1C3047]">총 결제금액</span>
+                <div className="flex justify-between items-center text-lg font-bold pt-3 border-t border-gray-200">
+                  <span className="text-gray-900">총 결제금액</span>
                   <span className="text-primary text-2xl">{calculateTotal()}원</span>
                 </div>
               </div>
@@ -1056,7 +1056,7 @@ export default function Order() {
             <Button
               type="submit"
               disabled={submitting || !paymentMethod}
-              className="w-full h-14 text-lg font-semibold bg-[#1C3047] hover:bg-[#2C4A65] text-[#E5EFF5] rounded-xl tracking-wide"
+              className="w-full h-14 text-lg font-semibold bg-black hover:bg-gray-800 text-white rounded-xl tracking-wide"
               data-testid="button-submit-order"
             >
               {submitting ? "주문 처리 중..." : "주문하기"}

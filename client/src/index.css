@@ -36,33 +36,33 @@
 }
 
 :root {
-  --background: 38 35% 97%;
-  --foreground: 25 38% 13%;
+  --background: 0 0% 100%;
+  --foreground: 0 0% 8%;
 
-  --card: 36 28% 95%;
-  --card-foreground: 25 38% 13%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 8%;
 
-  --popover: 38 35% 97%;
-  --popover-foreground: 25 38% 13%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 8%;
 
-  --primary: 210 42% 19%;
-  --primary-foreground: 38 35% 97%;
+  --primary: 0 0% 8%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 205 24% 89%;
-  --secondary-foreground: 210 42% 19%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 8%;
 
-  --muted: 205 20% 91%;
-  --muted-foreground: 205 18% 50%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 45%;
 
-  --accent: 205 24% 89%;
-  --accent-foreground: 210 42% 19%;
+  --accent: 0 0% 96%;
+  --accent-foreground: 0 0% 8%;
 
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 205 20% 82%;
-  --input: 205 20% 82%;
-  --ring: 210 42% 19%;
+  --border: 0 0% 88%;
+  --input: 0 0% 88%;
+  --ring: 0 0% 8%;
 
   --radius: 0rem;
 }
@@ -103,7 +103,7 @@
   
   body {
     @apply font-sans antialiased bg-background text-foreground;
-    font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
     overflow-x: hidden;
     min-height: 100vh;
     min-height: 100dvh;
@@ -111,6 +111,7 @@
   
   h1, h2, h3, h4, h5, h6 {
     @apply font-bold tracking-tight;
+    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   }
 }
 

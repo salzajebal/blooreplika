@@ -479,10 +479,10 @@ export default function ProductList() {
               className={cn(
                 "flex items-center gap-1.5 px-4 py-2 text-sm rounded-full border transition-colors",
                 subnameParam
-                  ? "bg-[#1C3047] text-[#E5EFF5] border-[#1C3047]"
+                  ? "bg-black text-white border-black"
                   : openDropdown === "category"
-                    ? "border-[#1C3047] text-[#1C3047]"
-                    : "border-[#BDCFDB] text-[#3D6080] hover:border-[#7A9CB5]"
+                    ? "border-black text-black"
+                    : "border-gray-200 text-gray-500 hover:border-gray-400"
               )}
               data-testid="button-filter-category"
             >
@@ -535,10 +535,10 @@ export default function ProductList() {
           className={cn(
             "flex items-center gap-1.5 px-4 py-2 text-sm rounded-full border transition-colors",
             selectedBrand
-              ? "bg-[#1C3047] text-[#E5EFF5] border-[#1C3047]"
+              ? "bg-black text-white border-black"
               : openDropdown === "brand"
-                ? "border-[#1C3047] text-[#1C3047]"
-                : "border-[#BDCFDB] text-[#3D6080] hover:border-[#7A9CB5]"
+                ? "border-black text-black"
+                : "border-gray-200 text-gray-500 hover:border-gray-400"
           )}
           data-testid="button-filter-brand"
         >
@@ -610,10 +610,10 @@ export default function ProductList() {
           className={cn(
             "flex items-center gap-1.5 px-4 py-2 text-sm rounded-full border transition-colors",
             (selectedGender || genderFromCategory || golfSubGender)
-              ? "bg-[#1C3047] text-[#E5EFF5] border-[#1C3047]"
+              ? "bg-black text-white border-black"
               : openDropdown === "gender"
-                ? "border-[#1C3047] text-[#1C3047]"
-                : "border-[#BDCFDB] text-[#3D6080] hover:border-[#7A9CB5]"
+                ? "border-black text-black"
+                : "border-gray-200 text-gray-500 hover:border-gray-400"
           )}
           data-testid="button-filter-gender"
         >
@@ -917,7 +917,7 @@ export default function ProductList() {
                       {viewMode === "grid" && (
                         <div className="absolute top-0 right-0 flex flex-col">
                           {product.isBest && (
-                            <span className="bg-[#1C3047] text-white text-[9px] px-1.5 py-1 font-bold text-center leading-none">세트</span>
+                            <span className="bg-black text-white text-[9px] px-1.5 py-1 font-bold text-center leading-none">세트</span>
                           )}
                           {discountPct > 0 && (
                             <span className="bg-red-500 text-white text-[10px] px-2 py-1 font-bold text-center leading-none">할인</span>

@@ -105,7 +105,7 @@ function TextBlock({ block }: { block: ContentBlock }) {
         {block.heading && (
           <h2
             className="text-xl md:text-3xl font-bold text-gray-900 mb-4 leading-snug"
-            style={{ fontFamily: "'Playfair Display', 'Noto Serif KR', serif" }}
+            style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
           >
             {block.heading}
           </h2>
@@ -413,7 +413,7 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
                       <p className="text-xs text-pink-500 uppercase tracking-widest font-medium mb-1">BENEFIT</p>
                       <h2
                         className="text-lg md:text-2xl font-bold text-gray-900"
-                        style={{ fontFamily: "'Playfair Display', 'Noto Serif KR', serif" }}
+                        style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
                       >
                         velour의 특별한 혜택
                       </h2>

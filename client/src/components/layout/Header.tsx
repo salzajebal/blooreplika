@@ -725,40 +725,40 @@ export function Header() {
           </button>
         )}
       </div>
-      {children && isOpen && <div className="bg-[#EAF2F7]">{children}</div>}
+      {children && isOpen && <div className="bg-gray-50">{children}</div>}
     </div>
   );
 
   return (
     <>
-      <header className={`w-full sticky top-0 z-50 bg-[#FAF8F4] transition-shadow ${scrolled ? "shadow-sm" : ""}`}>
+      <header className={`w-full sticky top-0 z-50 bg-white transition-shadow ${scrolled ? "shadow-sm" : ""}`}>
         {/* Top utility bar (desktop only) */}
-        <div className="hidden md:block bg-[#E5EFF5] border-b border-[#BDCFDB]">
-          <div className="max-w-[1200px] mx-auto px-4 h-9 flex items-center justify-end text-[12px] text-[#7A9CB5] gap-3" style={{ letterSpacing: "0.03em" }}>
+        <div className="hidden md:block bg-gray-100 border-b border-gray-200">
+          <div className="max-w-[1200px] mx-auto px-4 h-9 flex items-center justify-end text-[12px] text-gray-500 gap-3" style={{ letterSpacing: "0.03em" }}>
             {memberName ? (
               <>
-                <span className="text-[#1C3047] font-medium">{memberName}님</span>
-                <span className="text-[#AECADB]">|</span>
-                <span className="text-[#7A9CB5]">{pointBalance.toLocaleString()}P</span>
-                <span className="text-[#AECADB]">|</span>
-                <button onClick={handleLogout} className="hover:text-[#1C3047]" data-testid="button-logout">로그아웃</button>
+                <span className="text-gray-900 font-medium">{memberName}님</span>
+                <span className="text-gray-300">|</span>
+                <span className="text-gray-500">{pointBalance.toLocaleString()}P</span>
+                <span className="text-gray-300">|</span>
+                <button onClick={handleLogout} className="hover:text-black" data-testid="button-logout">로그아웃</button>
               </>
             ) : (
               <>
-                <Link href="/login" className="hover:text-[#1C3047]" data-testid="link-login">로그인</Link>
-                <span className="text-[#AECADB]">|</span>
-                <Link href="/signup" className="hover:text-[#1C3047]" data-testid="link-signup">회원가입</Link>
+                <Link href="/login" className="hover:text-black" data-testid="link-login">로그인</Link>
+                <span className="text-gray-300">|</span>
+                <Link href="/signup" className="hover:text-black" data-testid="link-signup">회원가입</Link>
               </>
             )}
-            <span className="text-[#AECADB]">|</span>
-            <Link href="/orders" className="hover:text-[#1C3047]">주문조회</Link>
-            <span className="text-[#AECADB]">|</span>
-            <Link href="/profile" className="hover:text-[#1C3047]">마이페이지</Link>
+            <span className="text-gray-300">|</span>
+            <Link href="/orders" className="hover:text-black">주문조회</Link>
+            <span className="text-gray-300">|</span>
+            <Link href="/profile" className="hover:text-black">마이페이지</Link>
           </div>
         </div>
 
         {/* Main header row */}
-        <div className="bg-[#FAF8F4] border-b border-[#BDCFDB]">
+        <div className="bg-white border-b border-gray-200">
           <div className="max-w-[1200px] mx-auto px-4 py-4 md:py-5">
             <div className="flex items-center justify-between">
               {/* Left: hamburger + logo */}
@@ -766,25 +766,25 @@ export function Header() {
                 <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                   <SheetTrigger asChild>
                     <Button variant="ghost" size="icon" className="w-10 h-10 p-0" data-testid="button-mobile-menu">
-                      <Menu className="w-6 h-6 text-[#1C3047]" />
+                      <Menu className="w-6 h-6 text-gray-700" />
                     </Button>
                   </SheetTrigger>
 
                   <SheetContent side="left" className="w-[320px] overflow-y-auto p-0" hideCloseButton>
                     {/* Sheet header */}
-                    <div className="bg-[#1C3047] p-4 flex items-center justify-between">
+                    <div className="bg-black p-4 flex items-center justify-between">
                       <Link href="/" onClick={closeMobileMenu}>
-                        <span style={{ fontFamily: "'Cormorant Garamond', serif", letterSpacing: "0.45em", fontWeight: 400, fontSize: "1.4rem", color: "#E5EFF5", textTransform: "uppercase" }}>velour</span>
+                        <span style={{ letterSpacing: "0.45em", fontWeight: 500, fontSize: "1.4rem", color: "#ffffff", textTransform: "uppercase" }}>velour</span>
                       </Link>
                       <SheetClose asChild>
-                        <Button variant="ghost" size="icon" className="text-[#E5EFF5] hover:text-white p-0">
+                        <Button variant="ghost" size="icon" className="text-white hover:text-gray-300 p-0">
                           <X className="w-5 h-5" />
                         </Button>
                       </SheetClose>
                     </div>
 
                     {/* Member info */}
-                    <div className="p-4 border-b bg-[#E5EFF5]">
+                    <div className="p-4 border-b bg-gray-100">
                       {memberName ? (
                         <div className="flex items-center justify-between">
                           <div>
@@ -804,15 +804,15 @@ export function Header() {
                     {/* Search */}
                     <div className="p-4 border-b">
                       <form onSubmit={handleSearch}>
-                        <div className="flex border border-[#BDCFDB] rounded-sm overflow-hidden bg-white">
+                        <div className="flex border border-gray-200 overflow-hidden bg-white">
                           <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="검색어를 입력해주세요"
-                            className="flex-1 px-3 py-2.5 text-sm focus:outline-none bg-transparent text-[#1C3047] placeholder:text-[#9BBDCE]"
+                            className="flex-1 px-3 py-2.5 text-sm focus:outline-none bg-transparent text-gray-900 placeholder:text-gray-400"
                           />
-                          <button type="submit" className="px-3 bg-[#1C3047] text-[#E5EFF5]">
+                          <button type="submit" className="px-3 bg-black text-white">
                             <Search className="w-4 h-4" />
                           </button>
                         </div>
@@ -821,7 +821,7 @@ export function Header() {
 
                     {/* Category accordion */}
                     <div className="border-b">
-                      <div className="px-4 py-3 text-xs font-medium text-[#8EB0C8] uppercase tracking-widest" style={{ letterSpacing: "0.12em" }}>카테고리</div>
+                      <div className="px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-widest" style={{ letterSpacing: "0.12em" }}>카테고리</div>
                       <nav>
                         {/* 신상품 */}
                         <MobileAccordion
@@ -993,20 +993,20 @@ export function Header() {
                 </Sheet>
 
                 <Link href="/" className="flex items-center" data-testid="link-home">
-                  <span style={{ fontFamily: "'Cormorant Garamond', serif", letterSpacing: "0.5em", fontWeight: 400, fontSize: "clamp(1.3rem, 2vw, 1.65rem)", color: "#1C3047", textTransform: "uppercase" }}>velour</span>
+                  <span style={{ letterSpacing: "0.5em", fontWeight: 500, fontSize: "clamp(1.3rem, 2vw, 1.65rem)", color: "#111111", textTransform: "uppercase" }}>velour</span>
                 </Link>
               </div>
 
               {/* Right: icons */}
               <div className="flex flex-col items-end md:flex-row md:items-center gap-0 md:gap-4">
                 <div className="flex items-center gap-2">
-                  <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 text-[#2C4A65] hover:text-[#1C3047]" data-testid="button-search-toggle">
+                  <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 text-gray-600 hover:text-black" data-testid="button-search-toggle">
                     <Search className="w-5 h-5" />
                   </button>
-                  <Link href="/profile" className="hidden md:block p-2 text-[#2C4A65] hover:text-[#1C3047]" data-testid="link-profile">
+                  <Link href="/profile" className="hidden md:block p-2 text-gray-600 hover:text-black" data-testid="link-profile">
                     <User className="w-5 h-5" />
                   </Link>
-                  <Link href="/cart" className="relative p-2 text-[#2C4A65] hover:text-[#1C3047] hidden md:block" data-testid="button-cart">
+                  <Link href="/cart" className="relative p-2 text-gray-600 hover:text-black hidden md:block" data-testid="button-cart">
                     <ShoppingBag className="w-5 h-5" />
                     {count > 0 && (
                       <span className="absolute top-0 right-0 bg-red-500 text-white text-[9px] w-4 h-4 flex items-center justify-center rounded-full font-bold">
@@ -1016,20 +1016,20 @@ export function Header() {
                   </Link>
                 </div>
                 {/* Mobile quick links */}
-                <div className="md:hidden flex items-center gap-1 text-[11px] text-[#1C3047] pb-1 pr-2">
+                <div className="md:hidden flex items-center gap-1 text-[11px] text-gray-700 pb-1 pr-2">
                   {memberName ? (
                     <Link href="/profile" className="hover:opacity-70" data-testid="mobile-link-profile">마이페이지</Link>
                   ) : (
                     <>
                       <Link href="/login" className="hover:opacity-70" data-testid="mobile-link-login">로그인</Link>
-                      <span className="text-[#AECADB]">|</span>
+                      <span className="text-gray-300">|</span>
                       <Link href="/signup" className="hover:opacity-70" data-testid="mobile-link-signup">회원가입</Link>
-                      <span className="text-[#AECADB]">|</span>
+                      <span className="text-gray-300">|</span>
                     </>
                   )}
                   <Link href="/cart" className="hover:opacity-70 flex items-center gap-0.5" data-testid="mobile-link-cart">
                     장바구니
-                    {count > 0 && <span className="bg-[#1C3047] text-[#E5EFF5] text-[9px] w-3.5 h-3.5 flex items-center justify-center rounded-full font-bold">{count > 9 ? "9+" : count}</span>}
+                    {count > 0 && <span className="bg-black text-white text-[9px] w-3.5 h-3.5 flex items-center justify-center rounded-full font-bold">{count > 9 ? "9+" : count}</span>}
                   </Link>
                 </div>
               </div>
@@ -1038,7 +1038,7 @@ export function Header() {
         </div>
 
         {/* ── Desktop mega nav ────────────────────────────────────────────────── */}
-        <nav className="hidden md:block bg-[#FAF8F4] border-b border-[#BDCFDB]">
+        <nav className="hidden md:block bg-white border-b border-gray-200">
           <div className="max-w-[1200px] mx-auto px-4">
             <ul className="flex items-center justify-center gap-0">
               {SIMPLE_NAV.map((item, idx) => {
@@ -1054,7 +1054,7 @@ export function Header() {
                   >
                     <Link
                       href={item.path}
-                      className={`flex items-center gap-0.5 px-3 lg:px-4 py-3.5 text-[13px] transition-colors whitespace-nowrap ${specialCls || (active ? "text-[#1C3047] font-semibold" : "text-[#3D6080] hover:text-[#1C3047] hover:font-medium")}`}
+                      className={`flex items-center gap-0.5 px-3 lg:px-4 py-3.5 text-[13px] transition-colors whitespace-nowrap ${specialCls || (active ? "text-black font-semibold" : "text-gray-500 hover:text-black hover:font-medium")}`}
                       data-testid={`nav-${item.label}`}
                     >
                       {item.label}
@@ -1081,7 +1081,7 @@ export function Header() {
         </nav>
 
         {/* ── Mobile horizontal scroll nav ────────────────────────────────────── */}
-        <div className="md:hidden bg-[#FAF8F4] border-b border-[#BDCFDB] overflow-x-auto scrollbar-hide">
+        <div className="md:hidden bg-white border-b border-gray-200 overflow-x-auto scrollbar-hide">
           <div className="flex items-center px-2 py-2 gap-0 min-w-max">
             {SIMPLE_NAV.map((item, idx) => {
               const { cls: specialCls } = getNavLabel(item.label);
@@ -1089,7 +1089,7 @@ export function Header() {
                 <Link
                   key={idx}
                   href={item.path}
-                  className={`px-3 py-1.5 text-[12px] whitespace-nowrap ${specialCls || (isActive(item.path) ? "text-[#1C3047] font-semibold" : "text-[#3D6080] hover:text-[#1C3047]")}`}
+                  className={`px-3 py-1.5 text-[12px] whitespace-nowrap ${specialCls || (isActive(item.path) ? "text-black font-semibold" : "text-gray-500 hover:text-black")}`}
                   data-testid={`nav-mobile-${item.label}`}
                 >
                   {item.label}
@@ -1101,41 +1101,41 @@ export function Header() {
 
         {/* ── Search overlay ──────────────────────────────────────────────────── */}
         {searchOpen && (
-          <div className="absolute top-full left-0 right-0 bg-[#FAF8F4] border-b border-[#BDCFDB] shadow-md z-50">
+          <div className="absolute top-full left-0 right-0 bg-white border-b border-gray-200 shadow-md z-50">
             <div className="max-w-[600px] mx-auto px-4 py-6">
               <form onSubmit={handleSearch} className="mb-4">
-                <div className="flex border-b-2 border-[#1C3047]">
+                <div className="flex border-b-2 border-black">
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="검색어를 입력해주세요"
-                    className="flex-1 py-3 text-base focus:outline-none bg-transparent text-[#1C3047] placeholder:text-[#9BBDCE]"
+                    className="flex-1 py-3 text-base focus:outline-none bg-transparent text-gray-900 placeholder:text-gray-400"
                     autoFocus
                     data-testid="input-search"
                   />
                   <button type="submit" className="px-3">
-                    <Search className="w-5 h-5 text-[#2C4A65]" />
+                    <Search className="w-5 h-5 text-gray-500" />
                   </button>
                 </div>
               </form>
               <div>
-                <p className="text-xs text-[#8EB0C8] mb-3 font-medium tracking-widest uppercase">인기 검색어</p>
+                <p className="text-xs text-gray-400 mb-3 font-medium tracking-widest uppercase">인기 검색어</p>
                 <div className="grid grid-cols-2 gap-x-8 gap-y-0">
                   {popularSearches.map((term, i) => (
                     <button
                       key={term}
                       onClick={() => { setLocation(`/search?q=${encodeURIComponent(term)}`); setSearchOpen(false); }}
-                      className="flex items-center gap-3 py-2.5 text-sm text-[#3D6080] hover:text-[#1C3047] text-left border-b border-[#E5EFF5]"
+                      className="flex items-center gap-3 py-2.5 text-sm text-gray-500 hover:text-black text-left border-b border-gray-100"
                       data-testid={`search-popular-${i}`}
                     >
-                      <span className="text-sm text-[#5E9DC0] font-bold w-5 text-center">{i + 1}</span>
+                      <span className="text-sm text-gray-400 font-bold w-5 text-center">{i + 1}</span>
                       <span>{term}</span>
                     </button>
                   ))}
                 </div>
               </div>
-              <button onClick={() => setSearchOpen(false)} className="absolute top-4 right-4 text-[#8EB0C8] hover:text-[#1C3047]">
+              <button onClick={() => setSearchOpen(false)} className="absolute top-4 right-4 text-gray-400 hover:text-black">
                 <X className="w-5 h-5" />
               </button>
             </div>

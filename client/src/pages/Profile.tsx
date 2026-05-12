@@ -304,7 +304,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F4] font-sans">
+    <div className="min-h-screen bg-white font-sans">
       <Header />
 
       <main className="container-custom py-6 md:py-12 px-4 pb-24 md:pb-12">
@@ -323,7 +323,7 @@ export default function Profile() {
           )}
 
           <div className="bg-white border border-gray-100 overflow-hidden">
-            <div className="bg-[#1C3047] p-5 md:p-8 text-white">
+            <div className="bg-black p-5 md:p-8 text-white">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 md:w-16 md:h-16 bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0">
                   <User className="w-6 h-6 md:w-8 md:h-8 text-white/80" />
@@ -332,7 +332,7 @@ export default function Profile() {
                   {isLoggedIn ? (
                     <>
                       <p className="text-white/50 text-[10px] tracking-[0.2em] uppercase mb-0.5">Member</p>
-                      <h1 className="text-lg md:text-2xl font-bold truncate" style={{ fontFamily: "'Playfair Display', serif" }} data-testid="text-profile-name">
+                      <h1 className="text-lg md:text-2xl font-bold truncate" data-testid="text-profile-name">
                         {memberInfo?.name || localStorage.getItem("memberName") || "회원"}님
                       </h1>
                       <p className="text-white/60 text-xs mt-1 truncate">{memberInfo?.email || localStorage.getItem("memberEmail")}</p>
@@ -340,7 +340,7 @@ export default function Profile() {
                   ) : (
                     <>
                       <p className="text-white/50 text-[10px] tracking-[0.2em] uppercase mb-0.5">VELOUR</p>
-                      <h1 className="text-lg md:text-xl font-bold" style={{ fontFamily: "'Playfair Display', serif" }}>로그인이 필요합니다</h1>
+                      <h1 className="text-lg md:text-xl font-bold">로그인이 필요합니다</h1>
                       <p className="text-white/60 text-xs mt-1">로그인하시면 더 많은 혜택을 받으실 수 있습니다</p>
                     </>
                   )}
@@ -355,12 +355,12 @@ export default function Profile() {
                 </p>
                 <div className="flex gap-3 justify-center">
                   <Link href="/login">
-                    <button className="px-8 py-2.5 bg-[#1C3047] hover:bg-black text-white text-sm tracking-widest transition-colors">
+                    <button className="px-8 py-2.5 bg-black hover:bg-gray-800 text-white text-sm tracking-widest transition-colors">
                       로그인
                     </button>
                   </Link>
                   <Link href="/signup">
-                    <button className="px-8 py-2.5 border border-[#1C3047] text-[#1C3047] hover:bg-[#1C3047] hover:text-white text-sm tracking-widest transition-colors">
+                    <button className="px-8 py-2.5 border border-black text-black hover:bg-black hover:text-white text-sm tracking-widest transition-colors">
                       회원가입
                     </button>
                   </Link>

@@ -113,7 +113,7 @@ function DefaultHero() {
       <div className="relative z-10 flex flex-col items-center justify-end text-center px-4 pb-16" style={{ minHeight: "80vh" }}>
         <h1
           className="text-[28px] md:text-[44px] font-bold text-white tracking-[0.2em] mb-5"
-          style={{ fontFamily: "'Playfair Display', serif" }}
+          style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
           data-testid="labs-hero-title"
         >
           velour
@@ -155,7 +155,7 @@ function HeroBlock({ block }: { block: any }) {
         {block.overlayTitle && (
           <h1
             className="text-[28px] md:text-[44px] font-bold tracking-[0.2em] mb-5"
-            style={{ fontFamily: "'Playfair Display', serif" }}
+            style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
           >
             {block.overlayTitle}
           </h1>
@@ -187,7 +187,7 @@ function ContentBlock({ block }: { block: any }) {
             {block.overlayTitle && (
               <h2
                 className="text-[22px] md:text-[36px] font-bold text-white mb-3 tracking-wide"
-                style={{ fontFamily: "'Playfair Display', serif" }}
+                style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
               >
                 {block.overlayTitle}
               </h2>

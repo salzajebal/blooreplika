@@ -365,7 +365,7 @@ function TopBrandSection() {
     <section className="bg-white py-6 md:py-8 border-b border-gray-100" data-testid="top-brand-section">
       <div className="max-w-[1200px] mx-auto px-4">
         <div className="mb-4">
-          <h2 className="text-xl md:text-2xl font-bold text-gray-900" style={{ fontFamily: "'Playfair Display', serif" }}>{title}</h2>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900">{title}</h2>
           <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
         </div>
         <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 md:gap-3">
@@ -468,7 +468,7 @@ function ForYouSection({ products, brands }: { products: any[]; brands: any[] })
       <div className="max-w-[1200px] mx-auto px-4">
         <div className="flex items-end justify-between mb-6 md:mb-8 pb-5 border-b border-gray-200">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 italic" style={{ fontFamily: "'Playfair Display', serif" }}>{sectionTitle}</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">{sectionTitle}</h2>
             <p className="text-sm md:text-base text-gray-500 mt-1.5">{sectionSubtitle}</p>
           </div>
           {totalPages > 1 && (
