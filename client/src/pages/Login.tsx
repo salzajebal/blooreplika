@@ -68,7 +68,7 @@ export default function Login() {
         <div className="w-full max-w-sm">
           <div className="text-center mb-10">
             <h1 className="text-2xl font-bold tracking-widest text-white uppercase mb-2">Login</h1>
-            <p className="text-[#555555] text-sm tracking-wider">velour 회원 로그인</p>
+            <p className="text-[#999999] text-sm tracking-wider">velour 회원 로그인</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -111,7 +111,7 @@ export default function Login() {
           </form>
 
           <div className="mt-8 text-center border-t border-[#222222] pt-8">
-            <p className="text-sm text-[#555555]">
+            <p className="text-sm text-[#999999]">
               아직 회원이 아니신가요?{" "}
               <Link href={`/signup${window.location.search}`} className="text-[#c9a96e] hover:text-[#dbb97e] transition-colors font-medium">
                 회원가입

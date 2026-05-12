@@ -78,7 +78,7 @@ export default function Inspection() {
 
       <div className="border-b border-[#2a2a2a]">
         <div className="max-w-[1200px] mx-auto px-4 py-3">
-          <div className="flex items-center gap-1.5 text-xs text-[#555555]">
+          <div className="flex items-center gap-1.5 text-xs text-[#999999]">
             <Link href="/">
               <Home className="w-3.5 h-3.5" />
             </Link>
@@ -103,7 +103,7 @@ export default function Inspection() {
                 className={`flex flex-col items-center gap-1.5 px-2 py-1 text-xs md:text-sm transition-colors ${
                   inspectionCategory === cat.id
                     ? "text-[#c9a96e] font-semibold"
-                    : "text-[#555555] hover:text-[#888888]"
+                    : "text-[#999999] hover:text-[#888888]"
                 }`}
               >
                 <div className={`w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center border ${
@@ -159,7 +159,7 @@ export default function Inspection() {
               </div>
             </div>
           ) : (
-            <div className="text-center py-12 text-[#555555] text-sm">
+            <div className="text-center py-12 text-[#999999] text-sm">
               등록된 검수 내역이 없습니다.
             </div>
           )}
@@ -181,7 +181,7 @@ export default function Inspection() {
                 className={`flex flex-col items-center gap-1.5 px-2 py-1 text-xs md:text-sm transition-colors ${
                   shippingCategory === cat.id
                     ? "text-[#c9a96e] font-semibold"
-                    : "text-[#555555] hover:text-[#888888]"
+                    : "text-[#999999] hover:text-[#888888]"
                 }`}
               >
                 <div className={`w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center border ${
@@ -234,7 +234,7 @@ export default function Inspection() {
                     <p className="text-sm md:text-base font-semibold text-[#f0f0f0]">
                       {photo.brandName}
                     </p>
-                    <p className="text-xs text-[#555555]">
+                    <p className="text-xs text-[#999999]">
                       {photo.photoDate} {photo.customerName} 고객님 검수사진
                     </p>
                   </div>
@@ -242,7 +242,7 @@ export default function Inspection() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 text-[#555555] text-sm">
+            <div className="text-center py-12 text-[#999999] text-sm">
               등록된 실사 내역이 없습니다.
             </div>
           )}

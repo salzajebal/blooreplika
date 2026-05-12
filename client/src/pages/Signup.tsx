@@ -160,7 +160,7 @@ export default function Signup() {
 
   const inputCls = "pl-10 h-12 rounded-none bg-[#1a1a1a] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0";
   const labelCls = "block text-sm font-medium text-[#aaaaaa] mb-2";
-  const iconCls = "absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#555555]";
+  const iconCls = "absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#999999]";
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] font-sans">
@@ -279,7 +279,7 @@ export default function Signup() {
                       value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                       data-testid="input-password" required />
                   </div>
-                  <p className="text-xs text-[#555555] mt-1">영문, 숫자 8자리 이상</p>
+                  <p className="text-xs text-[#999999] mt-1">영문, 숫자 8자리 이상</p>
                 </div>
               </div>
 
@@ -313,7 +313,7 @@ export default function Signup() {
                   <input type="checkbox" className="mt-1 w-4 h-4 accent-[#c9a96e] border-[#333333]"
                     checked={formData.agreeMarketing} onChange={(e) => setFormData({ ...formData, agreeMarketing: e.target.checked })} />
                   <span className="text-sm text-[#aaaaaa]">
-                    <span className="text-[#555555]">[선택]</span> 마케팅 정보 수신에 동의합니다
+                    <span className="text-[#999999]">[선택]</span> 마케팅 정보 수신에 동의합니다
                   </span>
                 </label>
               </div>

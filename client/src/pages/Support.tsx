@@ -82,7 +82,7 @@ export default function Support() {
       <main className="container-custom py-8 sm:py-12 pb-24 md:pb-12">
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-white tracking-widest uppercase mb-4" data-testid="text-support-title">고객센터</h1>
-          <p className="text-[#555555] tracking-wider">velour에 대해 궁금한 점을 확인하세요</p>
+          <p className="text-[#999999] tracking-wider">velour에 대해 궁금한 점을 확인하세요</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
@@ -93,7 +93,7 @@ export default function Support() {
           >
             <HelpCircle className="w-10 h-10 text-[#c9a96e] mx-auto mb-3 group-hover:scale-110 transition-transform" />
             <h3 className="font-bold text-white mb-2">자주묻는질문</h3>
-            <p className="text-sm text-[#555555]">FAQ에서 빠르게 답변을 찾아보세요</p>
+            <p className="text-sm text-[#999999]">FAQ에서 빠르게 답변을 찾아보세요</p>
           </button>
           <button 
             onClick={handleKakaoClick}
@@ -102,7 +102,7 @@ export default function Support() {
           >
             <MessageCircle className="w-10 h-10 text-[#c9a96e] mx-auto mb-3 group-hover:scale-110 transition-transform" />
             <h3 className="font-bold text-white mb-2">카카오톡 문의</h3>
-            <p className="text-sm text-[#555555]">카카오톡으로 상담하세요</p>
+            <p className="text-sm text-[#999999]">카카오톡으로 상담하세요</p>
           </button>
           <Link 
             href="/notices"
@@ -111,7 +111,7 @@ export default function Support() {
           >
             <FileText className="w-10 h-10 text-[#c9a96e] mx-auto mb-3 group-hover:scale-110 transition-transform" />
             <h3 className="font-bold text-white mb-2">공지사항</h3>
-            <p className="text-sm text-[#555555]">최신 소식과 이벤트를 확인하세요</p>
+            <p className="text-sm text-[#999999]">최신 소식과 이벤트를 확인하세요</p>
           </Link>
           <Link 
             href="/guide"
@@ -120,7 +120,7 @@ export default function Support() {
           >
             <Bell className="w-10 h-10 text-[#c9a96e] mx-auto mb-3 group-hover:scale-110 transition-transform" />
             <h3 className="font-bold text-white mb-2">이용안내</h3>
-            <p className="text-sm text-[#555555]">쇼핑 및 이용 방법을 안내합니다</p>
+            <p className="text-sm text-[#999999]">쇼핑 및 이용 방법을 안내합니다</p>
           </Link>
         </div>
 
@@ -163,7 +163,7 @@ export default function Support() {
                   {expandedFaq === faq.id ? (
                     <ChevronUp className="w-4 h-4 text-[#c9a96e] flex-shrink-0" />
                   ) : (
-                    <ChevronDown className="w-4 h-4 text-[#555555] flex-shrink-0" />
+                    <ChevronDown className="w-4 h-4 text-[#999999] flex-shrink-0" />
                   )}
                 </button>
                 {expandedFaq === faq.id && (
@@ -179,7 +179,7 @@ export default function Support() {
           </div>
 
           {filteredFaqs.length === 0 && (
-            <div className="text-center py-12 text-[#555555]">
+            <div className="text-center py-12 text-[#999999]">
               해당 카테고리에 등록된 FAQ가 없습니다.
             </div>
           )}

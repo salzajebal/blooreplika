@@ -92,7 +92,7 @@ function MagazineList() {
 
         <div className="max-w-[640px] mx-auto px-4 pb-16">
           {categoryKeys.length === 0 ? (
-            <div className="text-center py-24 text-[#555555]">
+            <div className="text-center py-24 text-[#999999]">
               <p className="text-base mb-2">등록된 매거진이 없습니다.</p>
               <p className="text-xs text-[#444444]">관리자가 매거진을 등록하면 여기에 표시됩니다.</p>
             </div>
@@ -152,7 +152,7 @@ function MagazineDetail({ id }: { id: string }) {
         )}
 
         {error && (
-          <div className="text-center py-20 text-[#555555]">
+          <div className="text-center py-20 text-[#999999]">
             <p className="text-base mb-3">매거진을 찾을 수 없습니다.</p>
             <Link href="/magazine" className="text-sm text-[#888888] underline underline-offset-4 hover:text-[#c9a96e]">목록으로 돌아가기</Link>
           </div>
@@ -171,13 +171,13 @@ function MagazineDetail({ id }: { id: string }) {
                 {article.category}
               </span>
               {article.createdAt && (
-                <span className="flex items-center gap-1 text-[11px] text-[#555555]">
+                <span className="flex items-center gap-1 text-[11px] text-[#999999]">
                   <Calendar className="w-3 h-3" />
                   {new Date(article.createdAt).toLocaleDateString("ko-KR")}
                 </span>
               )}
               {article.viewCount > 0 && (
-                <span className="flex items-center gap-1 text-[11px] text-[#555555]">
+                <span className="flex items-center gap-1 text-[11px] text-[#999999]">
                   <Eye className="w-3 h-3" />
                   {article.viewCount.toLocaleString()}
                 </span>

@@ -609,14 +609,14 @@ export function Header() {
           </div>
           <div className="w-[150px] flex-shrink-0 py-2">
             <div>
-              <span className="block px-4 py-2 text-[11px] font-semibold text-[#555555] uppercase tracking-wide border-b border-[#1a1a1a]">선글라스</span>
+              <span className="block px-4 py-2 text-[11px] font-semibold text-[#999999] uppercase tracking-wide border-b border-[#1a1a1a]">선글라스</span>
               <Link href="/products/sunglasses" className="block px-4 py-2.5 text-[13px] font-medium text-[#aaaaaa] hover:text-[#c9a96e] hover:bg-[#1a1a1a] whitespace-nowrap" onClick={() => setNavOpen(null)}>전체보기</Link>
               {SUNGLASSES_ALL.map((sub) => (
                 <Link key={sub.sub} href={`/products/sunglasses?sub=${sub.sub}`} className="block px-4 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a] whitespace-nowrap" onClick={() => setNavOpen(null)}>{sub.name}</Link>
               ))}
             </div>
             <div className="border-t border-[#1a1a1a] mt-1 pt-1">
-              <span className="block px-4 py-2 text-[11px] font-semibold text-[#555555] uppercase tracking-wide border-b border-[#1a1a1a]">벨트</span>
+              <span className="block px-4 py-2 text-[11px] font-semibold text-[#999999] uppercase tracking-wide border-b border-[#1a1a1a]">벨트</span>
               <Link href="/products/belts" className="block px-4 py-2.5 text-[13px] font-medium text-[#aaaaaa] hover:text-[#c9a96e] hover:bg-[#1a1a1a] whitespace-nowrap" onClick={() => setNavOpen(null)}>전체보기</Link>
               {BELTS_ALL.map((sub) => (
                 <Link key={sub.sub} href={`/products/belts?sub=${sub.sub}`} className="block px-4 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a] whitespace-nowrap" onClick={() => setNavOpen(null)}>{sub.name}</Link>
@@ -638,7 +638,7 @@ export function Header() {
           <button className="flex-1 text-left px-4 py-3.5 text-sm font-medium hover:text-[#c9a96e]" onClick={onToggle}>{title}</button>
         )}
         {children && (
-          <button onClick={onToggle} className="px-4 py-3.5 text-[#555555] hover:text-[#c9a96e]">
+          <button onClick={onToggle} className="px-4 py-3.5 text-[#999999] hover:text-[#c9a96e]">
             <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
           </button>
         )}
@@ -652,7 +652,7 @@ export function Header() {
       <header className={`w-full sticky top-0 z-50 bg-[#0a0a0a] transition-shadow ${scrolled ? "shadow-lg shadow-black/50" : ""}`}>
         {/* Top utility bar (desktop only) */}
         <div className="hidden md:block bg-[#050505] border-b border-[#1a1a1a]">
-          <div className="max-w-[1200px] mx-auto px-4 h-9 flex items-center justify-end text-[12px] text-[#555555] gap-3" style={{ letterSpacing: "0.03em" }}>
+          <div className="max-w-[1200px] mx-auto px-4 h-9 flex items-center justify-end text-[12px] text-[#999999] gap-3" style={{ letterSpacing: "0.03em" }}>
             {memberName ? (
               <>
                 <span className="text-[#c9a96e] font-medium">{memberName}님</span>
@@ -709,7 +709,7 @@ export function Header() {
                             <div className="font-semibold text-sm text-white">{memberName}님</div>
                             <span className="text-xs text-[#c9a96e]">{pointBalance.toLocaleString()}P</span>
                           </div>
-                          <button onClick={() => { handleLogout(); closeMobileMenu(); }} className="text-xs text-[#555555] hover:text-red-400">로그아웃</button>
+                          <button onClick={() => { handleLogout(); closeMobileMenu(); }} className="text-xs text-[#999999] hover:text-red-400">로그아웃</button>
                         </div>
                       ) : (
                         <div className="flex gap-4">
@@ -739,7 +739,7 @@ export function Header() {
 
                     {/* Category accordion */}
                     <div className="border-b border-[#1a1a1a]">
-                      <div className="px-4 py-3 text-xs font-medium text-[#555555] uppercase tracking-widest" style={{ letterSpacing: "0.12em" }}>카테고리</div>
+                      <div className="px-4 py-3 text-xs font-medium text-[#999999] uppercase tracking-widest" style={{ letterSpacing: "0.12em" }}>카테고리</div>
                       <nav>
                         {/* 신상품 */}
                         <MobileAccordion
@@ -780,7 +780,7 @@ export function Header() {
                                   className="flex-1 px-8 py-2.5 text-[13px] text-[#aaaaaa] hover:text-[#c9a96e]"
                                   onClick={closeMobileMenu}>{g}</Link>
                                 <button onClick={() => { setMobileGenderExpanded(mobileGenderExpanded === g ? null : g); setMobileGenderCatExpanded(null); }}
-                                  className="px-4 py-2.5 text-[#555555]">
+                                  className="px-4 py-2.5 text-[#999999]">
                                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${mobileGenderExpanded === g ? "rotate-180" : ""}`} />
                                 </button>
                               </div>
@@ -796,7 +796,7 @@ export function Header() {
                                             onClick={closeMobileMenu}>{cat.name}</Link>
                                           {subcats.length > 0 && (
                                             <button onClick={() => setMobileGenderCatExpanded(mobileGenderCatExpanded === `${g}-${cat.id}` ? null : `${g}-${cat.id}`)}
-                                              className="px-4 py-2.5 text-[#555555]">
+                                              className="px-4 py-2.5 text-[#999999]">
                                               <ChevronDown className={`w-3 h-3 transition-transform ${mobileGenderCatExpanded === `${g}-${cat.id}` ? "rotate-180" : ""}`} />
                                             </button>
                                           )}
@@ -868,10 +868,10 @@ export function Header() {
                         <MobileAccordion title="쥬얼리/잡화" isOpen={mobileExpanded === "쥬얼리"} onToggle={() => setMobileExpanded(mobileExpanded === "쥬얼리" ? null : "쥬얼리")}>
                           <Link href="/products/jewelry" className="block px-8 py-2.5 text-[13px] font-medium text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>쥬얼리/잡화 전체</Link>
                           {JEWELRY_MEN.map((s) => <Link key={s.sub} href={`/products/jewelry?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>{s.name}</Link>)}
-                          <div className="px-8 py-1.5 text-[11px] font-semibold text-[#555555] uppercase tracking-wide border-t border-[#1a1a1a] mt-1">선글라스</div>
+                          <div className="px-8 py-1.5 text-[11px] font-semibold text-[#999999] uppercase tracking-wide border-t border-[#1a1a1a] mt-1">선글라스</div>
                           <Link href="/products/sunglasses" className="block px-8 py-2.5 text-[13px] font-medium text-[#aaaaaa] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>전체보기</Link>
                           {SUNGLASSES_ALL.map((s) => <Link key={s.sub} href={`/products/sunglasses?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>{s.name}</Link>)}
-                          <div className="px-8 py-1.5 text-[11px] font-semibold text-[#555555] uppercase tracking-wide border-t border-[#1a1a1a] mt-1">벨트</div>
+                          <div className="px-8 py-1.5 text-[11px] font-semibold text-[#999999] uppercase tracking-wide border-t border-[#1a1a1a] mt-1">벨트</div>
                           <Link href="/products/belts" className="block px-8 py-2.5 text-[13px] font-medium text-[#aaaaaa] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>전체보기</Link>
                           {BELTS_ALL.map((s) => <Link key={s.sub} href={`/products/belts?sub=${s.sub}`} className="block px-8 py-2.5 text-[13px] text-[#888888] hover:text-[#c9a96e] hover:bg-[#1a1a1a]" onClick={closeMobileMenu}>{s.name}</Link>)}
                         </MobileAccordion>
@@ -888,7 +888,7 @@ export function Header() {
 
                     {/* More links */}
                     <div className="p-4">
-                      <div className="text-xs font-bold text-[#555555] uppercase tracking-wider mb-3">더보기</div>
+                      <div className="text-xs font-bold text-[#999999] uppercase tracking-wider mb-3">더보기</div>
                       {sideMenuLinks.map((item) =>
                         item.external ? (
                           <a key={item.name} href={item.path} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between py-2.5 text-sm text-[#888888] hover:text-[#c9a96e]" onClick={closeMobileMenu}>
@@ -1032,7 +1032,7 @@ export function Header() {
                 </div>
               </form>
               <div>
-                <p className="text-xs text-[#555555] mb-3 font-medium tracking-widest uppercase">인기 검색어</p>
+                <p className="text-xs text-[#999999] mb-3 font-medium tracking-widest uppercase">인기 검색어</p>
                 <div className="grid grid-cols-2 gap-x-8 gap-y-0">
                   {popularSearches.map((term, i) => (
                     <button
@@ -1041,13 +1041,13 @@ export function Header() {
                       className="flex items-center gap-3 py-2.5 text-sm text-[#888888] hover:text-[#c9a96e] text-left border-b border-[#1a1a1a]"
                       data-testid={`search-popular-${i}`}
                     >
-                      <span className="text-sm text-[#555555] font-bold w-5 text-center">{i + 1}</span>
+                      <span className="text-sm text-[#999999] font-bold w-5 text-center">{i + 1}</span>
                       <span>{term}</span>
                     </button>
                   ))}
                 </div>
               </div>
-              <button onClick={() => setSearchOpen(false)} className="absolute top-4 right-4 text-[#555555] hover:text-white">
+              <button onClick={() => setSearchOpen(false)} className="absolute top-4 right-4 text-[#999999] hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>

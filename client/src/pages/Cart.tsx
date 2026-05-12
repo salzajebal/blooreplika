@@ -105,7 +105,7 @@ export default function Cart() {
           <div className="text-center py-24 bg-[#1a1a1a] border border-[#2a2a2a]">
             <Heart className="w-10 h-10 text-[#333333] mx-auto mb-4" />
             <p className="text-white font-medium mb-1">찜한 상품이 없습니다</p>
-            <p className="text-[#555555] text-sm mb-8">하트 아이콘을 눌러 마음에 드는 상품을 담아보세요</p>
+            <p className="text-[#999999] text-sm mb-8">하트 아이콘을 눌러 마음에 드는 상품을 담아보세요</p>
             <Link href="/">
               <Button className="bg-[#c9a96e] hover:bg-[#b8945f] text-black text-xs tracking-widest h-11 px-8 rounded-none">
                 SHOP NOW
@@ -120,7 +120,7 @@ export default function Cart() {
                 총 <span className="font-semibold text-white">{items.length}</span>개 상품
               </p>
               <button
-                className="text-xs text-[#555555] hover:text-[#888888] underline underline-offset-2 transition-colors"
+                className="text-xs text-[#999999] hover:text-[#888888] underline underline-offset-2 transition-colors"
                 onClick={() => {
                   clearWishlist();
                   toast({ title: "전체 삭제 완료", description: "찜 목록이 비워졌습니다." });
@@ -239,12 +239,12 @@ export default function Cart() {
 
             <div className="mt-8 bg-[#1a1a1a] border border-[#2a2a2a] p-6">
               <div className="flex justify-between items-center mb-1">
-                <span className="text-xs tracking-widest text-[#555555] uppercase">Total</span>
+                <span className="text-xs tracking-widest text-[#999999] uppercase">Total</span>
                 <span className="text-2xl font-bold text-[#c9a96e]">
                   {totalPrice.toLocaleString()}원
                 </span>
               </div>
-              <p className="text-xs text-[#555555] mb-5">총 {items.length}개 상품 합계</p>
+              <p className="text-xs text-[#999999] mb-5">총 {items.length}개 상품 합계</p>
               <button
                 className="w-full bg-[#c9a96e] hover:bg-[#b8955a] text-black h-13 py-4 text-sm tracking-[0.15em] font-semibold transition-colors flex items-center justify-center gap-2"
                 onClick={handleCheckout}

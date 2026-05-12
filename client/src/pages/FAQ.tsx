@@ -61,7 +61,7 @@ export default function FAQ() {
         <div className="bg-[#161616] border-b border-[#2a2a2a] py-4">
           <div className="max-w-[1200px] mx-auto px-4">
             <h1 className="text-lg font-bold text-white tracking-widest uppercase">FAQ</h1>
-            <div className="flex items-center gap-2 text-sm text-[#555555] mt-1">
+            <div className="flex items-center gap-2 text-sm text-[#999999] mt-1">
               <Link href="/" className="hover:text-[#c9a96e] transition-colors">홈</Link>
               <span>&gt;</span>
               <span>고객센터</span>
@@ -93,7 +93,7 @@ export default function FAQ() {
 
             <div className="flex-1">
               <div className="mb-6">
-                <p className="text-sm text-[#555555]">
+                <p className="text-sm text-[#999999]">
                   Total : <strong className="text-[#c9a96e]">{faqItems.length}</strong> items
                 </p>
               </div>
@@ -115,7 +115,7 @@ export default function FAQ() {
                       {expandedId === item.id ? (
                         <ChevronUp className="w-5 h-5 text-[#c9a96e] flex-shrink-0" />
                       ) : (
-                        <ChevronDown className="w-5 h-5 text-[#555555] flex-shrink-0" />
+                        <ChevronDown className="w-5 h-5 text-[#999999] flex-shrink-0" />
                       )}
                     </button>
                     {expandedId === item.id && (

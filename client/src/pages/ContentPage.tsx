@@ -428,7 +428,7 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
               )}
             </div>
           ) : items.length === 0 ? (
-            <div className="text-center py-20 text-[#555555]">
+            <div className="text-center py-20 text-[#999999]">
               <p className="text-lg mb-2">등록된 혜택이 없습니다.</p>
               <p className="text-sm">관리자가 혜택 콘텐츠를 등록하면 여기에 표시됩니다.</p>
             </div>
@@ -474,7 +474,7 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
         <div className="max-w-[1200px] mx-auto px-4 py-8">
           <div className="flex-1">
             {items.length === 0 ? (
-              <div className="text-center py-16 text-[#555555]">
+              <div className="text-center py-16 text-[#999999]">
                 <p className="text-lg mb-2">등록된 콘텐츠가 없습니다.</p>
                 <p className="text-sm">관리자가 콘텐츠를 등록하면 여기에 표시됩니다.</p>
               </div>

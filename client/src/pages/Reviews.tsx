@@ -186,7 +186,7 @@ export default function Reviews() {
               className="pr-10 h-10 text-sm bg-[#1a1a1a] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e]"
               data-testid="input-review-search"
             />
-            <button onClick={handleSearch} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#555555] hover:text-[#c9a96e]">
+            <button onClick={handleSearch} className="absolute right-2 top-1/2 -translate-y-1/2 text-[#999999] hover:text-[#c9a96e]">
               <Search className="w-5 h-5" />
             </button>
           </div>
@@ -215,7 +215,7 @@ export default function Reviews() {
               ))}
             </div>
           ) : reviews.length === 0 ? (
-            <div className="text-center py-16 text-[#555555]">
+            <div className="text-center py-16 text-[#999999]">
               <Star className="w-12 h-12 mx-auto mb-3 text-[#333333]" />
               <p className="text-sm">등록된 구매후기가 없습니다.</p>
             </div>
@@ -244,7 +244,7 @@ export default function Reviews() {
 
                     <div className="flex-1 min-w-0">
                       {review.productName && (
-                        <p className="text-xs text-[#555555] mb-0.5 line-clamp-1">
+                        <p className="text-xs text-[#999999] mb-0.5 line-clamp-1">
                           {review.productName}
                         </p>
                       )}
@@ -262,7 +262,7 @@ export default function Reviews() {
                           <span className="inline-block ml-1 text-[10px] bg-green-700 text-white px-1 py-0.5 rounded font-bold align-middle">N</span>
                         )}
                       </p>
-                      <div className="flex items-center gap-2 text-xs text-[#555555]">
+                      <div className="flex items-center gap-2 text-xs text-[#999999]">
                         <span>{maskName(review.authorName)}</span>
                         <span>{timeAgo(review.displayDate)}</span>
                         <div className="flex items-center">
@@ -360,7 +360,7 @@ function ReviewWriteForm({ onClose, onSuccess, productId, productName }: {
     <div className="border border-[#2a2a2a] p-4 mb-4 bg-[#161616]">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-bold text-[#f0f0f0]">구매후기 작성</h3>
-        <button onClick={onClose} className="text-[#555555] hover:text-[#aaaaaa]">
+        <button onClick={onClose} className="text-[#999999] hover:text-[#aaaaaa]">
           <X className="w-4 h-4" />
         </button>
       </div>

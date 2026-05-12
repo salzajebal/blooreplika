@@ -102,7 +102,7 @@ export function HomePopup() {
           </div>
           <button
             onClick={handleClose}
-            className="text-xs text-[#555555] hover:text-[#888888] transition-colors"
+            className="text-xs text-[#999999] hover:text-[#888888] transition-colors"
             data-testid="button-close-text"
           >
             닫기

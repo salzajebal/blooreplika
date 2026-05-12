@@ -231,7 +231,7 @@ export default function OrderInquiry() {
           {searched && !order && !loading && (
             <div className="bg-[#161616] border border-[#2a2a2a] rounded-xl p-8 text-center">
               <div className="w-16 h-16 bg-[#1a1a1a] rounded-full flex items-center justify-center mx-auto mb-4">
-                <Search className="w-8 h-8 text-[#555555]" />
+                <Search className="w-8 h-8 text-[#999999]" />
               </div>
               <h3 className="text-lg font-bold text-[#f0f0f0] mb-2">주문을 찾을 수 없습니다</h3>
               <p className="text-[#888888] text-sm">

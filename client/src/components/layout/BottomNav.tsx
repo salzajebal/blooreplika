@@ -28,7 +28,7 @@ export function BottomNav() {
             <Link
               key={item.label}
               href={item.path}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1 text-xs transition-colors ${active ? 'text-[#c9a96e] font-semibold' : 'text-[#555555] hover:text-[#888888]'}`}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 text-xs transition-colors ${active ? 'text-[#c9a96e] font-semibold' : 'text-[#999999] hover:text-[#888888]'}`}
               data-testid={`bottom-nav-${item.label}`}
             >
               <IconComponent className="w-5 h-5" />

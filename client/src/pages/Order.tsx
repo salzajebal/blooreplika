@@ -638,7 +638,7 @@ export default function Order() {
 
           {!isLoggedIn && (
             <div className="bg-[#1a1a1a] border border-[#333333] p-4 flex items-start gap-3 mb-5">
-              <LogIn className="w-5 h-5 text-[#555555] mt-0.5 flex-shrink-0" />
+              <LogIn className="w-5 h-5 text-[#999999] mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-[#f0f0f0]">비회원으로 주문하시나요?</p>
                 <p className="text-xs text-[#888888] mt-0.5">아래 주문자 정보를 직접 입력하시면 비회원 주문이 가능합니다. 회원 로그인 시 정보가 자동으로 입력되며 적립금도 받으실 수 있습니다.</p>
@@ -915,7 +915,7 @@ export default function Order() {
               {paymentMethod === "bank" && (
                 <div className="bg-[#1a1a1a] border border-[#2a2a2a] p-4">
                   <p className="text-[#888888] text-sm flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 text-[#555555] shrink-0" />
+                    <MessageCircle className="w-4 h-4 text-[#999999] shrink-0" />
                     주문 완료 후 결제계좌 정보가 안내됩니다. 해당 계좌로 입금해주세요.
                   </p>
                 </div>

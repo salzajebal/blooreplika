@@ -241,7 +241,7 @@ export function ChatWidget() {
         </button>
         <div className="text-center">
           <p className="text-[11px] sm:text-xs font-bold text-[#c9a96e] leading-tight whitespace-nowrap">1:1 실시간 상담</p>
-          <p className="text-[10px] text-[#555555] leading-tight whitespace-nowrap">눌러서 상담 시작</p>
+          <p className="text-[10px] text-[#999999] leading-tight whitespace-nowrap">눌러서 상담 시작</p>
         </div>
       </div>
     );
@@ -291,7 +291,7 @@ export function ChatWidget() {
             </div>
             <div>
               <h3 className="font-bold text-[#f0f0f0] text-sm sm:text-base">1:1 실시간 상담</h3>
-              <p className="text-xs text-[#555555]">velour 고객 서비스</p>
+              <p className="text-xs text-[#999999]">velour 고객 서비스</p>
             </div>
           </div>
           <button data-testid="button-close-chat" onClick={closeChat}
@@ -340,10 +340,10 @@ export function ChatWidget() {
                 <p className="text-xs text-[#888888]">이름만 입력하고 바로 상담 시작</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-[#555555]" />
+            <ChevronRight className="w-4 h-4 text-[#999999]" />
           </button>
 
-          <p className="text-xs text-[#555555] mt-1">
+          <p className="text-xs text-[#999999] mt-1">
             아직 회원이 아니신가요?{" "}
             <button onClick={() => { setIsOpen(false); navigate("/signup"); }} className="text-[#c9a96e] underline">
               회원가입
@@ -373,7 +373,7 @@ export function ChatWidget() {
             </button>
             <div>
               <h3 className="font-bold text-[#f0f0f0] text-sm sm:text-base">비회원 상담</h3>
-              <p className="text-xs text-[#555555]">이름을 입력해주세요</p>
+              <p className="text-xs text-[#999999]">이름을 입력해주세요</p>
             </div>
           </div>
           <button data-testid="button-close-chat" onClick={closeChat}
@@ -439,7 +439,7 @@ export function ChatWidget() {
           </div>
           <div>
             <h3 className="font-bold text-[#f0f0f0] text-sm sm:text-base">1:1 실시간 상담</h3>
-            <p className="text-xs text-[#555555]">
+            <p className="text-xs text-[#999999]">
               {isConnected ? "상담원 연결됨" : loading ? "연결 중..." : "대기 중"}
             </p>
           </div>
@@ -464,7 +464,7 @@ export function ChatWidget() {
           님, 무엇을 도와드릴까요?
         </p>
         {chatMode === "guest" && (
-          <button onClick={resetGuestSession} className="text-[10px] text-[#555555] hover:text-[#888888] underline">
+          <button onClick={resetGuestSession} className="text-[10px] text-[#999999] hover:text-[#888888] underline">
             상담 초기화
           </button>
         )}
@@ -475,7 +475,7 @@ export function ChatWidget() {
         <div className="flex justify-start">
           <div className="max-w-[85%] bg-[#1a1a1a] rounded-2xl rounded-tl-sm px-4 py-2.5 border border-[#2a2a2a]">
             <p className="text-sm text-[#f0f0f0]">안녕하세요! velour 상담원입니다. 무엇을 도와드릴까요?</p>
-            <p className="text-[10px] text-[#555555] mt-1">자동응답</p>
+            <p className="text-[10px] text-[#999999] mt-1">자동응답</p>
           </div>
         </div>
 
@@ -494,7 +494,7 @@ export function ChatWidget() {
                 : "bg-[#1a1a1a] text-[#f0f0f0] border border-[#2a2a2a] rounded-tl-sm"
             }`}>
               <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
-              <p className={`text-[10px] mt-1 ${msg.senderType === "user" ? "text-black/50" : "text-[#555555]"}`}>
+              <p className={`text-[10px] mt-1 ${msg.senderType === "user" ? "text-black/50" : "text-[#999999]"}`}>
                 {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString("ko-KR") : ""}
               </p>
             </div>

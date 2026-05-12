@@ -469,7 +469,7 @@ export default function Profile() {
                             { Icon: MapPin, label: "주소", value: memberInfo?.address },
                           ].map(({ Icon, label, value }) => (
                             <div key={label} className="flex items-center gap-3 py-2 border-b border-[#2a2a2a]">
-                              <Icon className="w-5 h-5 text-[#555555]" />
+                              <Icon className="w-5 h-5 text-[#999999]" />
                               <div className="flex-1">
                                 <p className="text-xs text-[#888888]">{label}</p>
                                 <p className="text-[#f0f0f0] font-medium">{value || "-"}</p>
@@ -482,7 +482,7 @@ export default function Profile() {
                             { Icon: CreditCard, label: "계좌번호", value: memberInfo?.accountNumber },
                           ].map(({ Icon, label, value }) => (
                             <div key={label} className="flex items-center gap-3 py-2 border-b border-[#2a2a2a]">
-                              <Icon className="w-5 h-5 text-[#555555]" />
+                              <Icon className="w-5 h-5 text-[#999999]" />
                               <div className="flex-1">
                                 <p className="text-xs text-[#888888]">{label}</p>
                                 <p className="text-[#f0f0f0] font-medium">{value || "-"}</p>
@@ -490,7 +490,7 @@ export default function Profile() {
                             </div>
                           ))}
                           <div className="flex items-center gap-3 py-2">
-                            <Clock className="w-5 h-5 text-[#555555]" />
+                            <Clock className="w-5 h-5 text-[#999999]" />
                             <div className="flex-1">
                               <p className="text-xs text-[#888888]">가입일</p>
                               <p className="text-[#f0f0f0] font-medium">
@@ -512,7 +512,7 @@ export default function Profile() {
                             <div key={order.id} className="bg-[#1a1a1a] border border-[#2a2a2a] p-4" data-testid={`order-item-${order.id}`}>
                               <div className="flex justify-between items-center mb-3 pb-2 border-b border-[#2a2a2a]">
                                 <span className="text-xs font-mono bg-[#111111] border border-[#333333] px-2 py-1 text-[#888888]">주문번호: {order.orderNumber}</span>
-                                <span className="text-xs text-[#555555]">{new Date(order.createdAt).toLocaleDateString("ko-KR")}</span>
+                                <span className="text-xs text-[#999999]">{new Date(order.createdAt).toLocaleDateString("ko-KR")}</span>
                               </div>
                               <div className="flex justify-between items-start mb-2">
                                 <div>
@@ -551,7 +551,7 @@ export default function Profile() {
                           ))}
                         </div>
                       ) : (
-                        <div className="text-center py-8 text-[#555555]">
+                        <div className="text-center py-8 text-[#999999]">
                           <Package className="w-12 h-12 mx-auto mb-3 text-[#333333]" />
                           <p>주문 내역이 없습니다.</p>
                         </div>
@@ -564,7 +564,7 @@ export default function Profile() {
                       <Link href="/cart">
                         <div className="flex items-center justify-between p-4 hover:bg-[#1a1a1a] cursor-pointer transition-colors border border-transparent hover:border-[#2a2a2a]" data-testid="link-wishlist">
                           <div className="flex items-center gap-3">
-                            <Heart className="w-5 h-5 text-[#555555]" />
+                            <Heart className="w-5 h-5 text-[#999999]" />
                             <span className="text-[#aaaaaa]">찜 목록</span>
                           </div>
                           <ChevronRight className="w-5 h-5 text-[#444444]" />
@@ -573,7 +573,7 @@ export default function Profile() {
                       
                       <div className="flex items-center justify-between p-4 hover:bg-[#1a1a1a] cursor-pointer transition-colors border border-transparent hover:border-[#2a2a2a]">
                         <div className="flex items-center gap-3">
-                          <Package className="w-5 h-5 text-[#555555]" />
+                          <Package className="w-5 h-5 text-[#999999]" />
                           <span className="text-[#aaaaaa]">주문/배송 조회</span>
                         </div>
                         <ChevronRight className="w-5 h-5 text-[#444444]" />
@@ -635,7 +635,7 @@ export default function Profile() {
                       <div className="space-y-3">
                         <h3 className="font-bold text-white">입금 신청 내역</h3>
                         {!depositRequests?.length ? (
-                          <p className="text-sm text-[#555555] text-center py-8">입금 신청 내역이 없습니다.</p>
+                          <p className="text-sm text-[#999999] text-center py-8">입금 신청 내역이 없습니다.</p>
                         ) : (
                           depositRequests.map((request) => (
                             <div key={request.id} className="p-4 border border-[#2a2a2a] bg-[#1a1a1a]">
@@ -665,7 +665,7 @@ export default function Profile() {
                         </span>
                       </div>
                       {!pointTransactions?.length ? (
-                        <p className="text-sm text-[#555555] text-center py-8">포인트 내역이 없습니다.</p>
+                        <p className="text-sm text-[#999999] text-center py-8">포인트 내역이 없습니다.</p>
                       ) : (
                         pointTransactions.map((transaction) => (
                           <div key={transaction.id} className="p-4 border border-[#2a2a2a] bg-[#1a1a1a] flex justify-between items-center">

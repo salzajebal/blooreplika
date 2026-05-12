@@ -174,7 +174,7 @@ export default function About() {
                     <span><strong className="text-[#f0f0f0]">가슴으로 주목받는 건 '일류 상인'</strong></span>
                   </li>
                 </ul>
-                <p className="text-sm text-[#555555] mt-2 ml-4">(출처: 열혈장사꾼)</p>
+                <p className="text-sm text-[#999999] mt-2 ml-4">(출처: 열혈장사꾼)</p>
               </div>
 
               <div>

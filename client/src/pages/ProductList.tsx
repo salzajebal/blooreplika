@@ -540,7 +540,7 @@ export default function ProductList() {
           <div className="absolute top-full left-0 mt-2 bg-[#111111] border border-[#2a2a2a] shadow-xl shadow-black/50 z-50 min-w-[260px] max-h-[400px] overflow-hidden flex flex-col">
             <div className="p-3 border-b border-[#1a1a1a]">
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#555555]" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#999999]" />
                 <input type="text" placeholder="브랜드 검색..." value={brandSearch}
                   onChange={(e) => setBrandSearch(e.target.value)}
                   className="w-full pl-8 pr-3 py-2 text-sm border border-[#333333] bg-[#0d0d0d] text-[#f0f0f0] placeholder:text-[#444444] focus:outline-none focus:border-[#c9a96e]"
@@ -564,7 +564,7 @@ export default function ProductList() {
                   data-testid={`button-brand-${brand.id}`}>
                   <span className="flex items-center gap-1">
                     {brand.name}
-                    {brand.productCount > 0 && <span className="text-xs text-[#555555]">({brand.productCount})</span>}
+                    {brand.productCount > 0 && <span className="text-xs text-[#999999]">({brand.productCount})</span>}
                   </span>
                   {selectedBrand === brand.id && <Check className="w-4 h-4" />}
                 </button>
@@ -771,7 +771,7 @@ export default function ProductList() {
                 <span className="text-sm text-[#888888]">
                   총 <span className="font-bold text-white" data-testid="text-product-count">{total.toLocaleString()}</span>개
                   {totalPages > 1 && (
-                    <span className="ml-1 text-[#555555]">(페이지 {currentPage}/{totalPages})</span>
+                    <span className="ml-1 text-[#999999]">(페이지 {currentPage}/{totalPages})</span>
                   )}
                 </span>
               </div>
@@ -792,14 +792,14 @@ export default function ProductList() {
                 <div className="hidden sm:flex items-center gap-1 border border-[#333333]">
                   <button 
                     onClick={() => setViewMode("grid")}
-                    className={cn("p-1.5", viewMode === "grid" ? "bg-[#c9a96e] text-black" : "text-[#555555] hover:text-white")}
+                    className={cn("p-1.5", viewMode === "grid" ? "bg-[#c9a96e] text-black" : "text-[#999999] hover:text-white")}
                     data-testid="button-view-grid"
                   >
                     <Grid className="w-4 h-4" />
                   </button>
                   <button 
                     onClick={() => setViewMode("list")}
-                    className={cn("p-1.5", viewMode === "list" ? "bg-[#c9a96e] text-black" : "text-[#555555] hover:text-white")}
+                    className={cn("p-1.5", viewMode === "list" ? "bg-[#c9a96e] text-black" : "text-[#999999] hover:text-white")}
                     data-testid="button-view-list"
                   >
                     <List className="w-4 h-4" />
@@ -935,7 +935,7 @@ export default function ProductList() {
                         <div className="mb-2">
                           {salePrice ? (
                             <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5">
-                              <span className="text-xs text-[#555555] line-through">{Number(product.price).toLocaleString()}원</span>
+                              <span className="text-xs text-[#999999] line-through">{Number(product.price).toLocaleString()}원</span>
                               <span className="text-sm font-extrabold text-[#c9a96e]" data-testid={`price-product-${product.id}`}>{salePrice.toLocaleString()}원</span>
                               {discountPct > 0 && <span className="text-xs text-red-400 font-bold">{discountPct}%</span>}
                             </div>
@@ -946,7 +946,7 @@ export default function ProductList() {
                         <div className="flex items-center justify-between mt-auto pt-1 border-t border-[#2a2a2a]">
                           <button
                             onClick={(e) => handleWishlistToggle(e, product)}
-                            className="flex items-center gap-1 text-[#555555] hover:text-red-500 transition-colors"
+                            className="flex items-center gap-1 text-[#999999] hover:text-red-500 transition-colors"
                             data-testid={`button-wishlist-${product.id}`}
                           >
                             <Heart className={cn("w-4 h-4", isInWishlist(String(product.id)) ? "fill-red-500 text-red-500" : "")} />

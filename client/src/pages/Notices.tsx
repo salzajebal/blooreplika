@@ -57,7 +57,7 @@ export default function Notices() {
       <Header />
       
       <main className="flex-1 container mx-auto px-4 py-8">
-        <nav className="flex items-center gap-2 text-sm text-[#555555] mb-6">
+        <nav className="flex items-center gap-2 text-sm text-[#999999] mb-6">
           <Link href="/" className="hover:text-[#c9a96e] transition-colors flex items-center gap-1">
             <Home className="w-4 h-4" />
             홈
@@ -68,7 +68,7 @@ export default function Notices() {
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white tracking-widest uppercase mb-2">공지사항</h1>
-          <p className="text-[#555555]">velour의 새로운 소식과 공지사항입니다</p>
+          <p className="text-[#999999]">velour의 새로운 소식과 공지사항입니다</p>
         </div>
 
         {isLoading ? (
@@ -84,7 +84,7 @@ export default function Notices() {
           <div className="bg-[#1a1a1a] border border-[#2a2a2a] p-16 text-center">
             <Bell className="w-16 h-16 mx-auto mb-4 text-[#333333]" />
             <h3 className="text-xl font-medium text-[#888888] mb-2">등록된 공지사항이 없습니다</h3>
-            <p className="text-[#555555]">새로운 소식이 곧 올라올 예정입니다</p>
+            <p className="text-[#999999]">새로운 소식이 곧 올라올 예정입니다</p>
           </div>
         ) : (
           <div className="border border-[#2a2a2a] overflow-hidden">
@@ -115,7 +115,7 @@ export default function Notices() {
                         </span>
                       </div>
                       <div className="flex items-center gap-4 flex-shrink-0 ml-4">
-                        <span className="text-sm text-[#555555] hidden sm:block">
+                        <span className="text-sm text-[#999999] hidden sm:block">
                           {notice.displayDate
                             ? new Date(notice.displayDate).toLocaleDateString("ko-KR")
                             : "-"}
@@ -126,7 +126,7 @@ export default function Notices() {
                         {isExpanded ? (
                           <ChevronUp className="w-5 h-5 text-[#c9a96e]" />
                         ) : (
-                          <ChevronDown className="w-5 h-5 text-[#555555]" />
+                          <ChevronDown className="w-5 h-5 text-[#999999]" />
                         )}
                       </div>
                     </button>
@@ -137,7 +137,7 @@ export default function Notices() {
                           className="prose prose-sm max-w-none text-[#aaaaaa] [&_img]:max-w-full [&_img]:h-auto [&_p]:my-2 [&_h1]:text-white [&_h2]:text-white [&_h3]:text-white [&_strong]:text-[#f0f0f0] [&_a]:text-[#c9a96e]"
                           dangerouslySetInnerHTML={{ __html: notice.content }}
                         />
-                        <div className="mt-4 pt-4 border-t border-[#222222] text-sm text-[#555555] sm:hidden">
+                        <div className="mt-4 pt-4 border-t border-[#222222] text-sm text-[#999999] sm:hidden">
                           <p>
                             {notice.displayDate
                               ? new Date(notice.displayDate).toLocaleDateString("ko-KR")

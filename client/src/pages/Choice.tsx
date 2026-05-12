@@ -250,7 +250,7 @@ function ChoiceList() {
               </div>
 
               {filteredItems.length === 0 ? (
-                <div className="text-center py-16 text-[#555555]">
+                <div className="text-center py-16 text-[#999999]">
                   <p className="text-lg mb-2">등록된 콘텐츠가 없습니다.</p>
                   <p className="text-sm">관리자가 콘텐츠를 등록하면 여기에 표시됩니다.</p>
                 </div>

@@ -278,7 +278,7 @@ export function ProductGrid() {
               </div>
               
               <div className="p-4 flex-1 flex flex-col">
-                <p className="text-xs text-[#555555] uppercase tracking-wider mb-1 font-medium">
+                <p className="text-xs text-[#999999] uppercase tracking-wider mb-1 font-medium">
                   {product.brandId || "BRAND"}
                 </p>
                 <h3 className="text-sm md:text-base text-[#cccccc] line-clamp-2 mb-2.5 leading-snug flex-1">
@@ -289,7 +289,7 @@ export function ProductGrid() {
                   {hasSale ? (
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs text-[#555555] line-through">
+                        <span className="text-xs text-[#999999] line-through">
                           {product.price.toLocaleString()}원
                         </span>
                         <span className="text-[10px] bg-red-600 text-white px-2 py-0.5 font-bold">
@@ -299,19 +299,19 @@ export function ProductGrid() {
                       <span className="text-base md:text-lg font-extrabold text-red-400" data-testid={`price-product-${product.id}`}>
                         {calculateSalePrice(product.price).toLocaleString()}원
                       </span>
-                      <p className="text-xs text-[#555555] mt-1">즉시구매가</p>
+                      <p className="text-xs text-[#999999] mt-1">즉시구매가</p>
                     </div>
                   ) : (
                     <div>
                       <span className="text-base md:text-lg font-extrabold text-[#f0f0f0]" data-testid={`price-product-${product.id}`}>
                         {product.price.toLocaleString()}원
                       </span>
-                      <p className="text-xs text-[#555555] mt-1">즉시구매가</p>
+                      <p className="text-xs text-[#999999] mt-1">즉시구매가</p>
                     </div>
                   )}
                 </div>
                 {(product as any).viewCount > 0 && (
-                  <div className="flex items-center gap-1 mt-2 text-xs text-[#555555]">
+                  <div className="flex items-center gap-1 mt-2 text-xs text-[#999999]">
                     <Eye className="w-3.5 h-3.5" />
                     <span>조회 {(product as any).viewCount}</span>
                   </div>
@@ -322,7 +322,7 @@ export function ProductGrid() {
         </div>
       ) : (
         <div className="py-16 text-center bg-[#0f0f0f]">
-          <p className="text-[#555555] mb-3 text-sm">해당 카테고리에 등록된 상품이 없습니다.</p>
+          <p className="text-[#999999] mb-3 text-sm">해당 카테고리에 등록된 상품이 없습니다.</p>
           <p className="text-xs text-[#444444]">관리자 페이지에서 상품을 추가해주세요.</p>
           <a href="/admin" className="inline-block mt-3 text-[#c9a96e] hover:underline text-xs font-medium">
             관리자 페이지 바로가기 →
@@ -360,7 +360,7 @@ export function ProductGrid() {
                 {page}
               </Button>
             ) : (
-              <span key={index} className="px-1.5 text-[#555555] text-sm">...</span>
+              <span key={index} className="px-1.5 text-[#999999] text-sm">...</span>
             )
           ))}
           

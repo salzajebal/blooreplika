@@ -291,7 +291,7 @@ export default function ProductDetail() {
       
       <main className="flex-1 pb-20">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
-          <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-[#555555] mb-4 sm:mb-8 overflow-x-auto whitespace-nowrap">
+          <nav className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-[#999999] mb-4 sm:mb-8 overflow-x-auto whitespace-nowrap">
             <Link href="/" className="hover:text-[#c9a96e] shrink-0">홈</Link>
             <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
             <Link href="/products" className="hover:text-[#c9a96e] shrink-0">상품</Link>
@@ -380,7 +380,7 @@ export default function ProductDetail() {
                             />
                           ))}
                         </div>
-                        <p className="text-xs text-[#555555]">{selectedImageIndex + 1} / {images.length}</p>
+                        <p className="text-xs text-[#999999]">{selectedImageIndex + 1} / {images.length}</p>
                       </div>
                     )}
                   </>
@@ -408,7 +408,7 @@ export default function ProductDetail() {
                   <span className="text-[#888888] w-24">판매가격</span>
                   {hasSale ? (
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[#555555] line-through">{Number(product.price).toLocaleString()}원</span>
+                      <span className="text-[#999999] line-through">{Number(product.price).toLocaleString()}원</span>
                       <span className="font-bold text-[#c9a96e] text-lg" data-testid="price-product-detail">{calculateSalePrice(Number(product.price)).toLocaleString()}원</span>
                       <span className="text-xs bg-red-900/60 text-red-300 px-1.5 py-0.5 font-bold">{salePercent}% OFF</span>
                     </div>
@@ -557,21 +557,21 @@ export default function ProductDetail() {
             <div className="flex border-b border-[#2a2a2a]">
               <button
                 onClick={() => setActiveTab("detail")}
-                className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${activeTab === "detail" ? "border-[#c9a96e] text-[#c9a96e]" : "border-transparent text-[#555555] hover:text-[#888888]"}`}
+                className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${activeTab === "detail" ? "border-[#c9a96e] text-[#c9a96e]" : "border-transparent text-[#999999] hover:text-[#888888]"}`}
                 data-testid="tab-detail"
               >
                 상품상세
               </button>
               <button
                 onClick={() => setActiveTab("review")}
-                className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${activeTab === "review" ? "border-[#c9a96e] text-[#c9a96e]" : "border-transparent text-[#555555] hover:text-[#888888]"}`}
+                className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${activeTab === "review" ? "border-[#c9a96e] text-[#c9a96e]" : "border-transparent text-[#999999] hover:text-[#888888]"}`}
                 data-testid="tab-review"
               >
                 구매후기 ({reviewTotal})
               </button>
               <button
                 onClick={() => setActiveTab("shipping")}
-                className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${activeTab === "shipping" ? "border-[#c9a96e] text-[#c9a96e]" : "border-transparent text-[#555555] hover:text-[#888888]"}`}
+                className={`flex-1 py-4 text-sm font-medium text-center border-b-2 transition-colors ${activeTab === "shipping" ? "border-[#c9a96e] text-[#c9a96e]" : "border-transparent text-[#999999] hover:text-[#888888]"}`}
                 data-testid="tab-shipping"
               >
                 배송/교환
@@ -750,7 +750,7 @@ export default function ProductDetail() {
                                 ))}
                               </div>
                               <span className="text-xs font-medium text-[#aaaaaa]">{review.authorName}</span>
-                              <span className="text-xs text-[#555555]">{review.displayDate ? new Date(review.displayDate).toLocaleDateString('ko-KR') : ''}</span>
+                              <span className="text-xs text-[#999999]">{review.displayDate ? new Date(review.displayDate).toLocaleDateString('ko-KR') : ''}</span>
                             </div>
                             {review.title && (
                               <p className="text-sm font-semibold text-[#f0f0f0] mb-1">{review.title}</p>
@@ -794,7 +794,7 @@ export default function ProductDetail() {
                   )}
                 </div>
               ) : (
-                <div className="text-[#555555] text-center py-8 text-sm">
+                <div className="text-[#999999] text-center py-8 text-sm">
                   아직 작성된 후기가 없습니다. 첫 번째 후기를 남겨주세요!
                 </div>
               )}
@@ -840,7 +840,7 @@ export default function ProductDetail() {
               <button
                 onClick={handleBuyNow}
                 disabled={!!product.isSoldOut}
-                className="flex-1 h-14 sm:h-16 text-base sm:text-lg font-bold text-black bg-[#c9a96e] hover:bg-[#b8955a] active:bg-[#a07848] disabled:bg-[#333333] disabled:text-[#555555] disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="flex-1 h-14 sm:h-16 text-base sm:text-lg font-bold text-black bg-[#c9a96e] hover:bg-[#b8955a] active:bg-[#a07848] disabled:bg-[#333333] disabled:text-[#999999] disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 data-testid="button-buy-now-bottom"
               >
                 구매하기
