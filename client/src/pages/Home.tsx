@@ -2,7 +2,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Star, ArrowUp, Trophy, ShoppingBag, Flame, Tag, Package, MessageSquare, Shirt, Watch, Gem, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star, ArrowUp, Trophy } from "lucide-react";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 import { useState, useEffect, useRef } from "react";
 
@@ -192,79 +192,136 @@ function CategoryStripSection() {
   );
 }
 
+// 브랜드 이름 → ID 매핑 헬퍼
+function findBrandId(brands: any[], keywords: string[]): string | null {
+  for (const kw of keywords) {
+    const found = brands.find((b: any) =>
+      b.name?.toLowerCase().replace(/\s/g, "").includes(kw.toLowerCase().replace(/\s/g, ""))
+    );
+    if (found) return found.id;
+  }
+  return null;
+}
+
 function RankingSection() {
-  const [genderFilter, setGenderFilter] = useState<"전체" | "남성" | "여성">("전체");
+  const [tab, setTab] = useState<"남성" | "여성">("남성");
 
-  const { data: productsData } = useQuery({
-    queryKey: ["/api/products/ranking-home", genderFilter],
-    queryFn: async () => {
-      let url = "/api/products?limit=10&isBest=true";
-      if (genderFilter !== "전체") url += `&gender=${encodeURIComponent(genderFilter)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.success && data.data?.length > 0) return data.data;
-      // fallback: without isBest filter
-      let fallback = "/api/products?limit=10";
-      if (genderFilter !== "전체") fallback += `&gender=${encodeURIComponent(genderFilter)}`;
-      const fb = await fetch(fallback);
-      const fbData = await fb.json();
-      return fbData.success ? fbData.data : [];
-    },
-    staleTime: 60000,
-  });
-
+  // 브랜드 목록 (롤렉스/루이비통 ID 찾기용)
   const { data: brandsData } = useQuery({
-    queryKey: ["/api/brands"],
+    queryKey: ["/api/brands/all-for-ranking"],
     queryFn: async () => {
-      const res = await fetch("/api/brands?limit=200");
+      const res = await fetch("/api/brands?limit=300");
       const data = await res.json();
       return data.success ? data.data : [];
     },
     staleTime: 600000,
   });
 
+  const brands: any[] = brandsData || [];
+
+  // 남성: 롤렉스 시계 / 여성: 루이비통 가방
+  const rolexId = findBrandId(brands, ["롤렉스", "rolex"]);
+  const lvId = findBrandId(brands, ["루이비통", "louisvuitton", "louis vuitton", "LV"]);
+
+  const targetBrandId = tab === "남성" ? rolexId : lvId;
+  const targetCategory = tab === "남성" ? "watches" : "bags";
+  const targetBrandName = tab === "남성" ? "ROLEX" : "LOUIS VUITTON";
+
+  const { data: productsData, isLoading } = useQuery({
+    queryKey: ["/api/products/ranking-home-brand", tab, targetBrandId],
+    queryFn: async () => {
+      // 1차: 해당 브랜드 + 카테고리
+      if (targetBrandId) {
+        let url = `/api/products?limit=10&brandId=${encodeURIComponent(targetBrandId)}&category=${targetCategory}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.success && data.data?.length > 0) return data.data;
+        // 2차: 브랜드만 (카테고리 필터 없이)
+        const res2 = await fetch(`/api/products?limit=10&brandId=${encodeURIComponent(targetBrandId)}`);
+        const data2 = await res2.json();
+        if (data2.success && data2.data?.length > 0) return data2.data;
+      }
+      // 3차 폴백: 카테고리만
+      const res3 = await fetch(`/api/products?limit=10&category=${targetCategory}`);
+      const data3 = await res3.json();
+      return data3.success ? data3.data : [];
+    },
+    staleTime: 60000,
+    enabled: brands.length > 0, // 브랜드 로드 후 실행
+  });
+
   const getBrandName = (brandId: string) => {
-    const brand = (brandsData || []).find((b: any) => b.id === brandId);
-    return brand?.name?.toUpperCase() || "";
+    const b = brands.find((b: any) => b.id === brandId);
+    return b?.name?.toUpperCase() || "";
   };
 
   const products: any[] = productsData || [];
+  const moreLink = targetBrandId
+    ? `/products?brand=${encodeURIComponent(targetBrandId)}`
+    : tab === "남성" ? "/products/watches" : "/products/bags";
 
   return (
     <section className="bg-white border-b border-gray-100" data-testid="ranking-section">
       <div className="px-4 py-4">
-        <div className="flex items-center justify-between mb-3">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Trophy className="w-4 h-4 text-[#FF6100]" />
-            <h2 className="text-base font-bold text-gray-900">실시간 베스트 TOP 10</h2>
+            <h2 className="text-base font-bold text-gray-900">실시간 랭킹 TOP 10</h2>
           </div>
-          <Link href="/ranking" className="text-xs text-gray-400 hover:text-gray-600 font-medium">
+          <Link href={moreLink} className="text-xs text-gray-400 hover:text-gray-600 font-medium">
             더 보기
           </Link>
         </div>
 
-        {/* Gender filter */}
-        <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1 w-fit mb-4">
-          {(["전체", "남성", "여성"] as const).map((g) => (
+        {/* 남성 / 여성 탭 */}
+        <div className="flex border-b border-gray-100 mb-4 -mx-4 px-4">
+          {(["남성", "여성"] as const).map((g) => (
             <button
               key={g}
-              onClick={() => setGenderFilter(g)}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                genderFilter === g
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-400 hover:text-gray-600"
+              onClick={() => setTab(g)}
+              className={`flex-1 pb-2.5 text-sm font-semibold border-b-2 transition-colors ${
+                tab === g
+                  ? "border-black text-black"
+                  : "border-transparent text-gray-300 hover:text-gray-500"
               }`}
-              data-testid={`home-ranking-gender-${g}`}
+              data-testid={`home-ranking-tab-${g}`}
             >
               {g}
             </button>
           ))}
         </div>
 
-        {/* Product list */}
+        {/* 브랜드 배지 */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-[11px] font-bold text-[#FF6100] bg-orange-50 border border-orange-100 px-2 py-0.5 rounded">
+            {targetBrandName}
+          </span>
+          <span className="text-[11px] text-gray-400">
+            {tab === "남성" ? "시계 베스트" : "가방 베스트"}
+          </span>
+        </div>
+
+        {/* 상품 리스트 */}
         <div>
-          {products.length === 0 ? (
-            <div className="py-8 text-center text-gray-300 text-sm">상품을 불러오는 중...</div>
+          {isLoading || (brands.length === 0) ? (
+            <div className="space-y-0">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 py-3 border-b border-gray-50 animate-pulse">
+                  <div className="w-6 h-5 bg-gray-100 rounded flex-shrink-0" />
+                  <div className="w-14 h-14 bg-gray-100 rounded flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-2.5 bg-gray-100 rounded w-16" />
+                    <div className="h-3 bg-gray-100 rounded w-full" />
+                    <div className="h-4 bg-gray-100 rounded w-20" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : products.length === 0 ? (
+            <div className="py-8 text-center text-gray-300 text-sm">
+              상품을 불러오는 중...
+            </div>
           ) : (
             products.slice(0, 10).map((product: any, idx: number) => (
               <Link
@@ -278,7 +335,7 @@ function RankingSection() {
                 }`}>
                   {idx + 1}
                 </span>
-                <div className="w-14 h-14 flex-shrink-0 bg-gray-100 overflow-hidden rounded border border-gray-100">
+                <div className="w-14 h-14 flex-shrink-0 bg-gray-50 overflow-hidden rounded border border-gray-100">
                   <img
                     src={getProxiedImageUrl(product.imageUrl, "thumb")}
                     alt={product.name}
@@ -297,7 +354,9 @@ function RankingSection() {
                   </p>
                 </div>
                 {idx === 0 && (
-                  <span className="flex-shrink-0 bg-[#FF6100] text-white text-[10px] font-bold px-1.5 py-0.5 rounded">1위</span>
+                  <span className="flex-shrink-0 bg-[#FF6100] text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                    1위
+                  </span>
                 )}
               </Link>
             ))
