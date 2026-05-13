@@ -149,17 +149,22 @@ const CATEGORY_STRIP_ITEMS = [
   {
     label: "SHOP",
     path: "/products",
-    image: "https://images.unsplash.com/photo-1607082349566-187342175e2f?w=300&q=80",
+    image: null,
+    gradient: "linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+    icon: "🛍️",
   },
   {
     label: "랭킹",
     path: "/ranking",
-    image: "https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?w=300&q=80",
+    image: null,
+    gradient: "linear-gradient(160deg, #0f2027 0%, #203a43 50%, #2c5364 100%)",
+    icon: "📈",
   },
   {
     label: "리뷰",
     path: "/reviews",
-    image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=300&q=80",
+    image: null,
+    gradient: "linear-gradient(135deg, #FF6100 0%, #ff9a3c 40%, #e91e8c 100%)",
   },
 ];
 
@@ -167,7 +172,7 @@ function CategoryStripSection() {
   return (
     <section className="bg-white border-b border-gray-100" data-testid="category-strip-section">
       <div className="flex">
-        {CATEGORY_STRIP_ITEMS.map((item, idx) => (
+        {CATEGORY_STRIP_ITEMS.map((item: any, idx) => (
           <Link
             key={idx}
             href={item.path}
@@ -175,16 +180,48 @@ function CategoryStripSection() {
             style={{ aspectRatio: "1/1.3" }}
             data-testid={`category-strip-${idx}`}
           >
-            <img
-              src={item.image}
-              alt={item.label}
-              className="absolute inset-0 w-full h-full object-cover"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 pb-2 flex justify-center">
-              <span className="text-white text-xs font-bold tracking-wider drop-shadow">{item.label}</span>
-            </div>
+            {item.image ? (
+              <img
+                src={item.image}
+                alt={item.label}
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div
+                className="absolute inset-0"
+                style={{ background: item.gradient }}
+              />
+            )}
+            {item.label === "리뷰" ? (
+              <>
+                <div className="absolute inset-0 bg-black/20" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                  <span className="text-white text-[10px] font-bold tracking-[0.25em] uppercase drop-shadow opacity-80">velour</span>
+                  <span className="text-white text-[14px] font-black tracking-[0.2em] drop-shadow leading-none">REVIEW</span>
+                  <div className="flex gap-0.5 mt-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-2 h-2 fill-white text-white drop-shadow" />
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : item.icon ? (
+              <>
+                <div className="absolute inset-0 bg-black/10" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
+                  <span className="text-2xl drop-shadow-lg">{item.icon}</span>
+                  <span className="text-white text-[11px] font-black tracking-wider drop-shadow">{item.label}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 pb-2 flex justify-center">
+                  <span className="text-white text-xs font-bold tracking-wider drop-shadow">{item.label}</span>
+                </div>
+              </>
+            )}
           </Link>
         ))}
       </div>
