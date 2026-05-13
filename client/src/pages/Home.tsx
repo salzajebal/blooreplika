@@ -143,7 +143,7 @@ const CATEGORY_STRIP_ITEMS = [
   {
     label: "랭킹",
     path: "/ranking",
-    image: "https://images.unsplash.com/photo-1543286386-2e659306cd6c?w=300&q=80",
+    image: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=300&q=80",
   },
   {
     label: "리뷰",
