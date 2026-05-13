@@ -454,10 +454,10 @@ export default function Order() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#0f0f0f]">
+      <div className="min-h-screen flex flex-col bg-[#f5f5f5]">
         <Header />
         <main className="flex-1 flex items-center justify-center">
-          <div className="text-[#888888]">상품 정보를 불러오는 중...</div>
+          <div className="text-[#666666] text-sm">상품 정보를 불러오는 중...</div>
         </main>
         <Footer />
       </div>
@@ -466,12 +466,12 @@ export default function Order() {
 
   if (!isCartOrder && !product) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#0f0f0f]">
+      <div className="min-h-screen flex flex-col bg-[#f5f5f5]">
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-white mb-4">상품을 찾을 수 없습니다</h1>
-            <Button className="bg-[#c9a96e] hover:bg-[#b8945f] text-black font-semibold" onClick={() => setLocation("/products")}>상품 목록으로 돌아가기</Button>
+            <h1 className="text-xl font-bold text-[#111111] mb-4">상품을 찾을 수 없습니다</h1>
+            <Button className="bg-[#FF6100] hover:bg-[#e05500] text-white font-semibold" onClick={() => setLocation("/products")}>상품 목록으로 돌아가기</Button>
           </div>
         </main>
         <Footer />
@@ -481,143 +481,131 @@ export default function Order() {
 
   if (orderComplete) {
     return (
-      <div className="min-h-screen flex flex-col bg-[#0f0f0f]">
+      <div className="min-h-screen flex flex-col bg-[#f5f5f5]">
         <Header />
-        <main className="flex-1 py-8 sm:py-12">
-          <div className="max-w-2xl mx-auto px-4">
-            <div className="bg-[#161616] border border-[#2a2a2a] p-6 sm:p-10 text-center">
-              <div className="w-20 h-20 bg-[#1a1500] border border-[#c9a96e]/40 rounded-full flex items-center justify-center mx-auto mb-6">
-                <CheckCircle className="w-12 h-12 text-[#c9a96e]" />
+        <main className="flex-1 py-6">
+          <div className="max-w-[640px] mx-auto px-4 space-y-4">
+
+            {/* 완료 헤더 */}
+            <div className="bg-white border border-[#e8e8e8] p-8 text-center">
+              <div className="w-16 h-16 bg-[#fff5ee] border border-[#FF6100]/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-9 h-9 text-[#FF6100]" />
               </div>
-              
-              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-                주문이 완료되었습니다
-              </h1>
-              
-              <p className="text-[#888888] mb-6">
-                주문번호: <span className="font-bold text-[#c9a96e]">{orderNumber}</span>
+              <h1 className="text-xl font-bold text-[#111111] mb-1">주문이 완료되었습니다</h1>
+              <p className="text-sm text-[#666666]">
+                주문번호: <span className="font-bold text-[#FF6100]">{orderNumber}</span>
               </p>
+            </div>
 
-              {completedPaymentMethod === "card" ? (
-                <div className="bg-[#1a1a1a] border border-[#2a2a2a] p-4 sm:p-6 mb-6">
-                  <h2 className="font-bold text-white mb-3 flex items-center justify-center gap-2">
-                    <CreditCard className="w-5 h-5 text-[#c9a96e]" />
-                    카드결제 안내
-                  </h2>
-                  <div className="bg-[#111111] border border-[#2a2a2a] p-4">
-                    <div className="grid gap-2 text-left">
-                      <div className="flex justify-between items-center py-1 border-b border-[#2a2a2a]">
-                        <span className="text-[#888888] text-sm">결제수단</span>
-                        <span className="font-bold text-white">신용카드</span>
-                      </div>
-                      <div className="flex justify-between items-center py-1">
-                        <span className="text-[#888888] text-sm">결제금액</span>
-                        <span className="font-bold text-[#c9a96e]">{calculateTotal()}원</span>
-                      </div>
-                    </div>
+            {/* 결제 안내 */}
+            {completedPaymentMethod === "card" ? (
+              <div className="bg-white border border-[#e8e8e8] p-5">
+                <h2 className="font-bold text-[#111111] text-sm mb-3 flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-[#FF6100]" />
+                  카드결제 안내
+                </h2>
+                <div className="bg-[#f8f8f8] border border-[#e8e8e8] p-4 rounded">
+                  <div className="flex justify-between items-center py-1.5 border-b border-[#e8e8e8]">
+                    <span className="text-[#666666] text-sm">결제수단</span>
+                    <span className="font-semibold text-[#111111] text-sm">신용카드</span>
                   </div>
-                  <p className="text-[#888888] text-sm mt-3">
-                    카드결제 안내는 <strong className="text-white">카카오톡 상담</strong>을 통해 받으실 수 있습니다.
-                  </p>
-                  {kakaoLink && (
-                    <a
-                      href={kakaoLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 w-full mt-3 bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-bold py-3 px-6 transition-colors"
-                      data-testid="link-kakao-card"
-                    >
-                      <KakaoIcon className="w-5 h-5" />
-                      카카오톡으로 카드결제 안내받기
-                    </a>
-                  )}
+                  <div className="flex justify-between items-center py-1.5">
+                    <span className="text-[#666666] text-sm">결제금액</span>
+                    <span className="font-bold text-[#FF6100]">{calculateTotal()}원</span>
+                  </div>
                 </div>
-              ) : (
-                <div className="bg-[#1a1a1a] border border-[#2a2a2a] p-4 sm:p-6 mb-6">
-                  <h2 className="font-bold text-white mb-3 flex items-center justify-center gap-2">
-                    <Building2 className="w-5 h-5 text-[#c9a96e]" />
-                    결제계좌 안내
-                  </h2>
-                  
-                  {depositAccount ? (
-                    <div className="space-y-4">
-                      <div className="bg-[#111111] border border-[#2a2a2a] p-4">
-                        <div className="grid gap-2 text-left">
-                          <div className="flex justify-between items-center py-1 border-b border-[#2a2a2a]">
-                            <span className="text-[#888888] text-sm">은행</span>
-                            <span className="font-bold text-white">{depositAccount.bankName}</span>
-                          </div>
-                          <div className="flex justify-between items-center py-1 border-b border-[#2a2a2a]">
-                            <span className="text-[#888888] text-sm">계좌번호</span>
-                            <span className="font-bold text-white font-mono">{depositAccount.accountNumber}</span>
-                          </div>
-                          <div className="flex justify-between items-center py-1">
-                            <span className="text-[#888888] text-sm">예금주</span>
-                            <span className="font-bold text-white">{depositAccount.accountHolder}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-[#888888] text-sm">
-                        위 계좌로 <strong className="text-[#c9a96e]">{calculateTotal()}원</strong>을 입금해 주세요.
-                        <br />
-                        입금 확인 후 상품이 발송됩니다.
-                      </p>
-                    </div>
-                  ) : (
-                    <p className="text-[#888888] text-sm">
-                      결제계좌 정보를 불러오는 중입니다. 잠시 후 다시 확인해주세요.
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <div className="bg-[#1a1a1a] border border-[#2a2a2a] p-4 mb-6 text-left">
-                <h3 className="font-bold text-white mb-3">주문 상품 정보</h3>
-                {isCartOrder ? (
-                  <div className="space-y-3">
-                    {cartItems.map((item, idx) => (
-                      <div key={idx} className="flex gap-3 items-center">
-                        <div className="w-16 h-16 bg-[#0f0f0f] border border-[#2a2a2a] overflow-hidden shrink-0">
-                          <img src={getProxiedImageUrl(item.imageUrl) || DEFAULT_IMAGE} alt={item.name}
-                            className="w-full h-full object-contain p-1"
-                            onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }} />
-                        </div>
-                        <div>
-                          <p className="font-medium text-[#f0f0f0] text-sm">{item.name}</p>
-                          <p className="text-[#c9a96e] font-bold text-sm">{item.price.toLocaleString()}원</p>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="border-t border-[#2a2a2a] pt-2 mt-2">
-                      <p className="text-[#c9a96e] font-bold">{calculateTotal()}원</p>
-                    </div>
-                  </div>
-                ) : product && (
-                  <div className="flex gap-4">
-                    <div className="w-20 h-20 bg-[#0f0f0f] border border-[#2a2a2a] overflow-hidden shrink-0">
-                      <img src={getProxiedImageUrl(product.imageUrl) || DEFAULT_IMAGE} alt={product.name}
-                        className="w-full h-full object-contain p-2"
-                        onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }} />
-                    </div>
-                    <div>
-                      <p className="font-medium text-[#f0f0f0]">{product.name}</p>
-                      <p className="text-sm text-[#888888]">수량: {quantity}개</p>
-                      <p className="text-[#c9a96e] font-bold mt-1">{calculateTotal()}원</p>
-                    </div>
-                  </div>
+                <p className="text-[#666666] text-xs mt-3 leading-relaxed">
+                  카드결제 안내는 <strong className="text-[#111111]">카카오톡 상담</strong>을 통해 받으실 수 있습니다.
+                </p>
+                {kakaoLink && (
+                  <a href={kakaoLink} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 w-full mt-3 bg-[#FEE500] hover:bg-[#FDD835] text-[#3C1E1E] font-bold py-3 px-6 transition-colors text-sm rounded"
+                    data-testid="link-kakao-card">
+                    <KakaoIcon className="w-4 h-4" />
+                    카카오톡으로 카드결제 안내받기
+                  </a>
                 )}
               </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button variant="outline" onClick={() => setLocation("/")}
-                  className="sm:w-auto border-[#333333] bg-transparent text-[#888888] hover:border-[#c9a96e] hover:text-white">
-                  홈으로 돌아가기
-                </Button>
-                <Button onClick={() => isLoggedIn ? setLocation("/profile") : setLocation(`/orders?orderNumber=${encodeURIComponent(orderNumber)}`)}
-                  className="sm:w-auto bg-[#c9a96e] hover:bg-[#b8945f] text-black font-semibold">
-                  주문 내역 확인
-                </Button>
+            ) : (
+              <div className="bg-white border border-[#e8e8e8] p-5">
+                <h2 className="font-bold text-[#111111] text-sm mb-3 flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-[#FF6100]" />
+                  결제계좌 안내
+                </h2>
+                {depositAccount ? (
+                  <div className="space-y-3">
+                    <div className="bg-[#f8f8f8] border border-[#e8e8e8] p-4 rounded space-y-2">
+                      {[
+                        { label: "은행", value: depositAccount.bankName },
+                        { label: "계좌번호", value: depositAccount.accountNumber },
+                        { label: "예금주", value: depositAccount.accountHolder },
+                      ].map(({ label, value }, i, arr) => (
+                        <div key={label} className={`flex justify-between items-center py-1.5 ${i < arr.length - 1 ? "border-b border-[#e8e8e8]" : ""}`}>
+                          <span className="text-[#666666] text-sm">{label}</span>
+                          <span className="font-semibold text-[#111111] text-sm font-mono">{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[#666666] text-xs leading-relaxed">
+                      위 계좌로 <strong className="text-[#FF6100]">{calculateTotal()}원</strong>을 입금해 주세요.<br />
+                      입금 확인 후 상품이 발송됩니다.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-[#666666] text-sm">결제계좌 정보를 불러오는 중입니다. 잠시 후 다시 확인해주세요.</p>
+                )}
               </div>
+            )}
+
+            {/* 주문 상품 */}
+            <div className="bg-white border border-[#e8e8e8] p-5">
+              <h3 className="font-bold text-[#111111] text-sm mb-3">주문 상품 정보</h3>
+              {isCartOrder ? (
+                <div className="space-y-3">
+                  {cartItems.map((item, idx) => (
+                    <div key={idx} className="flex gap-3 items-center pb-3 border-b border-[#e8e8e8] last:border-b-0 last:pb-0">
+                      <div className="w-14 h-14 bg-[#f5f5f5] border border-[#e8e8e8] overflow-hidden shrink-0 rounded">
+                        <img src={getProxiedImageUrl(item.imageUrl) || DEFAULT_IMAGE} alt={item.name}
+                          className="w-full h-full object-contain p-1"
+                          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-[#111111] text-sm truncate">{item.name}</p>
+                        <p className="text-[#FF6100] font-bold text-sm mt-0.5">{item.price.toLocaleString()}원</p>
+                      </div>
+                    </div>
+                  ))}
+                  <div className="flex justify-between items-center pt-2">
+                    <span className="text-sm font-bold text-[#111111]">합계</span>
+                    <span className="text-[#FF6100] font-bold">{calculateTotal()}원</span>
+                  </div>
+                </div>
+              ) : product && (
+                <div className="flex gap-3 items-center">
+                  <div className="w-16 h-16 bg-[#f5f5f5] border border-[#e8e8e8] overflow-hidden shrink-0 rounded">
+                    <img src={getProxiedImageUrl(product.imageUrl) || DEFAULT_IMAGE} alt={product.name}
+                      className="w-full h-full object-contain p-2"
+                      onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-[#111111] text-sm truncate">{product.name}</p>
+                    <p className="text-xs text-[#666666] mt-0.5">수량: {quantity}개</p>
+                    <p className="text-[#FF6100] font-bold text-sm mt-1">{calculateTotal()}원</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 버튼 */}
+            <div className="flex gap-3 pb-8">
+              <Button variant="outline" onClick={() => setLocation("/")}
+                className="flex-1 border-[#e8e8e8] text-[#666666] hover:border-[#FF6100] hover:text-[#FF6100] bg-white">
+                홈으로
+              </Button>
+              <Button onClick={() => isLoggedIn ? setLocation("/profile") : setLocation(`/orders?orderNumber=${encodeURIComponent(orderNumber)}`)}
+                className="flex-1 bg-[#FF6100] hover:bg-[#e05500] text-white font-semibold">
+                주문 내역 확인
+              </Button>
             </div>
           </div>
         </main>
@@ -627,79 +615,79 @@ export default function Order() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0f0f0f]">
+    <div className="min-h-screen flex flex-col bg-[#f5f5f5]">
       <Header />
         
-        <main className="flex-1 py-6 sm:py-10">
-          <div className="max-w-4xl mx-auto px-4">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6 sm:mb-8 text-center" style={{ letterSpacing: "0.04em" }}>
+        <main className="flex-1 py-6">
+          <div className="max-w-[640px] mx-auto px-4">
+          <h1 className="text-lg font-bold text-[#111111] mb-4 tracking-wide">
             주문서 작성
           </h1>
 
           {!isLoggedIn && (
-            <div className="bg-[#1a1a1a] border border-[#333333] p-4 flex items-start gap-3 mb-5">
-              <LogIn className="w-5 h-5 text-[#999999] mt-0.5 flex-shrink-0" />
+            <div className="bg-[#f8f8f8] border border-[#e8e8e8] p-4 flex items-start gap-3 mb-5">
+              <LogIn className="w-5 h-5 text-[#888888] mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[#f0f0f0]">비회원으로 주문하시나요?</p>
-                <p className="text-xs text-[#888888] mt-0.5">아래 주문자 정보를 직접 입력하시면 비회원 주문이 가능합니다. 회원 로그인 시 정보가 자동으로 입력되며 적립금도 받으실 수 있습니다.</p>
+                <p className="text-sm font-medium text-[#111111]">비회원으로 주문하시나요?</p>
+                <p className="text-xs text-[#666666] mt-0.5">아래 주문자 정보를 직접 입력하시면 비회원 주문이 가능합니다. 회원 로그인 시 정보가 자동으로 입력되며 적립금도 받으실 수 있습니다.</p>
               </div>
               <button type="button" onClick={() => setLocation("/login")}
-                className="text-xs text-[#c9a96e] underline underline-offset-2 whitespace-nowrap flex-shrink-0">
+                className="text-xs text-[#FF6100] underline underline-offset-2 whitespace-nowrap flex-shrink-0">
                 로그인하기
               </button>
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="bg-[#161616] border border-[#2a2a2a] p-4 sm:p-6">
-              <h2 className="text-base font-semibold text-white mb-4 flex items-center gap-2 tracking-wide">
-                <Package className="w-4 h-4 text-[#c9a96e]" />
+            <div className="bg-white border border-[#e8e8e8] p-4 sm:p-6">
+              <h2 className="text-base font-semibold text-[#111111] mb-4 flex items-center gap-2 tracking-wide">
+                <Package className="w-4 h-4 text-[#FF6100]" />
                 주문 상품
               </h2>
               
               {isCartOrder ? (
                 <div className="space-y-3">
                   {cartItems.map((item, idx) => (
-                    <div key={idx} className="flex gap-4 items-center border-b border-[#2a2a2a] last:border-b-0 pb-3 last:pb-0">
-                      <div className="w-20 h-20 bg-[#0f0f0f] border border-[#2a2a2a] overflow-hidden shrink-0">
+                    <div key={idx} className="flex gap-4 items-center border-b border-[#e8e8e8] last:border-b-0 pb-3 last:pb-0">
+                      <div className="w-20 h-20 bg-[#f5f5f5] border border-[#e8e8e8] overflow-hidden shrink-0">
                         <img src={getProxiedImageUrl(item.imageUrl) || DEFAULT_IMAGE} alt={item.name}
                           className="w-full h-full object-contain p-2"
                           onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }} />
                       </div>
                       <div className="flex-1">
-                        <h3 className="font-bold text-[#f0f0f0]">{item.name}</h3>
+                        <h3 className="font-bold text-[#111111]">{item.name}</h3>
                         {(item.selectedSize || item.selectedColor) && (
-                          <p className="text-xs text-[#888888] mt-1">
+                          <p className="text-xs text-[#666666] mt-1">
                             {item.selectedSize && `사이즈: ${item.selectedSize}`}
                             {item.selectedSize && item.selectedColor && " / "}
                             {item.selectedColor && `색상: ${item.selectedColor}`}
                           </p>
                         )}
                         <div className="flex items-center justify-between mt-2">
-                          <span className="text-sm text-[#888888]">수량: 1개</span>
-                          <span className="font-bold text-[#c9a96e]">{item.price.toLocaleString()}원</span>
+                          <span className="text-sm text-[#666666]">수량: 1개</span>
+                          <span className="font-bold text-[#FF6100]">{item.price.toLocaleString()}원</span>
                         </div>
                       </div>
                     </div>
                   ))}
-                  <div className="border-t border-[#2a2a2a] pt-3 flex justify-between items-center">
-                    <span className="font-bold text-white">합계</span>
-                    <span className="font-bold text-[#c9a96e] text-lg">{calculateTotal()}원</span>
+                  <div className="border-t border-[#e8e8e8] pt-3 flex justify-between items-center">
+                    <span className="font-bold text-[#111111]">합계</span>
+                    <span className="font-bold text-[#FF6100] text-lg">{calculateTotal()}원</span>
                   </div>
                 </div>
               ) : product && (
                 <div className="flex gap-4 items-center">
-                  <div className="w-24 h-24 bg-[#0f0f0f] border border-[#2a2a2a] overflow-hidden shrink-0">
+                  <div className="w-24 h-24 bg-[#f5f5f5] border border-[#e8e8e8] overflow-hidden shrink-0">
                     <img src={getProxiedImageUrl(product.imageUrl) || DEFAULT_IMAGE} alt={product.name}
                       className="w-full h-full object-contain p-2"
                       onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }} />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-[#f0f0f0]">{product.name}</h3>
-                    {product.sku && <p className="text-sm text-[#888888]">SKU: {product.sku}</p>}
+                    <h3 className="font-bold text-[#111111]">{product.name}</h3>
+                    {product.sku && <p className="text-sm text-[#666666]">SKU: {product.sku}</p>}
                     <div className="flex items-center justify-between mt-2">
-                      <span className="text-sm text-[#888888]">수량: {quantity}개</span>
-                      <span className="font-bold text-[#c9a96e] text-lg">{calculateTotal()}원</span>
+                      <span className="text-sm text-[#666666]">수량: {quantity}개</span>
+                      <span className="font-bold text-[#FF6100] text-lg">{calculateTotal()}원</span>
                     </div>
                   </div>
                 </div>
@@ -712,15 +700,15 @@ export default function Order() {
                 const hasExtras = opts.extras.length > 0;
                 if (!hasColors && !hasSizes && !hasExtras) return null;
                 return (
-                  <div className="mt-4 pt-4 border-t border-[#2a2a2a]">
-                    <h3 className="text-sm font-medium text-[#888888] mb-3">선택옵션</h3>
+                  <div className="mt-4 pt-4 border-t border-[#e8e8e8]">
+                    <h3 className="text-sm font-medium text-[#666666] mb-3">선택옵션</h3>
                     <div className="grid gap-3 sm:grid-cols-2">
                       {hasColors && (
                         <div>
-                          <Label className="text-[#aaaaaa]">컬러</Label>
+                          <Label className="text-[#666666]">컬러</Label>
                           <select id="selectedColor" value={formData.selectedColor}
                             onChange={(e) => setFormData(prev => ({ ...prev, selectedColor: e.target.value }))}
-                            className="w-full h-10 px-3 border border-[#333333] text-sm bg-[#1a1a1a] text-[#f0f0f0] focus:outline-none focus:border-[#c9a96e] mt-1"
+                            className="w-full h-10 px-3 border border-[#e8e8e8] text-sm bg-[#f8f8f8] text-[#111111] focus:outline-none focus:border-[#FF6100] mt-1"
                             data-testid="select-order-color">
                             <option value="">컬러 선택</option>
                             {opts.colors.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -729,10 +717,10 @@ export default function Order() {
                       )}
                       {hasSizes && (
                         <div>
-                          <Label className="text-[#aaaaaa]">사이즈</Label>
+                          <Label className="text-[#666666]">사이즈</Label>
                           <select id="selectedSize" value={formData.selectedSize}
                             onChange={(e) => setFormData(prev => ({ ...prev, selectedSize: e.target.value }))}
-                            className="w-full h-10 px-3 border border-[#333333] text-sm bg-[#1a1a1a] text-[#f0f0f0] focus:outline-none focus:border-[#c9a96e] mt-1"
+                            className="w-full h-10 px-3 border border-[#e8e8e8] text-sm bg-[#f8f8f8] text-[#111111] focus:outline-none focus:border-[#FF6100] mt-1"
                             data-testid="select-order-size">
                             <option value="">사이즈 선택</option>
                             {opts.sizes.map((s) => <option key={s} value={s}>{s}</option>)}
@@ -741,9 +729,9 @@ export default function Order() {
                       )}
                       {opts.extras.map((extra) => (
                         <div key={extra.label}>
-                          <Label className="text-[#aaaaaa]">{extra.label}</Label>
+                          <Label className="text-[#666666]">{extra.label}</Label>
                           <select value="" onChange={() => {}}
-                            className="w-full h-10 px-3 border border-[#333333] text-sm bg-[#1a1a1a] text-[#f0f0f0] focus:outline-none focus:border-[#c9a96e] mt-1"
+                            className="w-full h-10 px-3 border border-[#e8e8e8] text-sm bg-[#f8f8f8] text-[#111111] focus:outline-none focus:border-[#FF6100] mt-1"
                             data-testid={`select-order-extra-${extra.label}`}>
                             <option value="">{extra.label} 선택</option>
                             {extra.values.map((v) => <option key={v} value={v}>{v}</option>)}
@@ -752,8 +740,8 @@ export default function Order() {
                       ))}
                     </div>
                     {(formData.selectedColor || formData.selectedSize) && (
-                      <div className="bg-[#1a1a1a] border border-[#2a2a2a] p-3 text-sm mt-3">
-                        <span className="text-[#888888]">
+                      <div className="bg-[#f8f8f8] border border-[#e8e8e8] p-3 text-sm mt-3">
+                        <span className="text-[#666666]">
                           {[formData.selectedColor && `컬러: ${formData.selectedColor}`, formData.selectedSize && `사이즈: ${formData.selectedSize}`].filter(Boolean).join(' / ')}
                         </span>
                       </div>
@@ -763,63 +751,63 @@ export default function Order() {
               })()}
             </div>
 
-            <div className="bg-[#161616] border border-[#2a2a2a] p-4 sm:p-6">
-              <h2 className="text-base font-semibold text-white mb-4 flex items-center gap-2 tracking-wide">
-                <User className="w-4 h-4 text-[#c9a96e]" />
+            <div className="bg-white border border-[#e8e8e8] p-4 sm:p-6">
+              <h2 className="text-base font-semibold text-[#111111] mb-4 flex items-center gap-2 tracking-wide">
+                <User className="w-4 h-4 text-[#FF6100]" />
                 주문자 정보
               </h2>
               
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label className="text-[#aaaaaa]">이름 *</Label>
+                  <Label className="text-[#666666]">이름 *</Label>
                   <Input id="memberName" name="memberName" value={formData.memberName} onChange={handleInputChange}
                     placeholder="홍길동" required data-testid="input-member-name"
-                    className="bg-[#0f0f0f] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0" />
+                    className="bg-[#f5f5f5] border-[#e8e8e8] text-[#111111] placeholder:text-[#aaaaaa] focus:border-[#FF6100] focus-visible:ring-0" />
                 </div>
                 <div>
-                  <Label className="text-[#aaaaaa]">연락처 *</Label>
+                  <Label className="text-[#666666]">연락처 *</Label>
                   <Input id="memberPhone" name="memberPhone" value={formData.memberPhone} onChange={handleInputChange}
                     placeholder="010-0000-0000" required data-testid="input-member-phone"
-                    className="bg-[#0f0f0f] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0" />
+                    className="bg-[#f5f5f5] border-[#e8e8e8] text-[#111111] placeholder:text-[#aaaaaa] focus:border-[#FF6100] focus-visible:ring-0" />
                 </div>
                 <div className="sm:col-span-2">
-                  <Label className="text-[#aaaaaa]">이메일 *</Label>
+                  <Label className="text-[#666666]">이메일 *</Label>
                   <Input id="memberEmail" name="memberEmail" type="email" value={formData.memberEmail} onChange={handleInputChange}
                     placeholder="example@email.com" required data-testid="input-member-email"
-                    className="bg-[#0f0f0f] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0" />
+                    className="bg-[#f5f5f5] border-[#e8e8e8] text-[#111111] placeholder:text-[#aaaaaa] focus:border-[#FF6100] focus-visible:ring-0" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-[#161616] border border-[#2a2a2a] p-4 sm:p-6">
+            <div className="bg-white border border-[#e8e8e8] p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-semibold text-white flex items-center gap-2 tracking-wide">
-                  <MapPin className="w-4 h-4 text-[#c9a96e]" />
+                <h2 className="text-base font-semibold text-[#111111] flex items-center gap-2 tracking-wide">
+                  <MapPin className="w-4 h-4 text-[#FF6100]" />
                   배송지 정보
                 </h2>
-                <label className="flex items-center gap-2 text-sm cursor-pointer text-[#888888]">
+                <label className="flex items-center gap-2 text-sm cursor-pointer text-[#666666]">
                   <input type="checkbox" checked={formData.sameAsOrderer}
                     onChange={(e) => handleSameAsOrderer(e.target.checked)}
-                    className="w-4 h-4 accent-[#c9a96e] border-[#333333]" />
+                    className="w-4 h-4 accent-[#FF6100] border-[#e8e8e8]" />
                   <span>주문자 정보와 동일</span>
                 </label>
               </div>
               
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label className="text-[#aaaaaa]">받는 분 *</Label>
+                  <Label className="text-[#666666]">받는 분 *</Label>
                   <Input id="shippingName" name="shippingName" value={formData.shippingName} onChange={handleInputChange}
                     placeholder="홍길동" required data-testid="input-shipping-name"
-                    className="bg-[#0f0f0f] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0" />
+                    className="bg-[#f5f5f5] border-[#e8e8e8] text-[#111111] placeholder:text-[#aaaaaa] focus:border-[#FF6100] focus-visible:ring-0" />
                 </div>
                 <div>
-                  <Label className="text-[#aaaaaa]">연락처 *</Label>
+                  <Label className="text-[#666666]">연락처 *</Label>
                   <Input id="shippingPhone" name="shippingPhone" value={formData.shippingPhone} onChange={handleInputChange}
                     placeholder="010-0000-0000" required data-testid="input-shipping-phone"
-                    className="bg-[#0f0f0f] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0" />
+                    className="bg-[#f5f5f5] border-[#e8e8e8] text-[#111111] placeholder:text-[#aaaaaa] focus:border-[#FF6100] focus-visible:ring-0" />
                 </div>
                 <div className="sm:col-span-2">
-                  <Label className="text-[#aaaaaa]">우편번호 *</Label>
+                  <Label className="text-[#666666]">우편번호 *</Label>
                   <div className="flex gap-2 mt-1">
                     <Input
                       id="shippingZipcode"
@@ -827,12 +815,12 @@ export default function Order() {
                       value={formData.shippingZipcode}
                       readOnly
                       placeholder="우편번호"
-                      className="flex-1 bg-[#111111] border-[#333333] text-[#f0f0f0] cursor-pointer"
+                      className="flex-1 bg-[#f5f5f5] border-[#e8e8e8] text-[#111111] cursor-pointer"
                       onClick={handleAddressSearch}
                       data-testid="input-shipping-zipcode"
                     />
                     <Button type="button" variant="outline" onClick={handleAddressSearch}
-                      className="shrink-0 gap-1.5 border-[#333333] bg-[#1a1a1a] text-[#888888] hover:border-[#c9a96e] hover:text-white"
+                      className="shrink-0 gap-1.5 border-[#e8e8e8] bg-[#f8f8f8] text-[#666666] hover:border-[#FF6100] hover:text-[#111111]"
                       data-testid="button-address-search">
                       <Search className="w-4 h-4" />
                       주소 검색
@@ -847,102 +835,102 @@ export default function Order() {
                     value={formData.shippingAddress}
                     readOnly
                     placeholder="주소 검색 버튼을 눌러주세요"
-                    className="bg-[#111111] border-[#333333] text-[#f0f0f0] cursor-pointer"
+                    className="bg-[#f5f5f5] border-[#e8e8e8] text-[#111111] cursor-pointer"
                     onClick={handleAddressSearch}
                     required
                     data-testid="input-shipping-address"
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <Label className="text-[#aaaaaa]">상세주소</Label>
+                  <Label className="text-[#666666]">상세주소</Label>
                   <Input id="shippingAddressDetail" name="shippingAddressDetail" value={formData.shippingAddressDetail} onChange={handleInputChange}
                     placeholder="101동 1001호" data-testid="input-shipping-address-detail"
-                    className="bg-[#0f0f0f] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0" />
+                    className="bg-[#f5f5f5] border-[#e8e8e8] text-[#111111] placeholder:text-[#aaaaaa] focus:border-[#FF6100] focus-visible:ring-0" />
                 </div>
                 <div className="sm:col-span-2">
-                  <Label className="text-[#aaaaaa]">배송 메모</Label>
+                  <Label className="text-[#666666]">배송 메모</Label>
                   <Textarea id="shippingMemo" name="shippingMemo" value={formData.shippingMemo} onChange={handleInputChange}
                     placeholder="배송 시 요청사항을 입력해주세요" rows={3} data-testid="input-shipping-memo"
-                    className="bg-[#0f0f0f] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0 resize-none" />
+                    className="bg-[#f5f5f5] border-[#e8e8e8] text-[#111111] placeholder:text-[#aaaaaa] focus:border-[#FF6100] focus-visible:ring-0 resize-none" />
                 </div>
               </div>
             </div>
 
             {memberPointBalance > 0 && (
-              <div className="bg-[#161616] border border-[#2a2a2a] p-4 sm:p-6">
-                <h2 className="text-base font-semibold text-white mb-4 flex items-center gap-2 tracking-wide">
-                  <Wallet className="w-4 h-4 text-[#c9a96e]" />
+              <div className="bg-white border border-[#e8e8e8] p-4 sm:p-6">
+                <h2 className="text-base font-semibold text-[#111111] mb-4 flex items-center gap-2 tracking-wide">
+                  <Wallet className="w-4 h-4 text-[#FF6100]" />
                   포인트 사용
                 </h2>
-                <div className="bg-[#1a1a1a] border border-[#2a2a2a] p-4 mb-4">
+                <div className="bg-[#f8f8f8] border border-[#e8e8e8] p-4 mb-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-[#888888]">보유 포인트</span>
-                    <span className="font-bold text-[#c9a96e]">{memberPointBalance.toLocaleString()}P</span>
+                    <span className="text-[#666666]">보유 포인트</span>
+                    <span className="font-bold text-[#FF6100]">{memberPointBalance.toLocaleString()}P</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <div className="flex-1">
                     <Input type="text" placeholder="사용할 포인트" value={pointInputValue}
                       onChange={(e) => handlePointInput(e.target.value)}
-                      className="h-11 bg-[#0f0f0f] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0"
+                      className="h-11 bg-[#f5f5f5] border-[#e8e8e8] text-[#111111] placeholder:text-[#aaaaaa] focus:border-[#FF6100] focus-visible:ring-0"
                       data-testid="input-points" />
                   </div>
                   <Button type="button" variant="outline" onClick={handleUseAllPoints}
-                    className="whitespace-nowrap border-[#333333] bg-transparent text-[#888888] hover:border-[#c9a96e] hover:text-white">
+                    className="whitespace-nowrap border-[#e8e8e8] bg-transparent text-[#666666] hover:border-[#FF6100] hover:text-[#111111]">
                     전액 사용
                   </Button>
                 </div>
                 {pointsToUse > 0 && (
-                  <div className="mt-3 text-sm text-[#c9a96e] font-medium">
+                  <div className="mt-3 text-sm text-[#FF6100] font-medium">
                     {pointsToUse.toLocaleString()}P 적용됨 (-{pointsToUse.toLocaleString()}원)
                   </div>
                 )}
               </div>
             )}
 
-            <div className="bg-[#161616] border border-[#2a2a2a] p-4 sm:p-6">
-              <h2 className="text-base font-semibold text-white mb-4 flex items-center gap-2 tracking-wide">
-                <CreditCard className="w-4 h-4 text-[#c9a96e]" />
+            <div className="bg-white border border-[#e8e8e8] p-4 sm:p-6">
+              <h2 className="text-base font-semibold text-[#111111] mb-4 flex items-center gap-2 tracking-wide">
+                <CreditCard className="w-4 h-4 text-[#FF6100]" />
                 결제 방법
               </h2>
               <div className="mb-4">
-                <div className="p-4 border-2 border-[#c9a96e] bg-[#1a1500] flex flex-col items-center gap-2 text-[#c9a96e]"
+                <div className="p-4 border-2 border-[#FF6100] bg-[#fff5ee] flex flex-col items-center gap-2 text-[#FF6100]"
                   data-testid="button-payment-bank">
                   <Building2 className="w-8 h-8" />
                   <span className="font-medium">계좌이체</span>
                 </div>
               </div>
               {paymentMethod === "bank" && (
-                <div className="bg-[#1a1a1a] border border-[#2a2a2a] p-4">
-                  <p className="text-[#888888] text-sm flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 text-[#999999] shrink-0" />
+                <div className="bg-[#f8f8f8] border border-[#e8e8e8] p-4">
+                  <p className="text-[#666666] text-sm flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4 text-[#888888] shrink-0" />
                     주문 완료 후 결제계좌 정보가 안내됩니다. 해당 계좌로 입금해주세요.
                   </p>
                 </div>
               )}
             </div>
 
-            <div className="bg-[#161616] border border-[#2a2a2a] p-4 sm:p-6">
+            <div className="bg-white border border-[#e8e8e8] p-4 sm:p-6">
               <div className="space-y-2">
-                <div className="flex justify-between items-center text-[#888888]">
+                <div className="flex justify-between items-center text-[#666666]">
                   <span>상품금액</span>
                   <span>{calculateSubtotal().toLocaleString()}원</span>
                 </div>
                 {pointsToUse > 0 && (
-                  <div className="flex justify-between items-center text-[#888888]">
+                  <div className="flex justify-between items-center text-[#666666]">
                     <span>포인트 할인</span>
                     <span>-{pointsToUse.toLocaleString()}원</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center text-lg font-bold pt-3 border-t border-[#2a2a2a]">
-                  <span className="text-white">총 결제금액</span>
-                  <span className="text-[#c9a96e] text-2xl">{calculateTotal()}원</span>
+                <div className="flex justify-between items-center text-lg font-bold pt-3 border-t border-[#e8e8e8]">
+                  <span className="text-[#111111]">총 결제금액</span>
+                  <span className="text-[#FF6100] text-2xl">{calculateTotal()}원</span>
                 </div>
               </div>
             </div>
 
             <Button type="submit" disabled={submitting || !paymentMethod}
-              className="w-full h-14 text-lg font-semibold bg-[#c9a96e] hover:bg-[#b8945f] text-black tracking-wide"
+              className="w-full h-14 text-lg font-semibold bg-[#FF6100] hover:bg-[#e05500] text-white tracking-wide"
               data-testid="button-submit-order">
               {submitting ? "주문 처리 중..." : "주문하기"}
             </Button>

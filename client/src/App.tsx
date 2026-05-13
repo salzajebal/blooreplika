@@ -56,23 +56,23 @@ function OrderCompleteFallback() {
       })
       .catch(() => setStatus("unknown"));
   }, [orderNum]);
-  if (status === "loading") return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-gray-300 border-t-black rounded-full" /></div>;
+  if (status === "loading") return <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center"><div className="animate-spin w-8 h-8 border-4 border-gray-200 border-t-[#FF6100] rounded-full" /></div>;
   const isOk = status === "success";
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="text-center space-y-4">
-        <div className={`w-16 h-16 ${isOk ? "bg-green-100" : "bg-red-100"} rounded-full flex items-center justify-center mx-auto`}>
+    <div className="min-h-screen bg-[#f5f5f5] flex items-center justify-center p-4">
+      <div className="bg-white border border-[#e8e8e8] rounded-xl p-8 max-w-sm w-full text-center space-y-4 shadow-sm">
+        <div className={`w-16 h-16 ${isOk ? "bg-[#fff5ee]" : "bg-red-50"} rounded-full flex items-center justify-center mx-auto border ${isOk ? "border-[#FF6100]/30" : "border-red-200"}`}>
           {isOk
-            ? <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-            : <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            ? <svg className="w-9 h-9 text-[#FF6100]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+            : <svg className="w-9 h-9 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           }
         </div>
-        <h1 className="text-2xl font-bold">{isOk ? "결제가 완료되었습니다" : "결제 상태를 확인해주세요"}</h1>
-        <p className="text-gray-600">{isOk ? "주문이 정상적으로 처리되었습니다." : "주문 내역에서 결제 상태를 확인하실 수 있습니다."}</p>
-        {orderNum && <p className="text-sm text-gray-500">주문번호: <strong>{orderNum}</strong></p>}
+        <h1 className="text-xl font-bold text-[#111111]">{isOk ? "결제가 완료되었습니다" : "결제 상태를 확인해주세요"}</h1>
+        <p className="text-sm text-[#666666]">{isOk ? "주문이 정상적으로 처리되었습니다." : "주문 내역에서 결제 상태를 확인하실 수 있습니다."}</p>
+        {orderNum && <p className="text-sm text-[#888888]">주문번호: <strong className="text-[#111111]">{orderNum}</strong></p>}
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-          <button onClick={() => setLocation("/")} className="px-6 py-3 border rounded-lg hover:bg-gray-50">홈으로</button>
-          <button onClick={() => setLocation("/profile")} className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800">주문 내역 확인</button>
+          <button onClick={() => setLocation("/")} className="px-6 py-3 border border-[#e8e8e8] rounded-lg text-[#666666] hover:border-[#FF6100] hover:text-[#FF6100] transition-colors text-sm">홈으로</button>
+          <button onClick={() => setLocation("/profile")} className="px-6 py-3 bg-[#FF6100] text-white rounded-lg hover:bg-[#e05500] transition-colors text-sm font-semibold">주문 내역 확인</button>
         </div>
       </div>
     </div>
