@@ -54,35 +54,36 @@ export default function FAQ() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f]">
+    <div className="min-h-screen bg-[#f5f5f5]">
       <Header />
-      
+
       <main>
-        <div className="bg-[#161616] border-b border-[#2a2a2a] py-4">
-          <div className="max-w-[1200px] mx-auto px-4">
-            <h1 className="text-lg font-bold text-white tracking-widest uppercase">FAQ</h1>
-            <div className="flex items-center gap-2 text-sm text-[#999999] mt-1">
-              <Link href="/" className="hover:text-[#c9a96e] transition-colors">홈</Link>
+        <div className="bg-white border-b border-[#e8e8e8] py-4">
+          <div className="max-w-[640px] mx-auto px-4">
+            <h1 className="text-base font-bold text-[#111111] tracking-widest uppercase">FAQ</h1>
+            <div className="flex items-center gap-2 text-xs text-[#999999] mt-1">
+              <Link href="/" className="hover:text-[#FF6100] transition-colors">홈</Link>
               <span>&gt;</span>
               <span>고객센터</span>
               <span>&gt;</span>
-              <span className="text-[#888888]">FAQ</span>
+              <span className="text-[#666666]">FAQ</span>
             </div>
           </div>
         </div>
 
-        <div className="max-w-[1200px] mx-auto px-4 py-8">
-          <div className="flex gap-8">
-            <aside className="hidden md:block w-48 flex-shrink-0">
-              <nav className="border border-[#2a2a2a]">
+        <div className="max-w-[640px] mx-auto px-4 py-6">
+          <div className="flex gap-5">
+            {/* 사이드 메뉴 */}
+            <aside className="hidden md:block w-40 flex-shrink-0">
+              <nav className="border border-[#e8e8e8] rounded-xl overflow-hidden bg-white">
                 {sideMenuItems.map((item, index) => (
                   <Link
                     key={index}
                     href={item.path}
-                    className={`block px-4 py-3 text-sm border-b border-[#2a2a2a] last:border-b-0 transition-colors ${
-                      location === item.path 
-                        ? 'bg-[#c9a96e] text-black font-semibold' 
-                        : 'text-[#888888] hover:text-white hover:bg-[#1c1c1c]'
+                    className={`block px-4 py-3 text-sm border-b border-[#e8e8e8] last:border-b-0 transition-colors ${
+                      location === item.path
+                        ? 'bg-[#FF6100] text-white font-semibold'
+                        : 'text-[#666666] hover:text-[#111111] hover:bg-[#f8f8f8]'
                     }`}
                   >
                     {item.name}
@@ -91,36 +92,37 @@ export default function FAQ() {
               </nav>
             </aside>
 
-            <div className="flex-1">
-              <div className="mb-6">
+            {/* FAQ 목록 */}
+            <div className="flex-1 min-w-0">
+              <div className="mb-4">
                 <p className="text-sm text-[#999999]">
-                  Total : <strong className="text-[#c9a96e]">{faqItems.length}</strong> items
+                  Total : <strong className="text-[#FF6100]">{faqItems.length}</strong> items
                 </p>
               </div>
 
-              <div className="border border-[#2a2a2a]">
+              <div className="border border-[#e8e8e8] rounded-xl overflow-hidden bg-white">
                 {faqItems.map((item) => (
-                  <div key={item.id} className="border-b border-[#2a2a2a] last:border-b-0">
+                  <div key={item.id} className="border-b border-[#e8e8e8] last:border-b-0">
                     <button
                       onClick={() => toggleExpand(item.id)}
-                      className="w-full px-4 py-4 flex items-center justify-between hover:bg-[#1a1a1a] transition-colors text-left"
+                      className="w-full px-4 py-4 flex items-center justify-between hover:bg-[#f8f8f8] transition-colors text-left"
                       data-testid={`faq-item-${item.id}`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-[10px] px-2 py-1 bg-[#222222] text-[#888888] border border-[#333333] tracking-widest uppercase">
+                        <span className="text-[10px] px-2 py-0.5 bg-[#f5f5f5] text-[#666666] border border-[#e8e8e8] rounded tracking-widest uppercase flex-shrink-0">
                           {item.category}
                         </span>
-                        <span className="font-medium text-[#f0f0f0]">{item.question}</span>
+                        <span className="font-medium text-[#111111] text-sm">{item.question}</span>
                       </div>
                       {expandedId === item.id ? (
-                        <ChevronUp className="w-5 h-5 text-[#c9a96e] flex-shrink-0" />
+                        <ChevronUp className="w-4 h-4 text-[#FF6100] flex-shrink-0 ml-2" />
                       ) : (
-                        <ChevronDown className="w-5 h-5 text-[#999999] flex-shrink-0" />
+                        <ChevronDown className="w-4 h-4 text-[#999999] flex-shrink-0 ml-2" />
                       )}
                     </button>
                     {expandedId === item.id && (
-                      <div className="px-4 py-5 bg-[#161616] border-t border-[#2a2a2a]">
-                        <p className="text-sm text-[#aaaaaa] leading-relaxed">{item.answer}</p>
+                      <div className="px-4 py-4 bg-[#f8f8f8] border-t border-[#e8e8e8]">
+                        <p className="text-sm text-[#444444] leading-relaxed">{item.answer}</p>
                       </div>
                     )}
                   </div>

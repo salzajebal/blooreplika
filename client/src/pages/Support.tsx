@@ -41,34 +41,24 @@ export default function Support() {
       try {
         const res = await fetch("/api/faqs");
         const data = await res.json();
-        if (data.success && data.data.length > 0) {
-          setFaqs(data.data);
-        }
-      } catch (error) {
-        console.error("Error fetching FAQs:", error);
-      }
+        if (data.success && data.data.length > 0) setFaqs(data.data);
+      } catch {}
     };
     const fetchKakaoLink = async () => {
       try {
         const res = await fetch("/api/settings/kakaoTalkLink");
         const data = await res.json();
-        if (data.success && data.data?.value) {
-          setKakaoLink(data.data.value);
-        }
+        if (data.success && data.data?.value) setKakaoLink(data.data.value);
       } catch {}
     };
     fetchFaqs();
     fetchKakaoLink();
   }, []);
 
-  const filteredFaqs = activeCategory === "all" 
-    ? faqs 
-    : faqs.filter(faq => faq.category === activeCategory);
+  const filteredFaqs = activeCategory === "all" ? faqs : faqs.filter(faq => faq.category === activeCategory);
 
   const handleKakaoClick = () => {
-    if (kakaoLink) {
-      window.open(kakaoLink, "_blank");
-    }
+    if (kakaoLink) window.open(kakaoLink, "_blank");
   };
 
   const scrollToFaq = () => {
@@ -76,61 +66,61 @@ export default function Support() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] font-sans">
+    <div className="min-h-screen bg-[#f5f5f5] font-sans">
       <Header />
-      
-      <main className="container-custom py-8 sm:py-12 pb-24 md:pb-12">
-        <div className="text-center mb-12">
-          <h1 className="text-3xl font-bold text-white tracking-widest uppercase mb-4" data-testid="text-support-title">고객센터</h1>
-          <p className="text-[#999999] tracking-wider">velour에 대해 궁금한 점을 확인하세요</p>
+
+      <main className="max-w-[640px] mx-auto py-6 px-4 pb-24">
+        <div className="text-center mb-6">
+          <h1 className="text-xl font-bold text-[#111111] mb-1" data-testid="text-support-title">고객센터</h1>
+          <p className="text-sm text-[#666666]">velour에 대해 궁금한 점을 확인하세요</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
-          <button 
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <button
             onClick={scrollToFaq}
-            className="bg-[#1a1a1a] border border-[#2a2a2a] p-6 text-center hover:border-[#c9a96e] transition-colors cursor-pointer block w-full group"
+            className="bg-white border border-[#e8e8e8] rounded-xl p-5 text-center hover:border-[#FF6100] transition-colors cursor-pointer group"
             data-testid="button-faq-link"
           >
-            <HelpCircle className="w-10 h-10 text-[#c9a96e] mx-auto mb-3 group-hover:scale-110 transition-transform" />
-            <h3 className="font-bold text-white mb-2">자주묻는질문</h3>
-            <p className="text-sm text-[#999999]">FAQ에서 빠르게 답변을 찾아보세요</p>
+            <HelpCircle className="w-8 h-8 text-[#FF6100] mx-auto mb-2 group-hover:scale-110 transition-transform" />
+            <h3 className="font-bold text-[#111111] text-sm mb-1">자주묻는질문</h3>
+            <p className="text-xs text-[#999999]">FAQ에서 빠르게 답변을 찾아보세요</p>
           </button>
-          <button 
+          <button
             onClick={handleKakaoClick}
-            className="bg-[#1a1a1a] border border-[#2a2a2a] p-6 text-center hover:border-[#c9a96e] transition-colors cursor-pointer block w-full group"
+            className="bg-white border border-[#e8e8e8] rounded-xl p-5 text-center hover:border-[#FF6100] transition-colors cursor-pointer group"
             data-testid="button-kakao-support"
           >
-            <MessageCircle className="w-10 h-10 text-[#c9a96e] mx-auto mb-3 group-hover:scale-110 transition-transform" />
-            <h3 className="font-bold text-white mb-2">카카오톡 문의</h3>
-            <p className="text-sm text-[#999999]">카카오톡으로 상담하세요</p>
+            <MessageCircle className="w-8 h-8 text-[#FF6100] mx-auto mb-2 group-hover:scale-110 transition-transform" />
+            <h3 className="font-bold text-[#111111] text-sm mb-1">카카오톡 문의</h3>
+            <p className="text-xs text-[#999999]">카카오톡으로 상담하세요</p>
           </button>
-          <Link 
+          <Link
             href="/notices"
-            className="bg-[#1a1a1a] border border-[#2a2a2a] p-6 text-center hover:border-[#c9a96e] transition-colors cursor-pointer block group"
+            className="bg-white border border-[#e8e8e8] rounded-xl p-5 text-center hover:border-[#FF6100] transition-colors cursor-pointer block group"
             data-testid="button-notices-link"
           >
-            <FileText className="w-10 h-10 text-[#c9a96e] mx-auto mb-3 group-hover:scale-110 transition-transform" />
-            <h3 className="font-bold text-white mb-2">공지사항</h3>
-            <p className="text-sm text-[#999999]">최신 소식과 이벤트를 확인하세요</p>
+            <FileText className="w-8 h-8 text-[#FF6100] mx-auto mb-2 group-hover:scale-110 transition-transform" />
+            <h3 className="font-bold text-[#111111] text-sm mb-1">공지사항</h3>
+            <p className="text-xs text-[#999999]">최신 소식과 이벤트를 확인하세요</p>
           </Link>
-          <Link 
+          <Link
             href="/guide"
-            className="bg-[#1a1a1a] border border-[#2a2a2a] p-6 text-center hover:border-[#c9a96e] transition-colors cursor-pointer block group"
+            className="bg-white border border-[#e8e8e8] rounded-xl p-5 text-center hover:border-[#FF6100] transition-colors cursor-pointer block group"
             data-testid="button-guide-link"
           >
-            <Bell className="w-10 h-10 text-[#c9a96e] mx-auto mb-3 group-hover:scale-110 transition-transform" />
-            <h3 className="font-bold text-white mb-2">이용안내</h3>
-            <p className="text-sm text-[#999999]">쇼핑 및 이용 방법을 안내합니다</p>
+            <Bell className="w-8 h-8 text-[#FF6100] mx-auto mb-2 group-hover:scale-110 transition-transform" />
+            <h3 className="font-bold text-[#111111] text-sm mb-1">이용안내</h3>
+            <p className="text-xs text-[#999999]">쇼핑 및 이용 방법을 안내합니다</p>
           </Link>
         </div>
 
-        <div ref={faqSectionRef} className="bg-[#161616] border border-[#2a2a2a] p-6 md:p-8">
-          <h2 className="text-xl font-bold text-white mb-6 tracking-widest uppercase">자주 묻는 질문</h2>
-          
-          <div className="flex flex-wrap gap-2 mb-8">
+        <div ref={faqSectionRef} className="bg-white border border-[#e8e8e8] rounded-xl p-5 shadow-sm">
+          <h2 className="text-base font-bold text-[#111111] mb-4">자주 묻는 질문</h2>
+
+          <div className="flex flex-wrap gap-1.5 mb-5">
             <button
               onClick={() => setActiveCategory("all")}
-              className={`px-4 py-2 text-sm font-medium transition-colors border ${activeCategory === "all" ? "bg-[#c9a96e] text-black border-[#c9a96e]" : "bg-transparent text-[#888888] border-[#333333] hover:border-[#c9a96e] hover:text-white"}`}
+              className={`px-3 py-1.5 text-xs font-medium transition-colors rounded-full border ${activeCategory === "all" ? "bg-[#FF6100] text-white border-[#FF6100]" : "bg-transparent text-[#666666] border-[#e8e8e8] hover:border-[#FF6100] hover:text-[#FF6100]"}`}
             >
               전체
             </button>
@@ -138,39 +128,39 @@ export default function Support() {
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`px-4 py-2 text-sm font-medium transition-colors border ${activeCategory === cat.id ? "bg-[#c9a96e] text-black border-[#c9a96e]" : "bg-transparent text-[#888888] border-[#333333] hover:border-[#c9a96e] hover:text-white"}`}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors rounded-full border ${activeCategory === cat.id ? "bg-[#FF6100] text-white border-[#FF6100]" : "bg-transparent text-[#666666] border-[#e8e8e8] hover:border-[#FF6100] hover:text-[#FF6100]"}`}
               >
                 {cat.name}
               </button>
             ))}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {filteredFaqs.map((faq) => (
-              <div 
-                key={faq.id} 
-                className="border border-[#2a2a2a] overflow-hidden"
+              <div
+                key={faq.id}
+                className="border border-[#e8e8e8] rounded-xl overflow-hidden"
                 data-testid={`faq-item-${faq.id}`}
               >
                 <button
                   onClick={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
-                  className="w-full flex items-center justify-between p-4 text-left hover:bg-[#1c1c1c] transition-colors"
+                  className="w-full flex items-center justify-between p-4 text-left hover:bg-[#f8f8f8] transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="text-[#c9a96e] font-bold text-sm">Q</span>
-                    <span className="font-medium text-[#f0f0f0] text-sm">{faq.question}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#FF6100] font-bold text-sm">Q</span>
+                    <span className="font-medium text-[#111111] text-sm">{faq.question}</span>
                   </div>
                   {expandedFaq === faq.id ? (
-                    <ChevronUp className="w-4 h-4 text-[#c9a96e] flex-shrink-0" />
+                    <ChevronUp className="w-4 h-4 text-[#FF6100] flex-shrink-0" />
                   ) : (
                     <ChevronDown className="w-4 h-4 text-[#999999] flex-shrink-0" />
                   )}
                 </button>
                 {expandedFaq === faq.id && (
-                  <div className="px-4 pb-4 border-t border-[#2a2a2a] bg-[#111111]">
-                    <div className="flex gap-3 pt-4">
-                      <span className="text-[#888888] font-bold text-sm">A</span>
-                      <p className="text-[#aaaaaa] leading-relaxed text-sm">{faq.answer}</p>
+                  <div className="px-4 pb-4 border-t border-[#e8e8e8] bg-[#f8f8f8]">
+                    <div className="flex gap-2 pt-3">
+                      <span className="text-[#999999] font-bold text-sm">A</span>
+                      <p className="text-[#444444] leading-relaxed text-sm">{faq.answer}</p>
                     </div>
                   </div>
                 )}
@@ -179,13 +169,13 @@ export default function Support() {
           </div>
 
           {filteredFaqs.length === 0 && (
-            <div className="text-center py-12 text-[#999999]">
+            <div className="text-center py-10 text-[#999999] text-sm">
               해당 카테고리에 등록된 FAQ가 없습니다.
             </div>
           )}
         </div>
       </main>
-      
+
       <Footer />
     </div>
   );

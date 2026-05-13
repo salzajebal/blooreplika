@@ -80,7 +80,7 @@ export default function Labs() {
   const contentBlocks = blocks.filter((b: any) => b.blockType !== "hero");
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f]">
+    <div className="min-h-screen bg-[#f5f5f5]">
       <Header />
       <main>
         {heroBlock ? (
@@ -108,9 +108,9 @@ export default function Labs() {
 
 function DefaultHero() {
   return (
-    <div className="relative w-full" style={{ minHeight: "80vh" }}>
-      <div className="absolute inset-0 bg-gradient-to-b from-gray-900 via-gray-800 to-black" />
-      <div className="relative z-10 flex flex-col items-center justify-end text-center px-4 pb-16" style={{ minHeight: "80vh" }}>
+    <div className="relative w-full" style={{ minHeight: "60vh" }}>
+      <div className="absolute inset-0 bg-gradient-to-b from-[#111111] via-[#222222] to-[#333333]" />
+      <div className="relative z-10 flex flex-col items-center justify-end text-center px-4 pb-16" style={{ minHeight: "60vh" }}>
         <h1
           className="text-[28px] md:text-[44px] font-bold text-white tracking-[0.2em] mb-5"
           style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
@@ -212,7 +212,7 @@ function ContentBlock({ block }: { block: any }) {
     return (
       <div
         data-testid={`labs-block-${block.id}`}
-        style={{ backgroundColor: block.bgColor || "#0f0f0f" }}
+        style={{ backgroundColor: block.bgColor || "#ffffff" }}
       >
         <div className="max-w-[640px] mx-auto px-5 pt-14 pb-10 md:pt-20 md:pb-14">
           {block.title && (
@@ -256,7 +256,7 @@ function ContentBlock({ block }: { block: any }) {
     <div
       className="py-14 md:py-20"
       style={{
-        backgroundColor: block.bgColor || "#0f0f0f",
+        backgroundColor: block.bgColor || "#ffffff",
         color: txtColor,
       }}
       data-testid={`labs-block-${block.id}`}

@@ -47,10 +47,7 @@ function ScrollReveal({ children, delay = 0 }: { children: React.ReactNode; dela
 
 export default function Magazine() {
   const params = useParams<{ id?: string }>();
-
-  if (params.id) {
-    return <MagazineDetail id={params.id} />;
-  }
+  if (params.id) return <MagazineDetail id={params.id} />;
   return <MagazineList />;
 }
 
@@ -67,41 +64,33 @@ function MagazineList() {
   const groupedByCategory: Record<string, any[]> = {};
   for (const cat of MAGAZINE_CATEGORIES) {
     const catArticles = articles.filter((a: any) => a.category === cat);
-    if (catArticles.length > 0) {
-      groupedByCategory[cat] = catArticles;
-    }
+    if (catArticles.length > 0) groupedByCategory[cat] = catArticles;
   }
-
-  const uncategorized = articles.filter(
-    (a: any) => !MAGAZINE_CATEGORIES.includes(a.category)
-  );
-  if (uncategorized.length > 0) {
-    groupedByCategory["기타"] = uncategorized;
-  }
-
+  const uncategorized = articles.filter((a: any) => !MAGAZINE_CATEGORIES.includes(a.category));
+  if (uncategorized.length > 0) groupedByCategory["기타"] = uncategorized;
   const categoryKeys = Object.keys(groupedByCategory);
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f]">
+    <div className="min-h-screen bg-[#f5f5f5]">
       <Header />
 
       <main>
-        <div className="max-w-[640px] mx-auto px-4 pt-8 pb-2">
-          <h1 className="text-[20px] font-bold text-[#f0f0f0] tracking-tight">매거진</h1>
+        <div className="max-w-[640px] mx-auto px-4 pt-6 pb-2">
+          <h1 className="text-[20px] font-bold text-[#111111] tracking-tight">매거진</h1>
         </div>
 
-        <div className="max-w-[640px] mx-auto px-4 pb-16">
+        <div className="max-w-[640px] mx-auto px-4 pb-20">
           {categoryKeys.length === 0 ? (
             <div className="text-center py-24 text-[#999999]">
               <p className="text-base mb-2">등록된 매거진이 없습니다.</p>
-              <p className="text-xs text-[#444444]">관리자가 매거진을 등록하면 여기에 표시됩니다.</p>
+              <p className="text-xs text-[#cccccc]">관리자가 매거진을 등록하면 여기에 표시됩니다.</p>
             </div>
           ) : (
             <div className="space-y-10 mt-4">
               {categoryKeys.map((category) => (
                 <section key={category}>
                   <ScrollReveal>
-                    <h2 className="text-[15px] font-bold text-[#888888] mb-3 tracking-tight border-b border-[#2a2a2a] pb-2">
+                    <h2 className="text-[14px] font-bold text-[#999999] mb-3 tracking-tight border-b border-[#e8e8e8] pb-2">
                       {category}
                     </h2>
                   </ScrollReveal>
@@ -136,38 +125,38 @@ function MagazineDetail({ id }: { id: string }) {
   });
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f]">
+    <div className="min-h-screen bg-[#f5f5f5]">
       <Header />
 
       <main className="max-w-[640px] mx-auto px-4 py-6">
-        <Link href="/magazine" className="inline-flex items-center gap-1 text-[13px] text-[#888888] hover:text-[#c9a96e] transition-colors mb-6" data-testid="btn-back-magazine">
+        <Link href="/magazine" className="inline-flex items-center gap-1 text-[13px] text-[#666666] hover:text-[#FF6100] transition-colors mb-6" data-testid="btn-back-magazine">
           <ArrowLeft className="w-3.5 h-3.5" />
           매거진 목록
         </Link>
 
         {isLoading && (
           <div className="text-center py-20">
-            <div className="w-6 h-6 border-2 border-[#333333] border-t-[#c9a96e] rounded-full animate-spin mx-auto" />
+            <div className="w-6 h-6 border-2 border-[#e8e8e8] border-t-[#FF6100] rounded-full animate-spin mx-auto" />
           </div>
         )}
 
         {error && (
           <div className="text-center py-20 text-[#999999]">
             <p className="text-base mb-3">매거진을 찾을 수 없습니다.</p>
-            <Link href="/magazine" className="text-sm text-[#888888] underline underline-offset-4 hover:text-[#c9a96e]">목록으로 돌아가기</Link>
+            <Link href="/magazine" className="text-sm text-[#666666] underline underline-offset-4 hover:text-[#FF6100]">목록으로 돌아가기</Link>
           </div>
         )}
 
         {article && (
           <article data-testid={`magazine-detail-${id}`} className="animate-in fade-in duration-500">
             {article.imageUrl && (
-              <div className="w-full rounded-lg overflow-hidden mb-5">
+              <div className="w-full rounded-xl overflow-hidden mb-5">
                 <img src={article.imageUrl} alt={article.title} className="w-full h-auto object-cover" />
               </div>
             )}
 
             <div className="flex items-center gap-2.5 mb-3">
-              <span className="text-[11px] px-2.5 py-1 rounded-full bg-[#1a1a1a] border border-[#2a2a2a] text-[#888888] font-medium">
+              <span className="text-[11px] px-2.5 py-1 rounded-full bg-white border border-[#e8e8e8] text-[#666666] font-medium">
                 {article.category}
               </span>
               {article.createdAt && (
@@ -184,29 +173,25 @@ function MagazineDetail({ id }: { id: string }) {
               )}
             </div>
 
-            <h1 className="text-[22px] md:text-[26px] font-bold text-[#f0f0f0] leading-tight mb-1.5 tracking-tight" data-testid="text-magazine-title">
+            <h1 className="text-[22px] font-bold text-[#111111] leading-tight mb-1.5 tracking-tight" data-testid="text-magazine-title">
               {article.title}
             </h1>
 
             {article.subtitle && (
-              <p className="text-[14px] text-[#888888] mb-8 leading-relaxed" data-testid="text-magazine-subtitle">
+              <p className="text-[14px] text-[#666666] mb-8 leading-relaxed" data-testid="text-magazine-subtitle">
                 {article.subtitle}
               </p>
             )}
 
             {article.content && (
-              <div className="text-[14px] text-[#aaaaaa] leading-[1.85] whitespace-pre-wrap" data-testid="text-magazine-content">
+              <div className="text-[14px] text-[#444444] leading-[1.85] whitespace-pre-wrap" data-testid="text-magazine-content">
                 {article.content}
               </div>
             )}
 
-            <div className="mt-12 pt-6 border-t border-[#2a2a2a]">
-              <Link
-                href="/magazine"
-                className="inline-flex items-center gap-1.5 text-[13px] text-[#888888] hover:text-[#c9a96e] transition-colors"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                목록으로
+            <div className="mt-12 pt-6 border-t border-[#e8e8e8]">
+              <Link href="/magazine" className="inline-flex items-center gap-1.5 text-[13px] text-[#666666] hover:text-[#FF6100] transition-colors">
+                <ArrowLeft className="w-3.5 h-3.5" />목록으로
               </Link>
             </div>
           </article>
@@ -223,10 +208,7 @@ function MagazineCard({ article }: { article: any }) {
   const isExternal = article.linkUrl && (article.linkUrl.startsWith("http") || article.linkUrl.startsWith("//"));
 
   const cardContent = (
-    <div
-      className="relative w-full overflow-hidden rounded-lg group cursor-pointer"
-      data-testid={`magazine-card-${article.id}`}
-    >
+    <div className="relative w-full overflow-hidden rounded-xl group cursor-pointer" data-testid={`magazine-card-${article.id}`}>
       {article.imageUrl ? (
         <img
           src={article.imageUrl}
@@ -235,35 +217,22 @@ function MagazineCard({ article }: { article: any }) {
           loading="lazy"
         />
       ) : (
-        <div className="w-full aspect-[4/5] bg-gradient-to-br from-gray-800 to-gray-600" />
+        <div className="w-full aspect-[4/5] bg-gradient-to-br from-gray-200 to-gray-100" />
       )}
-
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-
       <div className="absolute bottom-0 left-0 right-0 p-4">
-        <h2 className="text-white font-bold text-[18px] md:text-[20px] leading-snug mb-0.5 tracking-tight">
+        <h2 className="text-white font-bold text-[18px] leading-snug mb-0.5 tracking-tight">
           {article.title}
         </h2>
         {article.subtitle && (
-          <p className="text-white/60 text-[12px] md:text-[13px] line-clamp-1">
-            {article.subtitle}
-          </p>
+          <p className="text-white/70 text-[12px] line-clamp-1">{article.subtitle}</p>
         )}
       </div>
     </div>
   );
 
   if (isExternal) {
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className="block">
-        {cardContent}
-      </a>
-    );
+    return <a href={href} target="_blank" rel="noopener noreferrer" className="block">{cardContent}</a>;
   }
-
-  return (
-    <Link href={href} className="block">
-      {cardContent}
-    </Link>
-  );
+  return <Link href={href} className="block">{cardContent}</Link>;
 }

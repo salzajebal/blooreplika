@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Heart, LogOut, ChevronRight, Package, Wallet, Clock, CheckCircle, XCircle, AlertTriangle, Plus, Mail, Phone, MapPin, Building2, CreditCard, Info, Pencil, Save, X } from "lucide-react";
+import { User, Heart, LogOut, ChevronRight, Package, Wallet, Clock, CheckCircle, XCircle, AlertTriangle, Plus, Mail, Phone, MapPin, Building2, CreditCard, Pencil, Save, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -80,17 +80,15 @@ export default function Profile() {
     bank: "",
     accountNumber: "",
   });
-  
+
   const memberToken = localStorage.getItem("memberToken");
   const isLoggedIn = memberToken !== null;
 
-  const { data: memberInfo, refetch: refetchMember } = useQuery<MemberInfo>({
+  const { data: memberInfo } = useQuery<MemberInfo>({
     queryKey: ["member-info"],
     queryFn: async () => {
       const res = await fetch("/api/members/me", {
-        headers: {
-          Authorization: `Bearer ${memberToken}`,
-        },
+        headers: { Authorization: `Bearer ${memberToken}` },
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
@@ -103,9 +101,7 @@ export default function Profile() {
     queryKey: ["deposit-requests"],
     queryFn: async () => {
       const res = await fetch("/api/members/deposit-requests", {
-        headers: {
-          Authorization: `Bearer ${memberToken}`,
-        },
+        headers: { Authorization: `Bearer ${memberToken}` },
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
@@ -118,9 +114,7 @@ export default function Profile() {
     queryKey: ["point-transactions"],
     queryFn: async () => {
       const res = await fetch("/api/members/point-transactions", {
-        headers: {
-          Authorization: `Bearer ${memberToken}`,
-        },
+        headers: { Authorization: `Bearer ${memberToken}` },
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
@@ -130,17 +124,14 @@ export default function Profile() {
   });
 
   const memberId = localStorage.getItem("memberId");
-  
+
   const { data: memberOrders } = useQuery<Order[]>({
     queryKey: ["member-orders", memberId],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (memberId) params.append("memberId", memberId);
-      
       const res = await fetch(`/api/members/orders?${params.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${memberToken}`,
-        },
+        headers: { Authorization: `Bearer ${memberToken}` },
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
@@ -153,10 +144,7 @@ export default function Profile() {
     mutationFn: async (request: { amount: number; bankName: string; depositorName: string }) => {
       const res = await fetch("/api/members/deposit-requests", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${memberToken}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${memberToken}` },
         body: JSON.stringify(request),
       });
       const data = await res.json();
@@ -171,19 +159,14 @@ export default function Profile() {
       setDepositorName("");
       alert("입금신청이 접수되었습니다. 관리자 승인 후 포인트가 충전됩니다.");
     },
-    onError: (error: Error) => {
-      alert(error.message);
-    },
+    onError: (error: Error) => { alert(error.message); },
   });
 
   const profileUpdateMutation = useMutation({
     mutationFn: async (data: { name: string; email: string; phone: string; address: string; bank: string; accountNumber: string }) => {
       const res = await fetch("/api/members/me", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${memberToken}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${memberToken}` },
         body: JSON.stringify(data),
       });
       const result = await res.json();
@@ -193,17 +176,10 @@ export default function Profile() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["member-info"] });
       setIsEditing(false);
-      toast({
-        title: "수정 완료",
-        description: "개인정보가 성공적으로 수정되었습니다.",
-      });
+      toast({ title: "수정 완료", description: "개인정보가 성공적으로 수정되었습니다." });
     },
     onError: (error: Error) => {
-      toast({
-        title: "수정 실패",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "수정 실패", description: error.message, variant: "destructive" });
     },
   });
 
@@ -221,13 +197,8 @@ export default function Profile() {
     }
   };
 
-  const handleSaveProfile = () => {
-    profileUpdateMutation.mutate(editForm);
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-  };
+  const handleSaveProfile = () => { profileUpdateMutation.mutate(editForm); };
+  const handleCancelEdit = () => { setIsEditing(false); };
 
   const handleLogout = () => {
     localStorage.removeItem("memberToken");
@@ -238,471 +209,426 @@ export default function Profile() {
   };
 
   const handleDepositSubmit = () => {
-    if (memberInfo?.isFrozen) {
-      alert("계정이 동결되어 입금신청을 할 수 없습니다.");
-      return;
-    }
-    
-    if (!depositAmount || !bankName || !depositorName) {
-      alert("모든 필드를 입력해주세요.");
-      return;
-    }
-    
+    if (memberInfo?.isFrozen) { alert("계정이 동결되어 입금신청을 할 수 없습니다."); return; }
+    if (!depositAmount || !bankName || !depositorName) { alert("모든 필드를 입력해주세요."); return; }
     const amount = parseInt(depositAmount.replace(/,/g, ""));
-    if (isNaN(amount) || amount <= 0) {
-      alert("유효한 금액을 입력해주세요.");
-      return;
-    }
-    
+    if (isNaN(amount) || amount <= 0) { alert("유효한 금액을 입력해주세요."); return; }
     depositMutation.mutate({ amount, bankName, depositorName });
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const formatDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
-  const formatSimpleDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+  const formatSimpleDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "pending":
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
-            <Clock className="w-3 h-3" />
-            대기중
-          </span>
-        );
+        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700"><Clock className="w-3 h-3" />대기중</span>;
       case "approved":
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-            <CheckCircle className="w-3 h-3" />
-            승인됨
-          </span>
-        );
+        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700"><CheckCircle className="w-3 h-3" />승인됨</span>;
       case "rejected":
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-            <XCircle className="w-3 h-3" />
-            거부됨
-          </span>
-        );
-      default:
-        return null;
+        return <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700"><XCircle className="w-3 h-3" />거부됨</span>;
+      default: return null;
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] font-sans">
+    <div className="min-h-screen bg-[#f5f5f5] font-sans">
       <Header />
 
-      <main className="container-custom py-6 md:py-12 px-4 pb-24 md:pb-12">
-        <div className="max-w-2xl mx-auto">
-          {memberInfo?.isFrozen && (
-            <div className="mb-4 md:mb-6 p-3 md:p-4 bg-red-900/20 border border-red-800/40 flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <h3 className="font-bold text-red-300 text-sm md:text-base">계정이 동결되었습니다</h3>
-                <p className="text-xs md:text-sm text-red-400 mt-1">
-                  현재 계정이 동결 상태입니다. 일부 서비스 이용이 제한됩니다.
-                  문의사항은 고객센터로 연락해주세요.
-                </p>
+      <main className="max-w-[640px] mx-auto py-4 px-4 pb-24">
+        {memberInfo?.isFrozen && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 flex items-start gap-3 rounded-lg">
+            <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-bold text-red-600 text-sm">계정이 동결되었습니다</h3>
+              <p className="text-xs text-red-500 mt-1">현재 계정이 동결 상태입니다. 일부 서비스 이용이 제한됩니다. 문의사항은 고객센터로 연락해주세요.</p>
+            </div>
+          </div>
+        )}
+
+        <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-[#e8e8e8]">
+          {/* 프로필 헤더 */}
+          <div className="bg-[#111111] p-5 text-white">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white/10 border border-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <User className="w-6 h-6 text-white/80" />
+              </div>
+              <div className="min-w-0 flex-1">
+                {isLoggedIn ? (
+                  <>
+                    <p className="text-white/50 text-[10px] tracking-[0.2em] uppercase mb-0.5">Member</p>
+                    <h1 className="text-lg font-bold truncate" data-testid="text-profile-name">
+                      {memberInfo?.name || localStorage.getItem("memberName") || "회원"}님
+                    </h1>
+                    <p className="text-white/60 text-xs mt-0.5 truncate">{memberInfo?.email || localStorage.getItem("memberEmail")}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-white/50 text-[10px] tracking-[0.2em] uppercase mb-0.5">VELOUR</p>
+                    <h1 className="text-lg font-bold">로그인이 필요합니다</h1>
+                    <p className="text-white/60 text-xs mt-0.5">로그인하시면 더 많은 혜택을 받으실 수 있습니다</p>
+                  </>
+                )}
               </div>
             </div>
-          )}
+          </div>
 
-          <div className="bg-[#161616] border border-[#2a2a2a] overflow-hidden">
-            <div className="bg-[#0a0a0a] border-b border-[#1a1a1a] p-5 md:p-8 text-white">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 md:w-16 md:h-16 bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0">
-                  <User className="w-6 h-6 md:w-8 md:h-8 text-white/80" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  {isLoggedIn ? (
-                    <>
-                      <p className="text-white/50 text-[10px] tracking-[0.2em] uppercase mb-0.5">Member</p>
-                      <h1 className="text-lg md:text-2xl font-bold truncate" data-testid="text-profile-name">
-                        {memberInfo?.name || localStorage.getItem("memberName") || "회원"}님
-                      </h1>
-                      <p className="text-white/60 text-xs mt-1 truncate">{memberInfo?.email || localStorage.getItem("memberEmail")}</p>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-white/50 text-[10px] tracking-[0.2em] uppercase mb-0.5">VELOUR</p>
-                      <h1 className="text-lg md:text-xl font-bold">로그인이 필요합니다</h1>
-                      <p className="text-white/60 text-xs mt-1">로그인하시면 더 많은 혜택을 받으실 수 있습니다</p>
-                    </>
-                  )}
-                </div>
+          {!isLoggedIn ? (
+            <div className="p-8 text-center border-b border-[#e8e8e8]">
+              <p className="text-[#666666] text-sm mb-6 leading-relaxed">
+                로그인하여 주문 내역, 찜 목록 등<br />다양한 서비스를 이용해보세요.
+              </p>
+              <div className="flex gap-3 justify-center">
+                <Link href="/login">
+                  <button className="px-8 py-2.5 bg-[#FF6100] hover:bg-[#e05500] text-white text-sm font-semibold tracking-wide transition-colors rounded-lg">
+                    로그인
+                  </button>
+                </Link>
+                <Link href="/signup">
+                  <button className="px-8 py-2.5 border border-[#e8e8e8] text-[#666666] hover:border-[#FF6100] hover:text-[#FF6100] text-sm transition-colors rounded-lg">
+                    회원가입
+                  </button>
+                </Link>
               </div>
             </div>
-
-            {!isLoggedIn ? (
-              <div className="p-8 md:p-12 text-center border-b border-[#2a2a2a]">
-                <p className="text-[#888888] text-sm mb-8 leading-relaxed">
-                  로그인하여 주문 내역, 찜 목록 등<br />다양한 서비스를 이용해보세요.
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <Link href="/login">
-                    <button className="px-8 py-2.5 bg-[#c9a96e] hover:bg-[#b8945f] text-black text-sm tracking-widest transition-colors font-semibold">
-                      로그인
-                    </button>
-                  </Link>
-                  <Link href="/signup">
-                    <button className="px-8 py-2.5 border border-[#c9a96e] text-[#c9a96e] hover:bg-[#c9a96e] hover:text-black text-sm tracking-widest transition-colors">
-                      회원가입
-                    </button>
-                  </Link>
+          ) : (
+            <div className="p-4">
+              {/* 요약 카드 */}
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <Link href="/cart">
+                  <div className="text-center p-3 bg-[#f8f8f8] border border-[#e8e8e8] hover:border-[#FF6100] transition-colors cursor-pointer rounded-lg">
+                    <Heart className="w-6 h-6 text-[#FF6100] mx-auto mb-1" />
+                    <div className="text-lg font-bold text-[#111111]">{count}</div>
+                    <div className="text-[10px] text-[#999999]">찜 목록</div>
+                  </div>
+                </Link>
+                <div className="text-center p-3 bg-[#f8f8f8] border border-[#e8e8e8] rounded-lg">
+                  <Package className="w-6 h-6 text-[#FF6100] mx-auto mb-1" />
+                  <div className="text-lg font-bold text-[#111111]" data-testid="text-order-count">{memberOrders?.length || 0}</div>
+                  <div className="text-[10px] text-[#999999]">주문 내역</div>
+                </div>
+                <div className="text-center p-3 bg-orange-50 border border-orange-100 rounded-lg">
+                  <Wallet className="w-6 h-6 text-[#FF6100] mx-auto mb-1" />
+                  <div className="text-lg font-bold text-[#FF6100]" data-testid="text-point-balance">
+                    {(memberInfo?.pointBalance || 0).toLocaleString()}
+                  </div>
+                  <div className="text-[10px] text-[#FF6100] font-medium">포인트</div>
                 </div>
               </div>
-            ) : (
-              <div className="p-4 md:p-6">
-                <div className="grid grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
-                  <Link href="/cart">
-                    <div className="text-center p-2 md:p-4 bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#c9a96e] transition-colors cursor-pointer">
-                      <Heart className="w-6 h-6 md:w-8 md:h-8 text-[#c9a96e] mx-auto mb-1 md:mb-2" />
-                      <div className="text-lg md:text-2xl font-bold text-white">{count}</div>
-                      <div className="text-[10px] md:text-xs text-[#888888]">찜 목록</div>
-                    </div>
-                  </Link>
-                  <div className="text-center p-2 md:p-4 bg-[#1a1a1a] border border-[#2a2a2a]">
-                    <Package className="w-6 h-6 md:w-8 md:h-8 text-[#c9a96e] mx-auto mb-1 md:mb-2" />
-                    <div className="text-lg md:text-2xl font-bold text-white" data-testid="text-order-count">{memberOrders?.length || 0}</div>
-                    <div className="text-[10px] md:text-xs text-[#888888]">주문 내역</div>
-                  </div>
-                  <div className="text-center p-2 md:p-4 bg-[#1a1500] border border-[#c9a96e]/30">
-                    <Wallet className="w-6 h-6 md:w-8 md:h-8 text-[#c9a96e] mx-auto mb-1 md:mb-2" />
-                    <div className="text-lg md:text-2xl font-bold text-[#c9a96e]" data-testid="text-point-balance">
-                      {(memberInfo?.pointBalance || 0).toLocaleString()}
-                    </div>
-                    <div className="text-[10px] md:text-xs text-[#c9a96e] font-medium">포인트</div>
-                  </div>
-                </div>
 
-                <Tabs defaultValue="info" className="w-full">
-                  <TabsList className="w-full grid grid-cols-5 h-auto">
-                    <TabsTrigger value="info" className="text-xs md:text-sm py-2 px-1 md:px-3">내 정보</TabsTrigger>
-                    <TabsTrigger value="orders" className="text-xs md:text-sm py-2 px-1 md:px-3">주문내역</TabsTrigger>
-                    <TabsTrigger value="menu" className="text-xs md:text-sm py-2 px-1 md:px-3">메뉴</TabsTrigger>
-                    <TabsTrigger value="deposit" className="text-xs md:text-sm py-2 px-1 md:px-3">입금신청</TabsTrigger>
-                    <TabsTrigger value="points" className="text-xs md:text-sm py-2 px-1 md:px-3">포인트</TabsTrigger>
-                  </TabsList>
+              <Tabs defaultValue="info" className="w-full">
+                <TabsList className="w-full grid grid-cols-5 h-auto bg-[#f5f5f5] rounded-lg">
+                  <TabsTrigger value="info" className="text-xs py-2 px-1 rounded-md">내 정보</TabsTrigger>
+                  <TabsTrigger value="orders" className="text-xs py-2 px-1 rounded-md">주문내역</TabsTrigger>
+                  <TabsTrigger value="menu" className="text-xs py-2 px-1 rounded-md">메뉴</TabsTrigger>
+                  <TabsTrigger value="deposit" className="text-xs py-2 px-1 rounded-md">입금신청</TabsTrigger>
+                  <TabsTrigger value="points" className="text-xs py-2 px-1 rounded-md">포인트</TabsTrigger>
+                </TabsList>
 
-                  <TabsContent value="info" className="mt-4">
-                    <div className="space-y-4">
-                      {!isEditing && (
-                        <div className="flex justify-end">
-                          <Button variant="outline" size="sm" onClick={handleStartEditing}
-                            className="gap-2 border-[#333333] bg-transparent text-[#888888] hover:border-[#c9a96e] hover:text-white">
-                            <Pencil className="w-4 h-4" />
-                            정보 수정
-                          </Button>
-                        </div>
-                      )}
-
-                      {isEditing ? (
-                        <div className="bg-[#1a1a1a] border border-[#2a2a2a] p-4 space-y-4">
-                          <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-white">정보 수정</h3>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm" onClick={handleCancelEdit}
-                                className="gap-1 border-[#333333] bg-transparent text-[#888888] hover:border-[#555555] hover:text-white">
-                                <X className="w-4 h-4" />취소
-                              </Button>
-                              <Button size="sm" onClick={handleSaveProfile} disabled={profileUpdateMutation.isPending}
-                                className="gap-1 bg-[#c9a96e] hover:bg-[#b8945f] text-black">
-                                <Save className="w-4 h-4" />저장
-                              </Button>
-                            </div>
-                          </div>
-                          <div className="space-y-4">
-                            {[
-                              { label: "이름", key: "name", placeholder: "이름" },
-                              { label: "이메일", key: "email", placeholder: "이메일", type: "email" },
-                              { label: "휴대폰", key: "phone", placeholder: "휴대폰 번호" },
-                              { label: "주소", key: "address", placeholder: "주소" },
-                            ].map(({ label, key, placeholder, type }) => (
-                              <div key={key}>
-                                <Label className="text-xs text-[#888888]">{label}</Label>
-                                <Input type={type || "text"} value={(editForm as any)[key]}
-                                  onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
-                                  placeholder={placeholder}
-                                  className="bg-[#0f0f0f] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0" />
-                              </div>
-                            ))}
-                            <h4 className="font-bold text-[#c9a96e] mt-4">환급 계좌 정보</h4>
-                            <div>
-                              <Label className="text-xs text-[#888888]">은행</Label>
-                              <select className="w-full h-10 px-3 border border-[#333333] bg-[#0f0f0f] text-[#f0f0f0] focus:outline-none focus:border-[#c9a96e]"
-                                value={editForm.bank} onChange={(e) => setEditForm({ ...editForm, bank: e.target.value })}>
-                                <option value="">은행 선택</option>
-                                {BANKS.map((bank) => (<option key={bank} value={bank}>{bank}</option>))}
-                              </select>
-                            </div>
-                            <div>
-                              <Label className="text-xs text-[#888888]">계좌번호</Label>
-                              <Input value={editForm.accountNumber}
-                                onChange={(e) => setEditForm({ ...editForm, accountNumber: e.target.value })}
-                                placeholder="계좌번호"
-                                className="bg-[#0f0f0f] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0" />
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="bg-[#1a1a1a] border border-[#2a2a2a] p-4 space-y-4">
-                          <h3 className="font-bold text-white mb-4">기본 정보</h3>
-                          {[
-                            { Icon: User, label: "이름", value: memberInfo?.name },
-                            { Icon: Mail, label: "이메일", value: memberInfo?.email },
-                            { Icon: Phone, label: "휴대폰", value: memberInfo?.phone },
-                            { Icon: MapPin, label: "주소", value: memberInfo?.address },
-                          ].map(({ Icon, label, value }) => (
-                            <div key={label} className="flex items-center gap-3 py-2 border-b border-[#2a2a2a]">
-                              <Icon className="w-5 h-5 text-[#999999]" />
-                              <div className="flex-1">
-                                <p className="text-xs text-[#888888]">{label}</p>
-                                <p className="text-[#f0f0f0] font-medium">{value || "-"}</p>
-                              </div>
-                            </div>
-                          ))}
-                          <h3 className="font-bold text-[#c9a96e] mt-6 mb-4">환급 계좌 정보</h3>
-                          {[
-                            { Icon: Building2, label: "은행", value: memberInfo?.bank },
-                            { Icon: CreditCard, label: "계좌번호", value: memberInfo?.accountNumber },
-                          ].map(({ Icon, label, value }) => (
-                            <div key={label} className="flex items-center gap-3 py-2 border-b border-[#2a2a2a]">
-                              <Icon className="w-5 h-5 text-[#999999]" />
-                              <div className="flex-1">
-                                <p className="text-xs text-[#888888]">{label}</p>
-                                <p className="text-[#f0f0f0] font-medium">{value || "-"}</p>
-                              </div>
-                            </div>
-                          ))}
-                          <div className="flex items-center gap-3 py-2">
-                            <Clock className="w-5 h-5 text-[#999999]" />
-                            <div className="flex-1">
-                              <p className="text-xs text-[#888888]">가입일</p>
-                              <p className="text-[#f0f0f0] font-medium">
-                                {memberInfo?.createdAt ? formatSimpleDate(memberInfo.createdAt) : "-"}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="orders" className="mt-4">
-                    <div className="space-y-4">
-                      <h3 className="font-bold text-white">주문 내역</h3>
-                      {memberOrders && memberOrders.length > 0 ? (
-                        <div className="space-y-3">
-                          {memberOrders.map((order) => (
-                            <div key={order.id} className="bg-[#1a1a1a] border border-[#2a2a2a] p-4" data-testid={`order-item-${order.id}`}>
-                              <div className="flex justify-between items-center mb-3 pb-2 border-b border-[#2a2a2a]">
-                                <span className="text-xs font-mono bg-[#111111] border border-[#333333] px-2 py-1 text-[#888888]">주문번호: {order.orderNumber}</span>
-                                <span className="text-xs text-[#999999]">{new Date(order.createdAt).toLocaleDateString("ko-KR")}</span>
-                              </div>
-                              <div className="flex justify-between items-start mb-2">
-                                <div>
-                                  <h4 className="font-medium text-[#f0f0f0]">{order.productName}</h4>
-                                  <p className="text-sm text-[#888888]">수량: {order.quantity}개</p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="font-bold text-[#c9a96e]">{Number(order.totalAmount || 0).toLocaleString()}원</p>
-                                </div>
-                              </div>
-                              <div className="flex gap-2 mt-3">
-                                <span className={`text-xs px-2 py-1 ${
-                                  order.status === "delivered" ? "bg-green-900/40 text-green-400" :
-                                  order.status === "shipped" ? "bg-blue-900/40 text-blue-400" :
-                                  order.status === "confirmed" ? "bg-yellow-900/40 text-yellow-400" :
-                                  order.status === "cancelled" ? "bg-red-900/40 text-red-400" :
-                                  "bg-[#222222] text-[#888888]"
-                                }`}>
-                                  {order.status === "pending" && "대기중"}
-                                  {order.status === "confirmed" && "확인됨"}
-                                  {order.status === "shipped" && "배송중"}
-                                  {order.status === "delivered" && "배송완료"}
-                                  {order.status === "cancelled" && "취소됨"}
-                                </span>
-                                <span className={`text-xs px-2 py-1 ${
-                                  order.paymentStatus === "paid" ? "bg-green-900/40 text-green-400" :
-                                  order.paymentStatus === "refunded" ? "bg-red-900/40 text-red-400" :
-                                  "bg-yellow-900/40 text-yellow-400"
-                                }`}>
-                                  {order.paymentStatus === "pending" && "결제 대기"}
-                                  {order.paymentStatus === "paid" && "결제 완료"}
-                                  {order.paymentStatus === "refunded" && "환불됨"}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8 text-[#999999]">
-                          <Package className="w-12 h-12 mx-auto mb-3 text-[#333333]" />
-                          <p>주문 내역이 없습니다.</p>
-                        </div>
-                      )}
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="menu" className="mt-4">
-                    <div className="space-y-1">
-                      <Link href="/cart">
-                        <div className="flex items-center justify-between p-4 hover:bg-[#1a1a1a] cursor-pointer transition-colors border border-transparent hover:border-[#2a2a2a]" data-testid="link-wishlist">
-                          <div className="flex items-center gap-3">
-                            <Heart className="w-5 h-5 text-[#999999]" />
-                            <span className="text-[#aaaaaa]">찜 목록</span>
-                          </div>
-                          <ChevronRight className="w-5 h-5 text-[#444444]" />
-                        </div>
-                      </Link>
-                      
-                      <div className="flex items-center justify-between p-4 hover:bg-[#1a1a1a] cursor-pointer transition-colors border border-transparent hover:border-[#2a2a2a]">
-                        <div className="flex items-center gap-3">
-                          <Package className="w-5 h-5 text-[#999999]" />
-                          <span className="text-[#aaaaaa]">주문/배송 조회</span>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-[#444444]" />
+                {/* 내 정보 탭 */}
+                <TabsContent value="info" className="mt-4">
+                  <div className="space-y-4">
+                    {!isEditing && (
+                      <div className="flex justify-end">
+                        <Button variant="outline" size="sm" onClick={handleStartEditing}
+                          className="gap-2 border-[#e8e8e8] text-[#666666] hover:border-[#FF6100] hover:text-[#FF6100]">
+                          <Pencil className="w-4 h-4" />정보 수정
+                        </Button>
                       </div>
+                    )}
 
-                      <button onClick={handleLogout}
-                        className="w-full flex items-center justify-between p-4 hover:bg-red-900/10 cursor-pointer transition-colors border border-transparent hover:border-red-900/30 text-left"
-                        data-testid="button-logout">
-                        <div className="flex items-center gap-3">
-                          <LogOut className="w-5 h-5 text-red-500" />
-                          <span className="text-red-500">로그아웃</span>
-                        </div>
-                      </button>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="deposit" className="mt-4">
-                    <div className="space-y-4">
-                      <div className="p-4 bg-[#1a1500] border border-[#c9a96e]/30">
-                        <h3 className="font-bold text-[#c9a96e] mb-2">입금 안내</h3>
-                        <div className="text-sm text-[#c9a96e]/70">
-                          <p>입금 관련 상세 안내는 카카오톡 고객센터로 연락 바랍니다.</p>
-                        </div>
-                      </div>
-
-                      <Dialog open={showDepositForm} onOpenChange={setShowDepositForm}>
-                        <DialogTrigger asChild>
-                          <Button className="w-full bg-[#c9a96e] hover:bg-[#b8945f] text-black font-semibold"
-                            disabled={memberInfo?.isFrozen}>
-                            <Plus className="w-4 h-4 mr-2" />
-                            입금 신청하기
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="bg-[#1a1a1a] border-[#2a2a2a] text-[#f0f0f0]">
-                          <DialogHeader>
-                            <DialogTitle className="text-white">입금 신청</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4 pt-4">
-                            {[
-                              { id: "amount", label: "입금 금액 (원)", placeholder: "예: 100,000", value: depositAmount, onChange: setDepositAmount },
-                              { id: "bankName", label: "입금 은행", placeholder: "예: 국민은행", value: bankName, onChange: setBankName },
-                              { id: "depositorName", label: "입금자명", placeholder: "입금시 표시되는 이름", value: depositorName, onChange: setDepositorName },
-                            ].map(({ id, label, placeholder, value, onChange }) => (
-                              <div key={id}>
-                                <Label htmlFor={id} className="text-[#aaaaaa]">{label}</Label>
-                                <Input id={id} type="text" placeholder={placeholder} value={value}
-                                  onChange={(e) => onChange(e.target.value)}
-                                  className="bg-[#0f0f0f] border-[#333333] text-[#f0f0f0] placeholder:text-[#444444] focus:border-[#c9a96e] focus-visible:ring-0 mt-1" />
-                              </div>
-                            ))}
-                            <Button className="w-full bg-[#c9a96e] hover:bg-[#b8945f] text-black font-semibold"
-                              onClick={handleDepositSubmit} disabled={depositMutation.isPending}>
-                              {depositMutation.isPending ? "처리중..." : "신청하기"}
+                    {isEditing ? (
+                      <div className="bg-[#f8f8f8] border border-[#e8e8e8] rounded-xl p-4 space-y-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <h3 className="font-bold text-[#111111]">정보 수정</h3>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={handleCancelEdit}
+                              className="gap-1 border-[#e8e8e8] text-[#666666] hover:text-[#111111]">
+                              <X className="w-4 h-4" />취소
+                            </Button>
+                            <Button size="sm" onClick={handleSaveProfile} disabled={profileUpdateMutation.isPending}
+                              className="gap-1 bg-[#FF6100] hover:bg-[#e05500] text-white">
+                              <Save className="w-4 h-4" />저장
                             </Button>
                           </div>
-                        </DialogContent>
-                      </Dialog>
-
-                      <div className="space-y-3">
-                        <h3 className="font-bold text-white">입금 신청 내역</h3>
-                        {!depositRequests?.length ? (
-                          <p className="text-sm text-[#999999] text-center py-8">입금 신청 내역이 없습니다.</p>
-                        ) : (
-                          depositRequests.map((request) => (
-                            <div key={request.id} className="p-4 border border-[#2a2a2a] bg-[#1a1a1a]">
-                              <div className="flex justify-between items-start mb-2">
-                                <div className="font-bold text-lg text-white">{request.amount.toLocaleString()}원</div>
-                                {getStatusBadge(request.status)}
-                              </div>
-                              <div className="text-sm text-[#888888] space-y-1">
-                                <p>입금자: {request.depositorName} ({request.bankName})</p>
-                                <p>신청일: {formatDate(request.requestedAt)}</p>
-                                {request.processedAt && <p>처리일: {formatDate(request.processedAt)}</p>}
-                                {request.adminNote && <p className="text-[#c9a96e]">메모: {request.adminNote}</p>}
-                              </div>
+                        </div>
+                        <div className="space-y-3">
+                          {[
+                            { label: "이름", key: "name", placeholder: "이름" },
+                            { label: "이메일", key: "email", placeholder: "이메일", type: "email" },
+                            { label: "휴대폰", key: "phone", placeholder: "휴대폰 번호" },
+                            { label: "주소", key: "address", placeholder: "주소" },
+                          ].map(({ label, key, placeholder, type }) => (
+                            <div key={key}>
+                              <Label className="text-xs text-[#666666]">{label}</Label>
+                              <Input type={type || "text"} value={(editForm as any)[key]}
+                                onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
+                                placeholder={placeholder}
+                                className="bg-white border-[#e8e8e8] text-[#111111] placeholder:text-[#cccccc] focus:border-[#FF6100] focus-visible:ring-0 mt-1" />
                             </div>
-                          ))
-                        )}
+                          ))}
+                          <h4 className="font-bold text-[#FF6100] mt-2 text-sm">환급 계좌 정보</h4>
+                          <div>
+                            <Label className="text-xs text-[#666666]">은행</Label>
+                            <select className="w-full h-10 px-3 mt-1 border border-[#e8e8e8] bg-white text-[#111111] rounded-md focus:outline-none focus:border-[#FF6100] text-sm"
+                              value={editForm.bank} onChange={(e) => setEditForm({ ...editForm, bank: e.target.value })}>
+                              <option value="">은행 선택</option>
+                              {BANKS.map((bank) => (<option key={bank} value={bank}>{bank}</option>))}
+                            </select>
+                          </div>
+                          <div>
+                            <Label className="text-xs text-[#666666]">계좌번호</Label>
+                            <Input value={editForm.accountNumber}
+                              onChange={(e) => setEditForm({ ...editForm, accountNumber: e.target.value })}
+                              placeholder="계좌번호"
+                              className="bg-white border-[#e8e8e8] text-[#111111] placeholder:text-[#cccccc] focus:border-[#FF6100] focus-visible:ring-0 mt-1" />
+                          </div>
+                        </div>
                       </div>
+                    ) : (
+                      <div className="bg-[#f8f8f8] border border-[#e8e8e8] rounded-xl p-4 space-y-1">
+                        <h3 className="font-bold text-[#111111] mb-3 text-sm">기본 정보</h3>
+                        {[
+                          { Icon: User, label: "이름", value: memberInfo?.name },
+                          { Icon: Mail, label: "이메일", value: memberInfo?.email },
+                          { Icon: Phone, label: "휴대폰", value: memberInfo?.phone },
+                          { Icon: MapPin, label: "주소", value: memberInfo?.address },
+                        ].map(({ Icon, label, value }) => (
+                          <div key={label} className="flex items-center gap-3 py-2.5 border-b border-[#e8e8e8] last:border-b-0">
+                            <Icon className="w-4 h-4 text-[#999999]" />
+                            <div className="flex-1">
+                              <p className="text-xs text-[#999999]">{label}</p>
+                              <p className="text-[#111111] font-medium text-sm">{value || "-"}</p>
+                            </div>
+                          </div>
+                        ))}
+                        <h3 className="font-bold text-[#FF6100] mt-4 mb-2 text-sm pt-2">환급 계좌 정보</h3>
+                        {[
+                          { Icon: Building2, label: "은행", value: memberInfo?.bank },
+                          { Icon: CreditCard, label: "계좌번호", value: memberInfo?.accountNumber },
+                        ].map(({ Icon, label, value }) => (
+                          <div key={label} className="flex items-center gap-3 py-2.5 border-b border-[#e8e8e8] last:border-b-0">
+                            <Icon className="w-4 h-4 text-[#999999]" />
+                            <div className="flex-1">
+                              <p className="text-xs text-[#999999]">{label}</p>
+                              <p className="text-[#111111] font-medium text-sm">{value || "-"}</p>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="flex items-center gap-3 py-2.5">
+                          <Clock className="w-4 h-4 text-[#999999]" />
+                          <div className="flex-1">
+                            <p className="text-xs text-[#999999]">가입일</p>
+                            <p className="text-[#111111] font-medium text-sm">
+                              {memberInfo?.createdAt ? formatSimpleDate(memberInfo.createdAt) : "-"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                {/* 주문내역 탭 */}
+                <TabsContent value="orders" className="mt-4">
+                  <div className="space-y-3">
+                    <h3 className="font-bold text-[#111111] text-sm">주문 내역</h3>
+                    {memberOrders && memberOrders.length > 0 ? (
+                      <div className="space-y-2">
+                        {memberOrders.map((order) => (
+                          <div key={order.id} className="bg-[#f8f8f8] border border-[#e8e8e8] rounded-xl p-4" data-testid={`order-item-${order.id}`}>
+                            <div className="flex justify-between items-center mb-2 pb-2 border-b border-[#e8e8e8]">
+                              <span className="text-xs font-mono bg-white border border-[#e8e8e8] px-2 py-0.5 rounded text-[#666666]">
+                                {order.orderNumber}
+                              </span>
+                              <span className="text-xs text-[#999999]">{new Date(order.createdAt).toLocaleDateString("ko-KR")}</span>
+                            </div>
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h4 className="font-medium text-[#111111] text-sm">{order.productName}</h4>
+                                <p className="text-xs text-[#999999]">수량: {order.quantity}개</p>
+                              </div>
+                              <p className="font-bold text-[#FF6100]">{Number(order.totalAmount || 0).toLocaleString()}원</p>
+                            </div>
+                            <div className="flex gap-2 mt-2">
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                order.status === "delivered" ? "bg-green-100 text-green-700" :
+                                order.status === "shipped" ? "bg-blue-100 text-blue-700" :
+                                order.status === "confirmed" ? "bg-yellow-100 text-yellow-700" :
+                                order.status === "cancelled" ? "bg-red-100 text-red-700" :
+                                "bg-gray-100 text-gray-600"
+                              }`}>
+                                {order.status === "pending" && "대기중"}
+                                {order.status === "confirmed" && "확인됨"}
+                                {order.status === "shipped" && "배송중"}
+                                {order.status === "delivered" && "배송완료"}
+                                {order.status === "cancelled" && "취소됨"}
+                              </span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${
+                                order.paymentStatus === "paid" ? "bg-green-100 text-green-700" :
+                                order.paymentStatus === "refunded" ? "bg-red-100 text-red-700" :
+                                "bg-yellow-100 text-yellow-700"
+                              }`}>
+                                {order.paymentStatus === "pending" && "결제 대기"}
+                                {order.paymentStatus === "paid" && "결제 완료"}
+                                {order.paymentStatus === "refunded" && "환불됨"}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-10 text-[#999999]">
+                        <Package className="w-10 h-10 mx-auto mb-3 text-[#cccccc]" />
+                        <p className="text-sm">주문 내역이 없습니다.</p>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                {/* 메뉴 탭 */}
+                <TabsContent value="menu" className="mt-4">
+                  <div className="space-y-1 bg-[#f8f8f8] border border-[#e8e8e8] rounded-xl overflow-hidden">
+                    <Link href="/cart">
+                      <div className="flex items-center justify-between p-4 hover:bg-white cursor-pointer transition-colors" data-testid="link-wishlist">
+                        <div className="flex items-center gap-3">
+                          <Heart className="w-5 h-5 text-[#999999]" />
+                          <span className="text-[#111111] text-sm">찜 목록</span>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-[#cccccc]" />
+                      </div>
+                    </Link>
+                    <div className="flex items-center justify-between p-4 hover:bg-white cursor-pointer transition-colors border-t border-[#e8e8e8]">
+                      <div className="flex items-center gap-3">
+                        <Package className="w-5 h-5 text-[#999999]" />
+                        <span className="text-[#111111] text-sm">주문/배송 조회</span>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-[#cccccc]" />
                     </div>
-                  </TabsContent>
-
-                  <TabsContent value="points" className="mt-4">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-bold text-white">포인트 사용 내역</h3>
-                        <span className="text-sm text-[#888888]">
-                          현재 잔액: <span className="font-bold text-[#c9a96e]">{(memberInfo?.pointBalance || 0).toLocaleString()}P</span>
-                        </span>
+                    <button onClick={handleLogout}
+                      className="w-full flex items-center justify-between p-4 hover:bg-red-50 cursor-pointer transition-colors border-t border-[#e8e8e8] text-left"
+                      data-testid="button-logout">
+                      <div className="flex items-center gap-3">
+                        <LogOut className="w-5 h-5 text-red-500" />
+                        <span className="text-red-500 text-sm">로그아웃</span>
                       </div>
-                      {!pointTransactions?.length ? (
-                        <p className="text-sm text-[#999999] text-center py-8">포인트 내역이 없습니다.</p>
-                      ) : (
-                        pointTransactions.map((transaction) => (
-                          <div key={transaction.id} className="p-4 border border-[#2a2a2a] bg-[#1a1a1a] flex justify-between items-center">
-                            <div>
-                              <p className="font-medium text-[#f0f0f0]">{transaction.description}</p>
-                              <p className="text-xs text-[#888888]">{formatDate(transaction.createdAt)}</p>
+                    </button>
+                  </div>
+                </TabsContent>
+
+                {/* 입금신청 탭 */}
+                <TabsContent value="deposit" className="mt-4">
+                  <div className="space-y-4">
+                    <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
+                      <h3 className="font-bold text-[#FF6100] mb-1 text-sm">입금 안내</h3>
+                      <p className="text-sm text-[#FF6100]/70">입금 관련 상세 안내는 카카오톡 고객센터로 연락 바랍니다.</p>
+                    </div>
+
+                    <Dialog open={showDepositForm} onOpenChange={setShowDepositForm}>
+                      <DialogTrigger asChild>
+                        <Button className="w-full bg-[#FF6100] hover:bg-[#e05500] text-white font-semibold rounded-xl"
+                          disabled={memberInfo?.isFrozen}>
+                          <Plus className="w-4 h-4 mr-2" />입금 신청하기
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-white border-[#e8e8e8] text-[#111111]">
+                        <DialogHeader>
+                          <DialogTitle className="text-[#111111]">입금 신청</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 pt-4">
+                          {[
+                            { id: "amount", label: "입금 금액 (원)", placeholder: "예: 100,000", value: depositAmount, onChange: setDepositAmount },
+                            { id: "bankName", label: "입금 은행", placeholder: "예: 국민은행", value: bankName, onChange: setBankName },
+                            { id: "depositorName", label: "입금자명", placeholder: "입금시 표시되는 이름", value: depositorName, onChange: setDepositorName },
+                          ].map(({ id, label, placeholder, value, onChange }) => (
+                            <div key={id}>
+                              <Label htmlFor={id} className="text-[#666666] text-sm">{label}</Label>
+                              <Input id={id} type="text" placeholder={placeholder} value={value}
+                                onChange={(e) => onChange(e.target.value)}
+                                className="bg-white border-[#e8e8e8] text-[#111111] placeholder:text-[#cccccc] focus:border-[#FF6100] focus-visible:ring-0 mt-1" />
                             </div>
-                            <div className="text-right">
-                              <p className={`font-bold ${transaction.amount >= 0 ? "text-green-400" : "text-red-400"}`}>
-                                {transaction.amount >= 0 ? "+" : ""}{transaction.amount.toLocaleString()}P
-                              </p>
-                              <p className="text-xs text-[#888888]">잔액: {transaction.balanceAfter.toLocaleString()}P</p>
+                          ))}
+                          <Button className="w-full bg-[#FF6100] hover:bg-[#e05500] text-white font-semibold rounded-xl"
+                            onClick={handleDepositSubmit} disabled={depositMutation.isPending}>
+                            {depositMutation.isPending ? "처리중..." : "신청하기"}
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+                    <div className="space-y-2">
+                      <h3 className="font-bold text-[#111111] text-sm">입금 신청 내역</h3>
+                      {!depositRequests?.length ? (
+                        <p className="text-sm text-[#999999] text-center py-8">입금 신청 내역이 없습니다.</p>
+                      ) : (
+                        depositRequests.map((request) => (
+                          <div key={request.id} className="p-4 border border-[#e8e8e8] bg-[#f8f8f8] rounded-xl">
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="font-bold text-lg text-[#111111]">{request.amount.toLocaleString()}원</div>
+                              {getStatusBadge(request.status)}
+                            </div>
+                            <div className="text-sm text-[#666666] space-y-0.5">
+                              <p>입금자: {request.depositorName} ({request.bankName})</p>
+                              <p>신청일: {formatDate(request.requestedAt)}</p>
+                              {request.processedAt && <p>처리일: {formatDate(request.processedAt)}</p>}
+                              {request.adminNote && <p className="text-[#FF6100]">메모: {request.adminNote}</p>}
                             </div>
                           </div>
                         ))
                       )}
                     </div>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            )}
-          </div>
+                  </div>
+                </TabsContent>
 
-          <div className="mt-6 p-6 bg-[#161616] border border-[#2a2a2a]">
-            <h2 className="font-bold text-white mb-4">고객 지원</h2>
-            <div className="space-y-3 text-sm text-[#888888]">
-              <div className="flex justify-between">
-                <span>운영시간</span>
-                <span>평일 09:00 - 18:00</span>
-              </div>
+                {/* 포인트 탭 */}
+                <TabsContent value="points" className="mt-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-bold text-[#111111] text-sm">포인트 사용 내역</h3>
+                      <span className="text-sm text-[#666666]">
+                        잔액: <span className="font-bold text-[#FF6100]">{(memberInfo?.pointBalance || 0).toLocaleString()}P</span>
+                      </span>
+                    </div>
+                    {!pointTransactions?.length ? (
+                      <p className="text-sm text-[#999999] text-center py-8">포인트 내역이 없습니다.</p>
+                    ) : (
+                      pointTransactions.map((transaction) => (
+                        <div key={transaction.id} className="p-4 border border-[#e8e8e8] bg-[#f8f8f8] rounded-xl flex justify-between items-center">
+                          <div>
+                            <p className="font-medium text-[#111111] text-sm">{transaction.description}</p>
+                            <p className="text-xs text-[#999999]">{formatDate(transaction.createdAt)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className={`font-bold text-sm ${transaction.amount >= 0 ? "text-green-600" : "text-red-500"}`}>
+                              {transaction.amount >= 0 ? "+" : ""}{transaction.amount.toLocaleString()}P
+                            </p>
+                            <p className="text-xs text-[#999999]">잔액: {transaction.balanceAfter.toLocaleString()}P</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
-            <Link href="/support">
-              <Button variant="outline" className="w-full mt-4 border-[#333333] bg-transparent text-[#888888] hover:border-[#c9a96e] hover:text-white">
-                고객센터 바로가기
-              </Button>
-            </Link>
+          )}
+        </div>
+
+        {/* 고객 지원 */}
+        <div className="mt-4 p-5 bg-white border border-[#e8e8e8] rounded-xl shadow-sm">
+          <h2 className="font-bold text-[#111111] mb-3 text-sm">고객 지원</h2>
+          <div className="text-sm text-[#666666] flex justify-between mb-3">
+            <span>운영시간</span>
+            <span>평일 09:00 - 18:00</span>
           </div>
+          <Link href="/support">
+            <Button variant="outline" className="w-full border-[#e8e8e8] text-[#666666] hover:border-[#FF6100] hover:text-[#FF6100] rounded-xl">
+              고객센터 바로가기
+            </Button>
+          </Link>
         </div>
       </main>
 

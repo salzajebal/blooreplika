@@ -68,7 +68,7 @@ function ScrollRevealWrapper({ children, delay = 0 }: { children: React.ReactNod
 
 function BannerBlock({ block }: { block: ContentBlock }) {
   const content = (
-    <div className="w-full overflow-hidden rounded-lg">
+    <div className="w-full overflow-hidden rounded-xl">
       <img
         src={block.imageUrl || ""}
         alt=""
@@ -78,13 +78,8 @@ function BannerBlock({ block }: { block: ContentBlock }) {
       />
     </div>
   );
-
   if (block.linkUrl) {
-    return (
-      <a href={block.linkUrl} target="_blank" rel="noopener noreferrer" className="block">
-        {content}
-      </a>
-    );
+    return <a href={block.linkUrl} target="_blank" rel="noopener noreferrer" className="block">{content}</a>;
   }
   return content;
 }
@@ -92,28 +87,19 @@ function BannerBlock({ block }: { block: ContentBlock }) {
 function TextBlock({ block }: { block: ContentBlock }) {
   return (
     <div
-      className="w-full py-10 md:py-16 px-4"
-      style={{ backgroundColor: block.bgColor || "#0f0f0f" }}
+      className="w-full py-10 px-4"
+      style={{ backgroundColor: block.bgColor || "#ffffff" }}
       data-testid="content-block-text"
     >
-      <div className="max-w-[800px] mx-auto text-center">
+      <div className="max-w-[640px] mx-auto text-center">
         {block.subheading && (
-          <p className="text-xs uppercase tracking-[0.2em] text-[#888888] mb-3 font-medium">
-            {block.subheading}
-          </p>
+          <p className="text-xs uppercase tracking-[0.2em] text-[#999999] mb-3 font-medium">{block.subheading}</p>
         )}
         {block.heading && (
-          <h2
-            className="text-xl md:text-3xl font-bold text-[#f0f0f0] mb-4 leading-snug"
-            style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
-          >
-            {block.heading}
-          </h2>
+          <h2 className="text-xl font-bold text-[#111111] mb-4 leading-snug">{block.heading}</h2>
         )}
         {block.body && (
-          <p className="text-sm md:text-base text-[#aaaaaa] leading-relaxed whitespace-pre-line">
-            {block.body}
-          </p>
+          <p className="text-sm text-[#666666] leading-relaxed whitespace-pre-line">{block.body}</p>
         )}
       </div>
     </div>
@@ -128,28 +114,16 @@ function ButtonsBlock({ block }: { block: ContentBlock }) {
         {block.buttons.map((btn, i) => {
           const isOutline = btn.style === "outline";
           const className = isOutline
-            ? "px-6 py-2.5 rounded-full border-2 border-[#c9a96e] text-[#c9a96e] text-sm font-semibold hover:bg-[#c9a96e] hover:text-black transition-all duration-300"
-            : "px-6 py-2.5 rounded-full bg-[#c9a96e] text-black text-sm font-semibold hover:bg-[#b8955a] transition-all duration-300 shadow-md hover:shadow-lg";
-
+            ? "px-6 py-2.5 rounded-full border-2 border-[#FF6100] text-[#FF6100] text-sm font-semibold hover:bg-[#FF6100] hover:text-white transition-all duration-300"
+            : "px-6 py-2.5 rounded-full bg-[#FF6100] text-white text-sm font-semibold hover:bg-[#e05500] transition-all duration-300 shadow-sm";
           if (btn.linkUrl) {
             return (
-              <a
-                key={i}
-                href={btn.linkUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={className}
-                data-testid={`content-block-button-${i}`}
-              >
+              <a key={i} href={btn.linkUrl} target="_blank" rel="noopener noreferrer" className={className} data-testid={`content-block-button-${i}`}>
                 {btn.label}
               </a>
             );
           }
-          return (
-            <span key={i} className={className} data-testid={`content-block-button-${i}`}>
-              {btn.label}
-            </span>
-          );
+          return <span key={i} className={className} data-testid={`content-block-button-${i}`}>{btn.label}</span>;
         })}
       </div>
     </div>
@@ -164,13 +138,11 @@ function CouponBlock({ block }: { block: ContentBlock }) {
         {block.coupons.map((coupon, i) => (
           <div
             key={i}
-            className="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-dashed border-[#555555] rounded-full bg-[#1a1a1a] hover:border-[#c9a96e] hover:shadow-md transition-all duration-300 cursor-default"
+            className="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-dashed border-[#e8e8e8] rounded-full bg-white hover:border-[#FF6100] hover:shadow-md transition-all duration-300 cursor-default"
             data-testid={`content-block-coupon-${i}`}
           >
-            <span className="text-sm font-bold text-[#c9a96e]">{coupon.value}</span>
-            {coupon.label && (
-              <span className="text-xs text-[#888888]">{coupon.label}</span>
-            )}
+            <span className="text-sm font-bold text-[#FF6100]">{coupon.value}</span>
+            {coupon.label && <span className="text-xs text-[#666666]">{coupon.label}</span>}
           </div>
         ))}
       </div>
@@ -181,8 +153,8 @@ function CouponBlock({ block }: { block: ContentBlock }) {
 function DividerBlock() {
   return (
     <div className="w-full py-4 px-4" data-testid="content-block-divider">
-      <div className="max-w-[800px] mx-auto">
-        <hr className="border-[#2a2a2a]" />
+      <div className="max-w-[640px] mx-auto">
+        <hr className="border-[#e8e8e8]" />
       </div>
     </div>
   );
@@ -190,51 +162,20 @@ function DividerBlock() {
 
 function ContentBlockRenderer({ block, index }: { block: ContentBlock; index: number }) {
   const delay = index * 100;
-
   switch (block.type) {
-    case "banner":
-      return (
-        <ScrollRevealWrapper delay={delay}>
-          <BannerBlock block={block} />
-        </ScrollRevealWrapper>
-      );
-    case "text":
-      return (
-        <ScrollRevealWrapper delay={delay}>
-          <TextBlock block={block} />
-        </ScrollRevealWrapper>
-      );
-    case "buttons":
-      return (
-        <ScrollRevealWrapper delay={delay}>
-          <ButtonsBlock block={block} />
-        </ScrollRevealWrapper>
-      );
-    case "coupon":
-      return (
-        <ScrollRevealWrapper delay={delay}>
-          <CouponBlock block={block} />
-        </ScrollRevealWrapper>
-      );
-    case "divider":
-      return (
-        <ScrollRevealWrapper delay={delay}>
-          <DividerBlock />
-        </ScrollRevealWrapper>
-      );
-    default:
-      return null;
+    case "banner": return <ScrollRevealWrapper delay={delay}><BannerBlock block={block} /></ScrollRevealWrapper>;
+    case "text": return <ScrollRevealWrapper delay={delay}><TextBlock block={block} /></ScrollRevealWrapper>;
+    case "buttons": return <ScrollRevealWrapper delay={delay}><ButtonsBlock block={block} /></ScrollRevealWrapper>;
+    case "coupon": return <ScrollRevealWrapper delay={delay}><CouponBlock block={block} /></ScrollRevealWrapper>;
+    case "divider": return <ScrollRevealWrapper delay={delay}><DividerBlock /></ScrollRevealWrapper>;
+    default: return null;
   }
 }
 
 function ProductCard({ product }: { product: any }) {
   return (
-    <Link
-      href={`/product/${product.id}`}
-      className="block group"
-      data-testid={`product-card-${product.id}`}
-    >
-      <div className="aspect-square bg-[#1a1a1a] overflow-hidden mb-2 rounded-lg">
+    <Link href={`/product/${product.id}`} className="block group" data-testid={`product-card-${product.id}`}>
+      <div className="aspect-square bg-[#f5f5f5] overflow-hidden mb-2 rounded-xl border border-[#e8e8e8]">
         <img
           src={getProxiedImageUrl(product.imageUrl || "")}
           alt={product.name}
@@ -242,11 +183,9 @@ function ProductCard({ product }: { product: any }) {
           onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
         />
       </div>
-      <div className="px-1">
-        <p className="text-xs text-[#aaaaaa] line-clamp-2 leading-relaxed mb-1">{product.name}</p>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-[#f0f0f0]">{Number(product.price).toLocaleString()}원</span>
-        </div>
+      <div className="px-0.5">
+        <p className="text-xs text-[#666666] line-clamp-2 leading-relaxed mb-1">{product.name}</p>
+        <span className="text-sm font-bold text-[#111111]">{Number(product.price).toLocaleString()}원</span>
       </div>
     </Link>
   );
@@ -298,11 +237,11 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
     const contentBlocks = activeItem ? parseContentBlocks(activeItem.contentBlocks) : [];
 
     return (
-      <div className="min-h-screen bg-[#0f0f0f]">
+      <div className="min-h-screen bg-[#f5f5f5]">
         <Header />
 
         <main>
-          <div className="relative w-full bg-gradient-to-b from-[#0a0a0a] to-[#111111] overflow-hidden">
+          <div className="relative w-full bg-white overflow-hidden">
             {heroImageUrl && heroImageUrl.trim() ? (
               <div className="relative">
                 <img
@@ -316,20 +255,20 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
                     if (fallback) (fallback as HTMLElement).style.display = 'flex';
                   }}
                 />
-                <div className="hero-fallback w-full aspect-[16/9] md:aspect-[2.4/1] items-center justify-center bg-gradient-to-br from-purple-900 via-purple-700 to-pink-600 hidden">
+                <div className="hero-fallback w-full aspect-[16/9] items-center justify-center bg-gradient-to-br from-orange-500 to-orange-300 hidden">
                   <div className="text-center text-white p-8">
-                    <h1 className="text-3xl md:text-5xl font-bold mb-3">{config.heroTitle || config.title}</h1>
-                    <p className="text-sm md:text-lg text-white/80">{config.heroSubtitle || ""}</p>
+                    <h1 className="text-3xl font-bold mb-3">{config.heroTitle || config.title}</h1>
+                    <p className="text-sm text-white/80">{config.heroSubtitle || ""}</p>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="w-full aspect-[16/9] md:aspect-[2.4/1] flex items-center justify-center bg-gradient-to-br from-purple-900 via-purple-700 to-pink-600">
+              <div className="w-full aspect-[16/9] flex items-center justify-center bg-gradient-to-br from-orange-500 to-orange-300">
                 <div className="text-center text-white p-8">
-                  <h1 className="text-3xl md:text-5xl font-bold mb-3" data-testid="benefit-hero-title">
+                  <h1 className="text-3xl font-bold mb-3" data-testid="benefit-hero-title">
                     {config.heroTitle || config.title}
                   </h1>
-                  <p className="text-sm md:text-lg text-white/80" data-testid="benefit-hero-subtitle">
+                  <p className="text-sm text-white/80" data-testid="benefit-hero-subtitle">
                     {config.heroSubtitle || ""}
                   </p>
                 </div>
@@ -338,23 +277,23 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
           </div>
 
           {items.length > 0 && (
-            <div className="border-b border-[#2a2a2a] bg-[#0a0a0a] sticky top-0 z-20">
-              <div className="max-w-[1200px] mx-auto px-2 md:px-4">
+            <div className="border-b border-[#e8e8e8] bg-white sticky top-0 z-20">
+              <div className="max-w-[640px] mx-auto px-2">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-0">
                   {items.map((item: any, index: number) => (
                     <button
                       key={item.id}
                       onClick={() => handleTabSwitch(index)}
-                      className={`relative py-3.5 md:py-4 text-xs md:text-sm text-center transition-all duration-300 ${
+                      className={`relative py-3.5 text-xs text-center transition-all duration-300 ${
                         index === activeTab
-                          ? "font-bold text-[#f0f0f0] bg-[#0a0a0a]"
-                          : "font-medium text-[#888888] bg-[#111111] hover:text-[#c9a96e] hover:bg-[#141414]"
+                          ? "font-bold text-[#111111]"
+                          : "font-medium text-[#999999] hover:text-[#FF6100]"
                       }`}
                       data-testid={`benefit-tab-${index}`}
                     >
                       {item.title}
                       {index === activeTab && (
-                        <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#c9a96e]" />
+                        <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#FF6100]" />
                       )}
                     </button>
                   ))}
@@ -364,12 +303,7 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
           )}
 
           {activeItem ? (
-            <div
-              key={tabKey}
-              className="benefit-tab-content"
-              data-testid={`benefit-content-${activeItem.id}`}
-              style={{ animation: "benefitFadeIn 0.4s ease-out" }}
-            >
+            <div key={tabKey} className="benefit-tab-content" data-testid={`benefit-content-${activeItem.id}`} style={{ animation: "benefitFadeIn 0.4s ease-out" }}>
               {contentBlocks.length > 0 ? (
                 <div className="content-blocks-container">
                   {contentBlocks.map((block, index) => (
@@ -380,45 +314,27 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
                 <>
                   {activeItem.imageUrl && (
                     <div className="w-full">
-                      <a
-                        href={activeItem.linkUrl || "#"}
-                        target={activeItem.linkUrl ? "_blank" : undefined}
-                        rel="noopener noreferrer"
-                        className="block"
-                      >
-                        <img
-                          src={activeItem.imageUrl}
-                          alt={activeItem.title}
-                          className="w-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
+                      <a href={activeItem.linkUrl || "#"} target={activeItem.linkUrl ? "_blank" : undefined} rel="noopener noreferrer" className="block">
+                        <img src={activeItem.imageUrl} alt={activeItem.title} className="w-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                       </a>
                     </div>
                   )}
-
                   {activeItem.description && (
-                    <div className="max-w-[1200px] mx-auto px-4 py-8 md:py-12">
-                      <div className="text-center">
-                        <p className="text-sm md:text-base text-[#aaaaaa] leading-relaxed whitespace-pre-line">{activeItem.description}</p>
-                      </div>
+                    <div className="max-w-[640px] mx-auto px-4 py-8">
+                      <p className="text-sm text-[#666666] leading-relaxed whitespace-pre-line text-center">{activeItem.description}</p>
                     </div>
                   )}
                 </>
               )}
 
               {activeItem.products && activeItem.products.length > 0 && (
-                <div className="max-w-[1200px] mx-auto px-4 pb-10 md:pb-16">
+                <div className="max-w-[640px] mx-auto px-4 pb-10">
                   <ScrollRevealWrapper>
-                    <div className="text-center mb-6 md:mb-8 pt-8">
-                      <p className="text-xs text-[#c9a96e] uppercase tracking-widest font-medium mb-1">BENEFIT</p>
-                      <h2
-                        className="text-lg md:text-2xl font-bold text-[#f0f0f0]"
-                        style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
-                      >
-                        velour의 특별한 혜택
-                      </h2>
+                    <div className="text-center mb-6 pt-8">
+                      <p className="text-xs text-[#FF6100] uppercase tracking-widest font-medium mb-1">BENEFIT</p>
+                      <h2 className="text-lg font-bold text-[#111111]">velour의 특별한 혜택</h2>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-5">
+                    <div className="grid grid-cols-2 gap-3">
                       {activeItem.products.map((product: any) => (
                         <ProductCard key={product.id} product={product} />
                       ))}
@@ -429,8 +345,8 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
             </div>
           ) : items.length === 0 ? (
             <div className="text-center py-20 text-[#999999]">
-              <p className="text-lg mb-2">등록된 혜택이 없습니다.</p>
-              <p className="text-sm">관리자가 혜택 콘텐츠를 등록하면 여기에 표시됩니다.</p>
+              <p className="text-base mb-2">등록된 혜택이 없습니다.</p>
+              <p className="text-sm text-[#cccccc]">관리자가 혜택 콘텐츠를 등록하면 여기에 표시됩니다.</p>
             </div>
           ) : null}
         </main>
@@ -439,14 +355,8 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
 
         <style>{`
           @keyframes benefitFadeIn {
-            from {
-              opacity: 0;
-              transform: translateY(10px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
           }
         `}</style>
       </div>
@@ -454,15 +364,15 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f]">
+    <div className="min-h-screen bg-[#f5f5f5]">
       <Header />
 
       <main>
-        <div className="bg-[#111111] border-b border-[#2a2a2a] py-4">
-          <div className="max-w-[1200px] mx-auto px-4">
-            <h1 className="text-lg font-bold text-[#f0f0f0]">{config.title}</h1>
-            <div className="flex items-center gap-2 text-sm text-[#888888] mt-1">
-              <Link href="/" className="hover:text-[#c9a96e]">홈</Link>
+        <div className="bg-white border-b border-[#e8e8e8] py-4">
+          <div className="max-w-[640px] mx-auto px-4">
+            <h1 className="text-base font-bold text-[#111111]">{config.title}</h1>
+            <div className="flex items-center gap-2 text-xs text-[#999999] mt-1">
+              <Link href="/" className="hover:text-[#FF6100]">홈</Link>
               <span>&gt;</span>
               <span>쇼핑몰</span>
               <span>&gt;</span>
@@ -471,50 +381,43 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
           </div>
         </div>
 
-        <div className="max-w-[1200px] mx-auto px-4 py-8">
-          <div className="flex-1">
-            {items.length === 0 ? (
-              <div className="text-center py-16 text-[#999999]">
-                <p className="text-lg mb-2">등록된 콘텐츠가 없습니다.</p>
-                <p className="text-sm">관리자가 콘텐츠를 등록하면 여기에 표시됩니다.</p>
-              </div>
-            ) : (
-              <div className="space-y-10">
-                {items.map((item: any) => (
-                  <div key={item.id} data-testid={`content-section-${item.id}`}>
-                    {item.imageUrl && (
-                      <a
-                        href={item.linkUrl || "#"}
-                        target={item.linkUrl ? "_blank" : undefined}
-                        rel="noopener noreferrer"
-                        className="block mb-4"
-                      >
-                        <div className="aspect-[21/9] bg-[#1a1a1a] overflow-hidden rounded-lg">
-                          <img
-                            src={getProxiedImageUrl(item.imageUrl)}
-                            alt={item.title}
-                            className="w-full h-full object-cover"
-                            onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.5'; }}
-                          />
-                        </div>
-                      </a>
-                    )}
-                    <h3 className="text-lg font-bold text-[#f0f0f0] mb-2">{item.title}</h3>
-                    {item.description && (
-                      <p className="text-sm text-[#888888] mb-4">{item.description}</p>
-                    )}
-                    {item.products && item.products.length > 0 && (
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {item.products.map((product: any) => (
-                          <ProductCard key={product.id} product={product} />
-                        ))}
+        <div className="max-w-[640px] mx-auto px-4 py-6">
+          {items.length === 0 ? (
+            <div className="text-center py-16 text-[#999999]">
+              <p className="text-base mb-2">등록된 콘텐츠가 없습니다.</p>
+              <p className="text-sm text-[#cccccc]">관리자가 콘텐츠를 등록하면 여기에 표시됩니다.</p>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {items.map((item: any) => (
+                <div key={item.id} data-testid={`content-section-${item.id}`}>
+                  {item.imageUrl && (
+                    <a href={item.linkUrl || "#"} target={item.linkUrl ? "_blank" : undefined} rel="noopener noreferrer" className="block mb-3">
+                      <div className="aspect-[21/9] bg-[#f5f5f5] overflow-hidden rounded-xl border border-[#e8e8e8]">
+                        <img
+                          src={getProxiedImageUrl(item.imageUrl)}
+                          alt={item.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.5'; }}
+                        />
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+                    </a>
+                  )}
+                  <h3 className="text-base font-bold text-[#111111] mb-2">{item.title}</h3>
+                  {item.description && (
+                    <p className="text-sm text-[#666666] mb-4">{item.description}</p>
+                  )}
+                  {item.products && item.products.length > 0 && (
+                    <div className="grid grid-cols-2 gap-3">
+                      {item.products.map((product: any) => (
+                        <ProductCard key={product.id} product={product} />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
 
