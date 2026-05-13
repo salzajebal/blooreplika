@@ -143,7 +143,9 @@ const CATEGORY_STRIP_ITEMS = [
   {
     label: "랭킹",
     path: "/ranking",
-    image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=300&q=80",
+    image: null,
+    gradient: "linear-gradient(160deg, #7b4f00 0%, #c9860a 45%, #f5c842 100%)",
+    rankingCard: true,
   },
   {
     label: "리뷰",
@@ -188,10 +190,15 @@ function CategoryStripSection() {
               {item.label === "리뷰" && (
                 <>
                   <div className="absolute inset-0 bg-black/20" />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-                    <Star className="w-4 h-4 fill-white text-white drop-shadow" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Star className="w-5 h-5 fill-white text-white drop-shadow" />
                   </div>
                 </>
+              )}
+              {item.rankingCard && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-2xl drop-shadow-lg">🏆</span>
+                </div>
               )}
             </div>
             <span className="text-[11px] font-semibold text-[#111] tracking-tight">{item.label}</span>
