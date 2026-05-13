@@ -61,7 +61,7 @@ export function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm max-w-[640px] mx-auto" style={{ left: '50%', transform: 'translateX(-50%)', width: '100%' }}>
+      <header className="bg-white shadow-sm" style={{ position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '640px', zIndex: 50 }}>
         {/* Search bar row */}
         <div className="px-3 py-2 bg-white border-b border-gray-100">
           <div className="flex items-center gap-2">
