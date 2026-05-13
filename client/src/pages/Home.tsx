@@ -86,17 +86,6 @@ function MainBannerSlider() {
                 className="w-full h-auto block"
                 loading="eager"
               />
-              {(banner.title || banner.subtitle) && (
-                <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black/60 to-transparent">
-                  {banner.subtitle && (
-                    <p className="text-xs text-white/80 uppercase tracking-widest mb-1">{banner.subtitle}</p>
-                  )}
-                  {banner.title && (
-                    <h2 className="text-xl font-bold text-white">{banner.title}</h2>
-                  )}
-                  <p className="text-sm text-white/70 mt-0.5">가장 빠른 신상품</p>
-                </div>
-              )}
             </Link>
           </div>
         ))}
