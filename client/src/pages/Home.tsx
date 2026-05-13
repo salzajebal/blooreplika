@@ -138,16 +138,12 @@ const CATEGORY_STRIP_ITEMS = [
   {
     label: "SHOP",
     path: "/products",
-    image: null,
-    gradient: "linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
-    icon: "🛍️",
+    image: "https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=300&q=80",
   },
   {
     label: "랭킹",
     path: "/ranking",
-    image: null,
-    gradient: "linear-gradient(160deg, #0f2027 0%, #203a43 50%, #2c5364 100%)",
-    icon: "📈",
+    image: "https://images.unsplash.com/photo-1543286386-2e659306cd6c?w=300&q=80",
   },
   {
     label: "리뷰",
