@@ -155,64 +155,46 @@ const CATEGORY_STRIP_ITEMS = [
 
 function CategoryStripSection() {
   return (
-    <section className="bg-white border-b border-gray-100" data-testid="category-strip-section">
-      <div className="flex">
+    <section className="bg-white border-b border-gray-100 py-4" data-testid="category-strip-section">
+      <div className="flex justify-around px-2">
         {CATEGORY_STRIP_ITEMS.map((item: any, idx) => (
           <Link
             key={idx}
             href={item.path}
-            className="flex-1 relative overflow-hidden touch-manipulation"
-            style={{ aspectRatio: "1/1.3" }}
+            className="flex flex-col items-center gap-2 touch-manipulation"
             data-testid={`category-strip-${idx}`}
           >
-            {item.image ? (
-              <img
-                src={item.image}
-                alt={item.label}
-                className="absolute inset-0 w-full h-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div
-                className="absolute inset-0"
-                style={{ background: item.gradient }}
-              />
-            )}
-            {item.label === "리뷰" ? (
-              <>
-                <div className="absolute inset-0 bg-black/20" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                  <span className="text-white text-[10px] font-bold tracking-[0.25em] uppercase drop-shadow opacity-80">velour</span>
-                  <span className="text-white text-[14px] font-black tracking-[0.2em] drop-shadow leading-none">REVIEW</span>
-                  <div className="flex gap-0.5 mt-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="w-2 h-2 fill-white text-white drop-shadow" />
-                    ))}
+            <div
+              className="relative rounded-full overflow-hidden"
+              style={{
+                width: 60,
+                height: 60,
+                border: "2px solid #e8e8e8",
+              }}
+            >
+              {item.image ? (
+                <img
+                  src={item.image}
+                  alt={item.label}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <div
+                  className="absolute inset-0"
+                  style={{ background: item.gradient }}
+                />
+              )}
+              {item.label === "리뷰" && (
+                <>
+                  <div className="absolute inset-0 bg-black/20" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
+                    <Star className="w-4 h-4 fill-white text-white drop-shadow" />
                   </div>
-                </div>
-              </>
-            ) : item.rankingCard ? (
-              <>
-                <div className="absolute inset-0 bg-black/15" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                  <span className="text-2xl drop-shadow-lg">🏆</span>
-                  <span className="text-white text-[10px] font-bold tracking-[0.2em] uppercase drop-shadow opacity-90">TOP</span>
-                  <span className="text-white text-[13px] font-black tracking-wider drop-shadow leading-none">랭킹</span>
-                  <div className="flex gap-1 mt-1">
-                    {["1", "2", "3"].map((n) => (
-                      <span key={n} className="w-4 h-4 rounded-full bg-white/30 text-white text-[9px] font-black flex items-center justify-center drop-shadow">{n}</span>
-                    ))}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 pb-2 flex justify-center">
-                  <span className="text-white text-xs font-bold tracking-wider drop-shadow">{item.label}</span>
-                </div>
-              </>
-            )}
+                </>
+              )}
+            </div>
+            <span className="text-[11px] font-semibold text-[#111] tracking-tight">{item.label}</span>
           </Link>
         ))}
       </div>
