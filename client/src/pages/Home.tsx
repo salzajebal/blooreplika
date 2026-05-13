@@ -135,76 +135,58 @@ function MainBannerSlider() {
   );
 }
 
-const QUICK_MENU_ITEMS = [
-  { label: "SHOP", path: "/products", icon: ShoppingBag, color: "#111111" },
-  { label: "랭킹", path: "/ranking", icon: Trophy, color: "#FF6100" },
-  { label: "기획전", path: "/events", icon: Flame, color: "#FF6100" },
-  { label: "브랜드", path: "/brands", icon: Tag, color: "#111111" },
-  { label: "할인상품", path: "/products/discount", icon: Package, color: "#e53e3e" },
-  { label: "리뷰", path: "/reviews", icon: MessageSquare, color: "#111111", badge: "리뷰" },
-  { label: "신상품", path: "/products/new", icon: Star, color: "#FF6100" },
-  { label: "시계", path: "/products/watches", icon: Watch, color: "#111111" },
-  { label: "쥬얼리", path: "/products/jewelry", icon: Gem, color: "#111111" },
-  { label: "이벤트", path: "/events", icon: Calendar, color: "#8B5CF6" },
+const CATEGORY_STRIP_ITEMS = [
+  {
+    label: "남성",
+    path: "/products?gender=%EB%82%A8%EC%84%B1",
+    image: "https://images.unsplash.com/photo-1617127365659-c47fa864d8bc?w=300&q=80",
+  },
+  {
+    label: "여성",
+    path: "/products?gender=%EC%97%AC%EC%84%B1",
+    image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=300&q=80",
+  },
+  {
+    label: "SHOP",
+    path: "/products",
+    image: "https://images.unsplash.com/photo-1607082349566-187342175e2f?w=300&q=80",
+  },
+  {
+    label: "랭킹",
+    path: "/ranking",
+    image: "https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?w=300&q=80",
+  },
+  {
+    label: "리뷰",
+    path: "/reviews",
+    image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=300&q=80",
+  },
 ];
 
-function QuickMenuSection() {
-  const { data: quickMenuData } = useQuery({
-    queryKey: ["/api/quick-menu"],
-    queryFn: async () => {
-      const res = await fetch("/api/quick-menu");
-      const data = await res.json();
-      return data.success && data.data?.length > 0 ? data.data : null;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const items = quickMenuData
-    ? quickMenuData.slice(0, 10).map((item: any) => ({
-        label: item.name,
-        path: item.linkUrl || "/products",
-        imageUrl: item.imageUrl,
-      }))
-    : null;
-
+function CategoryStripSection() {
   return (
-    <section className="bg-white py-4 border-b border-gray-100" data-testid="quick-menu-section">
-      <div className="grid grid-cols-5 gap-0">
-        {(items || QUICK_MENU_ITEMS).map((item: any, idx: number) => {
-          const IconComponent = item.icon;
-          return (
-            <Link
-              key={idx}
-              href={item.path}
-              className="flex flex-col items-center gap-1.5 py-3 px-1 hover:bg-gray-50 transition-colors touch-manipulation"
-              data-testid={`quick-menu-${idx}`}
-            >
-              <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative">
-                {item.imageUrl ? (
-                  <img
-                    src={item.imageUrl.startsWith("/objects/") ? item.imageUrl : item.imageUrl}
-                    alt={item.label}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = "none";
-                    }}
-                    loading="lazy"
-                  />
-                ) : IconComponent ? (
-                  <IconComponent className="w-6 h-6" style={{ color: item.color || "#111111" }} />
-                ) : (
-                  <span className="text-xl">🛍️</span>
-                )}
-                {item.badge && (
-                  <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">
-                    {item.badge}
-                  </span>
-                )}
-              </div>
-              <span className="text-[11px] text-gray-600 font-medium text-center leading-tight">{item.label}</span>
-            </Link>
-          );
-        })}
+    <section className="bg-white border-b border-gray-100" data-testid="category-strip-section">
+      <div className="flex">
+        {CATEGORY_STRIP_ITEMS.map((item, idx) => (
+          <Link
+            key={idx}
+            href={item.path}
+            className="flex-1 relative overflow-hidden touch-manipulation"
+            style={{ aspectRatio: "1/1.3" }}
+            data-testid={`category-strip-${idx}`}
+          >
+            <img
+              src={item.image}
+              alt={item.label}
+              className="absolute inset-0 w-full h-full object-cover"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 pb-2 flex justify-center">
+              <span className="text-white text-xs font-bold tracking-wider drop-shadow">{item.label}</span>
+            </div>
+          </Link>
+        ))}
       </div>
     </section>
   );
@@ -212,16 +194,21 @@ function QuickMenuSection() {
 
 function RankingSection() {
   const [genderFilter, setGenderFilter] = useState<"전체" | "남성" | "여성">("전체");
-  const [ageFilter, setAgeFilter] = useState<"20대" | "30대" | "40대">("20대");
 
   const { data: productsData } = useQuery({
-    queryKey: ["/api/products/ranking", genderFilter, ageFilter],
+    queryKey: ["/api/products/ranking-home", genderFilter],
     queryFn: async () => {
-      let url = "/api/products?limit=10&sort=popular";
+      let url = "/api/products?limit=10&isBest=true";
       if (genderFilter !== "전체") url += `&gender=${encodeURIComponent(genderFilter)}`;
       const res = await fetch(url);
       const data = await res.json();
-      return data.success ? data.data : [];
+      if (data.success && data.data?.length > 0) return data.data;
+      // fallback: without isBest filter
+      let fallback = "/api/products?limit=10";
+      if (genderFilter !== "전체") fallback += `&gender=${encodeURIComponent(genderFilter)}`;
+      const fb = await fetch(fallback);
+      const fbData = await fb.json();
+      return fbData.success ? fbData.data : [];
     },
     staleTime: 60000,
   });
@@ -248,8 +235,8 @@ function RankingSection() {
       <div className="px-4 py-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-gray-900">실시간 전체 랭킹 TOP 10</h2>
-            <span className="text-lg">🏆</span>
+            <Trophy className="w-4 h-4 text-[#FF6100]" />
+            <h2 className="text-base font-bold text-gray-900">실시간 베스트 TOP 10</h2>
           </div>
           <Link href="/ranking" className="text-xs text-gray-400 hover:text-gray-600 font-medium">
             더 보기
@@ -257,70 +244,64 @@ function RankingSection() {
         </div>
 
         {/* Gender filter */}
-        <div className="flex gap-2 mb-3">
+        <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1 w-fit mb-4">
           {(["전체", "남성", "여성"] as const).map((g) => (
             <button
               key={g}
               onClick={() => setGenderFilter(g)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              className={`px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 genderFilter === g
-                  ? "bg-black text-white"
-                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-400 hover:text-gray-600"
               }`}
+              data-testid={`home-ranking-gender-${g}`}
             >
-              {g === "전체" ? "남성 랭킹" : g === "남성" ? "여성 랭킹" : "20대"}
-            </button>
-          ))}
-          {(["20대", "30대", "40대"] as const).map((a) => (
-            <button
-              key={a}
-              onClick={() => setAgeFilter(a)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                ageFilter === a
-                  ? "bg-[#FF6100] text-white"
-                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-              }`}
-            >
-              {a}
+              {g}
             </button>
           ))}
         </div>
 
         {/* Product list */}
-        <div className="space-y-0">
-          {products.slice(0, 10).map((product: any, idx: number) => (
-            <Link
-              key={product.id}
-              href={`/product/${product.id}`}
-              className="flex items-center gap-3 py-3 border-b border-gray-50 hover:bg-gray-50 -mx-4 px-4 transition-colors"
-              data-testid={`ranking-product-${product.id}`}
-            >
-              <span className={`text-base font-black w-6 text-center flex-shrink-0 ${idx < 3 ? "text-[#FF6100]" : "text-gray-300"}`}>
-                {idx + 1}
-              </span>
-              <div className="w-14 h-14 flex-shrink-0 bg-gray-100 overflow-hidden rounded">
-                <img
-                  src={getProxiedImageUrl(product.imageUrl, "thumb")}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-                  loading="lazy"
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[11px] text-[#FF6100] font-bold uppercase tracking-wide truncate">
-                  {getBrandName(product.brandId)}
-                </p>
-                <p className="text-xs text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
-                <p className="text-sm font-bold text-gray-900 mt-0.5">
-                  {Number(product.price).toLocaleString()}원
-                </p>
-              </div>
-              {product.isNew && (
-                <span className="flex-shrink-0 bg-black text-white text-[10px] font-bold px-1.5 py-0.5 rounded">NEW</span>
-              )}
-            </Link>
-          ))}
+        <div>
+          {products.length === 0 ? (
+            <div className="py-8 text-center text-gray-300 text-sm">상품을 불러오는 중...</div>
+          ) : (
+            products.slice(0, 10).map((product: any, idx: number) => (
+              <Link
+                key={product.id}
+                href={`/product/${product.id}`}
+                className="flex items-center gap-3 py-3 border-b border-gray-50 hover:bg-gray-50 -mx-4 px-4 transition-colors"
+                data-testid={`ranking-product-${product.id}`}
+              >
+                <span className={`text-base font-black w-6 text-center flex-shrink-0 ${
+                  idx === 0 ? "text-[#FF6100]" : idx < 3 ? "text-gray-500" : "text-gray-200"
+                }`}>
+                  {idx + 1}
+                </span>
+                <div className="w-14 h-14 flex-shrink-0 bg-gray-100 overflow-hidden rounded border border-gray-100">
+                  <img
+                    src={getProxiedImageUrl(product.imageUrl, "thumb")}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                    loading="lazy"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[11px] text-[#FF6100] font-bold uppercase tracking-wide truncate">
+                    {getBrandName(product.brandId)}
+                  </p>
+                  <p className="text-xs text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
+                  <p className="text-sm font-bold text-gray-900 mt-0.5">
+                    {Number(product.price).toLocaleString()}원
+                  </p>
+                </div>
+                {idx === 0 && (
+                  <span className="flex-shrink-0 bg-[#FF6100] text-white text-[10px] font-bold px-1.5 py-0.5 rounded">1위</span>
+                )}
+              </Link>
+            ))
+          )}
         </div>
       </div>
     </section>
@@ -626,7 +607,7 @@ export default function Home() {
       <Header />
       <main className="flex-1 max-w-[640px] w-full mx-auto bg-white">
         <MainBannerSlider />
-        <QuickMenuSection />
+        <CategoryStripSection />
         <RankingSection />
         <TopBrandSection />
         <NewProductsSection />

@@ -5,9 +5,10 @@ import { useState, useEffect } from "react";
 
 const NAV_TABS = [
   { label: "메인", path: "/" },
-  { label: "SHOP", path: "/products", badge: false },
+  { label: "SHOP", path: "/products" },
   { label: "STYLE", path: "/magazine", badge: true },
-  { label: "리뷰", path: "/reviews", badge: false },
+  { label: "랭킹", path: "/ranking" },
+  { label: "리뷰", path: "/reviews" },
 ];
 
 const SIDE_MENU_EXTRA = [
