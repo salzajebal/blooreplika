@@ -36,57 +36,35 @@
 }
 
 :root {
-  --background: 0 0% 6%;
-  --foreground: 0 0% 94%;
+  --background: 0 0% 100%;
+  --foreground: 0 0% 7%;
 
-  --card: 0 0% 11%;
-  --card-foreground: 0 0% 94%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 7%;
 
-  --popover: 0 0% 11%;
-  --popover-foreground: 0 0% 94%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 7%;
 
-  --primary: 0 0% 94%;
-  --primary-foreground: 0 0% 6%;
+  --primary: 0 0% 7%;
+  --primary-foreground: 0 0% 100%;
 
-  --secondary: 0 0% 15%;
-  --secondary-foreground: 0 0% 94%;
+  --secondary: 0 0% 96%;
+  --secondary-foreground: 0 0% 7%;
 
-  --muted: 0 0% 15%;
-  --muted-foreground: 0 0% 53%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 40%;
 
-  --accent: 38 45% 61%;
-  --accent-foreground: 0 0% 6%;
+  --accent: 22 100% 49%;
+  --accent-foreground: 0 0% 100%;
 
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 0 0% 17%;
-  --input: 0 0% 17%;
-  --ring: 38 45% 61%;
+  --border: 0 0% 91%;
+  --input: 0 0% 91%;
+  --ring: 22 100% 49%;
 
-  --radius: 0rem;
-}
-
-.dark {
-  --background: 0 0% 10%;
-  --foreground: 0 0% 98%;
-  --card: 0 0% 12%;
-  --card-foreground: 0 0% 98%;
-  --popover: 0 0% 12%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 0 0% 10%;
-  --secondary: 0 0% 15%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 0 0% 15%;
-  --muted-foreground: 0 0% 65%;
-  --accent: 0 0% 15%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 20%;
-  --input: 0 0% 20%;
-  --ring: 0 0% 98%;
+  --radius: 0.5rem;
 }
 
 @layer base {
@@ -107,6 +85,8 @@
     overflow-x: hidden;
     min-height: 100vh;
     min-height: 100dvh;
+    background-color: #ffffff;
+    color: #111111;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -117,7 +97,7 @@
 
 @layer utilities {
   .container-custom {
-    @apply max-w-[1200px] mx-auto px-3 sm:px-4;
+    @apply max-w-[640px] mx-auto px-3 sm:px-4;
     width: 100%;
   }
   
@@ -150,6 +130,14 @@
   
   .break-keep {
     word-break: keep-all;
+  }
+
+  .duello-orange {
+    color: #FF6100;
+  }
+
+  .duello-bg-orange {
+    background-color: #FF6100;
   }
 }
 

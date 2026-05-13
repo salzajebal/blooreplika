@@ -2,50 +2,27 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, Search, ArrowUp, Star, Camera } from "lucide-react";
+import { ChevronLeft, ChevronRight, Star, ArrowUp, Trophy, ShoppingBag, Flame, Tag, Package, MessageSquare, Shirt, Watch, Gem, Calendar } from "lucide-react";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
-import { useState, useEffect, useRef, useCallback } from "react";
-
-function useScrollReveal(threshold = 0.12) {
-  const ref = useRef<HTMLElement>(null);
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
-      { threshold }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [threshold]);
-  return { ref, visible };
-}
+import { useState, useEffect, useRef } from "react";
 
 function FloatingButtons() {
   const [showScrollTop, setShowScrollTop] = useState(false);
-
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 400);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   if (!showScrollTop) return null;
-
   return (
-    <div className="fixed right-3 md:right-5 bottom-32 md:bottom-28 z-40 flex flex-col gap-2.5">
+    <div className="fixed right-4 bottom-24 z-40">
       <button
-        onClick={scrollToTop}
-        className="w-11 h-11 md:w-12 md:h-12 bg-[#1a1a1a] border border-[#333333] rounded-full shadow-lg flex items-center justify-center text-[#888888] hover:text-white hover:border-[#c9a96e] transition-all hover:scale-105"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        className="w-11 h-11 bg-white border border-gray-200 rounded-full shadow-lg flex items-center justify-center text-gray-500 hover:text-gray-800 hover:border-gray-400 transition-all"
         data-testid="floating-scroll-top"
         aria-label="맨 위로"
       >
-        <ArrowUp className="w-5 h-5 md:w-6 md:h-6" />
+        <ArrowUp className="w-5 h-5" />
       </button>
     </div>
   );
@@ -53,14 +30,15 @@ function FloatingButtons() {
 
 function MainBannerSlider() {
   const [currentSlide, setCurrentSlide] = useState(0);
-  
+  const touchStartX = useRef(0);
+
   const { data: banners } = useQuery({
-    queryKey: ['/api/banners'],
+    queryKey: ["/api/banners"],
     queryFn: async () => {
-      const res = await fetch('/api/banners');
+      const res = await fetch("/api/banners");
       const data = await res.json();
       return data.success ? data.data : [];
-    }
+    },
   });
 
   const bannerList = banners && banners.length > 0 ? banners : [];
@@ -75,9 +53,11 @@ function MainBannerSlider() {
 
   if (bannerList.length === 0) {
     return (
-      <section className="w-full bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900">
-        <div className="max-w-[1200px] mx-auto px-4 py-16 md:py-24 text-center">
-          <p className="text-white/60 text-sm">관리자 페이지에서 배너를 등록해주세요</p>
+      <section className="w-full bg-gradient-to-br from-gray-100 to-gray-200 aspect-[4/3] flex items-end">
+        <div className="p-6">
+          <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">velour</p>
+          <h2 className="text-2xl font-bold text-gray-700">럭셔리 브랜드 컬렉션</h2>
+          <p className="text-sm text-gray-500 mt-1">가장 빠른 신상품</p>
         </div>
       </section>
     );
@@ -85,141 +65,405 @@ function MainBannerSlider() {
 
   return (
     <section className="relative w-full overflow-hidden" data-testid="main-banner">
-      <div className="relative w-full overflow-hidden">
-        <div 
-          className="flex transition-transform duration-500 ease-in-out"
-          style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-        >
-          {bannerList.map((banner: any, index: number) => (
-            <div key={index} className="w-full flex-shrink-0 relative">
-              <Link href={banner.linkUrl || "/products"} className="block w-full">
-                <div className="block md:hidden leading-[0]">
-                  <img 
-                    src={banner.imageUrl}
-                    alt={banner.title || `배너 ${index + 1}`}
-                    className="w-full h-auto block"
-                    loading="eager"
-                  />
+      <div
+        className="flex transition-transform duration-500 ease-in-out"
+        style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+        onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+        onTouchEnd={(e) => {
+          const diff = touchStartX.current - e.changedTouches[0].clientX;
+          if (Math.abs(diff) > 50) {
+            if (diff > 0) setCurrentSlide((p) => (p + 1) % bannerList.length);
+            else setCurrentSlide((p) => (p === 0 ? bannerList.length - 1 : p - 1));
+          }
+        }}
+      >
+        {bannerList.map((banner: any, index: number) => (
+          <div key={index} className="w-full flex-shrink-0 relative">
+            <Link href={banner.linkUrl || "/products"} className="block w-full">
+              <img
+                src={banner.imageUrl}
+                alt={banner.title || `배너 ${index + 1}`}
+                className="w-full h-auto block"
+                loading="eager"
+              />
+              {(banner.title || banner.subtitle) && (
+                <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black/60 to-transparent">
+                  {banner.subtitle && (
+                    <p className="text-xs text-white/80 uppercase tracking-widest mb-1">{banner.subtitle}</p>
+                  )}
+                  {banner.title && (
+                    <h2 className="text-xl font-bold text-white">{banner.title}</h2>
+                  )}
+                  <p className="text-sm text-white/70 mt-0.5">가장 빠른 신상품</p>
                 </div>
-                <div className="hidden md:block relative overflow-hidden" style={{ height: '480px' }}>
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      backgroundImage: `url(${banner.imageUrl})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      filter: 'blur(30px) brightness(0.7)',
-                      transform: 'scale(1.2)',
-                    }}
-                  />
-                  <div className="relative h-full flex items-center justify-center">
-                    <img 
-                      src={banner.imageUrl}
-                      alt={banner.title || `배너 ${index + 1}`}
-                      className="h-full w-auto max-w-none object-contain"
-                      loading="eager"
-                    />
-                  </div>
-                </div>
-              </Link>
-            </div>
-          ))}
-        </div>
+              )}
+            </Link>
+          </div>
+        ))}
       </div>
-      
+
       {bannerList.length > 1 && (
         <>
-          <button 
-            onClick={() => setCurrentSlide((prev) => (prev === 0 ? bannerList.length - 1 : prev - 1))}
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 md:w-10 md:h-10 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white shadow-sm z-10"
+          <button
+            onClick={() => setCurrentSlide((p) => (p === 0 ? bannerList.length - 1 : p - 1))}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow z-10"
             aria-label="이전"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-4 h-4 text-gray-700" />
           </button>
-          <button 
-            onClick={() => setCurrentSlide((prev) => (prev + 1) % bannerList.length)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 md:w-10 md:h-10 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white shadow-sm z-10"
+          <button
+            onClick={() => setCurrentSlide((p) => (p + 1) % bannerList.length)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow z-10"
             aria-label="다음"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4 text-gray-700" />
           </button>
-          
+
+          {/* Dots */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+            {bannerList.map((_: any, i: number) => (
+              <button
+                key={i}
+                onClick={() => setCurrentSlide(i)}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${i === currentSlide ? "bg-white w-4" : "bg-white/50"}`}
+              />
+            ))}
+          </div>
         </>
       )}
     </section>
   );
 }
 
+const QUICK_MENU_ITEMS = [
+  { label: "SHOP", path: "/products", icon: ShoppingBag, color: "#111111" },
+  { label: "랭킹", path: "/ranking", icon: Trophy, color: "#FF6100" },
+  { label: "기획전", path: "/events", icon: Flame, color: "#FF6100" },
+  { label: "브랜드", path: "/brands", icon: Tag, color: "#111111" },
+  { label: "할인상품", path: "/products/discount", icon: Package, color: "#e53e3e" },
+  { label: "리뷰", path: "/reviews", icon: MessageSquare, color: "#111111", badge: "리뷰" },
+  { label: "신상품", path: "/products/new", icon: Star, color: "#FF6100" },
+  { label: "시계", path: "/products/watches", icon: Watch, color: "#111111" },
+  { label: "쥬얼리", path: "/products/jewelry", icon: Gem, color: "#111111" },
+  { label: "이벤트", path: "/events", icon: Calendar, color: "#8B5CF6" },
+];
 
-function maskName(name: string): string {
-  if (!name) return "익명";
-  if (name.length <= 2) return name[0] + "*";
-  return name[0] + "*".repeat(name.length - 2) + name[name.length - 1];
-}
-
-function toReviewProxyUrl(url: string): string {
-  if (!url) return url;
-  if (url.includes('cdn.imweb.me') || (url.includes('bloostore.co.kr') && !url.startsWith('/'))) {
-    return `/api/bloostore-image-proxy?url=${encodeURIComponent(url)}`;
-  }
-  return url;
-}
-
-function HomeReviewsSection() {
-  const rowRef = useRef<HTMLDivElement>(null);
-  const isDragging = useRef(false);
-  const startX = useRef(0);
-  const scrollLeft = useRef(0);
-  const hasDragged = useRef(false);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-
-  const updateArrows = useCallback(() => {
-    const el = rowRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 8);
-    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 8);
-  }, []);
-
-  useEffect(() => {
-    const el = rowRef.current;
-    if (!el) return;
-    updateArrows();
-    el.addEventListener("scroll", updateArrows, { passive: true });
-    const ro = new ResizeObserver(updateArrows);
-    ro.observe(el);
-    return () => { el.removeEventListener("scroll", updateArrows); ro.disconnect(); };
-  }, [updateArrows]);
-
-  const onMouseDown = (e: React.MouseEvent) => {
-    if (!rowRef.current) return;
-    isDragging.current = true;
-    hasDragged.current = false;
-    startX.current = e.pageX - rowRef.current.offsetLeft;
-    scrollLeft.current = rowRef.current.scrollLeft;
-    rowRef.current.style.cursor = "grabbing";
-  };
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging.current || !rowRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - rowRef.current.offsetLeft;
-    const walk = (x - startX.current) * 1.2;
-    if (Math.abs(walk) > 4) hasDragged.current = true;
-    rowRef.current.scrollLeft = scrollLeft.current - walk;
-  };
-  const onMouseUp = () => {
-    isDragging.current = false;
-    if (rowRef.current) rowRef.current.style.cursor = "grab";
-  };
-  const scroll = (dir: "left" | "right") => {
-    if (!rowRef.current) return;
-    rowRef.current.scrollBy({ left: dir === "right" ? 320 : -320, behavior: "smooth" });
-  };
-
-  const { data: reviewsData } = useQuery({
-    queryKey: ['/api/reviews/home-preview'],
+function QuickMenuSection() {
+  const { data: quickMenuData } = useQuery({
+    queryKey: ["/api/quick-menu"],
     queryFn: async () => {
-      const res = await fetch('/api/reviews?limit=20&photoOnly=true');
+      const res = await fetch("/api/quick-menu");
+      const data = await res.json();
+      return data.success && data.data?.length > 0 ? data.data : null;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const items = quickMenuData
+    ? quickMenuData.slice(0, 10).map((item: any) => ({
+        label: item.name,
+        path: item.linkUrl || "/products",
+        imageUrl: item.imageUrl,
+      }))
+    : null;
+
+  return (
+    <section className="bg-white py-4 border-b border-gray-100" data-testid="quick-menu-section">
+      <div className="grid grid-cols-5 gap-0">
+        {(items || QUICK_MENU_ITEMS).map((item: any, idx: number) => {
+          const IconComponent = item.icon;
+          return (
+            <Link
+              key={idx}
+              href={item.path}
+              className="flex flex-col items-center gap-1.5 py-3 px-1 hover:bg-gray-50 transition-colors touch-manipulation"
+              data-testid={`quick-menu-${idx}`}
+            >
+              <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative">
+                {item.imageUrl ? (
+                  <img
+                    src={item.imageUrl.startsWith("/objects/") ? item.imageUrl : item.imageUrl}
+                    alt={item.label}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                    loading="lazy"
+                  />
+                ) : IconComponent ? (
+                  <IconComponent className="w-6 h-6" style={{ color: item.color || "#111111" }} />
+                ) : (
+                  <span className="text-xl">🛍️</span>
+                )}
+                {item.badge && (
+                  <span className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">
+                    {item.badge}
+                  </span>
+                )}
+              </div>
+              <span className="text-[11px] text-gray-600 font-medium text-center leading-tight">{item.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function RankingSection() {
+  const [genderFilter, setGenderFilter] = useState<"전체" | "남성" | "여성">("전체");
+  const [ageFilter, setAgeFilter] = useState<"20대" | "30대" | "40대">("20대");
+
+  const { data: productsData } = useQuery({
+    queryKey: ["/api/products/ranking", genderFilter, ageFilter],
+    queryFn: async () => {
+      let url = "/api/products?limit=10&sort=popular";
+      if (genderFilter !== "전체") url += `&gender=${encodeURIComponent(genderFilter)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      return data.success ? data.data : [];
+    },
+    staleTime: 60000,
+  });
+
+  const { data: brandsData } = useQuery({
+    queryKey: ["/api/brands"],
+    queryFn: async () => {
+      const res = await fetch("/api/brands?limit=200");
+      const data = await res.json();
+      return data.success ? data.data : [];
+    },
+    staleTime: 600000,
+  });
+
+  const getBrandName = (brandId: string) => {
+    const brand = (brandsData || []).find((b: any) => b.id === brandId);
+    return brand?.name?.toUpperCase() || "";
+  };
+
+  const products: any[] = productsData || [];
+
+  return (
+    <section className="bg-white border-b border-gray-100" data-testid="ranking-section">
+      <div className="px-4 py-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-bold text-gray-900">실시간 전체 랭킹 TOP 10</h2>
+            <span className="text-lg">🏆</span>
+          </div>
+          <Link href="/ranking" className="text-xs text-gray-400 hover:text-gray-600 font-medium">
+            더 보기
+          </Link>
+        </div>
+
+        {/* Gender filter */}
+        <div className="flex gap-2 mb-3">
+          {(["전체", "남성", "여성"] as const).map((g) => (
+            <button
+              key={g}
+              onClick={() => setGenderFilter(g)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                genderFilter === g
+                  ? "bg-black text-white"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+            >
+              {g === "전체" ? "남성 랭킹" : g === "남성" ? "여성 랭킹" : "20대"}
+            </button>
+          ))}
+          {(["20대", "30대", "40대"] as const).map((a) => (
+            <button
+              key={a}
+              onClick={() => setAgeFilter(a)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                ageFilter === a
+                  ? "bg-[#FF6100] text-white"
+                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+              }`}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+
+        {/* Product list */}
+        <div className="space-y-0">
+          {products.slice(0, 10).map((product: any, idx: number) => (
+            <Link
+              key={product.id}
+              href={`/product/${product.id}`}
+              className="flex items-center gap-3 py-3 border-b border-gray-50 hover:bg-gray-50 -mx-4 px-4 transition-colors"
+              data-testid={`ranking-product-${product.id}`}
+            >
+              <span className={`text-base font-black w-6 text-center flex-shrink-0 ${idx < 3 ? "text-[#FF6100]" : "text-gray-300"}`}>
+                {idx + 1}
+              </span>
+              <div className="w-14 h-14 flex-shrink-0 bg-gray-100 overflow-hidden rounded">
+                <img
+                  src={getProxiedImageUrl(product.imageUrl, "thumb")}
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                  loading="lazy"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] text-[#FF6100] font-bold uppercase tracking-wide truncate">
+                  {getBrandName(product.brandId)}
+                </p>
+                <p className="text-xs text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
+                <p className="text-sm font-bold text-gray-900 mt-0.5">
+                  {Number(product.price).toLocaleString()}원
+                </p>
+              </div>
+              {product.isNew && (
+                <span className="flex-shrink-0 bg-black text-white text-[10px] font-bold px-1.5 py-0.5 rounded">NEW</span>
+              )}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TopBrandSection() {
+  const { data: topBrandsData } = useQuery({
+    queryKey: ["/api/brands/top"],
+    queryFn: async () => {
+      const res = await fetch("/api/brands/top?limit=12");
+      const data = await res.json();
+      return data.success ? data.data : [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const brands: any[] = topBrandsData || [];
+  if (brands.length === 0) return null;
+
+  return (
+    <section className="bg-white border-b border-gray-100 py-5" data-testid="top-brand-section">
+      <div className="px-4 mb-3 flex items-center justify-between">
+        <h2 className="text-base font-bold text-gray-900">🔥 인기 브랜드</h2>
+        <Link href="/brands" className="text-xs text-gray-400 hover:text-gray-600 font-medium">더 보기</Link>
+      </div>
+      <div className="grid grid-cols-4 gap-3 px-4">
+        {brands.slice(0, 8).map((brand: any) => (
+          <Link
+            key={brand.id}
+            href={`/products?brand=${encodeURIComponent(brand.id)}`}
+            className="flex flex-col items-center group"
+            data-testid={`top-brand-${brand.id}`}
+          >
+            <div className="w-full aspect-square bg-gray-50 border border-gray-200 rounded-xl overflow-hidden flex items-center justify-center p-2 group-hover:border-[#FF6100] transition-colors">
+              {brand.representativeImage ? (
+                <img
+                  src={getProxiedImageUrl(brand.representativeImage, "thumb")}
+                  alt={brand.name}
+                  className="max-w-full max-h-full object-contain"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                  loading="lazy"
+                />
+              ) : (
+                <span className="text-[9px] text-gray-400 text-center font-medium leading-tight">{brand.name}</span>
+              )}
+            </div>
+            <span className="text-[10px] text-gray-500 mt-1.5 text-center font-medium truncate w-full group-hover:text-[#FF6100] transition-colors">
+              {brand.name}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function NewProductsSection() {
+  const { data: productsData } = useQuery({
+    queryKey: ["/api/products/new-home"],
+    queryFn: async () => {
+      const res = await fetch("/api/products?limit=6&categoryId=new");
+      const data = await res.json();
+      return data.success ? data.data : [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: brandsData } = useQuery({
+    queryKey: ["/api/brands"],
+    queryFn: async () => {
+      const res = await fetch("/api/brands?limit=200");
+      const data = await res.json();
+      return data.success ? data.data : [];
+    },
+    staleTime: 600000,
+  });
+
+  const products: any[] = productsData || [];
+  if (products.length === 0) return null;
+
+  const getBrandName = (brandId: string) => {
+    const brand = (brandsData || []).find((b: any) => b.id === brandId);
+    return brand?.name?.toUpperCase() || "";
+  };
+
+  return (
+    <section className="bg-white border-b border-gray-100 py-5" data-testid="new-products-section">
+      <div className="px-4 mb-3 flex items-center justify-between">
+        <h2 className="text-base font-bold text-gray-900">✨ 신상품</h2>
+        <Link href="/products/new" className="text-xs text-gray-400 hover:text-gray-600 font-medium">더 보기</Link>
+      </div>
+      <div className="grid grid-cols-2 gap-px bg-gray-100">
+        {products.slice(0, 6).map((product: any) => (
+          <Link
+            key={product.id}
+            href={`/product/${product.id}`}
+            className="bg-white group block"
+            data-testid={`new-product-${product.id}`}
+          >
+            <div className="relative aspect-square bg-gray-50 overflow-hidden">
+              <img
+                src={getProxiedImageUrl(product.imageUrl, "medium")}
+                alt={product.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                loading="lazy"
+              />
+              <div className="absolute top-2 left-2 flex gap-1">
+                {product.isNew && (
+                  <span className="bg-black text-white text-[10px] font-bold px-1.5 py-0.5">NEW</span>
+                )}
+                {product.isBest && (
+                  <span className="bg-[#FF6100] text-white text-[10px] font-bold px-1.5 py-0.5">인기</span>
+                )}
+              </div>
+            </div>
+            <div className="p-3">
+              <p className="text-[11px] text-[#FF6100] font-bold uppercase tracking-wide truncate">
+                {getBrandName(product.brandId)}
+              </p>
+              <p className="text-xs text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
+              {product.discountPercent > 0 && (
+                <p className="text-[10px] text-gray-400 line-through mt-1">
+                  매장가 {Number(product.price).toLocaleString()}원대
+                </p>
+              )}
+              <p className="text-sm font-bold text-gray-900 mt-0.5">
+                즉시구매가 {Number(product.price).toLocaleString()}원
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ReviewsSection() {
+  const { data: reviewsData } = useQuery({
+    queryKey: ["/api/reviews/home"],
+    queryFn: async () => {
+      const res = await fetch("/api/reviews?limit=6&photoOnly=true");
       const data = await res.json();
       return data.success ? data.data : [];
     },
@@ -229,467 +473,74 @@ function HomeReviewsSection() {
   const reviews: any[] = reviewsData || [];
   if (reviews.length === 0) return null;
 
+  const maskName = (name: string) => {
+    if (!name) return "익명";
+    if (name.length <= 2) return name[0] + "*";
+    return name[0] + "*".repeat(name.length - 2) + name[name.length - 1];
+  };
+
   return (
-    <section className="bg-[#0a0a0a] py-10 md:py-16" data-testid="home-reviews-section">
-      <div className="max-w-[1200px] mx-auto px-4">
-        <h2 className="text-center text-2xl md:text-3xl font-bold tracking-widest uppercase mb-2 text-white">
-          REVIEW
-        </h2>
-        <p className="text-center text-sm text-[#999999] mb-6 md:mb-10">고객님들의 솔직한 후기</p>
-
-        <div className="relative">
-          {canScrollLeft && (
-            <button
-              onClick={() => scroll("left")}
-              className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-[#1a1a1a] border border-[#333333] shadow items-center justify-center text-[#888888] hover:text-white hover:border-[#c9a96e] transition-all -translate-x-5"
-              aria-label="이전"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-          )}
-          {canScrollRight && (
-            <button
-              onClick={() => scroll("right")}
-              className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-10 h-10 bg-[#1a1a1a] border border-[#333333] shadow items-center justify-center text-[#888888] hover:text-white hover:border-[#c9a96e] transition-all translate-x-5"
-              aria-label="다음"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          )}
-
-          <div
-            ref={rowRef}
-            className="flex gap-4 md:gap-5 overflow-x-auto pb-2 select-none"
-            style={{ WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", cursor: "grab" }}
-            onMouseDown={onMouseDown}
-            onMouseMove={onMouseMove}
-            onMouseUp={onMouseUp}
-            onMouseLeave={onMouseUp}
-          >
-            {reviews.map((review: any, idx: number) => {
-              const thumb = review.imageUrls?.length > 0
-                ? toReviewProxyUrl(review.imageUrls[0])
-                : review.imageUrl
-                  ? toReviewProxyUrl(review.imageUrl)
-                  : review.productImageUrl || null;
-
-              return (
-                <Link
-                  key={review.id}
-                  href="/reviews"
-                  draggable={false}
-                  onClick={(e) => { if (hasDragged.current) e.preventDefault(); }}
-                  className="flex-shrink-0 w-[170px] sm:w-[220px] md:w-[260px] group block bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#c9a96e] transition-all duration-200"
-                  data-testid={`home-review-${review.id}`}
-                >
-                  <div className="relative aspect-[4/3] overflow-hidden bg-[#111111]">
-                    {thumb ? (
-                      <img
-                        src={thumb}
-                        alt="후기 사진"
-                        draggable={false}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-[#111111]">
-                        <Camera className="w-8 h-8 text-[#333333]" />
-                      </div>
-                    )}
-                    <div className="absolute bottom-2 left-2">
-                      <span className="text-4xl font-black text-white/80 leading-none" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>
-                        {idx + 1}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-3">
-                    {review.productName && (
-                      <p className="text-[11px] text-[#999999] mb-0.5 truncate">({review.productName})</p>
-                    )}
-                    <p className="text-sm font-bold text-[#f0f0f0] line-clamp-2 leading-snug">{review.content || review.title}</p>
-                    <div className="flex items-center gap-0.5 mt-2">
-                      {[1,2,3,4,5].map(s => (
-                        <Star key={s} className={`w-3 h-3 ${s <= (review.rating || 5) ? "fill-yellow-400 text-yellow-400" : "fill-[#333333] text-[#333333]"}`} />
-                      ))}
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-          {canScrollRight && (
-            <div className="md:hidden absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-[#0a0a0a]/80 to-transparent pointer-events-none" />
-          )}
+    <section className="bg-white border-b border-gray-100 py-5" data-testid="home-reviews-section">
+      <div className="px-4 mb-3 flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-bold text-gray-900">고객 리뷰</h2>
+          <p className="text-[11px] text-gray-400 mt-0.5">실제 구매 고객의 솔직한 후기</p>
         </div>
-
-        <p className="text-center text-xs text-[#444444] mt-4">↔ 손가락으로 좌우 스크롤해 주세요.</p>
-        <div className="text-center mt-6">
-          <Link
-            href="/reviews"
-            className="inline-block px-10 py-2.5 border border-[#c9a96e] text-[#c9a96e] text-sm font-medium hover:bg-[#c9a96e] hover:text-black transition-colors tracking-widest"
-            data-testid="home-reviews-more"
-          >
-            More view
-          </Link>
-        </div>
+        <Link href="/reviews" className="text-xs text-gray-400 hover:text-gray-600 font-medium">더 보기</Link>
       </div>
-    </section>
-  );
-}
-
-function useSectionTitle(_key: string, defaultTitle: string, defaultSubtitle: string) {
-  return { title: defaultTitle, subtitle: defaultSubtitle };
-}
-
-function TopBrandSection() {
-  const { title, subtitle } = useSectionTitle("home_topBrand", "Top Brand", "인기 탑 브랜드");
-  const { data: topBrandsData } = useQuery({
-    queryKey: ['/api/brands/top'],
-    queryFn: async () => {
-      const res = await fetch('/api/brands/top?limit=15');
-      const data = await res.json();
-      return data.success ? data.data : [];
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const brandDisplayData = (topBrandsData || []).map((brand: any) => ({
-    name: brand.name,
-    displayImage: brand.representativeImage ? getProxiedImageUrl(brand.representativeImage, 'thumb') : '',
-    brandId: brand.id,
-    path: `/products?brand=${encodeURIComponent(brand.id)}`,
-  }));
-
-  return (
-    <section className="bg-[#0f0f0f] py-6 md:py-8 border-b border-[#1a1a1a]" data-testid="top-brand-section">
-      <div className="max-w-[1200px] mx-auto px-4">
-        <div className="mb-4">
-          <h2 className="text-xl md:text-2xl font-bold text-white">{title}</h2>
-          <p className="text-sm text-[#999999] mt-1">{subtitle}</p>
-        </div>
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 md:gap-3">
-          {brandDisplayData.slice(0, 15).map((brand: any) => (
+      <div className="flex gap-3 overflow-x-auto px-4 scrollbar-hide pb-1">
+        {reviews.map((review: any, idx: number) => {
+          const thumb = review.imageUrls?.[0] || review.imageUrl || review.productImageUrl;
+          return (
             <Link
-              key={brand.name}
-              href={brand.path}
-              className="flex flex-col items-center group"
-              data-testid={`top-brand-${brand.name}`}
+              key={review.id}
+              href="/reviews"
+              className="flex-shrink-0 w-40 group"
+              data-testid={`home-review-${review.id}`}
             >
-              <div className="w-full aspect-square overflow-hidden bg-white flex items-center justify-center p-3 border-2 border-[#888888] group-hover:border-[#c9a96e] transition-colors">
-                {brand.displayImage ? (
+              <div className="relative aspect-square bg-gray-100 rounded-xl overflow-hidden mb-2">
+                {thumb ? (
                   <img
-                    src={brand.displayImage}
-                    alt={brand.name}
-                    className="max-w-full max-h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    src={thumb}
+                    alt="후기"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
                     loading="lazy"
                   />
                 ) : (
-                  <span className="text-[#666666] text-xs text-center">{brand.name}</span>
-                )}
-              </div>
-              <span className="text-[10px] md:text-xs text-[#666666] mt-1.5 text-center group-hover:text-[#c9a96e] transition-colors">{brand.name}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ForYouSection({ products, brands }: { products: any[]; brands: any[] }) {
-  const { title: sectionTitle, subtitle: sectionSubtitle } = useSectionTitle("home_forYou", "For You", "고객님을 위해 준비해 봤어요.");
-  const [currentPage, setCurrentPage] = useState(0);
-
-  if (products.length === 0) return null;
-
-  const getBrandName = (brandId: string) => {
-    const brand = brands?.find((b: any) => b.id === brandId);
-    return brand?.name || 'BRAND';
-  };
-
-  const brandGroups: Record<string, any[]> = {};
-  products.forEach((p: any) => {
-    const brand = p.brandId || "BRAND";
-    if (!brandGroups[brand]) brandGroups[brand] = [];
-    brandGroups[brand].push(p);
-  });
-
-  const diversifyProducts = (items: any[], count: number): any[] => {
-    const categoryGroups: Record<string, any[]> = {};
-    items.forEach((item) => {
-      const cat = item.categoryId || item.subcategoryId || 'other';
-      if (!categoryGroups[cat]) categoryGroups[cat] = [];
-      categoryGroups[cat].push(item);
-    });
-    const categories = Object.keys(categoryGroups);
-    if (categories.length <= 1) return items.slice(0, count);
-    const result: any[] = [];
-    const usedIds = new Set<string>();
-    let catIndex = 0;
-    while (result.length < count && usedIds.size < items.length) {
-      const cat = categories[catIndex % categories.length];
-      const catItems = categoryGroups[cat];
-      const next = catItems.find((item: any) => !usedIds.has(String(item.id)));
-      if (next) {
-        usedIds.add(String(next.id));
-        result.push(next);
-      }
-      catIndex++;
-      if (catIndex >= categories.length * items.length) break;
-    }
-    return result;
-  };
-
-  const brandEntries: [string, any[]][] = Object.entries(brandGroups)
-    .filter(([, items]) => items.length >= 2)
-    .map(([brandId, items]) => [brandId, diversifyProducts(items, 6)]);
-
-  const pairsPerPage = 2;
-  const brandPairs: [string, any[]][][] = [];
-  for (let i = 0; i < brandEntries.length; i += pairsPerPage) {
-    brandPairs.push(brandEntries.slice(i, i + pairsPerPage));
-  }
-
-  const totalPages = brandPairs.length;
-
-  const goToPrev = () => {
-    setCurrentPage((prev) => (prev === 0 ? totalPages - 1 : prev - 1));
-  };
-  const goToNext = () => {
-    setCurrentPage((prev) => (prev + 1) % totalPages);
-  };
-
-  const currentPairs = brandPairs[currentPage] || [];
-
-  return (
-    <section className="bg-[#0f0f0f] py-10 md:py-14">
-      <div className="max-w-[1200px] mx-auto px-4">
-        <div className="flex items-end justify-between mb-6 md:mb-8 pb-5 border-b border-[#1a1a1a]">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-white">{sectionTitle}</h2>
-            <p className="text-sm md:text-base text-[#999999] mt-1.5">{sectionSubtitle}</p>
-          </div>
-          {totalPages > 1 && (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-[#999999]">{currentPage + 1} / {totalPages}</span>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={goToPrev}
-                  className="w-8 h-8 border border-[#333333] flex items-center justify-center hover:border-[#c9a96e] hover:text-[#c9a96e] transition-colors text-[#888888]"
-                  data-testid="foryou-prev"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={goToNext}
-                  className="w-8 h-8 border border-[#333333] flex items-center justify-center hover:border-[#c9a96e] hover:text-[#c9a96e] transition-colors text-[#888888]"
-                  data-testid="foryou-next"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
-          {currentPairs.map(([brandId, items]) => {
-            const brandName = getBrandName(brandId);
-            return (
-              <div key={brandId} className="border border-[#2a2a2a] bg-[#1a1a1a] p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Search className="w-4 h-4 text-[#999999]" />
-                    <span className="text-sm md:text-base text-[#888888]">지금 뜨는 <span className="text-[#c9a96e] font-bold">{brandName}</span> 의 인기상품</span>
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Star className="w-8 h-8 text-gray-300" />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                  {items.slice(0, 6).map((product: any) => (
-                    <div
-                      key={product.id}
-                      data-testid={`foryou-product-${product.id}`}
-                    >
-                      <Link href={`/product/${product.id}`} className="block group">
-                        <div className="relative aspect-square bg-[#111111] overflow-hidden mb-2">
-                          <img
-                            src={getProxiedImageUrl(product.imageUrl, "medium")}
-                            alt={product.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                            onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-                          />
-                        </div>
-                        <p className="text-[11px] text-[#c9a96e] uppercase font-medium tracking-wide">{brandName}</p>
-                        <p className="text-xs text-[#aaaaaa] line-clamp-2 leading-snug mt-0.5">{product.name}</p>
-                        <p className="text-sm font-bold text-white mt-1">{Number(product.price).toLocaleString()}원</p>
-                      </Link>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-4 pt-3 border-t border-[#2a2a2a] text-center">
-                  <Link
-                    href={`/products?brand=${encodeURIComponent(brandId)}`}
-                    className="inline-flex items-center gap-1 text-sm text-[#888888] hover:text-white transition-colors border border-[#333333] px-6 py-2 hover:border-[#c9a96e]"
-                    data-testid={`foryou-more-${brandId}`}
-                  >
-                    더보기
-                  </Link>
+                )}
+                <div className="absolute bottom-1.5 left-2">
+                  <span className="text-3xl font-black text-white/90 leading-none drop-shadow">{idx + 1}</span>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-
-function SectionProductCard({ product, getBrandName }: { product: any; getBrandName: (id: string) => string }) {
-  const hasDiscount = product.discountPercent && product.discountPercent > 0;
-  const discountedPrice = hasDiscount
-    ? Math.round(Number(product.price) * (100 - product.discountPercent) / 100 / 1000) * 1000
-    : Number(product.price);
-
-  return (
-    <Link
-      href={`/product/${product.id}`}
-      className="group block relative overflow-hidden"
-      data-testid={`section-product-${product.id}`}
-    >
-      <div className="relative aspect-[4/5] bg-[#1a1a1a] overflow-hidden">
-        <img
-          src={getProxiedImageUrl(product.imageUrl, "medium")}
-          alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          loading="lazy"
-          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden md:flex flex-col justify-end p-3">
-          <p className="text-[10px] text-[#c9a96e] uppercase font-medium tracking-widest truncate mb-0.5">{getBrandName(product.brandId)}</p>
-          <p className="text-xs font-bold text-white line-clamp-2 leading-snug mb-1.5">{product.name}</p>
-          <div className="flex flex-wrap items-baseline gap-x-1.5">
-            {hasDiscount && (
-              <span className="text-[10px] text-white/50 line-through">{Number(product.price).toLocaleString()}원</span>
-            )}
-            <span className="text-sm font-extrabold text-[#c9a96e]">{discountedPrice.toLocaleString()}원</span>
-            {hasDiscount && product.discountPercent > 0 && (
-              <span className="text-[10px] text-red-400 font-bold">{product.discountPercent}%</span>
-            )}
-          </div>
-        </div>
-        <div className="md:hidden absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-2.5">
-          <p className="text-[11px] text-[#c9a96e] uppercase font-medium tracking-wide truncate">{getBrandName(product.brandId)}</p>
-          <span className="text-xs font-extrabold text-white">{discountedPrice.toLocaleString()}원</span>
-        </div>
-        <div className="absolute top-0 right-0 flex flex-col">
-          {hasDiscount && (
-            <span className="bg-red-500 text-white text-[11px] px-2 py-1 font-bold leading-none">할인</span>
-          )}
-          {product.isNew && (
-            <span className="bg-red-500 text-white text-[11px] px-1.5 py-1 font-bold leading-none">신상</span>
-          )}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function DynamicHomeSections({ brands }: { brands: any[] }) {
-  const { data: sections } = useQuery({
-    queryKey: ['/api/content-sections', 'homepage_product'],
-    queryFn: async () => {
-      const res = await fetch('/api/content-sections?sectionType=homepage_product');
-      const data = await res.json();
-      return data.success ? data.data : [];
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-  const getBrandName = (brandId: string) => {
-    const brand = brands.find((b: any) => b.id === brandId);
-    return brand?.name?.toUpperCase() || '';
-  };
-
-  const getMoreLink = (section: any) => {
-    if (section.linkUrl) return section.linkUrl;
-    if (section.categorySlug) return `/products/${section.categorySlug}`;
-    if (section.brandName) {
-      const brand = brands.find((b: any) => b.name?.toLowerCase() === section.brandName?.toLowerCase());
-      if (brand) return `/products?brand=${encodeURIComponent(brand.id)}`;
-    }
-    return "/products";
-  };
-
-  if (!sections || sections.length === 0) return null;
-
-  return (
-    <>
-      {sections.map((section: any) => (
-        <SectionBlock key={section.id} section={section} getMoreLink={getMoreLink} getBrandName={getBrandName} />
-      ))}
-    </>
-  );
-}
-
-function SectionBlock({ section, getMoreLink, getBrandName }: { section: any; getMoreLink: (s: any) => string; getBrandName: (id: string) => string }) {
-  const { ref, visible } = useScrollReveal();
-  return (
-    <section
-      ref={ref}
-      className="bg-[#0f0f0f] border-b border-[#1a1a1a]"
-      style={{ opacity: visible ? 1 : 0, transform: visible ? "translateY(0)" : "translateY(32px)", transition: "opacity 0.6s ease, transform 0.6s ease" }}
-      data-testid={`home-section-${section.id}`}
-    >
-      {section.imageUrl && (
-        <Link href={getMoreLink(section)} className="block w-full">
-          <img
-            src={section.imageUrl}
-            alt={section.title}
-            className="w-full object-cover"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-          />
-        </Link>
-      )}
-
-      {section.products && section.products.length > 0 && (
-        <div className="max-w-[1200px] mx-auto px-4 py-10 md:py-16">
-          <h2 className="text-center text-2xl md:text-3xl font-bold tracking-widest uppercase mb-2 text-white">
-            {section.title}
-          </h2>
-          {section.description && (
-            <p className="text-center text-sm text-[#999999] mb-8">{section.description}</p>
-          )}
-          {!section.description && <div className="mb-8" />}
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-            {section.products.slice(0, 8).map((product: any) => (
-              <SectionProductCard key={product.id} product={product} getBrandName={getBrandName} />
-            ))}
-          </div>
-
-          <div className="text-center mt-10">
-            <Link
-              href={getMoreLink(section)}
-              className="inline-block px-12 py-2.5 border border-[#c9a96e] text-[#c9a96e] text-sm font-medium hover:bg-[#c9a96e] hover:text-black transition-colors tracking-widest"
-              data-testid={`section-more-${section.id}`}
-            >
-              More view
+              <div className="flex items-center gap-0.5 mb-1">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star
+                    key={s}
+                    className={`w-2.5 h-2.5 ${s <= (review.rating || 5) ? "fill-yellow-400 text-yellow-400" : "text-gray-200"}`}
+                  />
+                ))}
+              </div>
+              <p className="text-xs text-gray-700 line-clamp-2 leading-snug font-medium">
+                {review.content || review.title}
+              </p>
+              <p className="text-[10px] text-gray-400 mt-1">{maskName(review.authorName)}</p>
             </Link>
-          </div>
-        </div>
-      )}
+          );
+        })}
+      </div>
     </section>
   );
 }
 
-export default function Home() {
-  const { data: productsData } = useQuery({
-    queryKey: ['/api/products/home'],
+function DynamicSections() {
+  const { data: sections } = useQuery({
+    queryKey: ["/api/content-sections", "homepage_product"],
     queryFn: async () => {
-      const res = await fetch('/api/products?limit=24');
+      const res = await fetch("/api/content-sections?sectionType=homepage_product");
       const data = await res.json();
       return data.success ? data.data : [];
     },
@@ -697,31 +548,95 @@ export default function Home() {
   });
 
   const { data: brandsData } = useQuery({
-    queryKey: ['/api/brands'],
+    queryKey: ["/api/brands"],
     queryFn: async () => {
-      const res = await fetch('/api/brands');
+      const res = await fetch("/api/brands?limit=200");
       const data = await res.json();
       return data.success ? data.data : [];
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 600000,
   });
 
-  const products = productsData || [];
-  const brands = brandsData || [];
+  const getBrandName = (brandId: string) => {
+    const brand = (brandsData || []).find((b: any) => b.id === brandId);
+    return brand?.name?.toUpperCase() || "";
+  };
+
+  if (!sections || sections.length === 0) return null;
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f]">
+    <>
+      {sections.map((section: any) => {
+        const moreLink = section.linkUrl || (section.categorySlug ? `/products/${section.categorySlug}` : "/products");
+        return (
+          <section key={section.id} className="bg-white border-b border-gray-100" data-testid={`section-${section.id}`}>
+            {section.imageUrl && (
+              <Link href={moreLink}>
+                <img src={section.imageUrl} alt={section.title} className="w-full object-cover" />
+              </Link>
+            )}
+            {section.products && section.products.length > 0 && (
+              <div className="py-5">
+                <div className="px-4 mb-3 flex items-center justify-between">
+                  <h2 className="text-base font-bold text-gray-900">{section.title}</h2>
+                  <Link href={moreLink} className="text-xs text-gray-400 hover:text-gray-600 font-medium">더 보기</Link>
+                </div>
+                <div className="grid grid-cols-2 gap-px bg-gray-100">
+                  {section.products.slice(0, 4).map((product: any) => (
+                    <Link
+                      key={product.id}
+                      href={`/product/${product.id}`}
+                      className="bg-white group block"
+                      data-testid={`section-product-${product.id}`}
+                    >
+                      <div className="aspect-square bg-gray-50 overflow-hidden relative">
+                        <img
+                          src={getProxiedImageUrl(product.imageUrl, "medium")}
+                          alt={product.name}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                        />
+                        {product.discountPercent > 0 && (
+                          <span className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                            {product.discountPercent}%
+                          </span>
+                        )}
+                      </div>
+                      <div className="p-3">
+                        <p className="text-[11px] text-[#FF6100] font-bold uppercase truncate">{getBrandName(product.brandId)}</p>
+                        <p className="text-xs text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
+                        <p className="text-sm font-bold text-gray-900 mt-0.5">{Number(product.price).toLocaleString()}원</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+        );
+      })}
+    </>
+  );
+}
+
+export default function Home() {
+  return (
+    <div className="min-h-screen bg-[#f5f5f5] flex flex-col">
       <Header />
-      
-      <main className="pb-16 md:pb-0">
+      <main className="flex-1 max-w-[640px] w-full mx-auto bg-white">
+        <MainBannerSlider />
+        <QuickMenuSection />
+        <RankingSection />
         <TopBrandSection />
-        <HomeReviewsSection />
-        <DynamicHomeSections brands={brands} />
-        <ForYouSection products={products} brands={brands} />
+        <NewProductsSection />
+        <ReviewsSection />
+        <DynamicSections />
       </main>
-      
+      <div className="max-w-[640px] w-full mx-auto">
+        <Footer />
+      </div>
       <FloatingButtons />
-      <Footer />
     </div>
   );
 }
