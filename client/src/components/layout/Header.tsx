@@ -6,12 +6,8 @@ import { useState, useEffect } from "react";
 const NAV_TABS = [
   { label: "메인", path: "/" },
   { label: "SHOP", path: "/products", badge: false },
-  { label: "기획전", path: "/events", badge: false },
-  { label: "랭킹", path: "/ranking", badge: true },
   { label: "STYLE", path: "/magazine", badge: true },
   { label: "리뷰", path: "/reviews", badge: false },
-  { label: "국내배송", path: "/products/sameday", badge: false },
-  { label: "브랜드", path: "/brands", badge: false },
 ];
 
 const SIDE_MENU_EXTRA = [
@@ -28,7 +24,6 @@ export function Header() {
   const [memberName, setMemberName] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [bannerVisible, setBannerVisible] = useState(true);
 
   useEffect(() => {
     const check = () => setMemberName(localStorage.getItem("memberName"));
@@ -66,24 +61,6 @@ export function Header() {
   return (
     <>
       <header className="fixed top-0 left-0 right-0 z-50 bg-white shadow-sm max-w-[640px] mx-auto" style={{ left: '50%', transform: 'translateX(-50%)', width: '100%' }}>
-        {/* Top app banner */}
-        {bannerVisible && (
-          <div className="bg-[#1a1a2e] text-white text-xs flex items-center justify-between px-3 py-2">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-white rounded-md flex items-center justify-center flex-shrink-0">
-                <span className="text-[#1a1a2e] font-black text-[11px]">V</span>
-              </div>
-              <span className="text-[11px]">앱설치하고 <span className="text-[#FF6100] font-bold">1만원 적립금</span> 받자!</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button className="bg-[#FF6100] text-white text-[11px] px-3 py-1 rounded-md font-bold whitespace-nowrap">앱설치</button>
-              <button onClick={() => setBannerVisible(false)} className="text-white/60 hover:text-white p-0.5" aria-label="닫기">
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Search bar row */}
         <div className="px-3 py-2 bg-white border-b border-gray-100">
           <div className="flex items-center gap-2">
@@ -136,7 +113,7 @@ export function Header() {
       </header>
 
       {/* Invisible spacer to push content below fixed header */}
-      <div style={{ height: bannerVisible ? '128px' : '92px' }} className="flex-shrink-0" />
+      <div style={{ height: '92px' }} className="flex-shrink-0" />
 
       {/* Side drawer overlay */}
       {menuOpen && (
