@@ -6,7 +6,6 @@ import { useState, useEffect } from "react";
 const NAV_TABS = [
   { label: "메인", path: "/" },
   { label: "SHOP", path: "/products" },
-  { label: "STYLE", path: "/magazine", badge: true },
   { label: "랭킹", path: "/ranking" },
   { label: "리뷰", path: "/reviews" },
 ];
