@@ -143,9 +143,7 @@ const CATEGORY_STRIP_ITEMS = [
   {
     label: "랭킹",
     path: "/ranking",
-    image: null,
-    gradient: "linear-gradient(160deg, #7b4f00 0%, #c9860a 45%, #f5c842 100%)",
-    rankingCard: true,
+    image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=300&q=80",
   },
   {
     label: "리뷰",
