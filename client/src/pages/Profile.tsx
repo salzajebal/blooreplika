@@ -251,25 +251,25 @@ export default function Profile() {
 
         <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-[#e8e8e8]">
           {/* 프로필 헤더 */}
-          <div className="bg-[#111111] p-5 text-white">
+          <div className="bg-[#FF6100] p-5">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/10 border border-white/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <User className="w-6 h-6 text-white/80" />
+              <div className="w-12 h-12 bg-white/20 border border-white/30 rounded-full flex items-center justify-center flex-shrink-0">
+                <User className="w-6 h-6 text-white" />
               </div>
               <div className="min-w-0 flex-1">
                 {isLoggedIn ? (
                   <>
-                    <p className="text-white/50 text-[10px] tracking-[0.2em] uppercase mb-0.5">Member</p>
-                    <h1 className="text-lg font-bold truncate" data-testid="text-profile-name">
+                    <p className="text-white/70 text-[10px] tracking-[0.2em] uppercase mb-0.5">Member</p>
+                    <h1 className="text-lg font-bold truncate text-white" data-testid="text-profile-name">
                       {memberInfo?.name || localStorage.getItem("memberName") || "회원"}님
                     </h1>
-                    <p className="text-white/60 text-xs mt-0.5 truncate">{memberInfo?.email || localStorage.getItem("memberEmail")}</p>
+                    <p className="text-white/80 text-xs mt-0.5 truncate">{memberInfo?.email || localStorage.getItem("memberEmail")}</p>
                   </>
                 ) : (
                   <>
-                    <p className="text-white/50 text-[10px] tracking-[0.2em] uppercase mb-0.5">VELOUR</p>
-                    <h1 className="text-lg font-bold">로그인이 필요합니다</h1>
-                    <p className="text-white/60 text-xs mt-0.5">로그인하시면 더 많은 혜택을 받으실 수 있습니다</p>
+                    <p className="text-white/70 text-[10px] tracking-[0.2em] uppercase mb-0.5">VELOUR</p>
+                    <h1 className="text-lg font-bold text-white">로그인이 필요합니다</h1>
+                    <p className="text-white/80 text-xs mt-0.5">로그인하시면 더 많은 혜택을 받으실 수 있습니다</p>
                   </>
                 )}
               </div>
