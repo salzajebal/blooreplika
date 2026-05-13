@@ -150,9 +150,9 @@ export default function Reviews() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-[#f5f5f5] flex flex-col">
       <Header />
-      <main className="flex-1 max-w-[640px] w-full mx-auto pb-24 md:pb-8">
+      <main className="flex-1 max-w-[640px] w-full mx-auto pb-24 md:pb-8 bg-white">
         {/* Header */}
         <div className="px-4 py-4 border-b border-gray-100">
           <div className="flex items-center justify-between mb-3">
@@ -214,7 +214,7 @@ export default function Reviews() {
         )}
 
         {/* Review list */}
-        <div className="px-4">
+        <div className="px-4 bg-white">
           {isLoading ? (
             <div className="space-y-4 py-4">
               {[...Array(5)].map((_, i) => (

@@ -82,10 +82,10 @@ export default function Cart() {
   const totalPrice = items.reduce((sum, item) => sum + (item.price || 0), 0);
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-[#f5f5f5] flex flex-col">
       <Header />
 
-      <main className="flex-1 max-w-[640px] w-full mx-auto px-4 pb-32 md:pb-10">
+      <main className="flex-1 max-w-[640px] w-full mx-auto px-4 pb-32 md:pb-10 bg-white">
         {/* Page title */}
         <div className="flex items-center justify-between py-4 border-b border-gray-100">
           <div className="flex items-center gap-2">

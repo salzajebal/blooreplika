@@ -286,7 +286,7 @@ export default function ProductDetail() {
   const hasAnyOptions = hasColorOptions || hasSizeOptions || hasExtraOptions;
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-[#f5f5f5]">
       <Header />
       
       <main className="flex-1 pb-20">

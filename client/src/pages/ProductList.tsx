@@ -329,7 +329,7 @@ export default function ProductList() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-[#f5f5f5] flex flex-col">
       <Header />
 
       <main className="flex-1 max-w-[640px] w-full mx-auto pb-24 md:pb-8">
