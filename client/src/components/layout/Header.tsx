@@ -64,6 +64,11 @@ export function Header() {
         {/* Search bar row */}
         <div className="px-3 py-2 bg-white border-b border-gray-100">
           <div className="flex items-center gap-2">
+            <Link href="/" className="flex-shrink-0">
+              <span className="text-base font-black tracking-widest text-[#111111] uppercase" style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "0.15em" }}>
+                VELOUR
+              </span>
+            </Link>
             <form onSubmit={handleSearch} className="flex-1 flex items-center bg-gray-100 rounded-full px-3 py-2 gap-2">
               <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <input
