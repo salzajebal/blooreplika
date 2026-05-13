@@ -223,59 +223,18 @@ function findBrandId(brands: any[], keywords: string[]): string | null {
 function RankingSection() {
   const [tab, setTab] = useState<"남성" | "여성">("남성");
 
-  // 브랜드 목록 (롤렉스/루이비통 ID 찾기용)
-  const { data: brandsData } = useQuery({
-    queryKey: ["/api/brands/all-for-ranking"],
+  const { data: rankingData, isLoading } = useQuery({
+    queryKey: ["/api/ranking-items", tab],
     queryFn: async () => {
-      const res = await fetch("/api/brands?limit=300");
+      const res = await fetch(`/api/ranking-items?gender=${encodeURIComponent(tab)}`);
       const data = await res.json();
       return data.success ? data.data : [];
     },
-    staleTime: 600000,
-  });
-
-  const brands: any[] = brandsData || [];
-
-  // 남성: 롤렉스 시계 / 여성: 루이비통 가방
-  const rolexId = findBrandId(brands, ["롤렉스", "rolex"]);
-  const lvId = findBrandId(brands, ["루이비통", "louisvuitton", "louis vuitton", "LV"]);
-
-  const targetBrandId = tab === "남성" ? rolexId : lvId;
-  const targetCategory = tab === "남성" ? "watches" : "bags";
-  const targetBrandName = tab === "남성" ? "ROLEX" : "LOUIS VUITTON";
-
-  const { data: productsData, isLoading } = useQuery({
-    queryKey: ["/api/products/ranking-home-brand", tab, targetBrandId],
-    queryFn: async () => {
-      // 1차: 해당 브랜드 + 카테고리
-      if (targetBrandId) {
-        let url = `/api/products?limit=10&brandId=${encodeURIComponent(targetBrandId)}&category=${targetCategory}`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data.success && data.data?.length > 0) return data.data;
-        // 2차: 브랜드만 (카테고리 필터 없이)
-        const res2 = await fetch(`/api/products?limit=10&brandId=${encodeURIComponent(targetBrandId)}`);
-        const data2 = await res2.json();
-        if (data2.success && data2.data?.length > 0) return data2.data;
-      }
-      // 3차 폴백: 카테고리만
-      const res3 = await fetch(`/api/products?limit=10&category=${targetCategory}`);
-      const data3 = await res3.json();
-      return data3.success ? data3.data : [];
-    },
     staleTime: 60000,
-    enabled: brands.length > 0, // 브랜드 로드 후 실행
   });
 
-  const getBrandName = (brandId: string) => {
-    const b = brands.find((b: any) => b.id === brandId);
-    return b?.name?.toUpperCase() || "";
-  };
-
-  const products: any[] = productsData || [];
-  const moreLink = targetBrandId
-    ? `/products?brand=${encodeURIComponent(targetBrandId)}`
-    : tab === "남성" ? "/products/watches" : "/products/bags";
+  const items: any[] = rankingData || [];
+  const hasData = items.length > 0;
 
   return (
     <section className="bg-white border-b border-gray-100" data-testid="ranking-section">
@@ -286,7 +245,7 @@ function RankingSection() {
             <Trophy className="w-4 h-4 text-[#FF6100]" />
             <h2 className="text-base font-bold text-gray-900">실시간 랭킹 TOP 10</h2>
           </div>
-          <Link href={moreLink} className="text-xs text-gray-400 hover:text-gray-600 font-medium">
+          <Link href="/ranking" className="text-xs text-gray-400 hover:text-gray-600 font-medium">
             더 보기
           </Link>
         </div>
@@ -309,19 +268,9 @@ function RankingSection() {
           ))}
         </div>
 
-        {/* 브랜드 배지 */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-[11px] font-bold text-[#FF6100] bg-orange-50 border border-orange-100 px-2 py-0.5 rounded">
-            {targetBrandName}
-          </span>
-          <span className="text-[11px] text-gray-400">
-            {tab === "남성" ? "시계 베스트" : "가방 베스트"}
-          </span>
-        </div>
-
         {/* 상품 리스트 */}
         <div>
-          {isLoading || (brands.length === 0) ? (
+          {isLoading ? (
             <div className="space-y-0">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-3 py-3 border-b border-gray-50 animate-pulse">
@@ -335,48 +284,49 @@ function RankingSection() {
                 </div>
               ))}
             </div>
-          ) : products.length === 0 ? (
+          ) : !hasData ? (
             <div className="py-8 text-center text-gray-300 text-sm">
-              상품을 불러오는 중...
+              어드민에서 랭킹 상품을 설정해주세요.
             </div>
           ) : (
-            products.slice(0, 10).map((product: any, idx: number) => (
-              <Link
-                key={product.id}
-                href={`/product/${product.id}`}
-                className="flex items-center gap-3 py-3 border-b border-gray-50 hover:bg-gray-50 -mx-4 px-4 transition-colors"
-                data-testid={`ranking-product-${product.id}`}
-              >
-                <span className={`text-base font-black w-6 text-center flex-shrink-0 ${
-                  idx === 0 ? "text-[#FF6100]" : idx < 3 ? "text-gray-500" : "text-gray-200"
-                }`}>
-                  {idx + 1}
-                </span>
-                <div className="w-14 h-14 flex-shrink-0 bg-gray-50 overflow-hidden rounded border border-gray-100">
-                  <img
-                    src={getProxiedImageUrl(product.imageUrl, "thumb")}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-                    loading="lazy"
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] text-[#FF6100] font-bold uppercase tracking-wide truncate">
-                    {getBrandName(product.brandId)}
-                  </p>
-                  <p className="text-xs text-gray-700 line-clamp-2 leading-snug mt-0.5">{product.name}</p>
-                  <p className="text-sm font-bold text-gray-900 mt-0.5">
-                    {Number(product.price).toLocaleString()}원
-                  </p>
-                </div>
-                {idx === 0 && (
-                  <span className="flex-shrink-0 bg-[#FF6100] text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                    1위
+            items.map((item: any, idx: number) => {
+              const product = item.product;
+              if (!product) return null;
+              return (
+                <Link
+                  key={item.id}
+                  href={`/product/${product.id}`}
+                  className="flex items-center gap-3 py-3 border-b border-gray-50 hover:bg-gray-50 -mx-4 px-4 transition-colors"
+                  data-testid={`ranking-product-${product.id}`}
+                >
+                  <span className={`text-base font-black w-6 text-center flex-shrink-0 ${
+                    idx === 0 ? "text-[#FF6100]" : idx < 3 ? "text-gray-500" : "text-gray-200"
+                  }`}>
+                    {item.rank}
                   </span>
-                )}
-              </Link>
-            ))
+                  <div className="w-14 h-14 flex-shrink-0 bg-gray-50 overflow-hidden rounded border border-gray-100">
+                    <img
+                      src={getProxiedImageUrl(product.imageUrl, "thumb")}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-700 line-clamp-2 leading-snug">{product.name}</p>
+                    <p className="text-sm font-bold text-gray-900 mt-0.5">
+                      {Number(product.price).toLocaleString()}원
+                    </p>
+                  </div>
+                  {idx === 0 && (
+                    <span className="flex-shrink-0 bg-[#FF6100] text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                      1위
+                    </span>
+                  )}
+                </Link>
+              );
+            })
           )}
         </div>
       </div>

@@ -210,7 +210,7 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff" | "contentSections" | "magazines" | "labs" | "quickMenu" | "telegram">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff" | "contentSections" | "magazines" | "labs" | "quickMenu" | "ranking" | "telegram">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [visitorStats, setVisitorStats] = useState<{ realtime: number; today: number; pageViews: number; recentPages: { page: string; count: number }[] } | null>(null);
   
@@ -3144,6 +3144,15 @@ export default function Admin() {
               >
                 <Circle className="w-4 h-4 md:mr-2" />
                 <span className="hidden md:inline">퀵메뉴 관리</span>
+              </Button>
+              <Button
+                data-testid="tab-ranking"
+                variant={activeTab === "ranking" ? "default" : "outline"}
+                onClick={() => setActiveTab("ranking")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "ranking" ? "bg-orange-500 hover:bg-orange-600" : ""}`}
+              >
+                <Trophy className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">랭킹 관리</span>
               </Button>
               <Button
                 data-testid="tab-telegram"
@@ -7584,6 +7593,10 @@ export default function Admin() {
           <QuickMenuTab authToken={authToken} />
         )}
 
+        {activeTab === "ranking" && adminRole === "super_admin" && (
+          <RankingAdminTab authToken={authToken} />
+        )}
+
         {activeTab === "telegram" && adminRole === "super_admin" && (
           <div className="space-y-6 max-w-2xl">
             {/* 헤더 */}
@@ -10203,6 +10216,219 @@ function QuickMenuTab({ authToken }: { authToken: string }) {
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function RankingAdminTab({ authToken }: { authToken: string }) {
+  const [gender, setGender] = React.useState<"남성" | "여성">("남성");
+  const [rankingItems, setRankingItems] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [searchResults, setSearchResults] = React.useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = React.useState(false);
+  const [editingRank, setEditingRank] = React.useState<number | null>(null);
+  const [msg, setMsg] = React.useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  const fetchRanking = async (g: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/ranking-items?gender=${encodeURIComponent(g)}`);
+      const data = await res.json();
+      setRankingItems(data.success ? data.data : []);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => { fetchRanking(gender); }, [gender]);
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setSearchLoading(true);
+    try {
+      const res = await fetch(`/api/products?limit=20&search=${encodeURIComponent(searchQuery.trim())}`);
+      const data = await res.json();
+      setSearchResults(data.success ? data.data : []);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleAssign = async (productId: string, rank: number) => {
+    const res = await fetch("/api/admin/ranking-items", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+      body: JSON.stringify({ gender, rank, productId }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      setMsg({ type: "ok", text: `${rank}위 설정 완료` });
+      setEditingRank(null);
+      setSearchResults([]);
+      setSearchQuery("");
+      fetchRanking(gender);
+    } else {
+      setMsg({ type: "err", text: data.error || "설정 실패" });
+    }
+    setTimeout(() => setMsg(null), 2500);
+  };
+
+  const handleDelete = async (rank: number) => {
+    const res = await fetch("/api/admin/ranking-items", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+      body: JSON.stringify({ gender, rank }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      fetchRanking(gender);
+      setMsg({ type: "ok", text: `${rank}위 삭제됨` });
+    } else {
+      setMsg({ type: "err", text: data.error || "삭제 실패" });
+    }
+    setTimeout(() => setMsg(null), 2500);
+  };
+
+  const rankSlots = Array.from({ length: 10 }, (_, i) => i + 1);
+  const getItemForRank = (rank: number) => rankingItems.find((r: any) => r.rank === rank);
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center">
+            <Trophy className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold">실시간 랭킹 관리</h2>
+            <p className="text-sm text-gray-500">홈 화면 랭킹 TOP 10 상품을 직접 설정합니다.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        {(["남성", "여성"] as const).map((g) => (
+          <button
+            key={g}
+            onClick={() => { setGender(g); setEditingRank(null); setSearchResults([]); setSearchQuery(""); }}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+              gender === g ? "bg-orange-500 text-white" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            {g} 랭킹
+          </button>
+        ))}
+      </div>
+
+      {msg && (
+        <div className={`px-4 py-2 rounded-lg text-sm font-medium ${msg.type === "ok" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+          {msg.text}
+        </div>
+      )}
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+          <p className="text-sm font-bold text-gray-700">{gender} TOP 10 설정</p>
+        </div>
+        {loading ? (
+          <div className="p-8 text-center text-gray-400 text-sm">불러오는 중...</div>
+        ) : (
+          <div className="divide-y divide-gray-50">
+            {rankSlots.map((rank) => {
+              const item = getItemForRank(rank);
+              const product = item?.product;
+              const isEditing = editingRank === rank;
+              return (
+                <div key={rank} className="p-3">
+                  <div className="flex items-center gap-3">
+                    <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black flex-shrink-0 ${
+                      rank === 1 ? "bg-orange-500 text-white" : rank <= 3 ? "bg-gray-700 text-white" : "bg-gray-100 text-gray-500"
+                    }`}>{rank}</span>
+                    {product ? (
+                      <div className="flex-1 flex items-center gap-2 min-w-0">
+                        <img
+                          src={product.imageUrl}
+                          alt={product.name}
+                          className="w-10 h-10 object-cover rounded border border-gray-100 flex-shrink-0"
+                          onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/40"; }}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{product.name}</p>
+                          <p className="text-xs text-orange-500 font-bold">{Number(product.price).toLocaleString()}원</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex-1 text-sm text-gray-300 italic">미설정</div>
+                    )}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs px-2"
+                        onClick={() => { setEditingRank(isEditing ? null : rank); setSearchResults([]); setSearchQuery(""); }}
+                      >
+                        {isEditing ? "취소" : product ? "변경" : "설정"}
+                      </Button>
+                      {product && (
+                        <Button size="sm" variant="outline" className="h-7 text-xs px-2 text-red-500 hover:text-red-700" onClick={() => handleDelete(rank)}>
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  {isEditing && (
+                    <div className="mt-3 bg-gray-50 rounded-lg p-3 space-y-2">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="상품명 검색..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
+                          className="flex-1 text-sm h-8"
+                          autoFocus
+                        />
+                        <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-white h-8 px-3" onClick={handleSearch} disabled={searchLoading}>
+                          {searchLoading ? "검색중" : "검색"}
+                        </Button>
+                      </div>
+                      {searchResults.length > 0 && (
+                        <div className="max-h-48 overflow-y-auto space-y-1">
+                          {searchResults.map((p: any) => (
+                            <div
+                              key={p.id}
+                              className="flex items-center gap-2 p-2 bg-white rounded border border-gray-100 cursor-pointer hover:border-orange-300 hover:bg-orange-50 transition-colors"
+                              onClick={() => handleAssign(p.id, rank)}
+                            >
+                              <img
+                                src={p.imageUrl}
+                                alt={p.name}
+                                className="w-8 h-8 object-cover rounded flex-shrink-0"
+                                onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/32"; }}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-gray-800 truncate">{p.name}</p>
+                                <p className="text-xs text-orange-500">{Number(p.price).toLocaleString()}원</p>
+                              </div>
+                              <span className="bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded flex-shrink-0">
+                                {rank}위 설정
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {searchResults.length === 0 && searchQuery && !searchLoading && (
+                        <p className="text-xs text-gray-400 text-center py-2">검색 결과가 없습니다.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

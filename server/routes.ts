@@ -6505,6 +6505,49 @@ export async function registerRoutes(
     }
   });
 
+  // ── Ranking Items (public read + admin write) ──
+  app.get("/api/ranking-items", async (req: Request, res: Response) => {
+    try {
+      const gender = (req.query.gender as string) || "남성";
+      const items = await storage.getRankingItems(gender);
+      if (items.length === 0) return res.json({ success: true, data: [] });
+      // Fetch associated products
+      const productIds = items.map((i) => i.productId);
+      const allProducts = await Promise.all(productIds.map((id) => storage.getProduct(id)));
+      const data = items.map((item, idx) => ({
+        ...item,
+        product: allProducts[idx] || null,
+      })).filter((i) => i.product !== null);
+      res.json({ success: true, data });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "랭킹 조회 실패" });
+    }
+  });
+
+  app.put("/api/admin/ranking-items", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      if ((req as any).adminRole !== "super_admin") return res.status(403).json({ success: false, error: "권한이 없습니다." });
+      const { gender, rank, productId } = req.body;
+      if (!gender || !rank || !productId) return res.status(400).json({ success: false, error: "gender, rank, productId 필수" });
+      const item = await storage.setRankingItem(gender, Number(rank), productId);
+      res.json({ success: true, data: item });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "랭킹 설정 실패" });
+    }
+  });
+
+  app.delete("/api/admin/ranking-items", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      if ((req as any).adminRole !== "super_admin") return res.status(403).json({ success: false, error: "권한이 없습니다." });
+      const { gender, rank } = req.body;
+      if (!gender || !rank) return res.status(400).json({ success: false, error: "gender, rank 필수" });
+      const ok = await storage.deleteRankingItem(gender, Number(rank));
+      res.json({ success: ok });
+    } catch (error) {
+      res.status(500).json({ success: false, error: "랭킹 삭제 실패" });
+    }
+  });
+
   app.post("/api/admin/update-product-options", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const KNOWN_COLORS = [

@@ -31,7 +31,8 @@ import {
   type ContentSection, type InsertContentSection, contentSections,
   type Magazine, type InsertMagazine, magazines,
   type LabsBlock, type InsertLabsBlock, labsBlocks,
-  type QuickMenuItem, type InsertQuickMenuItem, quickMenuItems
+  type QuickMenuItem, type InsertQuickMenuItem, quickMenuItems,
+  type RankingItem, type InsertRankingItem, rankingItems
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, sql, inArray } from "drizzle-orm";
@@ -166,6 +167,11 @@ export interface IStorage {
   createQuickMenuItem(item: InsertQuickMenuItem): Promise<QuickMenuItem>;
   updateQuickMenuItem(id: string, item: Partial<InsertQuickMenuItem>): Promise<QuickMenuItem | undefined>;
   deleteQuickMenuItem(id: string): Promise<boolean>;
+
+  // Ranking Items
+  getRankingItems(gender: string): Promise<RankingItem[]>;
+  setRankingItem(gender: string, rank: number, productId: string): Promise<RankingItem>;
+  deleteRankingItem(gender: string, rank: number): Promise<boolean>;
 
   // Popups
   getAllPopups(): Promise<Popup[]>;
@@ -1861,6 +1867,33 @@ export class DatabaseStorage implements IStorage {
 
   async deleteQuickMenuItem(id: string): Promise<boolean> {
     const result = await db.delete(quickMenuItems).where(eq(quickMenuItems.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getRankingItems(gender: string): Promise<RankingItem[]> {
+    return db.select().from(rankingItems)
+      .where(eq(rankingItems.gender, gender))
+      .orderBy(rankingItems.rank);
+  }
+
+  async setRankingItem(gender: string, rank: number, productId: string): Promise<RankingItem> {
+    const existing = await db.select().from(rankingItems)
+      .where(and(eq(rankingItems.gender, gender), eq(rankingItems.rank, rank)));
+    if (existing.length > 0) {
+      const [updated] = await db.update(rankingItems)
+        .set({ productId, updatedAt: new Date() })
+        .where(and(eq(rankingItems.gender, gender), eq(rankingItems.rank, rank)))
+        .returning();
+      return updated;
+    }
+    const [created] = await db.insert(rankingItems).values({ gender, rank, productId }).returning();
+    return created;
+  }
+
+  async deleteRankingItem(gender: string, rank: number): Promise<boolean> {
+    const result = await db.delete(rankingItems)
+      .where(and(eq(rankingItems.gender, gender), eq(rankingItems.rank, rank)))
+      .returning();
     return result.length > 0;
   }
 }

@@ -756,3 +756,20 @@ export const insertQuickMenuItemSchema = createInsertSchema(quickMenuItems).omit
 
 export type InsertQuickMenuItem = z.infer<typeof insertQuickMenuItemSchema>;
 export type QuickMenuItem = typeof quickMenuItems.$inferSelect;
+
+// Ranking Items table — admin-curated top-10 per gender shown on home page
+export const rankingItems = pgTable("ranking_items", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  gender: text("gender").notNull(), // '남성' | '여성'
+  rank: integer("rank").notNull(),  // 1-10
+  productId: varchar("product_id").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertRankingItemSchema = createInsertSchema(rankingItems).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertRankingItem = z.infer<typeof insertRankingItemSchema>;
+export type RankingItem = typeof rankingItems.$inferSelect;
