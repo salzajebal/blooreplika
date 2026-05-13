@@ -143,7 +143,9 @@ const CATEGORY_STRIP_ITEMS = [
   {
     label: "랭킹",
     path: "/ranking",
-    image: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?w=300&q=80",
+    image: null,
+    gradient: "linear-gradient(160deg, #7b4f00 0%, #c9860a 45%, #f5c842 100%)",
+    rankingCard: true,
   },
   {
     label: "리뷰",
@@ -191,12 +193,18 @@ function CategoryStripSection() {
                   </div>
                 </div>
               </>
-            ) : item.icon ? (
+            ) : item.rankingCard ? (
               <>
-                <div className="absolute inset-0 bg-black/10" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5">
-                  <span className="text-2xl drop-shadow-lg">{item.icon}</span>
-                  <span className="text-white text-[11px] font-black tracking-wider drop-shadow">{item.label}</span>
+                <div className="absolute inset-0 bg-black/15" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+                  <span className="text-2xl drop-shadow-lg">🏆</span>
+                  <span className="text-white text-[10px] font-bold tracking-[0.2em] uppercase drop-shadow opacity-90">TOP</span>
+                  <span className="text-white text-[13px] font-black tracking-wider drop-shadow leading-none">랭킹</span>
+                  <div className="flex gap-1 mt-1">
+                    {["1", "2", "3"].map((n) => (
+                      <span key={n} className="w-4 h-4 rounded-full bg-white/30 text-white text-[9px] font-black flex items-center justify-center drop-shadow">{n}</span>
+                    ))}
+                  </div>
                 </div>
               </>
             ) : (
