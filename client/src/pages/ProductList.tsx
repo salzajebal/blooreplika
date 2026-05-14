@@ -31,13 +31,13 @@ function LazyProductImage({ src, alt }: { src: string; alt: string }) {
 
 function ProductSkeleton() {
   return (
-    <div className="bg-white animate-pulse border-b border-r border-gray-100">
-      <div className="aspect-square bg-gray-100" />
-      <div className="p-3">
-        <div className="h-3 bg-gray-100 rounded w-16 mb-2" />
-        <div className="h-3 bg-gray-100 rounded w-full mb-1.5" />
-        <div className="h-3 bg-gray-100 rounded w-3/4 mb-1.5" />
-        <div className="h-4 bg-gray-100 rounded w-24" />
+    <div className="bg-white animate-pulse">
+      <div className="aspect-[3/4] bg-gray-100" />
+      <div className="px-2 pt-2 pb-3">
+        <div className="h-2.5 bg-gray-100 rounded w-12 mb-1.5" />
+        <div className="h-3 bg-gray-100 rounded w-full mb-1" />
+        <div className="h-3 bg-gray-100 rounded w-2/3 mb-2" />
+        <div className="h-4 bg-gray-100 rounded w-20" />
       </div>
     </div>
   );
@@ -460,7 +460,7 @@ export default function ProductList() {
         {/* Product grid */}
         <div>
           {loading && !products.length ? (
-            <div className="grid grid-cols-2 gap-px bg-gray-100">
+            <div className="grid grid-cols-2 gap-2 p-2 bg-[#f5f5f5]">
               {Array.from({ length: 8 }).map((_, i) => <ProductSkeleton key={i} />)}
             </div>
           ) : filteredProducts.length > 0 ? (
@@ -471,7 +471,7 @@ export default function ProductList() {
                   <span className="text-xs text-gray-400">불러오는 중...</span>
                 </div>
               )}
-              <div className={cn("grid grid-cols-2 gap-px bg-gray-100", showLoadingOverlay && "opacity-60 pointer-events-none")}>
+              <div className={cn("grid grid-cols-2 gap-2 p-2 bg-[#f5f5f5]", showLoadingOverlay && "opacity-60 pointer-events-none")}>
                 {filteredProducts.map((product) => {
                   const discountPct = product.discountPercent && product.discountPercent > 0 ? product.discountPercent : hasSale ? salePercent : 0;
                   const salePrice = discountPct > 0
@@ -485,60 +485,68 @@ export default function ProductList() {
                     <Link
                       key={product.id}
                       href={`/product/${product.id}`}
-                      className="group relative bg-white block"
+                      className="group relative bg-white block rounded-lg overflow-hidden"
                       data-testid={`card-product-${product.id}`}
                     >
-                      {/* Image */}
-                      <div className="relative aspect-square bg-gray-50 overflow-hidden">
+                      {/* Image — portrait 3:4 ratio */}
+                      <div className="relative aspect-[3/4] bg-gray-50 overflow-hidden">
                         <LazyProductImage src={getProxiedImageUrl(product.imageUrl)} alt={product.name} />
 
                         {product.isSoldOut && (
-                          <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-20">
-                            <span className="text-gray-500 text-xs font-bold px-3 py-1 border border-gray-300 rounded">SOLD OUT</span>
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
+                            <span className="text-white text-[11px] font-bold tracking-widest uppercase border border-white/60 px-3 py-1">SOLD OUT</span>
                           </div>
                         )}
 
-                        {/* Badges */}
-                        <div className="absolute top-2 left-2 flex gap-1 z-10">
+                        {/* Top-left badges */}
+                        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
                           {product.isNew && (
-                            <span className="bg-black text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm">NEW</span>
+                            <span className="bg-black text-white text-[9px] font-bold px-2 py-0.5 rounded-full tracking-wider">NEW</span>
                           )}
                           {product.isBest && (
-                            <span className="bg-[#FF6100] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm">인기</span>
+                            <span className="bg-[#FF6100] text-white text-[9px] font-bold px-2 py-0.5 rounded-full">인기</span>
                           )}
                           {discountPct > 0 && (
-                            <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm">{discountPct}%</span>
+                            <span className="bg-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">-{discountPct}%</span>
                           )}
                         </div>
 
-                        {/* Wishlist */}
+                        {/* Wishlist — top right */}
                         <button
                           onClick={(e) => handleWishlistToggle(e, product)}
-                          className="absolute bottom-2 right-2 z-10 w-7 h-7 bg-white/90 rounded-full flex items-center justify-center shadow-sm hover:bg-white transition-colors"
+                          className="absolute top-2 right-2 z-10 w-7 h-7 bg-white/85 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm"
                           data-testid={`button-wishlist-${product.id}`}
                         >
                           <Heart className={cn("w-3.5 h-3.5", isInWishlist(String(product.id)) ? "fill-red-500 text-red-500" : "text-gray-400")} />
                         </button>
+
+                        {/* Brand overlay on bottom of image */}
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-2.5 pt-6 pb-2 z-10">
+                          <p className="text-white text-[10px] font-bold uppercase tracking-wider truncate leading-none">
+                            {brandName}
+                          </p>
+                        </div>
                       </div>
 
-                      {/* Info */}
-                      <div className="p-3 bg-white">
-                        <p className="text-[11px] text-[#FF6100] font-bold uppercase tracking-wide truncate mb-0.5">
-                          {brandName}
-                        </p>
-                        <h3 className="text-xs text-gray-700 line-clamp-2 leading-snug mb-1.5">
+                      {/* Info below image */}
+                      <div className="px-2.5 pt-2 pb-3">
+                        <h3 className="text-[11px] text-gray-600 line-clamp-2 leading-snug mb-2">
                           {decodeHtml(product.name)}
                         </h3>
                         {salePrice ? (
-                          <>
-                            <p className="text-[10px] text-gray-400 line-through">매장가 {Number(product.price).toLocaleString()}원대</p>
-                            <p className="text-sm font-bold text-gray-900" data-testid={`price-product-${product.id}`}>
-                              즉시구매가 {salePrice.toLocaleString()}원
+                          <div>
+                            <p className="text-[10px] text-gray-300 line-through leading-none mb-0.5">
+                              {Number(product.price).toLocaleString()}원
                             </p>
-                          </>
+                            <p className="text-sm font-black text-gray-900 leading-none" data-testid={`price-product-${product.id}`}>
+                              {salePrice.toLocaleString()}
+                              <span className="text-[10px] font-normal text-gray-400 ml-0.5">원</span>
+                            </p>
+                          </div>
                         ) : (
-                          <p className="text-sm font-bold text-gray-900" data-testid={`price-product-${product.id}`}>
-                            즉시구매가 {Number(product.price).toLocaleString()}원
+                          <p className="text-sm font-black text-gray-900 leading-none" data-testid={`price-product-${product.id}`}>
+                            {Number(product.price).toLocaleString()}
+                            <span className="text-[10px] font-normal text-gray-400 ml-0.5">원</span>
                           </p>
                         )}
                       </div>
