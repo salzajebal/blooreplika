@@ -11,11 +11,11 @@ import {
   Star, FileText, Bell, Calendar, Tag,
   Clock, Snowflake, Unlock, Settings, Link2, Upload,
   MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2, Search, Shield, Image, Globe, Gift,
-  ChevronUp, ChevronDown, Type, Minus, MousePointer, Palette, GripVertical, Bot, LayoutGrid
+  ChevronUp, ChevronDown, Type, Minus, MousePointer, Palette, GripVertical, Bot, LayoutGrid,
+  ShoppingCart, Trophy
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage, Order, CouponPayment } from "@shared/schema";
-import { ShoppingCart } from "lucide-react";
 import { useRef, useCallback } from "react";
 import {
   DndContext,
