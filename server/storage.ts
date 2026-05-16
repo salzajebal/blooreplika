@@ -112,6 +112,8 @@ export interface IStorage {
   getChatMessages(conversationId: string): Promise<ChatMessage[]>;
   createMessage(message: InsertChatMessage): Promise<ChatMessage>;
   createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  updateChatMessageTelegramId(messageId: string, telegramMsgId: number): Promise<void>;
+  getChatMessageByTelegramId(telegramMsgId: number): Promise<ChatMessage | undefined>;
   markMessagesAsRead(conversationId: string, senderType: string): Promise<void>;
   getUnreadCount(conversationId: string, senderType: string): Promise<number>;
   
@@ -931,6 +933,19 @@ export class DatabaseStorage implements IStorage {
 
   async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
     return this.createMessage(message);
+  }
+
+  async updateChatMessageTelegramId(messageId: string, telegramMsgId: number): Promise<void> {
+    await db.update(chatMessages)
+      .set({ telegramMsgId })
+      .where(eq(chatMessages.id, messageId));
+  }
+
+  async getChatMessageByTelegramId(telegramMsgId: number): Promise<ChatMessage | undefined> {
+    const [msg] = await db.select().from(chatMessages)
+      .where(eq(chatMessages.telegramMsgId, telegramMsgId))
+      .limit(1);
+    return msg;
   }
 
   async markMessagesAsRead(conversationId: string, senderType: string): Promise<void> {

@@ -557,6 +557,7 @@ export const chatMessages = pgTable("chat_messages", {
   senderName: text("sender_name").notNull(),
   message: text("message").notNull(),
   isRead: boolean("is_read").default(false),
+  telegramMsgId: integer("telegram_msg_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

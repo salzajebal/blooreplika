@@ -2268,7 +2268,7 @@ export async function registerRoutes(
         updatedAt: new Date()
       });
       
-      sendTelegramNotification(`💬 <b>새 1:1 채팅 (회원)</b>\n👤 ${session.name}\n💬 ${message.substring(0, 100)}`).catch(() => {});
+      sendTelegramChatNotification(`💬 <b>새 1:1 채팅 (회원)</b>\n👤 ${session.name}\n💬 ${message.substring(0, 100)}`, chatMessage.id).catch(() => {});
 
       res.status(201).json({ success: true, data: chatMessage });
     } catch (error) {
@@ -2277,14 +2277,18 @@ export async function registerRoutes(
     }
   });
 
-  // ==================== TELEGRAM NOTIFICATION HELPER ====================
+  // ==================== TELEGRAM NOTIFICATION HELPERS ====================
 
-  async function sendTelegramNotification(text: string): Promise<void> {
+  // 주문 알림 봇 (단방향)
+  async function sendTelegramOrderNotification(text: string): Promise<void> {
     try {
       const settings = await storage.getAllSiteSettings();
-      const token   = settings.find(s => s.key === "telegram_bot_token")?.value;
-      const chatId  = settings.find(s => s.key === "telegram_chat_id")?.value;
-      const enabled = settings.find(s => s.key === "telegram_enabled")?.value === "true";
+      const token   = settings.find(s => s.key === "telegram_order_bot_token")?.value
+                   || settings.find(s => s.key === "telegram_bot_token")?.value; // 하위 호환
+      const chatId  = settings.find(s => s.key === "telegram_order_chat_id")?.value
+                   || settings.find(s => s.key === "telegram_chat_id")?.value;   // 하위 호환
+      const enabled = settings.find(s => s.key === "telegram_order_enabled")?.value === "true"
+                   || settings.find(s => s.key === "telegram_enabled")?.value === "true";
       if (!token || !chatId || !enabled) return;
       await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: "POST",
@@ -2292,24 +2296,55 @@ export async function registerRoutes(
         body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
       });
     } catch (e) {
-      console.error("[telegram] notification failed:", e);
+      console.error("[telegram-order] notification failed:", e);
     }
+  }
+
+  // 채팅 상담 봇 (양방향) — 전송 후 telegram_msg_id 저장
+  async function sendTelegramChatNotification(text: string, chatMessageId?: string): Promise<void> {
+    try {
+      const settings = await storage.getAllSiteSettings();
+      const token   = settings.find(s => s.key === "telegram_chat_bot_token")?.value;
+      const chatId  = settings.find(s => s.key === "telegram_chat_chat_id")?.value;
+      const enabled = settings.find(s => s.key === "telegram_chat_enabled")?.value === "true";
+      if (!token || !chatId || !enabled) return;
+      const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
+      });
+      const data = await r.json() as any;
+      // 전송 성공 시 telegram_msg_id를 chat_messages에 저장
+      if (data.ok && chatMessageId && data.result?.message_id) {
+        await storage.updateChatMessageTelegramId(chatMessageId, data.result.message_id);
+      }
+    } catch (e) {
+      console.error("[telegram-chat] notification failed:", e);
+    }
+  }
+
+  // 하위 호환용 래퍼 (주문/회원 알림에 계속 사용)
+  async function sendTelegramNotification(text: string): Promise<void> {
+    return sendTelegramOrderNotification(text);
   }
 
   // ==================== TELEGRAM BOT API ====================
 
-  app.get("/api/admin/telegram/settings", requireAdminAuth, async (req: Request, res: Response) => {
+  // 주문 봇 설정 GET
+  app.get("/api/admin/telegram/order-settings", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const settings = await storage.getAllSiteSettings();
       res.json({
         success: true,
         data: {
-          token:           settings.find(s => s.key === "telegram_bot_token")?.value || "",
-          chatId:          settings.find(s => s.key === "telegram_chat_id")?.value || "",
-          enabled:         settings.find(s => s.key === "telegram_enabled")?.value === "true",
-          notifyOrder:     settings.find(s => s.key === "telegram_notify_order")?.value !== "false",
-          notifyMember:    settings.find(s => s.key === "telegram_notify_member")?.value !== "false",
-          notifyChat:      settings.find(s => s.key === "telegram_notify_chat")?.value !== "false",
+          token:        settings.find(s => s.key === "telegram_order_bot_token")?.value
+                     || settings.find(s => s.key === "telegram_bot_token")?.value || "",
+          chatId:       settings.find(s => s.key === "telegram_order_chat_id")?.value
+                     || settings.find(s => s.key === "telegram_chat_id")?.value || "",
+          enabled:      settings.find(s => s.key === "telegram_order_enabled")?.value === "true"
+                     || settings.find(s => s.key === "telegram_enabled")?.value === "true",
+          notifyOrder:  settings.find(s => s.key === "telegram_notify_order")?.value !== "false",
+          notifyMember: settings.find(s => s.key === "telegram_notify_member")?.value !== "false",
         },
       });
     } catch (e) {
@@ -2317,16 +2352,16 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/admin/telegram/settings", requireAdminAuth, async (req: Request, res: Response) => {
+  // 주문 봇 설정 POST
+  app.post("/api/admin/telegram/order-settings", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      const { token, chatId, enabled, notifyOrder, notifyMember, notifyChat } = req.body;
+      const { token, chatId, enabled, notifyOrder, notifyMember } = req.body;
       await Promise.all([
-        storage.setSiteSetting("telegram_bot_token",   token   || ""),
-        storage.setSiteSetting("telegram_chat_id",     chatId  || ""),
-        storage.setSiteSetting("telegram_enabled",     enabled ? "true" : "false"),
-        storage.setSiteSetting("telegram_notify_order",  notifyOrder  !== false ? "true" : "false"),
-        storage.setSiteSetting("telegram_notify_member", notifyMember !== false ? "true" : "false"),
-        storage.setSiteSetting("telegram_notify_chat",   notifyChat   !== false ? "true" : "false"),
+        storage.setSiteSetting("telegram_order_bot_token", token   || ""),
+        storage.setSiteSetting("telegram_order_chat_id",   chatId  || ""),
+        storage.setSiteSetting("telegram_order_enabled",   enabled ? "true" : "false"),
+        storage.setSiteSetting("telegram_notify_order",    notifyOrder  !== false ? "true" : "false"),
+        storage.setSiteSetting("telegram_notify_member",   notifyMember !== false ? "true" : "false"),
       ]);
       res.json({ success: true });
     } catch (e) {
@@ -2334,7 +2369,47 @@ export async function registerRoutes(
     }
   });
 
-  // 토큰 자동 검증 — Telegram getMe API 호출
+  // 채팅 봇 설정 GET
+  app.get("/api/admin/telegram/chat-settings", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const settings = await storage.getAllSiteSettings();
+      const host = process.env.REPL_SLUG
+        ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+        : "";
+      res.json({
+        success: true,
+        data: {
+          token:          settings.find(s => s.key === "telegram_chat_bot_token")?.value || "",
+          chatId:         settings.find(s => s.key === "telegram_chat_chat_id")?.value || "",
+          enabled:        settings.find(s => s.key === "telegram_chat_enabled")?.value === "true",
+          notifyChat:     settings.find(s => s.key === "telegram_chat_notify")?.value !== "false",
+          webhookSecret:  settings.find(s => s.key === "telegram_chat_webhook_secret")?.value || "",
+          webhookSet:     settings.find(s => s.key === "telegram_chat_webhook_set")?.value === "true",
+          webhookUrl:     `${host}/api/telegram/chat-webhook`,
+        },
+      });
+    } catch (e) {
+      res.status(500).json({ success: false, error: "설정을 불러올 수 없습니다." });
+    }
+  });
+
+  // 채팅 봇 설정 POST
+  app.post("/api/admin/telegram/chat-settings", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { token, chatId, enabled, notifyChat } = req.body;
+      await Promise.all([
+        storage.setSiteSetting("telegram_chat_bot_token", token  || ""),
+        storage.setSiteSetting("telegram_chat_chat_id",   chatId || ""),
+        storage.setSiteSetting("telegram_chat_enabled",   enabled ? "true" : "false"),
+        storage.setSiteSetting("telegram_chat_notify",    notifyChat !== false ? "true" : "false"),
+      ]);
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ success: false, error: "저장에 실패했습니다." });
+    }
+  });
+
+  // 토큰 자동 검증 — Telegram getMe API 호출 (봇 무관)
   app.post("/api/admin/telegram/validate", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const { token } = req.body;
@@ -2348,7 +2423,7 @@ export async function registerRoutes(
     }
   });
 
-  // 채팅 ID 자동 감지 — getUpdates로 최근 채팅 목록 반환
+  // 채팅 ID 자동 감지 — getUpdates로 최근 채팅 목록 반환 (봇 무관)
   app.post("/api/admin/telegram/get-chats", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const { token } = req.body;
@@ -2356,7 +2431,6 @@ export async function registerRoutes(
       const r = await fetch(`https://api.telegram.org/bot${token}/getUpdates?limit=100&allowed_updates=["message","channel_post"]`);
       const data = await r.json() as any;
       if (!data.ok) return res.status(400).json({ success: false, error: "업데이트를 가져올 수 없습니다." });
-
       const seen = new Set<string>();
       const chats: { id: string; title: string; type: string }[] = [];
       for (const update of (data.result || [])) {
@@ -2365,8 +2439,7 @@ export async function registerRoutes(
         const key = String(chat.id);
         if (seen.has(key)) continue;
         seen.add(key);
-        const title = chat.title || chat.username || chat.first_name || String(chat.id);
-        chats.push({ id: key, title, type: chat.type });
+        chats.push({ id: key, title: chat.title || chat.username || chat.first_name || key, type: chat.type });
       }
       res.json({ success: true, data: chats });
     } catch (e) {
@@ -2374,21 +2447,116 @@ export async function registerRoutes(
     }
   });
 
-  // 테스트 메시지 전송
+  // 테스트 메시지 전송 (봇 무관)
   app.post("/api/admin/telegram/test", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      const { token, chatId } = req.body;
+      const { token, chatId, type } = req.body;
       if (!token || !chatId) return res.status(400).json({ success: false, error: "토큰과 채팅 ID가 필요합니다." });
+      const testText = type === "chat"
+        ? "✅ <b>velour 채팅 상담 봇 연결 성공!</b>\n\n고객 채팅 메시지가 이 채널로 발송됩니다.\n💡 메시지에 <b>답장(Reply)</b>하면 홈페이지 채팅창에 자동으로 전달됩니다."
+        : "✅ <b>velour 주문 알림 봇 연결 성공!</b>\n\n주문·회원가입 알림이 이 채널로 발송됩니다.";
       const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: chatId, text: "✅ <b>velour 알림 연결 성공!</b>\n\n이제 주문·회원가입·1:1 채팅 알림이 이 채널로 발송됩니다.", parse_mode: "HTML" }),
+        body: JSON.stringify({ chat_id: chatId, text: testText, parse_mode: "HTML" }),
       });
       const data = await r.json() as any;
       if (!data.ok) return res.status(400).json({ success: false, error: `전송 실패: ${data.description}` });
       res.json({ success: true });
     } catch (e) {
       res.status(500).json({ success: false, error: "테스트 메시지 전송에 실패했습니다." });
+    }
+  });
+
+  // 웹훅 등록 — 채팅 봇 전용
+  app.post("/api/admin/telegram/set-webhook", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { token } = req.body;
+      if (!token) return res.status(400).json({ success: false, error: "토큰이 필요합니다." });
+
+      // 배포 도메인 자동 감지 (REPLIT_DEV_DOMAIN or custom)
+      const host = process.env.REPLIT_DEV_DOMAIN
+        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+        : process.env.REPL_SLUG && process.env.REPL_OWNER
+          ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`
+          : null;
+      if (!host) return res.status(400).json({ success: false, error: "배포 도메인을 감지할 수 없습니다. 프로덕션 배포 후 다시 시도해주세요." });
+
+      const secret = Math.random().toString(36).substring(2, 18);
+      const webhookUrl = `${host}/api/telegram/chat-webhook`;
+
+      const r = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: webhookUrl,
+          secret_token: secret,
+          allowed_updates: ["message"],
+        }),
+      });
+      const data = await r.json() as any;
+      if (!data.ok) return res.status(400).json({ success: false, error: `웹훅 등록 실패: ${data.description}` });
+
+      await Promise.all([
+        storage.setSiteSetting("telegram_chat_webhook_secret", secret),
+        storage.setSiteSetting("telegram_chat_webhook_set", "true"),
+      ]);
+      res.json({ success: true, data: { webhookUrl } });
+    } catch (e) {
+      res.status(500).json({ success: false, error: "웹훅 등록에 실패했습니다." });
+    }
+  });
+
+  // ==================== TELEGRAM CHAT WEBHOOK (PUBLIC) ====================
+  // 텔레그램이 이 엔드포인트로 답장 이벤트를 전송
+
+  app.post("/api/telegram/chat-webhook", async (req: Request, res: Response) => {
+    try {
+      // secret_token 검증
+      const settings = await storage.getAllSiteSettings();
+      const secret = settings.find(s => s.key === "telegram_chat_webhook_secret")?.value;
+      if (secret) {
+        const incoming = req.headers["x-telegram-bot-api-secret-token"];
+        if (incoming !== secret) {
+          return res.status(401).json({ ok: false });
+        }
+      }
+
+      const body = req.body as any;
+      const msg = body?.message;
+      if (!msg) return res.json({ ok: true }); // 메시지가 없으면 무시
+
+      const replyTo = msg.reply_to_message;
+      if (!replyTo) return res.json({ ok: true }); // 답장이 아닌 일반 메시지는 무시
+
+      const telegramMsgId = replyTo.message_id as number;
+      const replyText = msg.text as string;
+      const senderName = msg.from?.first_name || msg.from?.username || "관리자";
+
+      if (!replyText) return res.json({ ok: true });
+
+      // 어떤 채팅 대화에 대한 답장인지 조회
+      const originalMsg = await storage.getChatMessageByTelegramId(telegramMsgId);
+      if (!originalMsg) {
+        console.log(`[telegram-webhook] telegram_msg_id ${telegramMsgId} 에 해당하는 대화를 찾을 수 없음`);
+        return res.json({ ok: true });
+      }
+
+      // 관리자 답장 메시지 저장
+      await storage.createMessage({
+        conversationId: originalMsg.conversationId,
+        senderType: "admin",
+        senderName,
+        message: replyText,
+      });
+
+      await storage.updateChatConversation(originalMsg.conversationId, { updatedAt: new Date() });
+
+      console.log(`[telegram-webhook] 관리자 답장 저장 완료 — conversation ${originalMsg.conversationId}`);
+      res.json({ ok: true });
+    } catch (e) {
+      console.error("[telegram-webhook] error:", e);
+      res.status(500).json({ ok: false });
     }
   });
 
@@ -2579,7 +2747,7 @@ export async function registerRoutes(
         message: message.trim(),
       });
       await storage.updateChatConversation(conversationId, { updatedAt: new Date() });
-      sendTelegramNotification(`💬 <b>새 1:1 채팅 (비회원)</b>\n👤 ${guestName.trim()}\n💬 ${message.trim().substring(0, 100)}`).catch(() => {});
+      sendTelegramChatNotification(`💬 <b>새 1:1 채팅 (비회원)</b>\n👤 ${guestName.trim()}\n💬 ${message.trim().substring(0, 100)}`, chatMessage.id).catch(() => {});
       res.status(201).json({ success: true, data: chatMessage });
     } catch (error) {
       console.error("Error sending guest message:", error);
