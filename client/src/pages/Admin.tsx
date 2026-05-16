@@ -10355,14 +10355,14 @@ function QuickMenuTab({ authToken }: { authToken: string }) {
 }
 
 function RankingAdminTab({ authToken }: { authToken: string }) {
-  const [gender, setGender] = React.useState<"남성" | "여성">("남성");
-  const [rankingItems, setRankingItems] = React.useState<any[]>([]);
-  const [loading, setLoading] = React.useState(false);
-  const [searchQuery, setSearchQuery] = React.useState("");
-  const [searchResults, setSearchResults] = React.useState<any[]>([]);
-  const [searchLoading, setSearchLoading] = React.useState(false);
-  const [editingRank, setEditingRank] = React.useState<number | null>(null);
-  const [msg, setMsg] = React.useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [gender, setGender] = useState<"남성" | "여성">("남성");
+  const [rankingItems, setRankingItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [editingRank, setEditingRank] = useState<number | null>(null);
+  const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
   const fetchRanking = async (g: string) => {
     setLoading(true);
@@ -10375,7 +10375,7 @@ function RankingAdminTab({ authToken }: { authToken: string }) {
     }
   };
 
-  React.useEffect(() => { fetchRanking(gender); }, [gender]);
+  useEffect(() => { fetchRanking(gender); }, [gender]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
