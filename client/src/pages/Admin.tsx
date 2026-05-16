@@ -7880,6 +7880,17 @@ export default function Admin() {
                     <h3 className="font-bold">저장 & 웹훅 등록</h3>
                   </div>
 
+                  {/* 미저장 경고 */}
+                  {(!tgChat.enabled || !tgChat.token || !tgChat.chatId) && (
+                    <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-400 rounded-lg">
+                      <span className="text-amber-500 text-lg leading-none">⚠️</span>
+                      <div>
+                        <p className="font-bold text-amber-800 text-sm">설정 저장이 필요합니다</p>
+                        <p className="text-xs text-amber-700 mt-0.5">테스트만으로는 실제 알림이 발송되지 않습니다.<br/>반드시 <b>채팅 상담 봇 활성화</b>를 켜고 <b>설정 저장</b>을 눌러주세요.</p>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg">
                     <div><p className="font-bold text-green-900">채팅 상담 봇 활성화</p><p className="text-xs text-green-700">비활성화 시 채팅 알림이 발송되지 않습니다.</p></div>
                     <label className="relative inline-flex items-center cursor-pointer">

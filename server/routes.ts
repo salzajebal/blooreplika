@@ -4,6 +4,7 @@ import * as cheerio from "cheerio";
 import compression from "compression";
 import { storage } from "./storage";
 import { pool } from "./db";
+import { broadcastToConversation, broadcastToAdmins } from "./chatSocket";
 import { registerObjectStorageRoutes, ObjectStorageService } from "./replit_integrations/object_storage";
 import { 
   type Product,
@@ -2268,6 +2269,9 @@ export async function registerRoutes(
         updatedAt: new Date()
       });
       
+      // WebSocket 브로드캐스트 (어드민에게 실시간 전달)
+      broadcastToConversation(conversation.id, { type: "message", conversationId: conversation.id, data: chatMessage });
+      broadcastToAdmins({ type: "new_message", conversationId: conversation.id, data: chatMessage });
       sendTelegramChatNotification(`💬 <b>새 1:1 채팅 (회원)</b>\n👤 ${session.name}\n💬 ${message.substring(0, 100)}`, chatMessage.id).catch(() => {});
 
       res.status(201).json({ success: true, data: chatMessage });
@@ -2747,6 +2751,9 @@ export async function registerRoutes(
         message: message.trim(),
       });
       await storage.updateChatConversation(conversationId, { updatedAt: new Date() });
+      // WebSocket 브로드캐스트 (어드민에게 실시간 전달)
+      broadcastToConversation(conversationId, { type: "message", conversationId, data: chatMessage });
+      broadcastToAdmins({ type: "new_message", conversationId, data: chatMessage });
       sendTelegramChatNotification(`💬 <b>새 1:1 채팅 (비회원)</b>\n👤 ${guestName.trim()}\n💬 ${message.trim().substring(0, 100)}`, chatMessage.id).catch(() => {});
       res.status(201).json({ success: true, data: chatMessage });
     } catch (error) {

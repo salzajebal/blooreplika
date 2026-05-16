@@ -100,7 +100,21 @@ export function ChatWidget() {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === "message" && data.conversationId === conversationId) {
-        setMessages(prev => [...prev, data.data]);
+        setMessages(prev => {
+          // 낙관적 메시지(opt-)를 실제 서버 메시지로 교체 (user 메시지)
+          // admin 메시지는 그냥 추가
+          if (data.data.senderType === "user") {
+            const optIdx = prev.findLastIndex((m: ChatMessage) => m.id.startsWith("opt-"));
+            if (optIdx !== -1) {
+              const next = [...prev];
+              next[optIdx] = data.data;
+              return next;
+            }
+          }
+          // 이미 동일 ID가 있으면 중복 추가 방지
+          if (prev.some((m: ChatMessage) => m.id === data.data.id)) return prev;
+          return [...prev, data.data];
+        });
       }
     };
     ws.onclose = () => {
@@ -159,20 +173,23 @@ export function ChatWidget() {
 
   // ── 메시지 전송 ──
   const sendMessage = async () => {
-    if (!newMessage.trim() || !conversation || !socket) return;
+    if (!newMessage.trim() || !conversation) return;
     const messageText = newMessage.trim();
+    const senderName = chatMode === "guest" ? guestName : memberName;
     setNewMessage("");
 
-    if (socket.readyState === WebSocket.OPEN) {
-      const senderName = chatMode === "guest" ? guestName : memberName;
-      socket.send(JSON.stringify({
-        type: "message",
-        conversationId: conversation.id,
-        senderType: "user",
-        senderName,
-        message: messageText,
-      }));
-    }
+    // 낙관적 UI 업데이트 (즉시 화면에 표시, 중복 저장 방지)
+    const optimisticMsg: ChatMessage = {
+      id: `opt-${Date.now()}`,
+      conversationId: conversation.id,
+      senderType: "user",
+      senderName,
+      message: messageText,
+      isRead: false,
+      telegramMsgId: null,
+      createdAt: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
 
     try {
       if (chatMode === "guest") {
