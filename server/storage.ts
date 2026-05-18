@@ -116,6 +116,7 @@ export interface IStorage {
   getChatMessageByTelegramId(telegramMsgId: number): Promise<ChatMessage | undefined>;
   markMessagesAsRead(conversationId: string, senderType: string): Promise<void>;
   getUnreadCount(conversationId: string, senderType: string): Promise<number>;
+  getUnreadCountsByConversation(): Promise<Record<string, number>>;
   
   // FAQ
   getAllFaqs(): Promise<Faq[]>;
@@ -967,6 +968,20 @@ export class DatabaseStorage implements IStorage {
         eq(chatMessages.isRead, false)
       ));
     return result[0]?.count || 0;
+  }
+
+  async getUnreadCountsByConversation(): Promise<Record<string, number>> {
+    const result = await db.select({
+      conversationId: chatMessages.conversationId,
+      count: sql<number>`count(*)`
+    })
+      .from(chatMessages)
+      .where(and(
+        eq(chatMessages.senderType, 'user'),
+        eq(chatMessages.isRead, false)
+      ))
+      .groupBy(chatMessages.conversationId);
+    return Object.fromEntries(result.map(r => [r.conversationId, Number(r.count)]));
   }
 
   // FAQ

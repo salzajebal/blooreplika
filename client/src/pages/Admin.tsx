@@ -2214,12 +2214,21 @@ export default function Admin() {
         senderType: "admin",
         senderName: "관리자",
       }));
-      
       chatSocket.send(JSON.stringify({
         type: "read",
         conversationId: conversation.id,
       }));
     }
+
+    // HTTP로 읽음 처리 + 목록에서 unreadCount 즉시 제거
+    fetchWithAuth(`/api/chat/conversations/${conversation.id}/read`, {
+      method: "POST",
+      body: JSON.stringify({ senderType: "admin" }),
+    }).then(() => {
+      setChatConversations(prev =>
+        prev.map(c => c.id === conversation.id ? { ...c, unreadCount: 0 } as any : c)
+      );
+    }).catch(() => {});
   };
 
   const sendChatMessage = () => {
@@ -6032,10 +6041,10 @@ export default function Admin() {
                             selectedConversation?.id === conv.id ? "bg-blue-50 border-l-4 border-blue-500" : ""
                           }`}
                         >
-                          <div className="flex items-start justify-between">
+                          <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-medium text-gray-900 truncate">
+                                <span className={`font-medium truncate ${(conv as any).unreadCount > 0 ? "text-gray-900 font-bold" : "text-gray-900"}`}>
                                   {displayName}
                                 </span>
                                 {isGuest && (
@@ -6058,6 +6067,11 @@ export default function Admin() {
                                 {conv.updatedAt ? new Date(conv.updatedAt).toLocaleString("ko-KR") : ""}
                               </p>
                             </div>
+                            {(conv as any).unreadCount > 0 && (
+                              <span className="flex-shrink-0 min-w-[20px] h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center px-1">
+                                {(conv as any).unreadCount}
+                              </span>
+                            )}
                           </div>
                         </div>
                         );
@@ -7785,15 +7799,14 @@ export default function Admin() {
                 </div>
                 <div>
                   <h2 className="text-lg font-bold">💬 채팅 상담 봇</h2>
-                  <p className="text-sm text-gray-500">고객 채팅 알림 수신 + <b>텔레그램에서 답장하면 홈페이지에 자동 전달</b> (양방향)</p>
+                  <p className="text-sm text-gray-500">고객 채팅 알림 단방향 수신</p>
                 </div>
               </div>
 
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-sm text-green-800 space-y-1">
                 <p className="font-semibold">💡 채팅 봇 작동 방식</p>
-                <p>① 고객이 홈페이지에서 채팅 메시지를 보내면 이 봇으로 알림이 옵니다</p>
-                <p>② 텔레그램에서 해당 메시지에 <b>답장(Reply)</b>을 하면</p>
-                <p>③ 홈페이지 고객 채팅창에 답장이 자동으로 표시됩니다</p>
+                <p>고객이 홈페이지에서 채팅 메시지를 보내면 텔레그램으로 알림이 옵니다.</p>
+                <p>답장은 어드민 패널에서 직접 해주세요.</p>
                 <p className="text-green-600 font-medium mt-1">⚠️ 주문 봇과 반드시 <b>다른 봇</b>을 사용해야 합니다</p>
               </div>
 
@@ -7805,7 +7818,7 @@ export default function Admin() {
                     {s < 3 && <div className={`h-1 w-10 rounded ${tgChatStep > s ? "bg-green-500" : "bg-gray-200"}`} />}
                   </div>
                 ))}
-                <span className="ml-2 text-sm text-gray-500">{tgChatStep === 1 ? "봇 토큰 입력" : tgChatStep === 2 ? "채팅 ID 선택" : "웹훅 설정"}</span>
+                <span className="ml-2 text-sm text-gray-500">{tgChatStep === 1 ? "봇 토큰 입력" : tgChatStep === 2 ? "채팅 ID 선택" : "저장"}</span>
               </div>
 
               {/* Step 1 — 토큰 */}
@@ -7877,7 +7890,7 @@ export default function Admin() {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 space-y-4">
                   <div className="flex items-center gap-2">
                     <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-green-500 text-white">3</div>
-                    <h3 className="font-bold">저장 & 웹훅 등록</h3>
+                    <h3 className="font-bold">설정 저장</h3>
                   </div>
 
                   {/* 미저장 경고 */}
@@ -7912,38 +7925,13 @@ export default function Admin() {
                       setTgChatSaving(true); setTgChatMsg(null);
                       const r = await fetchWithAuth("/api/admin/telegram/chat-settings", { method: "POST", body: JSON.stringify(tgChat) });
                       const d = await r.json(); setTgChatSaving(false);
-                      setTgChatMsg(d.success ? { type: "ok", text: "✅ 저장 완료! 아래에서 웹훅도 등록해주세요." } : { type: "err", text: d.error });
+                      setTgChatMsg(d.success ? { type: "ok", text: "✅ 저장 완료! 이제 채팅 알림이 텔레그램으로 발송됩니다." } : { type: "err", text: d.error });
                     }} disabled={tgChatSaving} className="bg-green-500 hover:bg-green-600 text-white" data-testid="button-tg-chat-save">
                       {tgChatSaving ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}설정 저장
                     </Button>
                   </div>
                   {tgChatMsg && <p className={`text-sm font-medium ${tgChatMsg.type === "ok" ? "text-green-600" : "text-red-600"}`}>{tgChatMsg.text}</p>}
 
-                  {/* 웹훅 등록 */}
-                  <div className="border-t border-gray-100 pt-4 space-y-3">
-                    <div>
-                      <p className="font-semibold text-sm mb-1">🔗 웹훅 등록 (답장 기능 활성화)</p>
-                      <p className="text-xs text-gray-500">설정 저장 후 아래 버튼으로 웹훅을 등록해야 텔레그램 답장이 홈페이지에 전달됩니다.</p>
-                    </div>
-                    {tgChat.webhookUrl && (
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <p className="text-xs text-gray-400 mb-1">등록된 웹훅 URL</p>
-                        <p className="font-mono text-xs text-gray-700 break-all">{tgChat.webhookUrl}</p>
-                        {tgChat.webhookSet && <p className="text-xs text-green-600 font-semibold mt-1">✅ 웹훅 등록 완료</p>}
-                      </div>
-                    )}
-                    <Button onClick={async () => {
-                      setTgWebhookLoading(true); setTgChatMsg(null);
-                      const r = await fetchWithAuth("/api/admin/telegram/set-webhook", { method: "POST", body: JSON.stringify({ token: tgChat.token }) });
-                      const d = await r.json(); setTgWebhookLoading(false);
-                      if (d.success) {
-                        setTgChat(p => ({ ...p, webhookSet: true, webhookUrl: d.data?.webhookUrl || "" }));
-                        setTgChatMsg({ type: "ok", text: `✅ 웹훅 등록 완료! 이제 텔레그램 답장이 홈페이지 채팅에 자동 전달됩니다.` });
-                      } else setTgChatMsg({ type: "err", text: d.error });
-                    }} disabled={tgWebhookLoading || !tgChat.token} className="bg-purple-600 hover:bg-purple-700 text-white" data-testid="button-tg-set-webhook">
-                      {tgWebhookLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : "🔗 "}웹훅 등록
-                    </Button>
-                  </div>
                 </div>
               )}
             </div>

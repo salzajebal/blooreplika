@@ -2148,8 +2148,12 @@ export async function registerRoutes(
   
   app.get("/api/chat/conversations", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      const conversations = await storage.getAllConversations();
-      res.json({ success: true, data: conversations });
+      const [conversations, unreadCounts] = await Promise.all([
+        storage.getAllConversations(),
+        storage.getUnreadCountsByConversation(),
+      ]);
+      const data = conversations.map(c => ({ ...c, unreadCount: unreadCounts[c.id] || 0 }));
+      res.json({ success: true, data });
     } catch (error) {
       console.error("Error fetching conversations:", error);
       res.status(500).json({ success: false, error: "대화 목록을 불러올 수 없습니다." });
@@ -2272,7 +2276,7 @@ export async function registerRoutes(
       // WebSocket 브로드캐스트 (어드민에게 실시간 전달)
       broadcastToConversation(conversation.id, { type: "message", conversationId: conversation.id, data: chatMessage });
       broadcastToAdmins({ type: "new_message", conversationId: conversation.id, data: chatMessage });
-      sendTelegramChatNotification(`💬 <b>새 1:1 채팅 (회원)</b>\n👤 ${session.name}\n💬 ${message.substring(0, 100)}`, chatMessage.id).catch(() => {});
+      sendTelegramChatNotification(`💬 <b>새 1:1 채팅 (회원)</b>\n👤 ${session.name}\n💬 ${message.substring(0, 100)}`).catch(() => {});
 
       res.status(201).json({ success: true, data: chatMessage });
     } catch (error) {
@@ -2305,23 +2309,18 @@ export async function registerRoutes(
   }
 
   // 채팅 상담 봇 (양방향) — 전송 후 telegram_msg_id 저장
-  async function sendTelegramChatNotification(text: string, chatMessageId?: string): Promise<void> {
+  async function sendTelegramChatNotification(text: string): Promise<void> {
     try {
       const settings = await storage.getAllSiteSettings();
       const token   = settings.find(s => s.key === "telegram_chat_bot_token")?.value;
       const chatId  = settings.find(s => s.key === "telegram_chat_chat_id")?.value;
       const enabled = settings.find(s => s.key === "telegram_chat_enabled")?.value === "true";
       if (!token || !chatId || !enabled) return;
-      const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
       });
-      const data = await r.json() as any;
-      // 전송 성공 시 telegram_msg_id를 chat_messages에 저장
-      if (data.ok && chatMessageId && data.result?.message_id) {
-        await storage.updateChatMessageTelegramId(chatMessageId, data.result.message_id);
-      }
     } catch (e) {
       console.error("[telegram-chat] notification failed:", e);
     }
@@ -2754,7 +2753,7 @@ export async function registerRoutes(
       // WebSocket 브로드캐스트 (어드민에게 실시간 전달)
       broadcastToConversation(conversationId, { type: "message", conversationId, data: chatMessage });
       broadcastToAdmins({ type: "new_message", conversationId, data: chatMessage });
-      sendTelegramChatNotification(`💬 <b>새 1:1 채팅 (비회원)</b>\n👤 ${guestName.trim()}\n💬 ${message.trim().substring(0, 100)}`, chatMessage.id).catch(() => {});
+      sendTelegramChatNotification(`💬 <b>새 1:1 채팅 (비회원)</b>\n👤 ${guestName.trim()}\n💬 ${message.trim().substring(0, 100)}`).catch(() => {});
       res.status(201).json({ success: true, data: chatMessage });
     } catch (error) {
       console.error("Error sending guest message:", error);
