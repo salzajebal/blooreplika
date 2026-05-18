@@ -129,6 +129,11 @@ export function ChatWidget() {
 
   useEffect(() => {
     if (!isOpen) return;
+    // 로그인 상태에서 chatMode가 null이면 자동으로 member 모드로 진입
+    if (isLoggedIn && !chatMode) {
+      setChatMode("member");
+      return;
+    }
     if (chatMode === "member" && isLoggedIn && !historyLoaded) {
       loadChatHistory();
     } else if (chatMode === "guest" && guestConversationId && !historyLoaded) {
@@ -534,7 +539,7 @@ export function ChatWidget() {
           <Button
             data-testid="button-send-user-message"
             onClick={sendMessage}
-            disabled={!newMessage.trim() || !isConnected}
+            disabled={!newMessage.trim() || !conversation}
             className="bg-[#FF6100] hover:bg-[#e05500] text-white rounded-xl touch-manipulation px-3 sm:px-4 disabled:opacity-50"
           >
             <Send className="w-4 h-4" />
