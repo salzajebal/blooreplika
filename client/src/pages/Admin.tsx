@@ -7940,6 +7940,28 @@ export default function Admin() {
 
         {activeTab === "staff" && adminRole === "super_admin" && (
           <div className="space-y-6">
+            {/* 직원 접속 URL 안내 */}
+            <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex items-start gap-3">
+              <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Shield className="w-4 h-4 text-indigo-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-indigo-800 text-sm">직원 전용 로그인 페이지</p>
+                <p className="text-indigo-600 text-xs mt-0.5">아래 URL을 직원에게 공유하세요. 직원은 이 페이지에서 로그인하여 후기만 관리할 수 있습니다.</p>
+                <div className="mt-2 flex items-center gap-2">
+                  <code className="bg-indigo-100 text-indigo-800 px-3 py-1.5 rounded-lg text-xs font-mono break-all select-all">
+                    {window.location.origin}/staff
+                  </code>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/staff`); }}
+                    className="flex-shrink-0 text-xs px-2 py-1 bg-indigo-200 hover:bg-indigo-300 text-indigo-800 rounded-md transition-colors"
+                  >
+                    복사
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
               <div className="p-6 border-b border-gray-100 flex justify-between items-center">
                 <div>
