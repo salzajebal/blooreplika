@@ -509,7 +509,7 @@ export default function Order() {
                   <div>
                     <p className="font-bold text-red-700 text-sm">입금 기한 안내 — 반드시 확인해주세요</p>
                     <p className="text-red-600 text-xs mt-1 leading-relaxed">
-                      주문 후 <strong>24시간 이내 미입금 시 주문이 자동 취소</strong>됩니다.<br />
+                      주문 후 <strong>1시간 이내 미입금 시 주문이 자동 취소</strong>됩니다.<br />
                       아래 계좌로 정확한 금액을 입금해 주셔야 주문이 확정됩니다.
                     </p>
                   </div>
