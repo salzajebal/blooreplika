@@ -488,14 +488,34 @@ export default function Order() {
 
             {/* 완료 헤더 */}
             <div className="bg-white border border-[#e8e8e8] p-8 text-center">
-              <div className="w-16 h-16 bg-[#fff5ee] border border-[#FF6100]/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-9 h-9 text-[#FF6100]" />
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${completedPaymentMethod === "bank" ? "bg-blue-50 border border-blue-200" : "bg-[#fff5ee] border border-[#FF6100]/30"}`}>
+                <CheckCircle className={`w-9 h-9 ${completedPaymentMethod === "bank" ? "text-blue-500" : "text-[#FF6100]"}`} />
               </div>
-              <h1 className="text-xl font-bold text-[#111111] mb-1">주문이 완료되었습니다</h1>
+              <h1 className="text-xl font-bold text-[#111111] mb-1">
+                {completedPaymentMethod === "bank" ? "입금 신청이 완료되었습니다" : "주문이 완료되었습니다"}
+              </h1>
               <p className="text-sm text-[#666666]">
                 주문번호: <span className="font-bold text-[#FF6100]">{orderNumber}</span>
               </p>
             </div>
+
+            {/* 계좌이체 긴급 안내 배너 */}
+            {completedPaymentMethod === "bank" && (
+              <div className="bg-red-50 border border-red-300 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-white text-xs font-bold">!</span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-red-700 text-sm">입금 기한 안내 — 반드시 확인해주세요</p>
+                    <p className="text-red-600 text-xs mt-1 leading-relaxed">
+                      주문 후 <strong>24시간 이내 미입금 시 주문이 자동 취소</strong>됩니다.<br />
+                      아래 계좌로 정확한 금액을 입금해 주셔야 주문이 확정됩니다.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* 결제 안내 */}
             {completedPaymentMethod === "card" ? (
