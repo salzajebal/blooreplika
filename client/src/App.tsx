@@ -128,17 +128,27 @@ function Router() {
 }
 
 
+function AppShell() {
+  const [location] = useLocation();
+  const isAdminRoute = location.startsWith("/admin") || location.startsWith("/staff");
+  return (
+    <>
+      <Toaster />
+      <MarketingPixels />
+      <Router />
+      {!isAdminRoute && <BottomNav />}
+      {!isAdminRoute && <ChatWidget />}
+    </>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <WishlistProvider>
           <TooltipProvider>
-            <Toaster />
-            <MarketingPixels />
-            <Router />
-            <BottomNav />
-            <ChatWidget />
+            <AppShell />
           </TooltipProvider>
         </WishlistProvider>
       </QueryClientProvider>
