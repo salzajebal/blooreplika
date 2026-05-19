@@ -2315,12 +2315,20 @@ export async function registerRoutes(
       const token   = settings.find(s => s.key === "telegram_chat_bot_token")?.value;
       const chatId  = settings.find(s => s.key === "telegram_chat_chat_id")?.value;
       const enabled = settings.find(s => s.key === "telegram_chat_enabled")?.value === "true";
-      if (!token || !chatId || !enabled) return;
-      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      if (!enabled) { console.log("[telegram-chat] 비활성화 상태 — 알림 생략"); return; }
+      if (!token)   { console.warn("[telegram-chat] 봇 토큰 미설정 — 어드민에서 채팅봇 토큰을 저장해주세요"); return; }
+      if (!chatId)  { console.warn("[telegram-chat] 채팅 ID 미설정 — 어드민에서 채팅봇 채팅 ID를 저장해주세요"); return; }
+      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
       });
+      const json = await res.json() as any;
+      if (!json.ok) {
+        console.error("[telegram-chat] Telegram API 오류:", json.description, `(error_code: ${json.error_code})`);
+      } else {
+        console.log("[telegram-chat] 알림 전송 완료 →", chatId);
+      }
     } catch (e) {
       console.error("[telegram-chat] notification failed:", e);
     }
