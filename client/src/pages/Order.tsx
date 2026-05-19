@@ -550,25 +550,51 @@ export default function Order() {
               <div className="bg-white border border-[#e8e8e8] p-5">
                 <h2 className="font-bold text-[#111111] text-sm mb-3 flex items-center gap-2">
                   <Building2 className="w-4 h-4 text-[#FF6100]" />
-                  결제계좌 안내
+                  입금 계좌 안내
                 </h2>
                 {depositAccount ? (
                   <div className="space-y-3">
-                    <div className="bg-[#f8f8f8] border border-[#e8e8e8] p-4 rounded space-y-2">
-                      {[
-                        { label: "은행", value: depositAccount.bankName },
-                        { label: "계좌번호", value: depositAccount.accountNumber },
-                        { label: "예금주", value: depositAccount.accountHolder },
-                      ].map(({ label, value }, i, arr) => (
-                        <div key={label} className={`flex justify-between items-center py-1.5 ${i < arr.length - 1 ? "border-b border-[#e8e8e8]" : ""}`}>
-                          <span className="text-[#666666] text-sm">{label}</span>
-                          <span className="font-semibold text-[#111111] text-sm font-mono">{value}</span>
-                        </div>
-                      ))}
+                    {/* 입금 금액 강조 */}
+                    <div className="bg-[#FF6100] rounded-lg p-4 text-center">
+                      <p className="text-white/80 text-xs mb-1">지금 바로 입금할 금액</p>
+                      <p className="text-white text-2xl font-bold">{calculateTotal().toLocaleString()}원</p>
                     </div>
-                    <p className="text-[#666666] text-xs leading-relaxed">
-                      위 계좌로 <strong className="text-[#FF6100]">{calculateTotal()}원</strong>을 입금해 주세요.<br />
-                      입금 확인 후 상품이 발송됩니다.
+                    {/* 계좌 정보 */}
+                    <div className="bg-[#f8f8f8] border border-[#e8e8e8] rounded-lg overflow-hidden">
+                      <div className="flex justify-between items-center px-4 py-3 border-b border-[#e8e8e8]">
+                        <span className="text-[#666666] text-sm">은행</span>
+                        <span className="font-semibold text-[#111111] text-sm">{depositAccount.bankName}</span>
+                      </div>
+                      <div className="flex justify-between items-center px-4 py-3 border-b border-[#e8e8e8]">
+                        <span className="text-[#666666] text-sm">계좌번호</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-[#111111] text-sm font-mono">{depositAccount.accountNumber}</span>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(depositAccount.accountNumber);
+                              const el = document.getElementById("copy-toast");
+                              if (el) { el.style.opacity = "1"; setTimeout(() => { el.style.opacity = "0"; }, 1500); }
+                            }}
+                            className="text-xs px-2 py-0.5 bg-[#111111] text-white rounded hover:bg-[#333] transition-colors"
+                            data-testid="button-copy-account"
+                          >
+                            복사
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center px-4 py-3">
+                        <span className="text-[#666666] text-sm">예금주</span>
+                        <span className="font-semibold text-[#111111] text-sm">{depositAccount.accountHolder}</span>
+                      </div>
+                    </div>
+                    {/* 복사 완료 토스트 */}
+                    <div id="copy-toast" style={{opacity: 0, transition: "opacity 0.3s"}}
+                      className="text-center text-xs text-green-600 font-medium">
+                      ✓ 계좌번호가 복사되었습니다
+                    </div>
+                    <p className="text-[#666666] text-xs leading-relaxed text-center">
+                      입금자명은 <strong className="text-[#111111]">주문자 성함</strong>으로 해주세요.<br />
+                      입금 확인 후 발송됩니다.
                     </p>
                   </div>
                 ) : (
