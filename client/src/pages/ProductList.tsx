@@ -45,7 +45,7 @@ function ProductSkeleton() {
 
 const SHOP_CATEGORY_TABS = [
   { id: "all", name: "전체", slug: null },
-  { id: "clothing", name: "상의", slug: "clothing" },
+  { id: "clothing", name: "상의/하의", slug: "clothing" },
   { id: "bags", name: "가방", slug: "bags" },
   { id: "shoes", name: "신발", slug: "shoes" },
   { id: "wallets", name: "지갑", slug: "wallets" },
