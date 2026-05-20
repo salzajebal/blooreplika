@@ -437,6 +437,14 @@ export default function Order() {
         setOrderNumber(createdOrderNumber);
         setCompletedPaymentMethod(paymentMethod);
         setOrderComplete(true);
+        // 비회원도 나중에 조회할 수 있도록 주문번호 localStorage 저장
+        try {
+          const saved = JSON.parse(localStorage.getItem("recentOrders") || "[]");
+          const entry = { orderNumber: createdOrderNumber, createdAt: new Date().toISOString() };
+          const updated = [entry, ...saved.filter((o: any) => o.orderNumber !== createdOrderNumber)].slice(0, 10);
+          localStorage.setItem("recentOrders", JSON.stringify(updated));
+        } catch {}
+
       } else {
         throw new Error(data.error || "주문 처리 중 오류가 발생했습니다.");
       }

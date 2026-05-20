@@ -3,7 +3,7 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Package, Search, Truck, CheckCircle, Clock, XCircle, AlertTriangle } from "lucide-react";
+import { Package, Search, Truck, CheckCircle, Clock, XCircle, AlertTriangle, History } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface OrderInfo {
@@ -20,6 +20,11 @@ interface OrderInfo {
   memberName: string;
   memberPhone: string;
   shippingAddress: string;
+}
+
+interface RecentOrder {
+  orderNumber: string;
+  createdAt: string;
 }
 
 const statusLabels: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
@@ -43,20 +48,30 @@ export default function OrderInquiry() {
   const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState<OrderInfo | null>(null);
   const [searched, setSearched] = useState(false);
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const on = params.get("orderNumber");
     if (on) setOrderNumber(on);
+
+    try {
+      const saved = JSON.parse(localStorage.getItem("recentOrders") || "[]");
+      setRecentOrders(saved);
+    } catch {}
   }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!orderNumber.trim()) {
+    await doSearch(orderNumber, phone);
+  };
+
+  const doSearch = async (num: string, ph: string) => {
+    if (!num.trim()) {
       toast({ title: "입력 오류", description: "주문번호를 입력해주세요.", variant: "destructive" });
       return;
     }
-    if (!phone.trim()) {
+    if (!ph.trim()) {
       toast({ title: "입력 오류", description: "연락처를 입력해주세요.", variant: "destructive" });
       return;
     }
@@ -65,7 +80,7 @@ export default function OrderInquiry() {
     setSearched(true);
 
     try {
-      const res = await fetch(`/api/orders/lookup?orderNumber=${encodeURIComponent(orderNumber.trim())}&phone=${encodeURIComponent(phone.replace(/-/g, ""))}`);
+      const res = await fetch(`/api/orders/lookup?orderNumber=${encodeURIComponent(num.trim())}&phone=${encodeURIComponent(ph.replace(/-/g, ""))}`);
       const data = await res.json();
       if (data.success && data.data) {
         setOrder(data.data);
@@ -73,7 +88,7 @@ export default function OrderInquiry() {
         setOrder(null);
         toast({ title: "조회 결과 없음", description: "주문번호와 연락처가 일치하는 주문이 없습니다.", variant: "destructive" });
       }
-    } catch (error) {
+    } catch {
       setOrder(null);
       toast({ title: "조회 오류", description: "주문 조회 중 오류가 발생했습니다.", variant: "destructive" });
     } finally {
@@ -86,6 +101,14 @@ export default function OrderInquiry() {
     return new Date(dateStr).toLocaleDateString("ko-KR", {
       year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit",
     });
+  };
+
+  const formatRelative = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const days = Math.floor(diff / 86400000);
+    if (days === 0) return "오늘";
+    if (days === 1) return "어제";
+    return `${days}일 전`;
   };
 
   const getStatusInfo = (status: string | null) => statusLabels[status || "pending"] || statusLabels.pending;
@@ -101,6 +124,35 @@ export default function OrderInquiry() {
             <h1 className="text-xl font-bold text-[#111111] mb-1">주문조회</h1>
             <p className="text-sm text-[#666666]">주문번호와 연락처를 입력하여 주문 상태를 확인하세요</p>
           </div>
+
+          {/* 최근 주문번호 */}
+          {recentOrders.length > 0 && (
+            <div className="bg-white border border-[#e8e8e8] rounded-xl p-4 mb-4 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <History className="w-4 h-4 text-[#FF6100]" />
+                <span className="text-sm font-bold text-[#111111]">이 기기에서 주문한 내역</span>
+              </div>
+              <div className="space-y-2">
+                {recentOrders.map((ro) => (
+                  <button
+                    key={ro.orderNumber}
+                    onClick={() => {
+                      setOrderNumber(ro.orderNumber);
+                      window.scrollTo({ top: 300, behavior: "smooth" });
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2.5 bg-[#f8f8f8] hover:bg-[#fff5ee] border border-[#e8e8e8] hover:border-[#FF6100]/30 rounded-lg transition-colors text-left"
+                    data-testid={`recent-order-${ro.orderNumber}`}
+                  >
+                    <div>
+                      <p className="text-sm font-mono font-semibold text-[#111111]">{ro.orderNumber}</p>
+                      <p className="text-xs text-[#999999] mt-0.5">{formatRelative(ro.createdAt)} 주문</p>
+                    </div>
+                    <span className="text-xs text-[#FF6100] font-medium">선택 →</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="bg-white border border-[#e8e8e8] rounded-xl p-5 mb-4 shadow-sm">
             <form onSubmit={handleSearch} className="space-y-4">
