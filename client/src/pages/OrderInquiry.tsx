@@ -3,7 +3,7 @@ import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Package, Search, Truck, CheckCircle, Clock, XCircle, AlertTriangle, History } from "lucide-react";
+import { Package, Search, Truck, CheckCircle, Clock, XCircle, AlertTriangle, History, Phone } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface OrderInfo {
@@ -41,46 +41,120 @@ const paymentLabels: Record<string, { label: string; color: string }> = {
   refunded: { label: "환불완료", color: "text-red-500" },
 };
 
+function OrderCard({ order }: { order: OrderInfo }) {
+  const getStatusInfo = (s: string | null) => statusLabels[s || "pending"] || statusLabels.pending;
+  const getPaymentInfo = (s: string | null) => paymentLabels[s || "pending"] || paymentLabels.pending;
+  const formatDate = (d: string | null) => {
+    if (!d) return "-";
+    return new Date(d).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  };
+
+  return (
+    <div className="bg-white border border-[#e8e8e8] rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-[#f8f8f8] border-b border-[#e8e8e8] p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-[#111111]">
+            <Package className="w-5 h-5 text-[#FF6100]" />
+            <span className="font-bold text-sm">{order.orderNumber}</span>
+          </div>
+          <div className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusInfo(order.status).color}`}>
+            {getStatusInfo(order.status).icon}
+            {getStatusInfo(order.status).label}
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4 space-y-4">
+        <div className="bg-[#f8f8f8] border border-[#e8e8e8] rounded-lg p-3">
+          <p className="font-medium text-[#111111] text-sm">{order.productName || "상품명 없음"}</p>
+          <div className="flex justify-between items-center mt-1.5 text-sm">
+            <span className="text-[#999999]">수량 {order.quantity || 1}개</span>
+            <span className="font-bold text-[#FF6100]">{Number(order.totalAmount).toLocaleString()}원</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <span className="text-[#999999] text-xs">주문일시</span>
+            <p className="font-medium text-[#111111] mt-0.5 text-xs">{formatDate(order.createdAt)}</p>
+          </div>
+          <div>
+            <span className="text-[#999999] text-xs">결제상태</span>
+            <p className={`font-medium mt-0.5 text-xs ${getPaymentInfo(order.paymentStatus).color}`}>
+              {getPaymentInfo(order.paymentStatus).label}
+            </p>
+          </div>
+        </div>
+
+        {order.trackingNumber && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <h4 className="font-bold text-blue-700 mb-1 flex items-center gap-1.5 text-sm">
+              <Truck className="w-4 h-4" />배송 정보
+            </h4>
+            <p className="text-blue-600 text-xs">
+              택배사: {order.shippingCompany || "미정"} · 운송장: {order.trackingNumber}
+            </p>
+          </div>
+        )}
+
+        {!order.trackingNumber && order.status === "pending" && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+            <div className="flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 text-[#FF6100] shrink-0 mt-0.5" />
+              <p className="text-[#FF6100]/80 text-xs">
+                주문 완료 페이지에 안내된 계좌로 입금해주세요. 입금 확인 후 발송됩니다.
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function OrderInquiry() {
   const { toast } = useToast();
+  const [tab, setTab] = useState<"number" | "phone">("number");
+
+  // 주문번호 + 연락처 탭
   const [orderNumber, setOrderNumber] = useState("");
   const [phone, setPhone] = useState("");
-  const [loading, setLoading] = useState(false);
   const [order, setOrder] = useState<OrderInfo | null>(null);
   const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // 연락처만 탭
+  const [phoneOnly, setPhoneOnly] = useState("");
+  const [phoneOrders, setPhoneOrders] = useState<OrderInfo[]>([]);
+  const [phoneSearched, setPhoneSearched] = useState(false);
+  const [phoneLoading, setPhoneLoading] = useState(false);
+
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const on = params.get("orderNumber");
     if (on) setOrderNumber(on);
-
     try {
       const saved = JSON.parse(localStorage.getItem("recentOrders") || "[]");
       setRecentOrders(saved);
     } catch {}
   }, []);
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleNumberSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    await doSearch(orderNumber, phone);
-  };
-
-  const doSearch = async (num: string, ph: string) => {
-    if (!num.trim()) {
+    if (!orderNumber.trim()) {
       toast({ title: "입력 오류", description: "주문번호를 입력해주세요.", variant: "destructive" });
       return;
     }
-    if (!ph.trim()) {
+    if (!phone.trim()) {
       toast({ title: "입력 오류", description: "연락처를 입력해주세요.", variant: "destructive" });
       return;
     }
-
     setLoading(true);
     setSearched(true);
-
     try {
-      const res = await fetch(`/api/orders/lookup?orderNumber=${encodeURIComponent(num.trim())}&phone=${encodeURIComponent(ph.replace(/-/g, ""))}`);
+      const res = await fetch(`/api/orders/lookup?orderNumber=${encodeURIComponent(orderNumber.trim())}&phone=${encodeURIComponent(phone.replace(/-/g, ""))}`);
       const data = await res.json();
       if (data.success && data.data) {
         setOrder(data.data);
@@ -90,17 +164,35 @@ export default function OrderInquiry() {
       }
     } catch {
       setOrder(null);
-      toast({ title: "조회 오류", description: "주문 조회 중 오류가 발생했습니다.", variant: "destructive" });
+      toast({ title: "오류", description: "주문 조회 중 오류가 발생했습니다.", variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleDateString("ko-KR", {
-      year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit",
-    });
+  const handlePhoneSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phoneOnly.trim()) {
+      toast({ title: "입력 오류", description: "연락처를 입력해주세요.", variant: "destructive" });
+      return;
+    }
+    setPhoneLoading(true);
+    setPhoneSearched(true);
+    try {
+      const res = await fetch(`/api/orders/lookup-by-phone?phone=${encodeURIComponent(phoneOnly.replace(/-/g, ""))}`);
+      const data = await res.json();
+      if (data.success && data.data?.length) {
+        setPhoneOrders(data.data);
+      } else {
+        setPhoneOrders([]);
+        toast({ title: "조회 결과 없음", description: "해당 연락처로 주문된 내역이 없습니다.", variant: "destructive" });
+      }
+    } catch {
+      setPhoneOrders([]);
+      toast({ title: "오류", description: "주문 조회 중 오류가 발생했습니다.", variant: "destructive" });
+    } finally {
+      setPhoneLoading(false);
+    }
   };
 
   const formatRelative = (dateStr: string) => {
@@ -111,9 +203,6 @@ export default function OrderInquiry() {
     return `${days}일 전`;
   };
 
-  const getStatusInfo = (status: string | null) => statusLabels[status || "pending"] || statusLabels.pending;
-  const getPaymentInfo = (status: string | null) => paymentLabels[status || "pending"] || paymentLabels.pending;
-
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f5f5]">
       <Header />
@@ -122,169 +211,149 @@ export default function OrderInquiry() {
         <div className="max-w-[640px] mx-auto px-4">
           <div className="text-center mb-6">
             <h1 className="text-xl font-bold text-[#111111] mb-1">주문조회</h1>
-            <p className="text-sm text-[#666666]">주문번호와 연락처를 입력하여 주문 상태를 확인하세요</p>
+            <p className="text-sm text-[#666666]">주문번호가 없어도 연락처만으로 조회할 수 있습니다</p>
           </div>
 
-          {/* 최근 주문번호 */}
-          {recentOrders.length > 0 && (
-            <div className="bg-white border border-[#e8e8e8] rounded-xl p-4 mb-4 shadow-sm">
-              <div className="flex items-center gap-2 mb-3">
-                <History className="w-4 h-4 text-[#FF6100]" />
-                <span className="text-sm font-bold text-[#111111]">이 기기에서 주문한 내역</span>
+          {/* 탭 */}
+          <div className="flex bg-white border border-[#e8e8e8] rounded-xl p-1 mb-4 shadow-sm">
+            <button
+              onClick={() => setTab("number")}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                tab === "number" ? "bg-[#FF6100] text-white" : "text-[#666666]"
+              }`}
+              data-testid="tab-number"
+            >
+              <Search className="w-4 h-4" />주문번호로 조회
+            </button>
+            <button
+              onClick={() => setTab("phone")}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                tab === "phone" ? "bg-[#FF6100] text-white" : "text-[#666666]"
+              }`}
+              data-testid="tab-phone"
+            >
+              <Phone className="w-4 h-4" />연락처만으로 조회
+            </button>
+          </div>
+
+          {/* 주문번호 + 연락처 탭 */}
+          {tab === "number" && (
+            <>
+              {recentOrders.length > 0 && (
+                <div className="bg-white border border-[#e8e8e8] rounded-xl p-4 mb-4 shadow-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <History className="w-4 h-4 text-[#FF6100]" />
+                    <span className="text-sm font-bold text-[#111111]">이 기기에서 주문한 내역</span>
+                  </div>
+                  <div className="space-y-2">
+                    {recentOrders.map((ro) => (
+                      <button
+                        key={ro.orderNumber}
+                        onClick={() => setOrderNumber(ro.orderNumber)}
+                        className="w-full flex items-center justify-between px-3 py-2.5 bg-[#f8f8f8] hover:bg-[#fff5ee] border border-[#e8e8e8] hover:border-[#FF6100]/30 rounded-lg transition-colors text-left"
+                        data-testid={`recent-order-${ro.orderNumber}`}
+                      >
+                        <div>
+                          <p className="text-sm font-mono font-semibold text-[#111111]">{ro.orderNumber}</p>
+                          <p className="text-xs text-[#999999] mt-0.5">{formatRelative(ro.createdAt)} 주문</p>
+                        </div>
+                        <span className="text-xs text-[#FF6100] font-medium">선택 →</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-white border border-[#e8e8e8] rounded-xl p-5 mb-4 shadow-sm">
+                <form onSubmit={handleNumberSearch} className="space-y-4">
+                  <div>
+                    <Label htmlFor="orderNumber" className="text-sm text-[#666666]">주문번호</Label>
+                    <Input
+                      id="orderNumber"
+                      value={orderNumber}
+                      onChange={(e) => setOrderNumber(e.target.value)}
+                      placeholder="ORD-XXXXXXXX"
+                      className="mt-1 bg-white border-[#e8e8e8] text-[#111111] placeholder:text-[#cccccc] focus:border-[#FF6100] focus-visible:ring-0"
+                      data-testid="input-order-number"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone" className="text-sm text-[#666666]">연락처</Label>
+                    <Input
+                      id="phone"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="010-0000-0000"
+                      className="mt-1 bg-white border-[#e8e8e8] text-[#111111] placeholder:text-[#cccccc] focus:border-[#FF6100] focus-visible:ring-0"
+                      data-testid="input-phone"
+                    />
+                  </div>
+                  <Button type="submit" disabled={loading}
+                    className="w-full h-12 bg-[#FF6100] hover:bg-[#e05500] text-white font-bold rounded-xl disabled:opacity-50"
+                    data-testid="button-search-order">
+                    {loading ? "조회 중..." : <><Search className="w-4 h-4 mr-2" />주문 조회하기</>}
+                  </Button>
+                </form>
               </div>
-              <div className="space-y-2">
-                {recentOrders.map((ro) => (
-                  <button
-                    key={ro.orderNumber}
-                    onClick={() => {
-                      setOrderNumber(ro.orderNumber);
-                      window.scrollTo({ top: 300, behavior: "smooth" });
-                    }}
-                    className="w-full flex items-center justify-between px-3 py-2.5 bg-[#f8f8f8] hover:bg-[#fff5ee] border border-[#e8e8e8] hover:border-[#FF6100]/30 rounded-lg transition-colors text-left"
-                    data-testid={`recent-order-${ro.orderNumber}`}
-                  >
-                    <div>
-                      <p className="text-sm font-mono font-semibold text-[#111111]">{ro.orderNumber}</p>
-                      <p className="text-xs text-[#999999] mt-0.5">{formatRelative(ro.createdAt)} 주문</p>
-                    </div>
-                    <span className="text-xs text-[#FF6100] font-medium">선택 →</span>
+
+              {searched && order && <OrderCard order={order} />}
+              {searched && !order && !loading && (
+                <div className="bg-white border border-[#e8e8e8] rounded-xl p-8 text-center shadow-sm">
+                  <Search className="w-7 h-7 text-[#cccccc] mx-auto mb-3" />
+                  <h3 className="text-base font-bold text-[#111111] mb-1">주문을 찾을 수 없습니다</h3>
+                  <p className="text-[#666666] text-sm mb-4">주문번호와 연락처를 다시 확인해주세요.</p>
+                  <button onClick={() => setTab("phone")}
+                    className="text-sm text-[#FF6100] underline font-medium">
+                    주문번호가 기억나지 않으신가요? → 연락처만으로 조회하기
                   </button>
-                ))}
-              </div>
-            </div>
+                </div>
+              )}
+            </>
           )}
 
-          <div className="bg-white border border-[#e8e8e8] rounded-xl p-5 mb-4 shadow-sm">
-            <form onSubmit={handleSearch} className="space-y-4">
-              <div>
-                <Label htmlFor="orderNumber" className="text-sm text-[#666666]">주문번호</Label>
-                <Input
-                  id="orderNumber"
-                  value={orderNumber}
-                  onChange={(e) => setOrderNumber(e.target.value)}
-                  placeholder="ORD-XXXXXXXX"
-                  className="mt-1 bg-white border-[#e8e8e8] text-[#111111] placeholder:text-[#cccccc] focus:border-[#FF6100] focus-visible:ring-0"
-                  data-testid="input-order-number"
-                />
-              </div>
-              <div>
-                <Label htmlFor="phone" className="text-sm text-[#666666]">연락처</Label>
-                <Input
-                  id="phone"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="010-0000-0000"
-                  className="mt-1 bg-white border-[#e8e8e8] text-[#111111] placeholder:text-[#cccccc] focus:border-[#FF6100] focus-visible:ring-0"
-                  data-testid="input-phone"
-                />
-              </div>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full h-12 bg-[#FF6100] hover:bg-[#e05500] text-white font-bold rounded-xl disabled:opacity-50"
-                data-testid="button-search-order"
-              >
-                {loading ? "조회 중..." : <><Search className="w-4 h-4 mr-2" />주문 조회하기</>}
-              </Button>
-            </form>
-          </div>
-
-          {searched && order && (
-            <div className="bg-white border border-[#e8e8e8] rounded-xl overflow-hidden shadow-sm">
-              <div className="bg-[#f8f8f8] border-b border-[#e8e8e8] p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-[#111111]">
-                    <Package className="w-5 h-5 text-[#FF6100]" />
-                    <span className="font-bold text-sm">주문번호: {order.orderNumber}</span>
-                  </div>
-                  <div className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusInfo(order.status).color}`}>
-                    {getStatusInfo(order.status).icon}
-                    {getStatusInfo(order.status).label}
-                  </div>
-                </div>
+          {/* 연락처만 탭 */}
+          {tab === "phone" && (
+            <>
+              <div className="bg-[#fff8f5] border border-[#FF6100]/20 rounded-xl p-4 mb-4">
+                <p className="text-sm text-[#FF6100] font-medium mb-1">📱 연락처만으로 조회</p>
+                <p className="text-xs text-[#666666]">주문 시 입력했던 연락처를 입력하면 해당 번호로 주문한 모든 내역을 확인할 수 있습니다.</p>
               </div>
 
-              <div className="p-5 space-y-5">
-                <div>
-                  <h3 className="font-bold text-[#111111] mb-3 flex items-center gap-2 text-sm">
-                    <Package className="w-4 h-4 text-[#FF6100]" />주문 상품
-                  </h3>
-                  <div className="bg-[#f8f8f8] border border-[#e8e8e8] rounded-lg p-4">
-                    <p className="font-medium text-[#111111] text-sm">{order.productName || "상품명 없음"}</p>
-                    <div className="flex justify-between items-center mt-2 text-sm">
-                      <span className="text-[#999999]">수량: {order.quantity || 1}개</span>
-                      <span className="font-bold text-[#FF6100]">{Number(order.totalAmount).toLocaleString()}원</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="bg-white border border-[#e8e8e8] rounded-xl p-5 mb-4 shadow-sm">
+                <form onSubmit={handlePhoneSearch} className="space-y-4">
                   <div>
-                    <span className="text-[#999999]">주문일시</span>
-                    <p className="font-medium text-[#111111] mt-1">{formatDate(order.createdAt)}</p>
+                    <Label htmlFor="phoneOnly" className="text-sm text-[#666666]">주문 시 입력한 연락처</Label>
+                    <Input
+                      id="phoneOnly"
+                      value={phoneOnly}
+                      onChange={(e) => setPhoneOnly(e.target.value)}
+                      placeholder="010-0000-0000"
+                      className="mt-1 bg-white border-[#e8e8e8] text-[#111111] placeholder:text-[#cccccc] focus:border-[#FF6100] focus-visible:ring-0"
+                      data-testid="input-phone-only"
+                    />
                   </div>
-                  <div>
-                    <span className="text-[#999999]">결제상태</span>
-                    <p className={`font-medium mt-1 ${getPaymentInfo(order.paymentStatus).color}`}>
-                      {getPaymentInfo(order.paymentStatus).label}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[#999999]">주문자</span>
-                    <p className="font-medium text-[#111111] mt-1">{order.memberName}</p>
-                  </div>
-                  <div>
-                    <span className="text-[#999999]">연락처</span>
-                    <p className="font-medium text-[#111111] mt-1">{order.memberPhone}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <span className="text-[#999999] text-sm">배송지</span>
-                  <p className="font-medium text-[#111111] mt-1 text-sm">{order.shippingAddress}</p>
-                </div>
-
-                {order.trackingNumber && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-bold text-blue-700 mb-2 flex items-center gap-2 text-sm">
-                      <Truck className="w-4 h-4" />배송 정보
-                    </h4>
-                    <p className="text-blue-600 text-sm">
-                      택배사: {order.shippingCompany || "미정"}<br />
-                      운송장번호: {order.trackingNumber}
-                    </p>
-                  </div>
-                )}
-
-                {!order.trackingNumber && order.status === "pending" && (
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="w-5 h-5 text-[#FF6100] shrink-0 mt-0.5" />
-                      <div>
-                        <h4 className="font-bold text-[#FF6100] text-sm">결제 대기중</h4>
-                        <p className="text-[#FF6100]/80 text-sm mt-1">
-                          주문 완료 페이지에 안내된 계좌로 입금해주세요.
-                          입금 확인 후 상품이 발송됩니다.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                  <Button type="submit" disabled={phoneLoading}
+                    className="w-full h-12 bg-[#FF6100] hover:bg-[#e05500] text-white font-bold rounded-xl disabled:opacity-50"
+                    data-testid="button-search-by-phone">
+                    {phoneLoading ? "조회 중..." : <><Phone className="w-4 h-4 mr-2" />연락처로 조회하기</>}
+                  </Button>
+                </form>
               </div>
-            </div>
-          )}
 
-          {searched && !order && !loading && (
-            <div className="bg-white border border-[#e8e8e8] rounded-xl p-8 text-center shadow-sm">
-              <div className="w-14 h-14 bg-[#f5f5f5] rounded-full flex items-center justify-center mx-auto mb-4">
-                <Search className="w-7 h-7 text-[#cccccc]" />
-              </div>
-              <h3 className="text-base font-bold text-[#111111] mb-2">주문을 찾을 수 없습니다</h3>
-              <p className="text-[#666666] text-sm">
-                입력하신 정보와 일치하는 주문이 없습니다.<br />
-                주문번호와 연락처를 다시 확인해주세요.
-              </p>
-            </div>
+              {phoneSearched && phoneOrders.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-sm text-[#666666] font-medium px-1">총 {phoneOrders.length}건의 주문 내역</p>
+                  {phoneOrders.map((o) => <OrderCard key={o.orderNumber} order={o} />)}
+                </div>
+              )}
+              {phoneSearched && !phoneOrders.length && !phoneLoading && (
+                <div className="bg-white border border-[#e8e8e8] rounded-xl p-8 text-center shadow-sm">
+                  <Phone className="w-7 h-7 text-[#cccccc] mx-auto mb-3" />
+                  <h3 className="text-base font-bold text-[#111111] mb-1">주문을 찾을 수 없습니다</h3>
+                  <p className="text-[#666666] text-sm">입력하신 연락처로 주문된 내역이 없습니다.</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>

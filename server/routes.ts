@@ -3659,6 +3659,38 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/orders/lookup-by-phone", async (req: Request, res: Response) => {
+    try {
+      const { phone } = req.query;
+      if (!phone) {
+        return res.status(400).json({ success: false, error: "연락처를 입력해주세요." });
+      }
+      const result = await storage.getOrdersByPhone(phone as string);
+      if (!result.length) {
+        return res.status(404).json({ success: false, error: "해당 연락처로 주문된 내역이 없습니다." });
+      }
+      const mapped = result.map((o) => ({
+        id: o.id,
+        orderNumber: o.orderNumber,
+        productName: o.productName,
+        quantity: o.quantity,
+        totalAmount: o.totalAmount,
+        status: o.status,
+        paymentStatus: o.paymentStatus,
+        trackingNumber: o.trackingNumber,
+        shippingCompany: o.shippingCompany,
+        createdAt: o.createdAt,
+        memberName: o.memberName,
+        memberPhone: o.memberPhone,
+        shippingAddress: o.shippingAddress,
+      }));
+      res.json({ success: true, data: mapped });
+    } catch (error) {
+      console.error("Error looking up orders by phone:", error);
+      res.status(500).json({ success: false, error: "주문을 조회할 수 없습니다." });
+    }
+  });
+
   app.get("/api/orders/lookup", async (req: Request, res: Response) => {
     try {
       const { orderNumber, phone } = req.query;

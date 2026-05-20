@@ -197,6 +197,7 @@ export interface IStorage {
   getOrdersByMember(memberId: string): Promise<Order[]>;
   getOrder(id: string): Promise<Order | undefined>;
   getOrderByNumber(orderNumber: string): Promise<Order | undefined>;
+  getOrdersByPhone(phone: string): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrder(id: string, order: Partial<InsertOrder>): Promise<Order | undefined>;
   updateOrderByNumber(orderNumber: string, order: Partial<InsertOrder>): Promise<Order | undefined>;
@@ -1265,6 +1266,15 @@ export class DatabaseStorage implements IStorage {
   async getOrderByNumber(orderNumber: string): Promise<Order | undefined> {
     const [order] = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber));
     return order;
+  }
+
+  async getOrdersByPhone(phone: string): Promise<Order[]> {
+    const clean = phone.replace(/-/g, "");
+    const result = await db.select().from(orders)
+      .where(eq(orders.memberPhone, clean))
+      .orderBy(desc(orders.createdAt))
+      .limit(20);
+    return result;
   }
 
   async createOrder(insertOrder: InsertOrder): Promise<Order> {
