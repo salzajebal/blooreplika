@@ -494,9 +494,27 @@ export default function Order() {
               <h1 className="text-xl font-bold text-[#111111] mb-1">
                 {completedPaymentMethod === "bank" ? "입금 신청이 완료되었습니다" : "주문이 완료되었습니다"}
               </h1>
-              <p className="text-sm text-[#666666]">
+              <p className="text-sm text-[#666666] mb-3">
                 주문번호: <span className="font-bold text-[#FF6100]">{orderNumber}</span>
               </p>
+              {/* 주문번호 복사 + 조회 안내 */}
+              <div className="bg-[#f8f8f8] border border-[#e8e8e8] rounded-xl p-3 text-left space-y-2">
+                <p className="text-xs text-[#666666] font-medium">📋 주문번호를 저장해두세요</p>
+                <div className="flex items-center gap-2">
+                  <span className="flex-1 font-mono text-sm font-bold text-[#111111] bg-white border border-[#e8e8e8] rounded-lg px-3 py-2 select-all">{orderNumber}</span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(orderNumber);
+                      const el = document.getElementById("order-copy-toast");
+                      if (el) { el.style.opacity = "1"; setTimeout(() => { el.style.opacity = "0"; }, 1500); }
+                    }}
+                    className="flex-shrink-0 text-xs px-3 py-2 bg-[#111111] text-white rounded-lg hover:bg-[#333] transition-colors font-medium"
+                    data-testid="button-copy-order-number"
+                  >복사</button>
+                </div>
+                <div id="order-copy-toast" style={{opacity: 0, transition: "opacity 0.3s"}} className="text-xs text-green-600 font-medium text-center">✓ 주문번호가 복사되었습니다</div>
+                <p className="text-xs text-[#999999]">이 번호로 <a href={`/orders?orderNumber=${encodeURIComponent(orderNumber)}`} className="text-[#FF6100] underline font-medium">주문 조회</a>를 언제든 할 수 있습니다</p>
+              </div>
             </div>
 
             {/* 계좌이체 긴급 안내 배너 */}
