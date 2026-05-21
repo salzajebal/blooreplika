@@ -653,62 +653,36 @@ export default function Order() {
                     {/* 앱으로 바로 이체 버튼 */}
                     <div className="border border-[#e8e8e8] rounded-lg p-4 bg-[#fafafa]">
                       <p className="text-[#444] text-xs font-semibold mb-3 text-center">앱으로 바로 이체하기</p>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-3 gap-3">
                         {/* 토스 */}
                         <a
                           href={`supertoss://send?bank=${getBankCode(depositAccount.bankName)}&account=${depositAccount.accountNumber.replace(/-/g,"")}&amount=${calculateTotalAmount()}&originName=velour`}
                           data-testid="button-transfer-toss"
-                          className="flex flex-col items-center gap-1.5 bg-white border border-[#e8e8e8] rounded-xl py-3 px-2 active:scale-95 transition-transform"
+                          className="flex flex-col items-center gap-2 bg-white border border-[#e8e8e8] rounded-2xl py-3 px-2 active:scale-95 transition-transform"
                         >
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:"#0064FF"}}>
-                            <span className="text-white font-black text-xs tracking-tight">toss</span>
-                          </div>
-                          <span className="text-[10px] text-[#444] font-medium">토스</span>
+                          <img src="/logo-toss.png" alt="토스" className="w-10 h-10 rounded-xl object-cover" />
+                          <span className="text-[11px] text-[#444] font-medium">토스</span>
                         </a>
                         {/* 카카오페이 */}
                         <a
                           href={`kakaotalk://kakaopay/money/transfer?bank_code=${getBankCode(depositAccount.bankName)}&account_number=${depositAccount.accountNumber.replace(/-/g,"")}&amount=${calculateTotalAmount()}`}
                           data-testid="button-transfer-kakaopay"
-                          className="flex flex-col items-center gap-1.5 bg-white border border-[#e8e8e8] rounded-xl py-3 px-2 active:scale-95 transition-transform"
+                          className="flex flex-col items-center gap-2 bg-white border border-[#e8e8e8] rounded-2xl py-3 px-2 active:scale-95 transition-transform"
                         >
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:"#FEE500"}}>
-                            <span className="font-black text-[10px] text-[#3C1E1E]">Pay</span>
-                          </div>
-                          <span className="text-[10px] text-[#444] font-medium">카카오페이</span>
+                          <img src="/logo-kakaopay.png" alt="카카오페이" className="w-10 h-10 rounded-xl object-cover" />
+                          <span className="text-[11px] text-[#444] font-medium">카카오페이</span>
                         </a>
                         {/* 카카오뱅크 */}
                         <a
                           href={`kakaobank://transfer?bank_code=${getBankCode(depositAccount.bankName)}&account=${depositAccount.accountNumber.replace(/-/g,"")}&amount=${calculateTotalAmount()}`}
                           data-testid="button-transfer-kakaobank"
-                          className="flex flex-col items-center gap-1.5 bg-white border border-[#e8e8e8] rounded-xl py-3 px-2 active:scale-95 transition-transform"
+                          className="flex flex-col items-center gap-2 bg-white border border-[#e8e8e8] rounded-2xl py-3 px-2 active:scale-95 transition-transform"
                         >
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:"#FFCD00"}}>
-                            <span className="font-black text-[10px] text-[#1A1A1A]">K뱅크</span>
-                          </div>
-                          <span className="text-[10px] text-[#444] font-medium">카카오뱅크</span>
+                          <img src="/logo-kakaobank.png" alt="카카오뱅크" className="w-10 h-10 rounded-xl object-cover" />
+                          <span className="text-[11px] text-[#444] font-medium">카카오뱅크</span>
                         </a>
-                        {/* 계좌복사 */}
-                        <button
-                          onClick={() => {
-                            const text = `${depositAccount.bankName} ${depositAccount.accountNumber} (${depositAccount.accountHolder}) ${calculateTotal().toLocaleString()}원`;
-                            navigator.clipboard.writeText(text);
-                            const el = document.getElementById("copy-toast2");
-                            if (el) { el.style.opacity = "1"; setTimeout(() => { el.style.opacity = "0"; }, 1800); }
-                          }}
-                          data-testid="button-transfer-copy"
-                          className="flex flex-col items-center gap-1.5 bg-white border border-[#e8e8e8] rounded-xl py-3 px-2 active:scale-95 transition-transform"
-                        >
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[#111111]">
-                            <span className="text-white font-bold text-[10px]">복사</span>
-                          </div>
-                          <span className="text-[10px] text-[#444] font-medium">계좌복사</span>
-                        </button>
                       </div>
-                      <div id="copy-toast2" style={{opacity: 0, transition: "opacity 0.3s"}}
-                        className="text-center text-xs text-green-600 font-medium mt-2">
-                        ✓ 계좌정보가 복사되었습니다
-                      </div>
-                      <p className="text-[#999] text-[10px] text-center mt-2">앱 미설치 시 앱스토어로 이동합니다</p>
+                      <p className="text-[#bbb] text-[10px] text-center mt-3">앱 미설치 시 앱스토어로 이동합니다</p>
                     </div>
 
                     <p className="text-[#666666] text-xs leading-relaxed text-center">
