@@ -313,6 +313,65 @@ export default function Order() {
     return effectivePrice * quantity;
   };
 
+  const handleBankAppTransfer = (app: "toss" | "kakaopay" | "kakaobank") => {
+    const acct = depositAccount?.accountNumber?.replace(/-/g, "") ?? "";
+    const bank = depositAccount?.bankName ?? "";
+    const amount = calculateTotalAmount();
+    const code = getBankCode(bank);
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isAndroid = /Android/i.test(navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    if (!isMobile) {
+      alert("모바일 앱에서만 이용 가능합니다.\n스마트폰으로 접속 후 이용해 주세요.");
+      return;
+    }
+
+    const stores: Record<string, { ios: string; android: string }> = {
+      toss: {
+        ios: "https://apps.apple.com/kr/app/toss/id839333328",
+        android: "https://play.google.com/store/apps/details?id=viva.republica.toss",
+      },
+      kakaopay: {
+        ios: "https://apps.apple.com/kr/app/id1357200704",
+        android: "https://play.google.com/store/apps/details?id=com.kakaopay.app",
+      },
+      kakaobank: {
+        ios: "https://apps.apple.com/kr/app/id1258016944",
+        android: "https://play.google.com/store/apps/details?id=com.kakaobank.channel",
+      },
+    };
+
+    const storeUrl = isIOS ? stores[app].ios : stores[app].android;
+
+    if (isAndroid) {
+      const intentMap: Record<string, string> = {
+        toss: `intent://send?bank=${code}&accountNo=${acct}&amount=${amount}&originName=velour#Intent;scheme=supertoss;package=viva.republica.toss;S.browser_fallback_url=${encodeURIComponent(stores.toss.android)};end`,
+        kakaopay: `intent://kakaopay/transfer#Intent;scheme=kakaotalk;package=com.kakao.talk;S.browser_fallback_url=${encodeURIComponent(stores.kakaopay.android)};end`,
+        kakaobank: `intent://transfer?bankCode=${code}&accountNo=${acct}&amount=${amount}#Intent;scheme=kakaobank;package=com.kakaobank.channel;S.browser_fallback_url=${encodeURIComponent(stores.kakaobank.android)};end`,
+      };
+      window.location.href = intentMap[app];
+      return;
+    }
+
+    if (isIOS) {
+      const schemeMap: Record<string, string> = {
+        toss: `supertoss://send?bank=${code}&accountNo=${acct}&amount=${amount}&originName=velour`,
+        kakaopay: `kakaotalk://kakaopay/transfer`,
+        kakaobank: `kakaobank://transfer?bankCode=${code}&accountNo=${acct}&amount=${amount}`,
+      };
+      const start = Date.now();
+      window.location.href = schemeMap[app];
+      const timer = setTimeout(() => {
+        if (Date.now() - start < 2000) {
+          window.location.href = storeUrl;
+        }
+      }, 1500);
+      const onBlur = () => { clearTimeout(timer); window.removeEventListener("blur", onBlur); };
+      window.addEventListener("blur", onBlur);
+    }
+  };
+
   const getBankCode = (bankName: string): string => {
     const map: Record<string, string> = {
       "국민은행": "004", "KB국민은행": "004", "KB": "004",
@@ -655,32 +714,32 @@ export default function Order() {
                       <p className="text-[#444] text-xs font-semibold mb-3 text-center">앱으로 바로 이체하기</p>
                       <div className="grid grid-cols-3 gap-3">
                         {/* 토스 */}
-                        <a
-                          href={`supertoss://send?bank=${getBankCode(depositAccount.bankName)}&account=${depositAccount.accountNumber.replace(/-/g,"")}&amount=${calculateTotalAmount()}&originName=velour`}
+                        <button
+                          onClick={() => handleBankAppTransfer("toss")}
                           data-testid="button-transfer-toss"
-                          className="flex flex-col items-center gap-2 bg-white border border-[#e8e8e8] rounded-2xl py-3 px-2 active:scale-95 transition-transform"
+                          className="flex flex-col items-center gap-2 bg-white border border-[#e8e8e8] rounded-2xl py-3 px-2 active:scale-95 transition-transform w-full"
                         >
                           <img src="/logo-toss.png" alt="토스" className="w-10 h-10 rounded-xl object-cover" />
                           <span className="text-[11px] text-[#444] font-medium">토스</span>
-                        </a>
+                        </button>
                         {/* 카카오페이 */}
-                        <a
-                          href={`kakaotalk://kakaopay/money/transfer?bank_code=${getBankCode(depositAccount.bankName)}&account_number=${depositAccount.accountNumber.replace(/-/g,"")}&amount=${calculateTotalAmount()}`}
+                        <button
+                          onClick={() => handleBankAppTransfer("kakaopay")}
                           data-testid="button-transfer-kakaopay"
-                          className="flex flex-col items-center gap-2 bg-white border border-[#e8e8e8] rounded-2xl py-3 px-2 active:scale-95 transition-transform"
+                          className="flex flex-col items-center gap-2 bg-white border border-[#e8e8e8] rounded-2xl py-3 px-2 active:scale-95 transition-transform w-full"
                         >
                           <img src="/logo-kakaopay.png" alt="카카오페이" className="w-10 h-10 rounded-xl object-cover" />
                           <span className="text-[11px] text-[#444] font-medium">카카오페이</span>
-                        </a>
+                        </button>
                         {/* 카카오뱅크 */}
-                        <a
-                          href={`kakaobank://transfer?bank_code=${getBankCode(depositAccount.bankName)}&account=${depositAccount.accountNumber.replace(/-/g,"")}&amount=${calculateTotalAmount()}`}
+                        <button
+                          onClick={() => handleBankAppTransfer("kakaobank")}
                           data-testid="button-transfer-kakaobank"
-                          className="flex flex-col items-center gap-2 bg-white border border-[#e8e8e8] rounded-2xl py-3 px-2 active:scale-95 transition-transform"
+                          className="flex flex-col items-center gap-2 bg-white border border-[#e8e8e8] rounded-2xl py-3 px-2 active:scale-95 transition-transform w-full"
                         >
                           <img src="/logo-kakaobank.png" alt="카카오뱅크" className="w-10 h-10 rounded-xl object-cover" />
                           <span className="text-[11px] text-[#444] font-medium">카카오뱅크</span>
-                        </a>
+                        </button>
                       </div>
                       <p className="text-[#bbb] text-[10px] text-center mt-3">앱 미설치 시 앱스토어로 이동합니다</p>
                     </div>
