@@ -313,6 +313,37 @@ export default function Order() {
     return effectivePrice * quantity;
   };
 
+  const getBankCode = (bankName: string): string => {
+    const map: Record<string, string> = {
+      "국민은행": "004", "KB국민은행": "004", "KB": "004",
+      "신한은행": "088", "신한": "088",
+      "우리은행": "020", "우리": "020",
+      "하나은행": "081", "하나": "081",
+      "농협은행": "011", "농협": "011", "NH농협은행": "011", "NH": "011",
+      "기업은행": "003", "IBK기업은행": "003", "IBK": "003",
+      "카카오뱅크": "090",
+      "토스뱅크": "092",
+      "케이뱅크": "089", "K뱅크": "089",
+      "SC제일은행": "023", "SC": "023",
+      "씨티은행": "027",
+      "부산은행": "032", "BNK부산은행": "032",
+      "대구은행": "031", "iM뱅크": "031",
+      "광주은행": "034",
+      "전북은행": "037",
+      "경남은행": "039", "BNK경남은행": "039",
+      "수협은행": "007", "수협": "007",
+      "우체국": "071", "우체국은행": "071",
+      "새마을금고": "045",
+      "신협": "048",
+    };
+    return map[bankName] ?? "000";
+  };
+
+  const calculateTotalAmount = (): number => {
+    const subtotal = calculateSubtotal();
+    return Math.max(0, subtotal - pointsToUse);
+  };
+
   const calculateTotal = () => {
     if (isCartOrder && cartItems.length > 0) {
       const subtotal = calculateSubtotal();
@@ -618,6 +649,90 @@ export default function Order() {
                       className="text-center text-xs text-green-600 font-medium">
                       ✓ 계좌번호가 복사되었습니다
                     </div>
+
+                    {/* 앱으로 바로 이체 버튼 */}
+                    <div className="border border-[#e8e8e8] rounded-lg p-4 bg-[#fafafa]">
+                      <p className="text-[#444] text-xs font-semibold mb-3 text-center">앱으로 바로 이체하기</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {/* 토스 */}
+                        <a
+                          href={`supertoss://send?bank=${getBankCode(depositAccount.bankName)}&account=${depositAccount.accountNumber.replace(/-/g,"")}&amount=${calculateTotalAmount()}&originName=velour`}
+                          data-testid="button-transfer-toss"
+                          className="flex flex-col items-center gap-1.5 bg-white border border-[#e8e8e8] rounded-xl py-3 px-2 active:scale-95 transition-transform"
+                        >
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:"#0064FF"}}>
+                            <span className="text-white font-black text-xs tracking-tight">toss</span>
+                          </div>
+                          <span className="text-[10px] text-[#444] font-medium">토스</span>
+                        </a>
+                        {/* 카카오페이 */}
+                        <a
+                          href={`kakaotalk://kakaopay/money/transfer?bank_code=${getBankCode(depositAccount.bankName)}&account_number=${depositAccount.accountNumber.replace(/-/g,"")}&amount=${calculateTotalAmount()}`}
+                          data-testid="button-transfer-kakaopay"
+                          className="flex flex-col items-center gap-1.5 bg-white border border-[#e8e8e8] rounded-xl py-3 px-2 active:scale-95 transition-transform"
+                        >
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:"#FEE500"}}>
+                            <span className="font-black text-[10px] text-[#3C1E1E]">Pay</span>
+                          </div>
+                          <span className="text-[10px] text-[#444] font-medium">카카오페이</span>
+                        </a>
+                        {/* 카카오뱅크 */}
+                        <a
+                          href={`kakaobank://transfer?bank_code=${getBankCode(depositAccount.bankName)}&account=${depositAccount.accountNumber.replace(/-/g,"")}&amount=${calculateTotalAmount()}`}
+                          data-testid="button-transfer-kakaobank"
+                          className="flex flex-col items-center gap-1.5 bg-white border border-[#e8e8e8] rounded-xl py-3 px-2 active:scale-95 transition-transform"
+                        >
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:"#FFCD00"}}>
+                            <span className="font-black text-[10px] text-[#1A1A1A]">K뱅크</span>
+                          </div>
+                          <span className="text-[10px] text-[#444] font-medium">카카오뱅크</span>
+                        </a>
+                        {/* 농협 */}
+                        <a
+                          href={`nhbanking://nhappbanking/openTransfer?receiveBank=${getBankCode(depositAccount.bankName)}&receiveAccount=${depositAccount.accountNumber.replace(/-/g,"")}&amount=${calculateTotalAmount()}`}
+                          data-testid="button-transfer-nh"
+                          className="flex flex-col items-center gap-1.5 bg-white border border-[#e8e8e8] rounded-xl py-3 px-2 active:scale-95 transition-transform"
+                        >
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:"#009B4B"}}>
+                            <span className="text-white font-black text-[10px]">농협</span>
+                          </div>
+                          <span className="text-[10px] text-[#444] font-medium">NH농협</span>
+                        </a>
+                        {/* KB국민 */}
+                        <a
+                          href={`kbbank://transfer?receiveBank=${getBankCode(depositAccount.bankName)}&receiveAccountNo=${depositAccount.accountNumber.replace(/-/g,"")}&amount=${calculateTotalAmount()}`}
+                          data-testid="button-transfer-kb"
+                          className="flex flex-col items-center gap-1.5 bg-white border border-[#e8e8e8] rounded-xl py-3 px-2 active:scale-95 transition-transform"
+                        >
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:"#FFBE00"}}>
+                            <span className="font-black text-[10px] text-[#1A1A1A]">KB</span>
+                          </div>
+                          <span className="text-[10px] text-[#444] font-medium">KB국민</span>
+                        </a>
+                        {/* 계좌복사 */}
+                        <button
+                          onClick={() => {
+                            const text = `${depositAccount.bankName} ${depositAccount.accountNumber} (${depositAccount.accountHolder}) ${calculateTotal().toLocaleString()}원`;
+                            navigator.clipboard.writeText(text);
+                            const el = document.getElementById("copy-toast2");
+                            if (el) { el.style.opacity = "1"; setTimeout(() => { el.style.opacity = "0"; }, 1800); }
+                          }}
+                          data-testid="button-transfer-copy"
+                          className="flex flex-col items-center gap-1.5 bg-white border border-[#e8e8e8] rounded-xl py-3 px-2 active:scale-95 transition-transform"
+                        >
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-[#111111]">
+                            <span className="text-white font-bold text-[10px]">복사</span>
+                          </div>
+                          <span className="text-[10px] text-[#444] font-medium">계좌복사</span>
+                        </button>
+                      </div>
+                      <div id="copy-toast2" style={{opacity: 0, transition: "opacity 0.3s"}}
+                        className="text-center text-xs text-green-600 font-medium mt-2">
+                        ✓ 계좌정보가 복사되었습니다
+                      </div>
+                      <p className="text-[#999] text-[10px] text-center mt-2">앱 미설치 시 앱스토어로 이동합니다</p>
+                    </div>
+
                     <p className="text-[#666666] text-xs leading-relaxed text-center">
                       입금자명은 <strong className="text-[#111111]">주문자 성함</strong>으로 해주세요.<br />
                       입금 확인 후 발송됩니다.
