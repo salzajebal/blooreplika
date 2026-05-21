@@ -687,28 +687,6 @@ export default function Order() {
                           </div>
                           <span className="text-[10px] text-[#444] font-medium">카카오뱅크</span>
                         </a>
-                        {/* 농협 */}
-                        <a
-                          href={`nhbanking://nhappbanking/openTransfer?receiveBank=${getBankCode(depositAccount.bankName)}&receiveAccount=${depositAccount.accountNumber.replace(/-/g,"")}&amount=${calculateTotalAmount()}`}
-                          data-testid="button-transfer-nh"
-                          className="flex flex-col items-center gap-1.5 bg-white border border-[#e8e8e8] rounded-xl py-3 px-2 active:scale-95 transition-transform"
-                        >
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:"#009B4B"}}>
-                            <span className="text-white font-black text-[10px]">농협</span>
-                          </div>
-                          <span className="text-[10px] text-[#444] font-medium">NH농협</span>
-                        </a>
-                        {/* KB국민 */}
-                        <a
-                          href={`kbbank://transfer?receiveBank=${getBankCode(depositAccount.bankName)}&receiveAccountNo=${depositAccount.accountNumber.replace(/-/g,"")}&amount=${calculateTotalAmount()}`}
-                          data-testid="button-transfer-kb"
-                          className="flex flex-col items-center gap-1.5 bg-white border border-[#e8e8e8] rounded-xl py-3 px-2 active:scale-95 transition-transform"
-                        >
-                          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{background:"#FFBE00"}}>
-                            <span className="font-black text-[10px] text-[#1A1A1A]">KB</span>
-                          </div>
-                          <span className="text-[10px] text-[#444] font-medium">KB국민</span>
-                        </a>
                         {/* 계좌복사 */}
                         <button
                           onClick={() => {
