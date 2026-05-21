@@ -49,3 +49,4 @@ integrations = ["javascript_database:1.0.0", "javascript_object_storage:2.0.0"]
 GH_PAYMENT_CODE = "TMN009983"
 GH_PAYMENT_PUBLIC_KEY = "pk_2131-ea9a34-92d-26596"
 VITE_GH_PAYMENT_PUBLIC_KEY = "pk_2131-ea9a34-92d-26596"
+FASTSEND_SENDER = "01051352481"

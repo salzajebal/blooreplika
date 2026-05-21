@@ -2339,6 +2339,53 @@ export async function registerRoutes(
     return sendTelegramOrderNotification(text);
   }
 
+  // ==================== 패스트샌드 SMS 발송 ====================
+  async function sendFastSendSMS(to: string, message: string): Promise<void> {
+    try {
+      const apiToken = process.env.FASTSEND_API_TOKEN;
+      const from = process.env.FASTSEND_SENDER;
+      if (!apiToken || !from) {
+        console.warn("[fastsend] API 토큰 또는 발신번호 미설정 — 문자 발송 생략");
+        return;
+      }
+      const cleanTo = to.replace(/-/g, "");
+      const cleanFrom = from.replace(/-/g, "");
+      const res = await fetch("https://www.fastsend.co.kr/api/send", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiToken}`,
+        },
+        body: JSON.stringify({ to: cleanTo, from: cleanFrom, message }),
+      });
+      const json = await res.json() as any;
+      if (json.code === "0" || json.code === 0 || json.message === "success") {
+        console.log(`[fastsend] SMS 발송 성공 → ${cleanTo}`);
+      } else {
+        console.warn(`[fastsend] SMS 발송 결과: code=${json.code} message=${json.message}`);
+      }
+    } catch (e) {
+      console.error("[fastsend] SMS 발송 실패:", e);
+    }
+  }
+
+  async function sendBankTransferSMS(order: { memberPhone: string; memberName: string; orderNumber: string; totalAmount: number | string; productName: string | null }): Promise<void> {
+    try {
+      const settings = await storage.getAllSiteSettings();
+      const depositSetting = settings.find(s => s.key === "deposit_account")?.value;
+      if (!depositSetting) return;
+      const account = JSON.parse(depositSetting) as { bankName: string; accountNumber: string; accountHolder: string };
+      if (!account.bankName || !account.accountNumber) return;
+
+      const amount = Number(order.totalAmount).toLocaleString();
+      const msg = `[velour] 주문이 완료되었습니다.\n\n주문번호: ${order.orderNumber}\n입금금액: ${amount}원\n\n■ 입금계좌\n${account.bankName} ${account.accountNumber}\n예금주: ${account.accountHolder}\n\n1시간 내 미입금 시 자동취소됩니다.`;
+
+      await sendFastSendSMS(order.memberPhone, msg);
+    } catch (e) {
+      console.error("[fastsend] 계좌이체 SMS 생성 실패:", e);
+    }
+  }
+
   // ==================== TELEGRAM BOT API ====================
 
   // 주문 봇 설정 GET
@@ -3493,6 +3540,9 @@ export async function registerRoutes(
         });
         
         sendTelegramNotification(`🛍️ <b>새 주문 (장바구니)</b>\n👤 ${orderData.memberName}\n📦 ${cartItems[0].productName}${cartItems.length > 1 ? ` 외 ${cartItems.length - 1}건` : ""}\n💰 ${orderData.totalAmount?.toLocaleString()}원`).catch(() => {});
+        if (orderData.paymentMethod === "bank" && order.memberPhone) {
+          sendBankTransferSMS(order).catch(() => {});
+        }
         return res.status(201).json({ success: true, data: order });
       }
       
@@ -3523,6 +3573,9 @@ export async function registerRoutes(
       }
       
       sendTelegramNotification(`🛍️ <b>새 주문</b>\n👤 ${order.memberName}\n📦 ${order.productName}\n💰 ${order.totalAmount?.toLocaleString()}원\n💳 ${order.paymentMethod === "card" ? "카드결제" : "계좌이체"}`).catch(() => {});
+      if (order.paymentMethod === "bank" && order.memberPhone) {
+        sendBankTransferSMS(order).catch(() => {});
+      }
 
       res.status(201).json({ success: true, data: order });
     } catch (error) {
