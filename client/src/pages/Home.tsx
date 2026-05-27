@@ -48,15 +48,13 @@ function MainBannerSlider() {
   });
 
   const STATIC_BANNERS = [
-    { imageUrl: "/bloo/banner_xmas.jpg", linkUrl: "/products", title: "", iw: 750, ih: 750 },
     { imageUrl: "/bloo/banner1.jpg",     linkUrl: "/products", title: "", iw: 1024, ih: 1024 },
     { imageUrl: "/bloo/banner2.jpg",     linkUrl: "/products", title: "", iw: 1080, ih: 1080 },
     { imageUrl: "/bloo/banner3.jpg",     linkUrl: "/products", title: "", iw: 750, ih: 750 },
     { imageUrl: "/bloo/banner4.jpg",     linkUrl: "/products", title: "", iw: 750, ih: 750 },
     { imageUrl: "/bloo/banner7.jpg",     linkUrl: "/products", title: "", iw: 750, ih: 750 },
     { imageUrl: "/bloo/banner8.jpg",     linkUrl: "/products", title: "", iw: 750, ih: 750 },
-    { imageUrl: "/bloo/banner6.jpg",     linkUrl: "/products", title: "", iw: 840, ih: 430 },
-    { imageUrl: "/bloo/banner5.jpg",     linkUrl: "/products", title: "", iw: 1920, ih: 596 },
+    { imageUrl: "/bloo/banner_xmas.jpg", linkUrl: "/products", title: "", iw: 750, ih: 750 },
   ];
 
   const displayList = (banners && banners.length > 0) ? banners : STATIC_BANNERS;
@@ -98,7 +96,7 @@ function MainBannerSlider() {
           display: "block",
           width: "100%",
           height: "auto",
-          maxHeight: "clamp(180px, 31vw, 420px)",
+          maxHeight: "clamp(220px, 38vw, 500px)",
           objectFit: "cover",
           visibility: "hidden",
         }}
