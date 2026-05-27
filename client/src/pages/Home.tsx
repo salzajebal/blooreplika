@@ -48,11 +48,12 @@ function MainBannerSlider() {
   });
 
   const STATIC_BANNERS = [
+    { imageUrl: "/bloo/banner_xmas.jpg", linkUrl: "/products", title: "" },
+    { imageUrl: "/bloo/banner5.jpg", linkUrl: "/products", title: "" },
     { imageUrl: "/bloo/banner1.jpg", linkUrl: "/products", title: "" },
     { imageUrl: "/bloo/banner2.jpg", linkUrl: "/products", title: "" },
     { imageUrl: "/bloo/banner3.jpg", linkUrl: "/products", title: "" },
     { imageUrl: "/bloo/banner4.jpg", linkUrl: "/products", title: "" },
-    { imageUrl: "/bloo/banner5.jpg", linkUrl: "/products", title: "" },
     { imageUrl: "/bloo/banner6.jpg", linkUrl: "/products", title: "" },
   ];
 
@@ -65,9 +66,9 @@ function MainBannerSlider() {
   }, [displayList.length]);
 
   return (
-    <section className="relative w-full overflow-hidden" data-testid="main-banner">
+    <section className="relative w-full overflow-hidden" style={{ height: "clamp(280px, 38vw, 520px)" }} data-testid="main-banner">
       <div
-        className="flex transition-transform duration-500 ease-in-out"
+        className="flex transition-transform duration-500 ease-in-out h-full"
         style={{ transform: `translateX(-${current * 100}%)` }}
         onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
         onTouchEnd={(e) => {
@@ -79,9 +80,15 @@ function MainBannerSlider() {
         }}
       >
         {displayList.map((b: any, i: number) => (
-          <div key={i} className="w-full flex-shrink-0">
-            <Link href={b.linkUrl || "/products"} className="block w-full">
-              <img src={b.imageUrl} alt={b.title || `배너 ${i + 1}`} className="w-full h-auto block" loading="eager" />
+          <div key={i} className="w-full flex-shrink-0" style={{ height: "clamp(280px, 38vw, 520px)" }}>
+            <Link href={b.linkUrl || "/products"} className="block w-full h-full">
+              <img
+                src={b.imageUrl}
+                alt={b.title || `배너 ${i + 1}`}
+                className="w-full h-full block"
+                style={{ objectFit: "cover", objectPosition: "center top" }}
+                loading="eager"
+              />
             </Link>
           </div>
         ))}
@@ -124,31 +131,26 @@ const MEN_CATEGORIES = [
   {
     label: "남성 의류",
     path: "/products?gender=%EB%82%A8%EC%84%B1&category=%EC%9D%98%EB%A5%98",
-    bg: "#c5d8ea",
     img: "https://cdn.imweb.me/thumbnail/20240405/b6122c0a1f2c8.jpg",
   },
   {
     label: "남성 가방",
     path: "/products?gender=%EB%82%A8%EC%84%B1&category=%EA%B0%80%EB%B0%A9",
-    bg: "#b8d0d0",
     img: "https://cdn.imweb.me/thumbnail/20240405/3d0ec2da5d1d0.jpg",
   },
   {
     label: "남성 신발",
     path: "/products?gender=%EB%82%A8%EC%84%B1&category=%EC%8B%A0%EB%B0%9C",
-    bg: "#c8dce8",
     img: "https://cdn.imweb.me/thumbnail/20240405/f1fa3ee1f2ddf.jpg",
   },
   {
     label: "남성 패션 집화",
     path: "/products?gender=%EB%82%A8%EC%84%B1&category=%EC%9E%A1%ED%99%94",
-    bg: "#c0c8d4",
     img: "https://cdn.imweb.me/thumbnail/20240405/47958dfff76f6.jpg",
   },
   {
     label: "시계관",
     path: "/products/watches",
-    bg: "#d0ccc8",
     img: "https://cdn.imweb.me/thumbnail/20240405/da21e08dfe2fa.jpg",
   },
 ];
@@ -157,32 +159,27 @@ const WOMEN_CATEGORIES = [
   {
     label: "여성 의류",
     path: "/products?gender=%EC%97%AC%EC%84%B1&category=%EC%9D%98%EB%A5%98",
-    bg: "#ecddc8",
     img: "https://cdn.imweb.me/thumbnail/20240405/19656e56216f8.jpg",
   },
   {
     label: "여성 가방",
     path: "/products?gender=%EC%97%AC%EC%84%B1&category=%EA%B0%80%EB%B0%A9",
-    bg: "#e4d0b0",
     img: "https://cdn.imweb.me/thumbnail/20240405/514fb7f4487dc.jpg",
   },
   {
     label: "여성 신발",
     path: "/products?gender=%EC%97%AC%EC%84%B1&category=%EC%8B%A0%EB%B0%9C",
-    bg: "#d8c8a8",
-    img: "https://cdn.imweb.me/thumbnail/20251221/ffa68f1aaddd6.jpg",
+    img: "https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/637c900188dfe.jpg",
   },
   {
     label: "여성 패션 집화",
     path: "/products?gender=%EC%97%AC%EC%84%B1&category=%EC%9E%A1%ED%99%94",
-    bg: "#ccaa88",
-    img: "https://cdn.imweb.me/thumbnail/20240207/1dfc67ec1aa9e.jpg",
+    img: "https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/15a2653af9aa9.jpg",
   },
   {
     label: "캐리어",
     path: "/products/carrier",
-    bg: "#d4d4d4",
-    img: "https://cdn.imweb.me/thumbnail/20231208/2efaba0d182d8.jpg",
+    img: "https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/aed8575a7a403.jpg",
   },
 ];
 
@@ -200,16 +197,18 @@ function CategoryGrid() {
               data-testid={`cat-men-${i}`}
             >
               <div
-                className="w-full rounded-2xl overflow-hidden relative flex items-center justify-center"
-                style={{ background: cat.bg, paddingBottom: "70%", minHeight: 0 }}
-              >
-                <img
-                  src={cat.img}
-                  alt={cat.label}
-                  className="absolute inset-2 w-[calc(100%-16px)] h-[calc(100%-16px)] object-contain group-hover:scale-105 transition-transform duration-300"
-                  loading="lazy"
-                />
-              </div>
+                className="w-full rounded-2xl overflow-hidden"
+                style={{
+                  position: "relative",
+                  paddingBottom: "100%",
+                  backgroundImage: `url(${cat.img})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center 50%",
+                  backgroundRepeat: "no-repeat",
+                  backgroundColor: "#dddddd",
+                  transition: "transform 0.3s",
+                }}
+              />
               <span className="mt-2 text-[13px] font-medium text-gray-800 text-center">{cat.label}</span>
             </Link>
           ))}
@@ -224,16 +223,18 @@ function CategoryGrid() {
               data-testid={`cat-women-${i}`}
             >
               <div
-                className="w-full rounded-2xl overflow-hidden relative flex items-center justify-center"
-                style={{ background: cat.bg, paddingBottom: "70%", minHeight: 0 }}
-              >
-                <img
-                  src={cat.img}
-                  alt={cat.label}
-                  className="absolute inset-2 w-[calc(100%-16px)] h-[calc(100%-16px)] object-contain group-hover:scale-105 transition-transform duration-300"
-                  loading="lazy"
-                />
-              </div>
+                className="w-full rounded-2xl overflow-hidden"
+                style={{
+                  position: "relative",
+                  paddingBottom: "100%",
+                  backgroundImage: `url(${cat.img})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center 50%",
+                  backgroundRepeat: "no-repeat",
+                  backgroundColor: "#dddddd",
+                  transition: "transform 0.3s",
+                }}
+              />
               <span className="mt-2 text-[13px] font-medium text-gray-800 text-center">{cat.label}</span>
             </Link>
           ))}
