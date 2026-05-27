@@ -78,8 +78,7 @@ function MainBannerSlider() {
 
   return (
     <section
-      className="relative w-full overflow-hidden bg-black"
-      style={{ paddingBottom: getPaddingBottom(curBanner) }}
+      className="relative w-full overflow-hidden"
       data-testid="main-banner"
       onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
       onTouchEnd={(e) => {
@@ -90,29 +89,36 @@ function MainBannerSlider() {
         }
       }}
     >
-      {displayList.map((b: any, i: number) => {
-        const iw = b?.iw ?? 16;
-        const ih = b?.ih ?? 9;
-        const isLandscape = ih / iw <= 0.85;
-        return (
-          <Link
-            key={i}
-            href={b.linkUrl || "/products"}
-            style={{
-              position: "absolute",
-              inset: 0,
-              backgroundImage: `url(${b.imageUrl})`,
-              backgroundSize: isLandscape ? "100% auto" : "cover",
-              backgroundPosition: "50% 50%",
-              backgroundRepeat: "no-repeat",
-              opacity: i === current ? 1 : 0,
-              transition: "opacity 0.6s ease-in-out",
-              pointerEvents: i === current ? "auto" : "none",
-            }}
-            aria-label={b.title || `배너 ${i + 1}`}
+      {/* 현재 슬라이드 비율로 높이 확보 (invisible) */}
+      <img
+        src={curBanner.imageUrl}
+        alt=""
+        aria-hidden="true"
+        style={{ display: "block", width: "100%", height: "auto", visibility: "hidden" }}
+      />
+
+      {/* 실제 슬라이드 이미지들 (absolute fade) */}
+      {displayList.map((b: any, i: number) => (
+        <Link
+          key={i}
+          href={b.linkUrl || "/products"}
+          style={{
+            position: "absolute",
+            top: 0, left: 0, right: 0,
+            opacity: i === current ? 1 : 0,
+            transition: "opacity 0.6s ease-in-out",
+            pointerEvents: i === current ? "auto" : "none",
+            display: "block",
+          }}
+          aria-label={b.title || `배너 ${i + 1}`}
+        >
+          <img
+            src={b.imageUrl}
+            alt={b.title || `배너 ${i + 1}`}
+            style={{ display: "block", width: "100%", height: "auto" }}
           />
-        );
-      })}
+        </Link>
+      ))}
 
       {displayList.length > 1 && (
         <>
