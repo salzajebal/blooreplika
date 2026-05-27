@@ -68,37 +68,38 @@ function MainBannerSlider() {
   }, [displayList.length]);
 
   return (
-    <section className="relative w-full overflow-hidden" style={{ height: "clamp(280px, 38vw, 520px)" }} data-testid="main-banner">
-      <div
-        className="flex transition-transform duration-500 ease-in-out h-full"
-        style={{ transform: `translateX(-${current * 100}%)` }}
-        onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
-        onTouchEnd={(e) => {
-          const diff = touchX.current - e.changedTouches[0].clientX;
-          if (Math.abs(diff) > 50) {
-            if (diff > 0) setCurrent((p) => (p + 1) % displayList.length);
-            else setCurrent((p) => (p === 0 ? displayList.length - 1 : p - 1));
-          }
-        }}
-      >
-        {displayList.map((b: any, i: number) => (
-          <Link
-            key={i}
-            href={b.linkUrl || "/products"}
-            className="flex-shrink-0 block"
-            style={{
-              width: "100%",
-              height: "clamp(280px, 38vw, 520px)",
-              backgroundImage: `url(${b.imageUrl})`,
-              backgroundSize: "cover",
-              backgroundPosition: "50% 50%",
-              backgroundRepeat: "no-repeat",
-              backgroundColor: "#111",
-            }}
-            aria-label={b.title || `배너 ${i + 1}`}
-          />
-        ))}
-      </div>
+    <section
+      className="relative w-full overflow-hidden bg-black"
+      style={{ paddingBottom: "38%" }}
+      data-testid="main-banner"
+      onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
+      onTouchEnd={(e) => {
+        const diff = touchX.current - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 50) {
+          if (diff > 0) setCurrent((p) => (p + 1) % displayList.length);
+          else setCurrent((p) => (p === 0 ? displayList.length - 1 : p - 1));
+        }
+      }}
+    >
+      {displayList.map((b: any, i: number) => (
+        <Link
+          key={i}
+          href={b.linkUrl || "/products"}
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage: `url(${b.imageUrl})`,
+            backgroundSize: "cover",
+            backgroundPosition: "50% 50%",
+            backgroundRepeat: "no-repeat",
+            opacity: i === current ? 1 : 0,
+            transition: "opacity 0.6s ease-in-out",
+            pointerEvents: i === current ? "auto" : "none",
+          }}
+          aria-label={b.title || `배너 ${i + 1}`}
+        />
+      ))}
+
       {displayList.length > 1 && (
         <>
           <button
