@@ -49,12 +49,14 @@ function MainBannerSlider() {
 
   const STATIC_BANNERS = [
     { imageUrl: "/bloo/banner_xmas.jpg", linkUrl: "/products", title: "" },
-    { imageUrl: "/bloo/banner5.jpg", linkUrl: "/products", title: "" },
     { imageUrl: "/bloo/banner1.jpg", linkUrl: "/products", title: "" },
     { imageUrl: "/bloo/banner2.jpg", linkUrl: "/products", title: "" },
     { imageUrl: "/bloo/banner3.jpg", linkUrl: "/products", title: "" },
     { imageUrl: "/bloo/banner4.jpg", linkUrl: "/products", title: "" },
+    { imageUrl: "/bloo/banner7.jpg", linkUrl: "/products", title: "" },
+    { imageUrl: "/bloo/banner8.jpg", linkUrl: "/products", title: "" },
     { imageUrl: "/bloo/banner6.jpg", linkUrl: "/products", title: "" },
+    { imageUrl: "/bloo/banner5.jpg", linkUrl: "/products", title: "" },
   ];
 
   const displayList = (banners && banners.length > 0) ? banners : STATIC_BANNERS;
@@ -125,120 +127,112 @@ function MainBannerSlider() {
 }
 
 // ─────────────────────────────────────────
-// Category grid (5×2, BLOO style)
+// Category carousel (BLOO style: 7 items, 5 visible, arrows)
 // ─────────────────────────────────────────
-const MEN_CATEGORIES = [
+const ALL_CATEGORIES = [
   {
     label: "남성 의류",
     path: "/products?gender=%EB%82%A8%EC%84%B1&category=%EC%9D%98%EB%A5%98",
-    img: "https://cdn.imweb.me/thumbnail/20240405/b6122c0a1f2c8.jpg",
+    img: "/bloo/cat_m1.jpg",
   },
   {
     label: "남성 가방",
     path: "/products?gender=%EB%82%A8%EC%84%B1&category=%EA%B0%80%EB%B0%A9",
-    img: "https://cdn.imweb.me/thumbnail/20240405/3d0ec2da5d1d0.jpg",
+    img: "/bloo/cat_m2.jpg",
   },
   {
     label: "남성 신발",
     path: "/products?gender=%EB%82%A8%EC%84%B1&category=%EC%8B%A0%EB%B0%9C",
-    img: "https://cdn.imweb.me/thumbnail/20240405/f1fa3ee1f2ddf.jpg",
+    img: "/bloo/cat_m3.jpg",
   },
   {
-    label: "남성 패션 집화",
+    label: "남성 패션 잡화",
     path: "/products?gender=%EB%82%A8%EC%84%B1&category=%EC%9E%A1%ED%99%94",
-    img: "https://cdn.imweb.me/thumbnail/20240405/47958dfff76f6.jpg",
+    img: "/bloo/cat_m4.jpg",
   },
   {
     label: "시계관",
     path: "/products/watches",
-    img: "https://cdn.imweb.me/thumbnail/20240405/da21e08dfe2fa.jpg",
+    img: "/bloo/cat_m5.jpg",
   },
-];
-
-const WOMEN_CATEGORIES = [
   {
     label: "여성 의류",
     path: "/products?gender=%EC%97%AC%EC%84%B1&category=%EC%9D%98%EB%A5%98",
-    img: "https://cdn.imweb.me/thumbnail/20240405/19656e56216f8.jpg",
+    img: "/bloo/cat_w1.jpg",
   },
   {
     label: "여성 가방",
     path: "/products?gender=%EC%97%AC%EC%84%B1&category=%EA%B0%80%EB%B0%A9",
-    img: "https://cdn.imweb.me/thumbnail/20240405/514fb7f4487dc.jpg",
-  },
-  {
-    label: "여성 신발",
-    path: "/products?gender=%EC%97%AC%EC%84%B1&category=%EC%8B%A0%EB%B0%9C",
-    img: "https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/637c900188dfe.jpg",
-  },
-  {
-    label: "여성 패션 집화",
-    path: "/products?gender=%EC%97%AC%EC%84%B1&category=%EC%9E%A1%ED%99%94",
-    img: "https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/15a2653af9aa9.jpg",
-  },
-  {
-    label: "캐리어",
-    path: "/products/carrier",
-    img: "https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/aed8575a7a403.jpg",
+    img: "/bloo/cat_w2.jpg",
   },
 ];
 
-function CategoryGrid() {
+function CategoryCarousel() {
+  const [offset, setOffset] = useState(0);
+  const visible = 5;
+  const max = ALL_CATEGORIES.length - visible;
+
+  const prev = () => setOffset((o) => Math.max(0, o - 1));
+  const next = () => setOffset((o) => Math.min(max, o + 1));
+
   return (
     <section className="bg-white py-6 border-b border-gray-100" data-testid="category-grid">
-      <div className="max-w-[1280px] mx-auto px-5">
-        {/* Row 1: Men */}
-        <div className="grid grid-cols-5 gap-3 mb-3">
-          {MEN_CATEGORIES.map((cat, i) => (
-            <Link
-              key={i}
-              href={cat.path}
-              className="flex flex-col items-center group"
-              data-testid={`cat-men-${i}`}
-            >
-              <div
-                className="w-full rounded-2xl overflow-hidden"
-                style={{
-                  position: "relative",
-                  paddingBottom: "100%",
-                  backgroundImage: `url(${cat.img})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center 50%",
-                  backgroundRepeat: "no-repeat",
-                  backgroundColor: "#dddddd",
-                  transition: "transform 0.3s",
-                }}
-              />
-              <span className="mt-2 text-[13px] font-medium text-gray-800 text-center">{cat.label}</span>
-            </Link>
-          ))}
+      <div className="max-w-[1280px] mx-auto px-5 relative">
+        {/* Left arrow */}
+        {offset > 0 && (
+          <button
+            onClick={prev}
+            className="absolute left-0 top-[calc(50%-28px)] z-10 w-8 h-8 bg-white border border-gray-200 rounded-full shadow flex items-center justify-center hover:bg-gray-50 transition-colors"
+            aria-label="이전"
+            data-testid="cat-prev"
+          >
+            <ChevronLeft className="w-4 h-4 text-gray-600" />
+          </button>
+        )}
+
+        {/* Carousel track */}
+        <div className="overflow-hidden">
+          <div
+            className="flex transition-transform duration-300 ease-in-out gap-3"
+            style={{ transform: `translateX(calc(-${offset} * (100% / ${visible}) - ${offset} * 12px / ${visible}))` }}
+          >
+            {ALL_CATEGORIES.map((cat, i) => (
+              <Link
+                key={i}
+                href={cat.path}
+                className="flex flex-col items-center group flex-shrink-0"
+                style={{ width: `calc((100% - ${(visible - 1) * 12}px) / ${visible})` }}
+                data-testid={`cat-item-${i}`}
+              >
+                <div
+                  className="w-full rounded-2xl overflow-hidden"
+                  style={{
+                    position: "relative",
+                    paddingBottom: "100%",
+                    backgroundImage: `url(${cat.img})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "50% 50%",
+                    backgroundRepeat: "no-repeat",
+                    backgroundColor: "#dddddd",
+                  }}
+                />
+                <span className="mt-2 text-[13px] font-medium text-gray-800 text-center whitespace-nowrap">{cat.label}</span>
+              </Link>
+            ))}
+          </div>
         </div>
-        {/* Row 2: Women */}
-        <div className="grid grid-cols-5 gap-3">
-          {WOMEN_CATEGORIES.map((cat, i) => (
-            <Link
-              key={i}
-              href={cat.path}
-              className="flex flex-col items-center group"
-              data-testid={`cat-women-${i}`}
-            >
-              <div
-                className="w-full rounded-2xl overflow-hidden"
-                style={{
-                  position: "relative",
-                  paddingBottom: "100%",
-                  backgroundImage: `url(${cat.img})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center 50%",
-                  backgroundRepeat: "no-repeat",
-                  backgroundColor: "#dddddd",
-                  transition: "transform 0.3s",
-                }}
-              />
-              <span className="mt-2 text-[13px] font-medium text-gray-800 text-center">{cat.label}</span>
-            </Link>
-          ))}
-        </div>
+
+        {/* Right arrow */}
+        {offset < max && (
+          <button
+            onClick={next}
+            className="absolute right-0 top-[calc(50%-28px)] z-10 w-8 h-8 bg-white border border-gray-200 rounded-full shadow flex items-center justify-center hover:bg-gray-50 transition-colors"
+            aria-label="다음"
+            data-testid="cat-next"
+          >
+            <ChevronRight className="w-4 h-4 text-gray-600" />
+          </button>
+        )}
       </div>
     </section>
   );
@@ -817,7 +811,7 @@ export default function Home() {
       <Header />
       <main className="bg-white">
         <MainBannerSlider />
-        <CategoryGrid />
+        <CategoryCarousel />
         <CelebritySection />
         <RankingSection />
         <NewProductsSection />
