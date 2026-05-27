@@ -89,12 +89,12 @@ export function Header() {
 
             {/* Logo */}
             <Link href="/" className="flex-shrink-0 mr-2">
-              <span
-                className="text-[26px] font-black text-[#060133] tracking-tight select-none"
-                style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "-0.01em" }}
-              >
-                VELOUR
-              </span>
+              <img
+                src="/bloo/logo.jpg"
+                alt="VELOUR"
+                className="h-[34px] w-auto object-contain select-none"
+                style={{ maxWidth: 140 }}
+              />
             </Link>
 
             {/* Search bar */}

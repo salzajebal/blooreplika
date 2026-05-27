@@ -47,30 +47,22 @@ function MainBannerSlider() {
     },
   });
 
-  const list = banners && banners.length > 0 ? banners : [];
+  const STATIC_BANNERS = [
+    { imageUrl: "/bloo/banner1.jpg", linkUrl: "/products", title: "" },
+    { imageUrl: "/bloo/banner2.jpg", linkUrl: "/products", title: "" },
+    { imageUrl: "/bloo/banner3.jpg", linkUrl: "/products", title: "" },
+    { imageUrl: "/bloo/banner4.jpg", linkUrl: "/products", title: "" },
+    { imageUrl: "/bloo/banner5.jpg", linkUrl: "/products", title: "" },
+    { imageUrl: "/bloo/banner6.jpg", linkUrl: "/products", title: "" },
+  ];
+
+  const displayList = (banners && banners.length > 0) ? banners : STATIC_BANNERS;
 
   useEffect(() => {
-    if (list.length <= 1) return;
-    const t = setInterval(() => setCurrent((p) => (p + 1) % list.length), 4000);
+    if (displayList.length <= 1) return;
+    const t = setInterval(() => setCurrent((p) => (p + 1) % displayList.length), 4000);
     return () => clearInterval(t);
-  }, [list.length]);
-
-  if (list.length === 0) {
-    return (
-      <section
-        className="w-full bg-gradient-to-br from-[#060133] via-[#1a0a6e] to-[#3d0099] flex items-center justify-center"
-        style={{ aspectRatio: "16/5", minHeight: 240 }}
-      >
-        <div className="text-center text-white px-6">
-          <p className="text-xs uppercase tracking-[0.3em] text-white/60 mb-3">VELOUR</p>
-          <h2 className="text-4xl font-black tracking-tight" style={{ fontFamily: "'Playfair Display', serif" }}>
-            럭셔리 브랜드 컬렉션
-          </h2>
-          <p className="text-base text-white/70 mt-3">전 상품 15% 할인 진행 중</p>
-        </div>
-      </section>
-    );
-  }
+  }, [displayList.length]);
 
   return (
     <section className="relative w-full overflow-hidden" data-testid="main-banner">
@@ -81,12 +73,12 @@ function MainBannerSlider() {
         onTouchEnd={(e) => {
           const diff = touchX.current - e.changedTouches[0].clientX;
           if (Math.abs(diff) > 50) {
-            if (diff > 0) setCurrent((p) => (p + 1) % list.length);
-            else setCurrent((p) => (p === 0 ? list.length - 1 : p - 1));
+            if (diff > 0) setCurrent((p) => (p + 1) % displayList.length);
+            else setCurrent((p) => (p === 0 ? displayList.length - 1 : p - 1));
           }
         }}
       >
-        {list.map((b: any, i: number) => (
+        {displayList.map((b: any, i: number) => (
           <div key={i} className="w-full flex-shrink-0">
             <Link href={b.linkUrl || "/products"} className="block w-full">
               <img src={b.imageUrl} alt={b.title || `배너 ${i + 1}`} className="w-full h-auto block" loading="eager" />
@@ -94,24 +86,24 @@ function MainBannerSlider() {
           </div>
         ))}
       </div>
-      {list.length > 1 && (
+      {displayList.length > 1 && (
         <>
           <button
-            onClick={() => setCurrent((p) => (p === 0 ? list.length - 1 : p - 1))}
+            onClick={() => setCurrent((p) => (p === 0 ? displayList.length - 1 : p - 1))}
             className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow z-10"
             aria-label="이전"
           >
             <ChevronLeft className="w-5 h-5 text-gray-700" />
           </button>
           <button
-            onClick={() => setCurrent((p) => (p + 1) % list.length)}
+            onClick={() => setCurrent((p) => (p + 1) % displayList.length)}
             className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow z-10"
             aria-label="다음"
           >
             <ChevronRight className="w-5 h-5 text-gray-700" />
           </button>
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-            {list.map((_: any, i: number) => (
+            {displayList.map((_: any, i: number) => (
               <button
                 key={i}
                 onClick={() => setCurrent(i)}
@@ -133,31 +125,31 @@ const MEN_CATEGORIES = [
     label: "남성 의류",
     path: "/products?gender=%EB%82%A8%EC%84%B1&category=%EC%9D%98%EB%A5%98",
     bg: "#c5d8ea",
-    img: "https://images.unsplash.com/photo-1617127365659-c47fa864d8bc?w=400&q=80",
+    img: "https://cdn.imweb.me/thumbnail/20240405/b6122c0a1f2c8.jpg",
   },
   {
     label: "남성 가방",
     path: "/products?gender=%EB%82%A8%EC%84%B1&category=%EA%B0%80%EB%B0%A9",
     bg: "#b8d0d0",
-    img: "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=400&q=80",
+    img: "https://cdn.imweb.me/thumbnail/20240405/3d0ec2da5d1d0.jpg",
   },
   {
     label: "남성 신발",
     path: "/products?gender=%EB%82%A8%EC%84%B1&category=%EC%8B%A0%EB%B0%9C",
     bg: "#c8dce8",
-    img: "https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?w=400&q=80",
+    img: "https://cdn.imweb.me/thumbnail/20240405/f1fa3ee1f2ddf.jpg",
   },
   {
     label: "남성 패션 집화",
     path: "/products?gender=%EB%82%A8%EC%84%B1&category=%EC%9E%A1%ED%99%94",
     bg: "#c0c8d4",
-    img: "https://images.unsplash.com/photo-1611652022419-a9419f74343d?w=400&q=80",
+    img: "https://cdn.imweb.me/thumbnail/20240405/47958dfff76f6.jpg",
   },
   {
     label: "시계관",
     path: "/products/watches",
     bg: "#d0ccc8",
-    img: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80",
+    img: "https://cdn.imweb.me/thumbnail/20240405/da21e08dfe2fa.jpg",
   },
 ];
 
@@ -166,31 +158,31 @@ const WOMEN_CATEGORIES = [
     label: "여성 의류",
     path: "/products?gender=%EC%97%AC%EC%84%B1&category=%EC%9D%98%EB%A5%98",
     bg: "#ecddc8",
-    img: "https://images.unsplash.com/photo-1562157873-818bc0726f68?w=400&q=80",
+    img: "https://cdn.imweb.me/thumbnail/20240405/19656e56216f8.jpg",
   },
   {
     label: "여성 가방",
     path: "/products?gender=%EC%97%AC%EC%84%B1&category=%EA%B0%80%EB%B0%A9",
     bg: "#e4d0b0",
-    img: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400&q=80",
+    img: "https://cdn.imweb.me/thumbnail/20240405/514fb7f4487dc.jpg",
   },
   {
     label: "여성 신발",
     path: "/products?gender=%EC%97%AC%EC%84%B1&category=%EC%8B%A0%EB%B0%9C",
     bg: "#d8c8a8",
-    img: "https://images.unsplash.com/photo-1515347619252-60a4bf4fff4f?w=400&q=80",
+    img: "https://cdn.imweb.me/thumbnail/20251221/ffa68f1aaddd6.jpg",
   },
   {
     label: "여성 패션 집화",
     path: "/products?gender=%EC%97%AC%EC%84%B1&category=%EC%9E%A1%ED%99%94",
     bg: "#ccaa88",
-    img: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80",
+    img: "https://cdn.imweb.me/thumbnail/20240207/1dfc67ec1aa9e.jpg",
   },
   {
     label: "캐리어",
     path: "/products/carrier",
     bg: "#d4d4d4",
-    img: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=400&q=80",
+    img: "https://cdn.imweb.me/thumbnail/20231208/2efaba0d182d8.jpg",
   },
 ];
 
