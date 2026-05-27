@@ -94,7 +94,14 @@ function MainBannerSlider() {
         src={curBanner.imageUrl}
         alt=""
         aria-hidden="true"
-        style={{ display: "block", width: "100%", height: "auto", visibility: "hidden" }}
+        style={{
+          display: "block",
+          width: "100%",
+          height: "auto",
+          maxHeight: "clamp(240px, 40vw, 540px)",
+          objectFit: "cover",
+          visibility: "hidden",
+        }}
       />
 
       {/* 실제 슬라이드 이미지들 (absolute fade) */}
@@ -104,18 +111,25 @@ function MainBannerSlider() {
           href={b.linkUrl || "/products"}
           style={{
             position: "absolute",
-            top: 0, left: 0, right: 0,
+            top: 0, left: 0, right: 0, bottom: 0,
             opacity: i === current ? 1 : 0,
             transition: "opacity 0.6s ease-in-out",
             pointerEvents: i === current ? "auto" : "none",
             display: "block",
+            overflow: "hidden",
           }}
           aria-label={b.title || `배너 ${i + 1}`}
         >
           <img
             src={b.imageUrl}
             alt={b.title || `배너 ${i + 1}`}
-            style={{ display: "block", width: "100%", height: "auto" }}
+            style={{
+              display: "block",
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "50% 50%",
+            }}
           />
         </Link>
       ))}
