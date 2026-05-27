@@ -82,17 +82,21 @@ function MainBannerSlider() {
         }}
       >
         {displayList.map((b: any, i: number) => (
-          <div key={i} className="w-full flex-shrink-0" style={{ height: "clamp(280px, 38vw, 520px)" }}>
-            <Link href={b.linkUrl || "/products"} className="block w-full h-full">
-              <img
-                src={b.imageUrl}
-                alt={b.title || `배너 ${i + 1}`}
-                className="w-full h-full block"
-                style={{ objectFit: "cover", objectPosition: "center top" }}
-                loading="eager"
-              />
-            </Link>
-          </div>
+          <Link
+            key={i}
+            href={b.linkUrl || "/products"}
+            className="flex-shrink-0 block"
+            style={{
+              width: "100%",
+              height: "clamp(280px, 38vw, 520px)",
+              backgroundImage: `url(${b.imageUrl})`,
+              backgroundSize: "cover",
+              backgroundPosition: "50% 50%",
+              backgroundRepeat: "no-repeat",
+              backgroundColor: "#111",
+            }}
+            aria-label={b.title || `배너 ${i + 1}`}
+          />
         ))}
       </div>
       {displayList.length > 1 && (
