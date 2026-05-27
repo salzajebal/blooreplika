@@ -48,18 +48,25 @@ function MainBannerSlider() {
   });
 
   const STATIC_BANNERS = [
-    { imageUrl: "/bloo/banner_xmas.jpg", linkUrl: "/products", title: "" },
-    { imageUrl: "/bloo/banner1.jpg", linkUrl: "/products", title: "" },
-    { imageUrl: "/bloo/banner2.jpg", linkUrl: "/products", title: "" },
-    { imageUrl: "/bloo/banner3.jpg", linkUrl: "/products", title: "" },
-    { imageUrl: "/bloo/banner4.jpg", linkUrl: "/products", title: "" },
-    { imageUrl: "/bloo/banner7.jpg", linkUrl: "/products", title: "" },
-    { imageUrl: "/bloo/banner8.jpg", linkUrl: "/products", title: "" },
-    { imageUrl: "/bloo/banner6.jpg", linkUrl: "/products", title: "" },
-    { imageUrl: "/bloo/banner5.jpg", linkUrl: "/products", title: "" },
+    { imageUrl: "/bloo/banner_xmas.jpg", linkUrl: "/products", title: "", iw: 750, ih: 750 },
+    { imageUrl: "/bloo/banner1.jpg",     linkUrl: "/products", title: "", iw: 1024, ih: 1024 },
+    { imageUrl: "/bloo/banner2.jpg",     linkUrl: "/products", title: "", iw: 1080, ih: 1080 },
+    { imageUrl: "/bloo/banner3.jpg",     linkUrl: "/products", title: "", iw: 750, ih: 750 },
+    { imageUrl: "/bloo/banner4.jpg",     linkUrl: "/products", title: "", iw: 750, ih: 750 },
+    { imageUrl: "/bloo/banner7.jpg",     linkUrl: "/products", title: "", iw: 750, ih: 750 },
+    { imageUrl: "/bloo/banner8.jpg",     linkUrl: "/products", title: "", iw: 750, ih: 750 },
+    { imageUrl: "/bloo/banner6.jpg",     linkUrl: "/products", title: "", iw: 840, ih: 430 },
+    { imageUrl: "/bloo/banner5.jpg",     linkUrl: "/products", title: "", iw: 1920, ih: 596 },
   ];
 
   const displayList = (banners && banners.length > 0) ? banners : STATIC_BANNERS;
+
+  const getPaddingBottom = (b: any) => {
+    const iw = b?.iw ?? 16;
+    const ih = b?.ih ?? 9;
+    const ratio = (ih / iw) * 100;
+    return `${Math.min(ratio, 85).toFixed(2)}%`;
+  };
 
   useEffect(() => {
     if (displayList.length <= 1) return;
@@ -67,10 +74,12 @@ function MainBannerSlider() {
     return () => clearInterval(t);
   }, [displayList.length]);
 
+  const curBanner = displayList[current] ?? displayList[0];
+
   return (
     <section
       className="relative w-full overflow-hidden bg-black"
-      style={{ paddingBottom: "38%" }}
+      style={{ paddingBottom: getPaddingBottom(curBanner) }}
       data-testid="main-banner"
       onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
       onTouchEnd={(e) => {
@@ -81,24 +90,29 @@ function MainBannerSlider() {
         }
       }}
     >
-      {displayList.map((b: any, i: number) => (
-        <Link
-          key={i}
-          href={b.linkUrl || "/products"}
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage: `url(${b.imageUrl})`,
-            backgroundSize: "cover",
-            backgroundPosition: "50% 50%",
-            backgroundRepeat: "no-repeat",
-            opacity: i === current ? 1 : 0,
-            transition: "opacity 0.6s ease-in-out",
-            pointerEvents: i === current ? "auto" : "none",
-          }}
-          aria-label={b.title || `배너 ${i + 1}`}
-        />
-      ))}
+      {displayList.map((b: any, i: number) => {
+        const iw = b?.iw ?? 16;
+        const ih = b?.ih ?? 9;
+        const isLandscape = ih / iw <= 0.85;
+        return (
+          <Link
+            key={i}
+            href={b.linkUrl || "/products"}
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage: `url(${b.imageUrl})`,
+              backgroundSize: isLandscape ? "100% auto" : "cover",
+              backgroundPosition: "50% 50%",
+              backgroundRepeat: "no-repeat",
+              opacity: i === current ? 1 : 0,
+              transition: "opacity 0.6s ease-in-out",
+              pointerEvents: i === current ? "auto" : "none",
+            }}
+            aria-label={b.title || `배너 ${i + 1}`}
+          />
+        );
+      })}
 
       {displayList.length > 1 && (
         <>
