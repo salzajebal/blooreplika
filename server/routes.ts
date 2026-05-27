@@ -118,8 +118,8 @@ async function uploadBufferToObjectStorage(
   return objectPath;
 }
 
-const ADMIN_USERNAME = "admin";
-const ADMIN_PASSWORD = "admin123";
+const ADMIN_USERNAME = "velour_admin";
+const ADMIN_PASSWORD = "velour2024!";
 
 const adminSessions = new Map<string, { expiresAt: Date; role: string; userId?: string; name?: string }>();
 
