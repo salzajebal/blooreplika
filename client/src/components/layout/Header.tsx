@@ -1,13 +1,15 @@
-import { Search, Menu, X, ShoppingBag, User, ChevronRight } from "lucide-react";
+import { Search, Menu, X, ShoppingBag, User, ChevronRight, MessageCircle, LogIn } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useState, useEffect } from "react";
 
-const NAV_TABS = [
-  { label: "메인", path: "/" },
-  { label: "SHOP", path: "/products" },
-  { label: "랭킹", path: "/ranking" },
+const SUB_NAV = [
+  { label: "실시간 검수", path: "/inspection", highlight: true },
   { label: "리뷰", path: "/reviews" },
+  { label: "샐럽", path: "/celeb" },
+  { label: "남성", path: "/products?gender=%EB%82%A8%EC%84%B1" },
+  { label: "여성", path: "/products?gender=%EC%97%AC%EC%84%B1" },
+  { label: "공지사항", path: "/notices" },
 ];
 
 const SIDE_MENU_EXTRA = [
@@ -24,6 +26,7 @@ export function Header() {
   const [memberName, setMemberName] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [announcementText, setAnnouncementText] = useState("5월 쿠폰 지급, 전 상품 15% 할인!");
 
   useEffect(() => {
     const check = () => setMemberName(localStorage.getItem("memberName"));
@@ -31,6 +34,12 @@ export function Header() {
     window.addEventListener("storage", check);
     const iv = setInterval(check, 1000);
     return () => { window.removeEventListener("storage", check); clearInterval(iv); };
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/site-settings/announcement").then(r => r.json()).then(d => {
+      if (d.success && d.data?.text) setAnnouncementText(d.data.text);
+    }).catch(() => {});
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -51,103 +60,153 @@ export function Header() {
     setLocation("/");
   };
 
-  const isActive = (path: string, label: string) => {
-    if (label === "메인") return location === "/";
-    if (label === "SHOP") return location.startsWith("/products") && !location.startsWith("/products/sameday");
-    if (label === "국내배송") return location.startsWith("/products/sameday");
-    return location === path || location.startsWith(path + "/") || location.startsWith(path + "?");
-  };
-
   return (
     <>
-      <header className="bg-white shadow-sm" style={{ position: 'fixed', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: '640px', zIndex: 50 }}>
-        {/* Search bar row */}
-        <div className="px-3 py-2 bg-white border-b border-gray-100">
-          <div className="flex items-center gap-2">
-            <Link href="/" className="flex-shrink-0">
-              <span className="text-base font-black tracking-widest text-[#111111] uppercase" style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "0.15em" }}>
-                VELOUR
-              </span>
-            </Link>
-            <form onSubmit={handleSearch} className="flex-1 flex items-center bg-gray-100 rounded-full px-3 py-2 gap-2">
-              <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="상품과 브랜드를 검색해보세요."
-                className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder-gray-400"
-                data-testid="header-search-input"
-              />
-            </form>
+      <header style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100 }}>
+        {/* ── Announcement bar ── */}
+        <div className="bg-[#060133] text-white text-center py-2 text-[13px] tracking-wide font-medium">
+          {announcementText.split("15%").map((part, i, arr) =>
+            i < arr.length - 1 ? (
+              <span key={i}>{part}<span className="text-orange-400 font-bold">15%</span></span>
+            ) : (
+              <span key={i}>{part}</span>
+            )
+          )}
+        </div>
+
+        {/* ── Main header ── */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-[1280px] mx-auto px-5 flex items-center gap-4 h-[60px]">
+            {/* Hamburger */}
             <button
               onClick={() => setMenuOpen(true)}
-              className="p-2 text-gray-600 hover:text-gray-900 touch-manipulation"
+              className="p-1 text-gray-700 hover:text-black touch-manipulation flex-shrink-0"
               aria-label="메뉴"
               data-testid="header-menu-btn"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-6 h-6" />
             </button>
+
+            {/* Logo */}
+            <Link href="/" className="flex-shrink-0 mr-2">
+              <span
+                className="text-[26px] font-black text-[#060133] tracking-tight select-none"
+                style={{ fontFamily: "'Playfair Display', serif", letterSpacing: "-0.01em" }}
+              >
+                VELOUR
+              </span>
+            </Link>
+
+            {/* Search bar */}
+            <form onSubmit={handleSearch} className="flex-1 max-w-[420px] flex items-center border border-gray-300 rounded-sm overflow-hidden h-[38px]">
+              <input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="제품,브랜드,카테고리 등"
+                className="flex-1 px-3 text-sm outline-none text-gray-700 placeholder-gray-400 h-full"
+                data-testid="header-search-input"
+              />
+              <button type="submit" className="w-10 h-full flex items-center justify-center bg-white hover:bg-gray-50 flex-shrink-0 border-l border-gray-300">
+                <Search className="w-4 h-4 text-gray-500" />
+              </button>
+            </form>
+
+            {/* Right icons */}
+            <div className="ml-auto flex items-center gap-1">
+              <Link
+                href={memberName ? "/profile" : "/login"}
+                className="flex items-center gap-1 px-3 py-1.5 text-[13px] text-gray-700 hover:text-black font-medium transition-colors"
+                data-testid="header-login-link"
+              >
+                <LogIn className="w-4 h-4" />
+                <span className="hidden sm:inline">{memberName ? memberName.slice(0, 5) : "로그인"}</span>
+              </Link>
+              <Link
+                href="/profile"
+                className="flex items-center gap-1 px-3 py-1.5 text-[13px] text-gray-700 hover:text-black font-medium transition-colors"
+                data-testid="header-my-link"
+              >
+                <User className="w-4 h-4" />
+                <span className="hidden sm:inline">my</span>
+              </Link>
+              <Link
+                href="/cart"
+                className="flex items-center gap-1 px-3 py-1.5 text-[13px] text-gray-700 hover:text-black font-medium transition-colors relative"
+                data-testid="header-cart-link"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span className="hidden sm:inline">cart</span>
+                {count > 0 && (
+                  <span className="absolute -top-0.5 right-0 w-4 h-4 bg-[#060133] text-white text-[9px] rounded-full flex items-center justify-center font-bold">
+                    {count}
+                  </span>
+                )}
+              </Link>
+              <Link
+                href="/support"
+                className="flex items-center gap-1 px-3 py-1.5 text-[13px] text-gray-700 hover:text-black font-medium transition-colors"
+                data-testid="header-support-link"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span className="hidden sm:inline">1:1상담</span>
+              </Link>
+            </div>
           </div>
         </div>
 
-        {/* Tab navigation */}
-        <nav className="bg-white border-b border-gray-200 overflow-x-auto scrollbar-hide" data-testid="header-tabs">
-          <div className="flex">
-            {NAV_TABS.map((tab) => {
-              const active = isActive(tab.path, tab.label);
-              return (
-                <Link
-                  key={tab.label}
-                  href={tab.path}
-                  className={`flex-shrink-0 px-4 py-3 text-sm font-medium relative whitespace-nowrap transition-colors ${
-                    active
-                      ? "text-black border-b-2 border-black"
-                      : "text-gray-500 hover:text-gray-800"
-                  }`}
-                  data-testid={`nav-tab-${tab.label}`}
-                >
-                  {tab.label}
-                  {tab.badge && (
-                    <span className="absolute top-2.5 right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
-                  )}
-                </Link>
-              );
-            })}
+        {/* ── Sub-nav ── */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-[1280px] mx-auto px-5 flex items-center gap-0 overflow-x-auto scrollbar-hide h-[40px]">
+            {SUB_NAV.map((item) => (
+              <Link
+                key={item.label}
+                href={item.path}
+                className={`flex-shrink-0 flex items-center gap-1 px-3 h-full text-[13px] font-medium transition-colors whitespace-nowrap ${
+                  item.highlight
+                    ? "text-[#00a050] hover:text-[#008040]"
+                    : "text-gray-700 hover:text-black"
+                } ${location === item.path || location.startsWith(item.path + "?") ? "border-b-2 border-[#060133]" : ""}`}
+                data-testid={`subnav-${item.label}`}
+              >
+                {item.label}
+                {item.highlight && (
+                  <span className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0" />
+                )}
+              </Link>
+            ))}
           </div>
-        </nav>
+        </div>
       </header>
 
-      {/* Invisible spacer to push content below fixed header */}
-      <div style={{ height: '92px' }} className="flex-shrink-0" />
+      {/* Spacer: announcement(32) + main header(60) + subnav(40) = 132px */}
+      <div style={{ height: "132px" }} className="flex-shrink-0" />
 
-      {/* Side drawer overlay */}
+      {/* ── Side drawer ── */}
       {menuOpen && (
         <div className="fixed inset-0 z-[200]" data-testid="side-menu-overlay">
           <div className="absolute inset-0 bg-black/50" onClick={() => setMenuOpen(false)} />
-          <div className="absolute right-0 top-0 bottom-0 w-72 bg-white flex flex-col shadow-2xl">
-            {/* Drawer header */}
-            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
-              <span className="font-bold text-base text-gray-900">velour</span>
-              <button onClick={() => setMenuOpen(false)} className="p-1 text-gray-500 hover:text-gray-900" data-testid="side-menu-close">
+          <div className="absolute left-0 top-0 bottom-0 w-72 bg-white flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100 bg-[#060133]">
+              <span className="font-black text-xl text-white" style={{ fontFamily: "'Playfair Display', serif" }}>VELOUR</span>
+              <button onClick={() => setMenuOpen(false)} className="p-1 text-white/80 hover:text-white" data-testid="side-menu-close">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto">
-              {/* Member area */}
               <div className="px-4 py-4 border-b border-gray-100">
                 {memberName ? (
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-bold text-gray-900 text-sm">{memberName}님, 안녕하세요!</p>
-                      <Link href="/profile" onClick={() => setMenuOpen(false)} className="text-xs text-[#FF6100] font-medium mt-0.5 block">
+                      <Link href="/profile" onClick={() => setMenuOpen(false)} className="text-xs text-[#060133] font-medium mt-0.5 block">
                         마이페이지 보기 →
                       </Link>
                     </div>
                     <Link href="/cart" onClick={() => setMenuOpen(false)} className="relative p-2">
                       <ShoppingBag className="w-5 h-5 text-gray-600" />
                       {count > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#FF6100] text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                        <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#060133] text-white text-[10px] rounded-full flex items-center justify-center font-bold">
                           {count}
                         </span>
                       )}
@@ -155,41 +214,34 @@ export function Header() {
                   </div>
                 ) : (
                   <div className="flex gap-2">
-                    <Link
-                      href="/login"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex-1 py-2.5 border border-gray-200 text-sm text-center rounded-lg font-medium text-gray-700 hover:bg-gray-50"
-                    >
+                    <Link href="/login" onClick={() => setMenuOpen(false)} className="flex-1 py-2.5 border border-gray-300 text-sm text-center rounded font-medium text-gray-700 hover:bg-gray-50">
                       로그인
                     </Link>
-                    <Link
-                      href="/signup"
-                      onClick={() => setMenuOpen(false)}
-                      className="flex-1 py-2.5 bg-black text-white text-sm text-center rounded-lg font-medium hover:bg-gray-800"
-                    >
+                    <Link href="/signup" onClick={() => setMenuOpen(false)} className="flex-1 py-2.5 bg-[#060133] text-white text-sm text-center rounded font-medium hover:bg-[#0a0240]">
                       회원가입
                     </Link>
                   </div>
                 )}
               </div>
 
-              {/* Main nav */}
               <div className="px-2 py-2 border-b border-gray-100">
-                {NAV_TABS.map((tab) => (
+                {SUB_NAV.map((item) => (
                   <Link
-                    key={tab.label}
-                    href={tab.path}
+                    key={item.label}
+                    href={item.path}
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center justify-between px-3 py-3 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-black"
-                    data-testid={`side-nav-${tab.label}`}
+                    className={`flex items-center justify-between px-3 py-3 rounded-lg text-sm font-medium hover:bg-gray-50 ${item.highlight ? "text-[#00a050]" : "text-gray-700 hover:text-black"}`}
+                    data-testid={`side-subnav-${item.label}`}
                   >
-                    <span>{tab.label}</span>
+                    <span className="flex items-center gap-1.5">
+                      {item.label}
+                      {item.highlight && <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />}
+                    </span>
                     <ChevronRight className="w-4 h-4 text-gray-300" />
                   </Link>
                 ))}
               </div>
 
-              {/* Extra links */}
               <div className="px-2 py-2">
                 {SIDE_MENU_EXTRA.map((item) => (
                   <Link
@@ -201,12 +253,10 @@ export function Header() {
                     {item.label}
                   </Link>
                 ))}
-
                 <Link href="/cart" onClick={() => setMenuOpen(false)} className="flex items-center px-3 py-2.5 rounded-lg text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-700">
-                  찜 / 장바구니
-                  {count > 0 && <span className="ml-2 text-[#FF6100] font-bold text-xs">({count})</span>}
+                  장바구니
+                  {count > 0 && <span className="ml-2 text-[#060133] font-bold text-xs">({count})</span>}
                 </Link>
-
                 {memberName && (
                   <button
                     onClick={handleLogout}
