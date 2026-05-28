@@ -48,13 +48,18 @@ function MainBannerSlider() {
   });
 
   const STATIC_BANNERS = [
-    { imageUrl: "/bloo/banner1.jpg", linkUrl: "/products", title: "", pos: "50% 22%" },
-    { imageUrl: "/bloo/banner2.jpg", linkUrl: "/products", title: "", pos: "50% 50%" },
-    { imageUrl: "/bloo/banner3.jpg", linkUrl: "/products", title: "", pos: "50% 50%" },
-    { imageUrl: "/bloo/banner4.jpg", linkUrl: "/products", title: "", pos: "50% 50%" },
-    { imageUrl: "/bloo/banner7.jpg", linkUrl: "/products", title: "", pos: "50% 50%" },
-    { imageUrl: "/bloo/banner8.jpg", linkUrl: "/products", title: "", pos: "50% 50%" },
-    { imageUrl: "/bloo/banner_xmas.jpg", linkUrl: "/products", title: "", pos: "50% 42%" },
+    { imageUrl: "/bloo/banner_carrier.jpg", linkUrl: "/products", title: "", pos: "50% 50%" },
+    { imageUrl: "/bloo/banner_xmas2.jpg",   linkUrl: "/products", title: "", pos: "50% 50%" },
+    { imageUrl: "/bloo/banner_acc.jpg",     linkUrl: "/products/accessories", title: "", pos: "50% 50%" },
+    { imageUrl: "/bloo/banner_review_event.jpg", linkUrl: "/reviews", title: "", pos: "50% 50%" },
+    { imageUrl: "/bloo/banner_app.jpg",     linkUrl: "/products", title: "", pos: "50% 50%" },
+    { imageUrl: "/bloo/banner1.jpg",        linkUrl: "/products", title: "", pos: "50% 22%" },
+    { imageUrl: "/bloo/banner2.jpg",        linkUrl: "/products", title: "", pos: "50% 50%" },
+    { imageUrl: "/bloo/banner3.jpg",        linkUrl: "/products", title: "", pos: "50% 50%" },
+    { imageUrl: "/bloo/banner4.jpg",        linkUrl: "/products", title: "", pos: "50% 50%" },
+    { imageUrl: "/bloo/banner7.jpg",        linkUrl: "/products", title: "", pos: "50% 50%" },
+    { imageUrl: "/bloo/banner8.jpg",        linkUrl: "/products", title: "", pos: "50% 50%" },
+    { imageUrl: "/bloo/banner_xmas.jpg",    linkUrl: "/products", title: "", pos: "50% 42%" },
   ];
 
   const displayList = (banners && banners.length > 0) ? banners : STATIC_BANNERS;
@@ -513,24 +518,19 @@ function InspectionSection() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Review Event Banner — Daily & Weekly
+// Review Event Banner — Daily & Weekly (full image)
 // ─────────────────────────────────────────────────────────────
 function ReviewEventBanner() {
   return (
-    <section className="bg-white border-b border-gray-100 py-12" data-testid="review-event-banner">
-      <div className="flex flex-col items-center justify-center gap-3">
-        <div className="flex items-center gap-3">
-          <span className="text-5xl font-black text-gray-900 leading-none" style={{ fontFamily: "serif" }}>Daily</span>
-          <div className="flex items-center gap-1">
-            <span className="bg-red-500 text-white text-sm font-bold rounded-full w-8 h-8 flex items-center justify-center">❤</span>
-          </div>
-          <span className="text-5xl font-black text-gray-900 leading-none" style={{ fontFamily: "serif" }}>&</span>
-          <span className="bg-red-500 text-white text-sm font-bold rounded-full w-8 h-8 flex items-center justify-center">❤</span>
-          <span className="text-5xl font-black text-gray-900 leading-none" style={{ fontFamily: "serif" }}>Weekly</span>
-        </div>
-        <p className="text-5xl font-black text-gray-900 text-center" style={{ fontFamily: "serif" }}>REVIEW EVENT</p>
-      </div>
-    </section>
+    <Link href="/reviews" data-testid="review-event-banner" className="block w-full">
+      <img
+        src="/bloo/banner_review_event.jpg"
+        alt="Daily & Weekly REVIEW EVENT"
+        className="w-full object-cover"
+        style={{ display: "block", maxHeight: "clamp(160px, 22vw, 290px)", objectFit: "cover", objectPosition: "50% 50%" }}
+        loading="lazy"
+      />
+    </Link>
   );
 }
 
@@ -687,17 +687,23 @@ export default function Home() {
         {/* 2. Category grid */}
         <CategoryGrid />
 
+        {/* 2.5 Carrier Collection wide banner */}
+        <WideBanner
+          imageUrl="/bloo/banner_carrier.jpg"
+          href="/products"
+          objectPos="50% 50%"
+          height="clamp(160px, 22vw, 290px)"
+        />
+
         {/* 3. Celebrity's dress */}
         <CelebritySection />
 
         {/* 4. Winter Outer / Most Popular */}
         <WideBanner
-          imageUrl="/bloo/banner3.jpg"
-          subtitle="올겨울 나름위한 플렉스"
-          title={"겨울 아우터 10% 쿠폰"}
-          buttonText="지금 구매하기"
+          imageUrl="/bloo/banner_xmas2.jpg"
           href="/products"
           objectPos="50% 50%"
+          height="clamp(160px, 22vw, 290px)"
         />
         <RankedProductsSection
           title="Most Popular"
@@ -710,11 +716,9 @@ export default function Home() {
         {/* 5. Luxury Bag Collection */}
         <WideBanner
           imageUrl="/bloo/banner4.jpg"
-          subtitle="가볍게 들기 좋은 BAG"
-          title={"브랜드로의 초대"}
-          buttonText="지금 구매하기"
           href="/products/bags"
           objectPos="50% 50%"
+          height="clamp(160px, 22vw, 290px)"
         />
         <RankedProductsSection
           title="Luxury Bag Collection"
@@ -729,12 +733,10 @@ export default function Home() {
 
         {/* 7. 인기 럭셔리 액세서리 */}
         <WideBanner
-          imageUrl="/bloo/banner7.jpg"
-          subtitle="포인트가 되어줄 Best Acc"
-          title={"인기 럭셔리 액세서리"}
-          buttonText="지금 구매하기"
+          imageUrl="/bloo/banner_acc.jpg"
           href="/products/accessories"
           objectPos="50% 50%"
+          height="clamp(180px, 24vw, 310px)"
         />
         <RankedProductsSection
           title="인기 럭셔리 액세서리"
@@ -767,6 +769,14 @@ export default function Home() {
 
         {/* 11. Reviews */}
         <ReviewsSection />
+
+        {/* 11.5 App download banner */}
+        <WideBanner
+          imageUrl="/bloo/banner_app.jpg"
+          href="/products"
+          objectPos="50% 50%"
+          height="clamp(160px, 22vw, 290px)"
+        />
 
         {/* 12. Customer support */}
         <CustomerSupportSection />
