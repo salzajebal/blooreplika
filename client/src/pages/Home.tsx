@@ -148,15 +148,15 @@ function CategoryGrid() {
       {cats.map((cat, i) => (
         <Link key={i} href={cat.path} data-testid={`${testPrefix}-${i}`} className="group">
           <div
-            className="relative rounded-2xl overflow-hidden flex items-flex-end justify-end"
+            className="relative rounded-2xl overflow-hidden"
             style={{ background: bgColor, height: "140px" }}
           >
             <img
               src={cat.img}
               alt={cat.label}
-              className="absolute bottom-0 right-0 h-full w-auto object-contain"
-              style={{ maxWidth: "85%" }}
+              className="absolute inset-0 w-full h-full object-cover"
               loading="lazy"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
             />
           </div>
           <p className="text-[14px] text-gray-800 font-medium text-center mt-2 group-hover:text-[#060133] transition-colors">{cat.label}</p>

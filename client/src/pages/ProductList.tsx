@@ -29,6 +29,128 @@ function LazyProductImage({ src, alt }: { src: string; alt: string }) {
   );
 }
 
+const BLOO_CDN_BRAND_ICONS: Record<string, string> = {
+  "Louis Vuitton": "/bloo/brands/men_lv.jpg",
+  "루이비통": "/bloo/brands/men_lv.jpg",
+  "LV": "/bloo/brands/men_lv.jpg",
+  "Dior": "/bloo/brands/men_dior.jpg",
+  "Christian Dior": "/bloo/brands/men_dior.jpg",
+  "디올": "/bloo/brands/men_dior.jpg",
+  "Gucci": "/bloo/brands/men_gucci.jpg",
+  "GUCCI": "/bloo/brands/men_gucci.jpg",
+  "구찌": "/bloo/brands/men_gucci.jpg",
+  "PRADA": "/bloo/brands/men_prada.jpg",
+  "Prada": "/bloo/brands/men_prada.jpg",
+  "프라다": "/bloo/brands/men_prada.jpg",
+  "Balenciaga": "/bloo/brands/men_balenciaga.jpg",
+  "발렌시아가": "/bloo/brands/men_balenciaga.jpg",
+  "BOTTEGA VENETA": "/bloo/brands/men_bottega.jpg",
+  "Bottega Veneta": "/bloo/brands/men_bottega.jpg",
+  "보테가 베네타": "/bloo/brands/men_bottega.jpg",
+  "GOYARD": "/bloo/brands/men_goyard.jpg",
+  "Goyard": "/bloo/brands/men_goyard.jpg",
+  "고야드": "/bloo/brands/men_goyard.jpg",
+  "HERMES": "/bloo/brands/women_hermes.jpg",
+  "Hermes": "/bloo/brands/women_hermes.jpg",
+  "에르메스": "/bloo/brands/women_hermes.jpg",
+  "Hermès": "/bloo/brands/women_hermes.jpg",
+};
+
+function getBrandCdnIcon(brandName: string): string | null {
+  return BLOO_CDN_BRAND_ICONS[brandName] ?? null;
+}
+
+function BrandIconRow({
+  brands,
+  selectedBrand,
+  onSelect,
+  gender,
+}: {
+  brands: any[];
+  selectedBrand: string | null;
+  onSelect: (id: string) => void;
+  gender: "men" | "women";
+}) {
+  const WOMEN_BRAND_ICONS: Record<string, string> = {
+    "HERMES": "/bloo/brands/women_hermes.jpg",
+    "Hermes": "/bloo/brands/women_hermes.jpg",
+    "에르메스": "/bloo/brands/women_hermes.jpg",
+    "Hermès": "/bloo/brands/women_hermes.jpg",
+    "Louis Vuitton": "/bloo/brands/women_lv.jpg",
+    "루이비통": "/bloo/brands/women_lv.jpg",
+    "LV": "/bloo/brands/women_lv.jpg",
+    "Dior": "/bloo/brands/women_dior.jpg",
+    "Christian Dior": "/bloo/brands/women_dior.jpg",
+    "디올": "/bloo/brands/women_dior.jpg",
+    "Gucci": "/bloo/brands/women_gucci.jpg",
+    "GUCCI": "/bloo/brands/women_gucci.jpg",
+    "구찌": "/bloo/brands/women_gucci.jpg",
+    "PRADA": "/bloo/brands/women_prada.jpg",
+    "Prada": "/bloo/brands/women_prada.jpg",
+    "프라다": "/bloo/brands/women_prada.jpg",
+    "Balenciaga": "/bloo/brands/women_balenciaga.jpg",
+    "발렌시아가": "/bloo/brands/women_balenciaga.jpg",
+    "BOTTEGA VENETA": "/bloo/brands/women_bottega.jpg",
+    "Bottega Veneta": "/bloo/brands/women_bottega.jpg",
+    "보테가 베네타": "/bloo/brands/women_bottega.jpg",
+    "GOYARD": "/bloo/brands/men_goyard.jpg",
+    "Goyard": "/bloo/brands/men_goyard.jpg",
+    "고야드": "/bloo/brands/men_goyard.jpg",
+  };
+
+  const iconMap = gender === "women" ? WOMEN_BRAND_ICONS : BLOO_CDN_BRAND_ICONS;
+
+  return (
+    <div className="flex gap-4 overflow-x-auto scrollbar-hide px-4 lg:px-6 py-4 border-b border-gray-100">
+      {brands.slice(0, 15).map((brand: any) => {
+        const cdnIcon = iconMap[brand.name] ?? getBrandCdnIcon(brand.name);
+        const isSelected = selectedBrand === brand.id;
+        return (
+          <button
+            key={brand.id}
+            onClick={() => onSelect(brand.id)}
+            className="flex flex-col items-center gap-1.5 flex-shrink-0 group"
+            data-testid={`brand-logo-${brand.id}`}
+          >
+            <div className={cn(
+              "w-[68px] h-[68px] rounded-full border-2 flex items-center justify-center bg-white overflow-hidden transition-all",
+              isSelected
+                ? "border-gray-800 shadow-md"
+                : "border-gray-200 group-hover:border-gray-500"
+            )}>
+              {cdnIcon ? (
+                <img
+                  src={cdnIcon}
+                  alt={brand.name}
+                  className="w-full h-full object-contain p-1"
+                  onError={(e) => {
+                    const el = e.target as HTMLImageElement;
+                    el.style.display = "none";
+                    const fb = el.parentElement?.querySelector(".brand-fb") as HTMLElement;
+                    if (fb) fb.style.display = "flex";
+                  }}
+                />
+              ) : null}
+              <span
+                className="brand-fb text-[8px] font-bold text-gray-700 text-center leading-tight px-1 break-all"
+                style={{ display: cdnIcon ? "none" : "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}
+              >
+                {brand.name.length > 10 ? brand.name.slice(0, 9) + "…" : brand.name}
+              </span>
+            </div>
+            <span className={cn(
+              "text-[10px] text-center leading-tight max-w-[72px] break-words whitespace-pre-wrap",
+              isSelected ? "font-bold text-gray-900" : "text-gray-500 group-hover:text-gray-800"
+            )}>
+              {brand.name}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 const CATEGORIES = [
   { id: "new-arrivals", name: "신상품", slug: "new-arrivals" },
   { id: "new", name: "신상품", slug: "new" },
@@ -419,53 +541,14 @@ export default function ProductList() {
         {/* ── MAIN CONTENT ── */}
         <div className="flex-1 min-w-0 pb-20 lg:pb-8">
 
-          {/* Brand logos row (gender pages only) */}
+          {/* Brand logos row (gender pages only) — BLOO style circular icons */}
           {isGenderCategory && brands.length > 0 && (
-            <div className="flex gap-5 overflow-x-auto scrollbar-hide px-4 lg:px-6 py-4 border-b border-gray-100">
-              {brands.slice(0, 15).map((brand: any) => (
-                <button
-                  key={brand.id}
-                  onClick={() => setSelectedBrand(selectedBrand === brand.id ? null : brand.id)}
-                  className="flex flex-col items-center gap-1.5 flex-shrink-0 group"
-                  data-testid={`brand-logo-${brand.id}`}
-                >
-                  <div className={cn(
-                    "w-[56px] h-[56px] rounded-full border-2 flex items-center justify-center bg-white overflow-hidden transition-all",
-                    selectedBrand === brand.id
-                      ? "border-gray-800 shadow-md"
-                      : "border-gray-200 group-hover:border-gray-400"
-                  )}>
-                    {brand.representativeImage ? (
-                      <img
-                        src={getProxiedImageUrl(brand.representativeImage, "thumb")}
-                        alt={brand.name}
-                        className="w-full h-full object-contain p-1.5"
-                        onError={(e) => {
-                          const el = e.target as HTMLImageElement;
-                          el.style.display = "none";
-                          const span = el.parentElement?.querySelector(".brand-fallback") as HTMLElement;
-                          if (span) span.style.display = "flex";
-                        }}
-                      />
-                    ) : null}
-                    <span
-                      className={cn(
-                        "brand-fallback text-[9px] font-bold text-gray-600 text-center leading-tight px-1 break-all",
-                        brand.representativeImage ? "hidden" : "flex items-center justify-center w-full h-full"
-                      )}
-                    >
-                      {brand.name.slice(0, 8)}
-                    </span>
-                  </div>
-                  <span className={cn(
-                    "text-[10px] text-center leading-tight max-w-[64px] break-words",
-                    selectedBrand === brand.id ? "font-bold text-gray-900" : "text-gray-500 group-hover:text-gray-700"
-                  )}>
-                    {brand.name}
-                  </span>
-                </button>
-              ))}
-            </div>
+            <BrandIconRow
+              brands={brands}
+              selectedBrand={selectedBrand}
+              onSelect={(id) => setSelectedBrand(selectedBrand === id ? null : id)}
+              gender={categorySlug as "men" | "women"}
+            />
           )}
 
           {/* Subcategory tabs + sort row */}
