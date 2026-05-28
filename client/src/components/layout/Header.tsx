@@ -256,95 +256,89 @@ export function Header() {
       {/* Spacer */}
       <div style={{ height: "132px" }} className="flex-shrink-0" />
 
-      {/* ── Side drawer ── */}
+      {/* ── BLOO Side drawer ── */}
       {menuOpen && (
         <div className="fixed inset-0 z-[200]" data-testid="side-menu-overlay">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setMenuOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-72 bg-white flex flex-col shadow-2xl">
-            <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100 bg-[#060133]">
-              <span className="font-black text-xl text-white" style={{ fontFamily: "'Playfair Display', serif" }}>VELOUR</span>
-              <button onClick={() => setMenuOpen(false)} className="p-1 text-white/80 hover:text-white" data-testid="side-menu-close">
-                <X className="w-5 h-5" />
+          <div className="absolute inset-0 bg-black/60" onClick={() => setMenuOpen(false)} />
+          <div
+            className="absolute left-0 top-0 bottom-0 flex flex-col shadow-2xl"
+            style={{ width: 160, background: "#151520" }}
+          >
+            {/* BLOO logo + close */}
+            <div className="relative flex items-center justify-center pt-8 pb-6">
+              <span
+                className="text-[28px] font-black text-white tracking-widest"
+                style={{ fontFamily: "'Playfair Display', serif" }}
+              >
+                BLOO
+              </span>
+              <button
+                onClick={() => setMenuOpen(false)}
+                className="absolute right-3 top-3 p-1 text-white/60 hover:text-white transition-colors"
+                data-testid="side-menu-close"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
-              <div className="px-4 py-4 border-b border-gray-100">
-                {memberName ? (
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-bold text-gray-900 text-sm">{memberName}님, 안녕하세요!</p>
-                      <Link href="/profile" onClick={() => setMenuOpen(false)} className="text-xs text-[#060133] font-medium mt-0.5 block">
-                        마이페이지 보기 →
-                      </Link>
-                    </div>
-                    <Link href="/cart" onClick={() => setMenuOpen(false)} className="relative p-2">
-                      <ShoppingBag className="w-5 h-5 text-gray-600" />
-                      {count > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#060133] text-white text-[10px] rounded-full flex items-center justify-center font-bold">
-                          {count}
-                        </span>
-                      )}
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={openLoginModal}
-                      className="flex-1 py-2.5 border border-gray-300 text-sm text-center rounded font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      로그인
-                    </button>
-                    <Link href="/signup" onClick={() => setMenuOpen(false)} className="flex-1 py-2.5 bg-[#060133] text-white text-sm text-center rounded font-medium hover:bg-[#0a0240]">
-                      회원가입
-                    </Link>
-                  </div>
-                )}
-              </div>
-
-              <div className="px-2 py-2 border-b border-gray-100">
-                {SUB_NAV.map((item) => (
-                  <Link
-                    key={item.label}
-                    href={item.path}
-                    onClick={() => setMenuOpen(false)}
-                    className={`flex items-center justify-between px-3 py-3 rounded-lg text-sm font-medium hover:bg-gray-50 ${item.highlight ? "text-[#00a050]" : "text-gray-700 hover:text-black"}`}
-                    data-testid={`side-subnav-${item.label}`}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      {item.label}
-                      {item.highlight && <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />}
-                    </span>
-                    <ChevronRight className="w-4 h-4 text-gray-300" />
-                  </Link>
-                ))}
-              </div>
-
-              <div className="px-2 py-2">
-                {SIDE_MENU_EXTRA.map((item) => (
-                  <Link
-                    key={item.label}
-                    href={item.path}
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center px-3 py-2.5 rounded-lg text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-700"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-                <Link href="/cart" onClick={() => setMenuOpen(false)} className="flex items-center px-3 py-2.5 rounded-lg text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-700">
-                  장바구니
-                  {count > 0 && <span className="ml-2 text-[#060133] font-bold text-xs">({count})</span>}
-                </Link>
-                {memberName && (
-                  <button
-                    onClick={handleLogout}
-                    className="w-full text-left flex items-center px-3 py-2.5 rounded-lg text-sm text-red-500 hover:bg-red-50 mt-2"
-                    data-testid="side-logout"
-                  >
-                    로그아웃
-                  </button>
-                )}
-              </div>
+            {/* Nav items — centered */}
+            <div className="flex-1 overflow-y-auto flex flex-col items-center gap-0 pt-2">
+              <Link
+                href="/inspection"
+                onClick={() => setMenuOpen(false)}
+                className="w-full text-center py-3 text-[14px] text-white/90 hover:text-white transition-colors"
+              >
+                실시간 검수 사진 <span className="text-green-400 font-bold">✓</span>
+              </Link>
+              <Link
+                href="/products/men"
+                onClick={() => setMenuOpen(false)}
+                className="w-full text-center py-3 text-[14px] text-white/90 hover:text-white transition-colors"
+              >
+                남성
+              </Link>
+              <Link
+                href="/products/women"
+                onClick={() => setMenuOpen(false)}
+                className="w-full text-center py-3 text-[14px] text-white/90 hover:text-white transition-colors"
+              >
+                여성
+              </Link>
+              <Link
+                href="/products/watches"
+                onClick={() => setMenuOpen(false)}
+                className="w-full text-center py-3 text-[14px] text-white/90 hover:text-white transition-colors"
+              >
+                시계관
+              </Link>
+              <Link
+                href="/events"
+                onClick={() => setMenuOpen(false)}
+                className="w-full text-center py-3 text-[14px] text-white/90 hover:text-white transition-colors"
+              >
+                기획전
+              </Link>
+              <Link
+                href="/notices"
+                onClick={() => setMenuOpen(false)}
+                className="w-full text-center py-3 text-[14px] text-white/90 hover:text-white transition-colors"
+              >
+                커뮤니티
+              </Link>
+              <Link
+                href="/products/sameday"
+                onClick={() => setMenuOpen(false)}
+                className="w-full text-center py-3 text-[14px] text-white/90 hover:text-white transition-colors"
+              >
+                오늘출발
+              </Link>
+              <Link
+                href="/blog"
+                onClick={() => setMenuOpen(false)}
+                className="w-full text-center py-3 text-[14px] text-white/90 hover:text-white transition-colors"
+              >
+                썸머
+              </Link>
             </div>
           </div>
         </div>
