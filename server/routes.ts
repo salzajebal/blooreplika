@@ -7365,7 +7365,7 @@ export async function registerRoutes(
     } catch {
       return res.status(400).send("invalid url");
     }
-    if (!targetUrl.includes("cdn.imweb.me") && !targetUrl.includes("bloostore.co.kr") && !targetUrl.includes("bloostore1.co.kr")) {
+    if (!targetUrl.includes("cdn.imweb.me") && !targetUrl.includes("cdn-optimized.imweb.me") && !targetUrl.includes("bloostore.co.kr") && !targetUrl.includes("bloostore1.co.kr")) {
       return res.status(403).send("forbidden");
     }
     try {

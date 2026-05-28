@@ -1,300 +1,214 @@
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Header } from "@/components/layout/Header";
-import { Home, ChevronRight, Loader2 } from "lucide-react";
 import { Link } from "wouter";
+import { Header } from "@/components/layout/Header";
 
-interface InspectionItem {
-  id: string;
-  productName: string;
-  imageUrl: string;
-  mediaType: string;
-  category: string;
-  brandName: string | null;
-  isActive: boolean;
-  createdAt: string;
-}
-
-interface ShippingPhotoItem {
-  id: string;
-  imageUrl: string;
-  mediaType: string;
-  brandName: string;
-  category: string;
-  customerName: string;
-  photoDate: string;
-  productId: string | null;
-  isActive: boolean;
-  createdAt: string;
-}
+const HERO_DESKTOP = "https://cdn.imweb.me/thumbnail/20240108/cce63a1a894f5.jpg";
+const CAT_DESKTOP = "https://cdn.imweb.me/thumbnail/20240314/b79ab49edc10e.jpg";
+const HERO_MOBILE = "https://cdn.imweb.me/thumbnail/20260423/79e840dba168f.jpg";
+const CAT_MOBILE = "https://cdn.imweb.me/thumbnail/20240314/c24d89d590764.jpg";
 
 const CATEGORIES = [
-  { id: "all", label: "전체보기" },
-  { id: "clothing", label: "의류" },
-  { id: "bags", label: "가방" },
-  { id: "shoes", label: "신발" },
-  { id: "acc", label: "ACC" },
+  { label: "의류", href: "/products/clothing" },
+  { label: "가방", href: "/products/bags" },
+  { label: "신발", href: "/products/shoes" },
+  { label: "액세서리", href: "/products/accessories" },
+  { label: "시계", href: "/products/watches" },
 ];
 
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&h=500&fit=crop";
+const SORT_OPTIONS = [
+  { value: "recent", label: "등록순" },
+  { value: "like", label: "인기순" },
+  { value: "min_price", label: "낮은가격순" },
+  { value: "max_price", label: "높은가격순" },
+  { value: "comment", label: "상품평 많은순" },
+  { value: "abc", label: "이름순" },
+  { value: "descabc", label: "이름역순" },
+];
 
-function getMediaUrl(url: string): string {
-  if (!url) return DEFAULT_IMAGE;
-  if (url.startsWith("/objects/") || url.startsWith("/uploads/")) return url;
-  if (url.includes("pliki.wisacdn.com") || url.includes("bagstyle.site")) {
-    return `/api/image-proxy?url=${encodeURIComponent(url)}&w=400&q=80`;
-  }
-  return url;
+const INSPECTION_ITEMS = [
+  { idx: 36859, name: "5월 28일 정호* 제품 검수", img: "630163ab2ee71" },
+  { idx: 36858, name: "5월 28일 김경* 제품 검수", img: "d57a54b0ed363" },
+  { idx: 36857, name: "5월 28일 최진* 제품 검수", img: "f9ddfdad97885" },
+  { idx: 36856, name: "5월 28일 오세* 제품 검수", img: "fc5deee1b9124" },
+  { idx: 36855, name: "5월 27일 나인* 제품 검수", img: "7362cb2727c3f" },
+  { idx: 36854, name: "5월 27일 박가* 제품 검수", img: "7b3d47b6063e1" },
+  { idx: 36853, name: "5월 27일 박루* 제품 검수", img: "7625bfb4fde44" },
+  { idx: 36852, name: "5월 27일 양홍* 제품 검수", img: "bc0220ce73a92" },
+  { idx: 36851, name: "5월 27일 양성* 제품 검수", img: "9c1ececa90699" },
+  { idx: 36850, name: "5월 27일 이인* 제품 검수", img: "caa99d73bb2ae" },
+  { idx: 36849, name: "5월 27일 석근* 제품 검수", img: "248dc094a8b0f" },
+  { idx: 36848, name: "5월 27일 김현* 제품 검수", img: "d8d563c1c5e0d" },
+  { idx: 36847, name: "5월 27일 위태* 제품 검수", img: "10d0c2a0422be" },
+  { idx: 36846, name: "5월 27일 곽미* 제품 검수", img: "26adeac0d1ef6" },
+  { idx: 36845, name: "5월 26일 원세* 제품 검수", img: "637c900188dfe" },
+  { idx: 36844, name: "5월 26일 김말* 제품 검수", img: "aed8575a7a403" },
+  { idx: 36843, name: "5월 26일 구민* 제품 검수", img: "15a2653af9aa9" },
+  { idx: 36842, name: "5월 26일 노정* 제품 검수", img: "b4ced95337b41" },
+  { idx: 36841, name: "5월 26일 정고* 제품 검수", img: "e1bc9cbc0519c" },
+  { idx: 36840, name: "5월 26일 김경* 제품 검수", img: "9e0f8f00c23a5" },
+];
+
+function getImgUrl(hash: string) {
+  return `/api/bloostore-image-proxy?url=${encodeURIComponent(
+    `https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/${hash}.jpg?w=800`
+  )}`;
+}
+
+function getCdnUrl(path: string) {
+  return `/api/bloostore-image-proxy?url=${encodeURIComponent(
+    `https://cdn.imweb.me/thumbnail/${path}`
+  )}`;
 }
 
 export default function Inspection() {
-  const [inspectionCategory, setInspectionCategory] = useState("all");
-  const [shippingCategory, setShippingCategory] = useState("all");
+  const [sort, setSort] = useState("recent");
+  const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
 
-  const { data: inspections, isLoading: inspectionsLoading } = useQuery<InspectionItem[]>({
-    queryKey: ["/api/inspections", inspectionCategory],
-    queryFn: async () => {
-      const params = inspectionCategory !== "all" ? `?category=${inspectionCategory}` : "";
-      const res = await fetch(`/api/inspections${params}`);
-      const json = await res.json();
-      return json.data || [];
-    },
-  });
-
-  const { data: shippingPhotos, isLoading: shippingLoading } = useQuery<ShippingPhotoItem[]>({
-    queryKey: ["/api/shipping-photos", shippingCategory],
-    queryFn: async () => {
-      const params = shippingCategory !== "all" ? `?category=${shippingCategory}` : "";
-      const res = await fetch(`/api/shipping-photos${params}`);
-      const json = await res.json();
-      return json.data || [];
-    },
+  const sortedItems = [...INSPECTION_ITEMS].sort((a, b) => {
+    if (sort === "abc") return a.name.localeCompare(b.name);
+    if (sort === "descabc") return b.name.localeCompare(a.name);
+    return 0;
   });
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f]" data-testid="inspection-page">
+    <div className="min-h-screen bg-white" data-testid="inspection-page">
       <Header />
 
-      <div className="border-b border-[#2a2a2a]">
-        <div className="max-w-[1200px] mx-auto px-4 py-3">
-          <div className="flex items-center gap-1.5 text-xs text-[#999999]">
-            <Link href="/">
-              <Home className="w-3.5 h-3.5" />
-            </Link>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-[#aaaaaa]">검수</span>
+      <div className="w-full">
+        {/* ── 데스크톱 히어로 배너 ── */}
+        <div className="hidden md:block w-full">
+          <img
+            src={getCdnUrl("20240108/cce63a1a894f5.jpg")}
+            alt="실시간 검수"
+            className="w-full h-auto block"
+            style={{ maxWidth: "100%" }}
+            onError={(e) => {
+              const t = e.target as HTMLImageElement;
+              t.src = "https://cdn.imweb.me/thumbnail/20240108/cce63a1a894f5.jpg";
+            }}
+          />
+        </div>
+
+        {/* ── 모바일 히어로 배너 ── */}
+        <div className="block md:hidden w-full">
+          <img
+            src={getCdnUrl("20260423/79e840dba168f.jpg")}
+            alt="실시간 검수"
+            className="w-full h-auto block"
+            onError={(e) => {
+              const t = e.target as HTMLImageElement;
+              t.src = "https://cdn.imweb.me/thumbnail/20260423/79e840dba168f.jpg";
+            }}
+          />
+        </div>
+
+        {/* ── 데스크톱 카테고리 이미지맵 ── */}
+        <div className="hidden md:block w-full relative">
+          <img
+            src={getCdnUrl("20240314/b79ab49edc10e.jpg")}
+            alt="카테고리"
+            className="w-full h-auto block"
+            onError={(e) => {
+              const t = e.target as HTMLImageElement;
+              t.src = "https://cdn.imweb.me/thumbnail/20240314/b79ab49edc10e.jpg";
+            }}
+          />
+          {/* 5개 클릭 영역 오버레이 */}
+          {CATEGORIES.map((cat, i) => (
+            <Link
+              key={cat.label}
+              href={cat.href}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: `${i * 20}%`,
+                width: "20%",
+                height: "100%",
+                display: "block",
+              }}
+              aria-label={cat.label}
+            />
+          ))}
+        </div>
+
+        {/* ── 모바일 카테고리 이미지맵 ── */}
+        <div className="block md:hidden w-full relative">
+          <img
+            src={getCdnUrl("20240314/c24d89d590764.jpg")}
+            alt="카테고리"
+            className="w-full h-auto block"
+            onError={(e) => {
+              const t = e.target as HTMLImageElement;
+              t.src = "https://cdn.imweb.me/thumbnail/20240314/c24d89d590764.jpg";
+            }}
+          />
+          {CATEGORIES.map((cat, i) => (
+            <Link
+              key={cat.label}
+              href={cat.href}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: `${i * 20}%`,
+                width: "20%",
+                height: "100%",
+                display: "block",
+              }}
+              aria-label={cat.label}
+            />
+          ))}
+        </div>
+
+        {/* ── 정렬 + 상품 그리드 ── */}
+        <div
+          className="mx-auto px-3 md:px-4"
+          style={{ maxWidth: "1200px" }}
+        >
+          {/* 정렬 드롭다운 */}
+          <div className="flex justify-end py-2 md:py-3">
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+              className="text-xs md:text-sm border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none"
+              title="정렬 바꾸기"
+              data-testid="sort-select"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 4열 상품 그리드 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 pb-10">
+            {sortedItems.map((item, i) => (
+              <div
+                key={item.idx}
+                data-testid={`inspection-item-${item.idx}`}
+                className="group cursor-pointer"
+              >
+                <div
+                  className="w-full bg-gray-100 overflow-hidden"
+                  style={{ aspectRatio: "1/1" }}
+                >
+                  <img
+                    src={imgErrors[i] ? "https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/" + item.img + ".jpg?w=800" : getImgUrl(item.img)}
+                    alt={item.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                    onError={() => setImgErrors((prev) => ({ ...prev, [i]: true }))}
+                  />
+                </div>
+                <p className="text-xs md:text-sm text-gray-700 mt-1 leading-tight line-clamp-2 px-0.5">
+                  {item.name}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
-
-      <div className="max-w-[1200px] mx-auto px-4 py-8 md:py-12">
-        {/* 실시간 검수 Section */}
-        <section className="mb-12 md:mb-16" data-testid="section-inspection">
-          <h2 className="text-lg md:text-xl font-bold text-[#f0f0f0] text-center mb-6 tracking-wide">실시간 검수</h2>
-
-          {/* Category Tabs */}
-          <div className="flex justify-center gap-4 md:gap-6 mb-8">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                data-testid={`inspection-tab-${cat.id}`}
-                onClick={() => setInspectionCategory(cat.id)}
-                className={`flex flex-col items-center gap-1.5 px-2 py-1 text-xs md:text-sm transition-colors ${
-                  inspectionCategory === cat.id
-                    ? "text-[#c9a96e] font-semibold"
-                    : "text-[#999999] hover:text-[#888888]"
-                }`}
-              >
-                <div className={`w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center border ${
-                  inspectionCategory === cat.id
-                    ? "border-[#c9a96e] bg-[#c9a96e] text-black"
-                    : "border-[#2a2a2a] bg-[#1a1a1a]"
-                }`}>
-                  <CategoryIcon id={cat.id} active={inspectionCategory === cat.id} />
-                </div>
-                <span>{cat.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {inspectionsLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-[#c9a96e]" />
-            </div>
-          ) : inspections && inspections.length > 0 ? (
-            <div className="overflow-x-auto pb-4 -mx-4 px-4">
-              <div className="flex gap-4" style={{ minWidth: "min-content" }}>
-                {inspections.map((item) => (
-                  <div
-                    key={item.id}
-                    data-testid={`inspection-item-${item.id}`}
-                    className="flex-shrink-0 w-[160px] md:w-[200px]"
-                  >
-                    <div className="aspect-square rounded-lg overflow-hidden bg-[#1a1a1a] mb-2">
-                      {item.mediaType === "video" ? (
-                        <video
-                          src={getMediaUrl(item.imageUrl)}
-                          className="w-full h-full object-cover"
-                          autoPlay
-                          loop
-                          muted
-                          playsInline
-                        />
-                      ) : (
-                        <img
-                          src={getMediaUrl(item.imageUrl)}
-                          alt={item.productName}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-                        />
-                      )}
-                    </div>
-                    <p className="text-xs md:text-sm text-[#aaaaaa] line-clamp-2 leading-relaxed">
-                      {item.productName}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-12 text-[#999999] text-sm">
-              등록된 검수 내역이 없습니다.
-            </div>
-          )}
-        </section>
-
-        <div className="border-t border-[#2a2a2a] mb-12 md:mb-16" />
-
-        {/* 발송 전 실사 Section */}
-        <section data-testid="section-shipping-photos">
-          <h2 className="text-lg md:text-xl font-bold text-[#f0f0f0] text-center mb-6 tracking-wide">발송전실사</h2>
-
-          {/* Category Tabs */}
-          <div className="flex justify-center gap-4 md:gap-6 mb-8">
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                data-testid={`shipping-tab-${cat.id}`}
-                onClick={() => setShippingCategory(cat.id)}
-                className={`flex flex-col items-center gap-1.5 px-2 py-1 text-xs md:text-sm transition-colors ${
-                  shippingCategory === cat.id
-                    ? "text-[#c9a96e] font-semibold"
-                    : "text-[#999999] hover:text-[#888888]"
-                }`}
-              >
-                <div className={`w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center border ${
-                  shippingCategory === cat.id
-                    ? "border-[#c9a96e] bg-[#c9a96e] text-black"
-                    : "border-[#2a2a2a] bg-[#1a1a1a]"
-                }`}>
-                  <CategoryIcon id={cat.id} active={shippingCategory === cat.id} />
-                </div>
-                <span>{cat.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {shippingLoading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-[#c9a96e]" />
-            </div>
-          ) : shippingPhotos && shippingPhotos.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-              {shippingPhotos.map((photo) => (
-                <div
-                  key={photo.id}
-                  data-testid={`shipping-photo-${photo.id}`}
-                  className="group"
-                >
-                  <div className="aspect-square rounded-lg overflow-hidden bg-[#1a1a1a] mb-3">
-                    {photo.mediaType === "video" ? (
-                      <video
-                        src={getMediaUrl(photo.imageUrl)}
-                        className="w-full h-full object-cover"
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                      />
-                    ) : (
-                      <img
-                        src={getMediaUrl(photo.imageUrl)}
-                        alt={`${photo.brandName} 검수사진`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                      />
-                    )}
-                  </div>
-                  <div className="space-y-1">
-                    <div className="inline-block px-2 py-0.5 bg-[#2a2a2a] rounded text-[10px] md:text-xs text-[#c9a96e] font-medium">
-                      발송전실사
-                    </div>
-                    <p className="text-sm md:text-base font-semibold text-[#f0f0f0]">
-                      {photo.brandName}
-                    </p>
-                    <p className="text-xs text-[#999999]">
-                      {photo.photoDate} {photo.customerName} 고객님 검수사진
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-[#999999] text-sm">
-              등록된 실사 내역이 없습니다.
-            </div>
-          )}
-        </section>
-      </div>
-
-
     </div>
   );
-}
-
-function CategoryIcon({ id, active }: { id: string; active: boolean }) {
-  const color = active ? "black" : "#555555";
-  const size = 20;
-
-  switch (id) {
-    case "all":
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="7" height="7" />
-          <rect x="14" y="3" width="7" height="7" />
-          <rect x="3" y="14" width="7" height="7" />
-          <rect x="14" y="14" width="7" height="7" />
-        </svg>
-      );
-    case "clothing":
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M6 2L2 6v4l4 2v10h12V12l4-2V6l-4-4h-4l-2 3-2-3H6z" />
-        </svg>
-      );
-    case "bags":
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <path d="M16 10a4 4 0 01-8 0" />
-        </svg>
-      );
-    case "shoes":
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M2 18h20v2H2zM4 18V8c0-1.1.9-2 2-2h2l2 4h8l2-4h2v12" />
-        </svg>
-      );
-    case "acc":
-      return (
-        <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 6v6l4 2" />
-        </svg>
-      );
-    default:
-      return null;
-  }
 }
