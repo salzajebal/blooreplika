@@ -379,6 +379,64 @@ export async function registerRoutes(
   const countsCache = new Map<string, { total: number; timestamp: number }>();
   const COUNTS_CACHE_TTL = 300000; // 5 minutes
   
+  // Celeb page items API
+  let celebItemsCache: { data: unknown; timestamp: number } | null = null;
+  app.get("/api/celeb-items", async (_req: Request, res: Response) => {
+    try {
+      if (celebItemsCache && Date.now() - celebItemsCache.timestamp < 10 * 60 * 1000) {
+        return res.json({ success: true, data: celebItemsCache.data });
+      }
+
+      const GALLERY = [
+        { bgUrl: 'https://cdn.imweb.me/thumbnail/20240206/83cae41443969.jpg', brandName: 'Christian Dior', brandShort: 'Dior', categoryId: 'bags' },
+        { bgUrl: 'https://cdn.imweb.me/thumbnail/20240206/9a9d02d1acd1a.jpg', brandName: 'Balenciaga', brandShort: 'BALENCIAGA', categoryId: 'clothing' },
+        { bgUrl: 'https://cdn.imweb.me/thumbnail/20240206/dcd4d9bdd9565.jpg', brandName: 'Celine', brandShort: 'CELINE', categoryId: 'bags' },
+        { bgUrl: 'https://cdn.imweb.me/thumbnail/20231224/91883157a16c8.jpg', brandName: 'Gucci', brandShort: 'GUCCI', categoryId: 'bags' },
+        { bgUrl: 'https://cdn.imweb.me/thumbnail/20231224/ff725f5c625e6.jpg', brandName: 'Louis Vuitton', brandShort: 'LOUIS VUITTON', categoryId: 'bags' },
+        { bgUrl: 'https://cdn.imweb.me/thumbnail/20231224/a39b2f2cdd630.jpg', brandName: 'Gucci', brandShort: 'GUCCI', categoryId: 'shoes' },
+        { bgUrl: 'https://cdn.imweb.me/thumbnail/20231228/67f8c8f4fd296.jpg', brandName: 'Christian Dior', brandShort: 'Dior', categoryId: 'clothing' },
+        { bgUrl: 'https://cdn.imweb.me/thumbnail/20231224/63b7a98a5f3ac.jpg', brandName: 'Celine', brandShort: 'CELINE', categoryId: 'clothing' },
+        { bgUrl: 'https://cdn.imweb.me/thumbnail/20231224/d84cb78d135e6.jpg', brandName: 'Christian Dior', brandShort: 'Dior', categoryId: 'clothing' },
+        { bgUrl: 'https://cdn.imweb.me/thumbnail/20231224/03568d1ce1ba0.jpg', brandName: 'Celine', brandShort: 'CELINE', categoryId: 'bags' },
+      ];
+
+      const allBrands = await storage.getAllBrands();
+      const BRAND_ALIASES: Record<string, string[]> = {
+        'Christian Dior': ['dior', '디올', 'christian dior'],
+        'Balenciaga': ['balenciaga', '발렌시아가'],
+        'Celine': ['celine', '셀린느', 'céline'],
+        'Gucci': ['gucci', '구찌'],
+        'Louis Vuitton': ['louis vuitton', '루이비통', 'lv', 'louis'],
+      };
+
+      const result = [];
+      for (const item of GALLERY) {
+        const aliases = BRAND_ALIASES[item.brandName] || [item.brandName.toLowerCase()];
+        const brand = allBrands.find(b =>
+          aliases.some(alias => b.name.toLowerCase().includes(alias) || alias.includes(b.name.toLowerCase()))
+        );
+        let products: object[] = [];
+        if (brand) {
+          const { products: dbProducts } = await storage.getProductsPaginated(3, 0, item.categoryId, undefined, undefined, brand.id);
+          products = dbProducts
+            .filter(p => p.price > 0 && p.imageUrl)
+            .map(p => ({ id: p.id, name: p.name, price: p.price, imageUrl: p.imageUrl, categoryId: p.categoryId }));
+          if (products.length < 2) {
+            const { products: fallback } = await storage.getProductsPaginated(2, 0, undefined, undefined, undefined, brand.id);
+            const extra = fallback.filter(p => p.price > 0 && p.imageUrl && !products.find((x: any) => (x as any).id === p.id));
+            products = [...products, ...extra].slice(0, 2);
+          }
+        }
+        result.push({ ...item, brandId: brand?.id || null, products });
+      }
+
+      celebItemsCache = { data: result, timestamp: Date.now() };
+      res.json({ success: true, data: result });
+    } catch (error: any) {
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   // Brands endpoint with aggressive caching
   app.get("/api/brands", async (req: Request, res: Response) => {
     try {

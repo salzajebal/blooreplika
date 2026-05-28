@@ -37,6 +37,7 @@ import Magazine from "@/pages/Magazine";
 import Labs from "@/pages/Labs";
 import Inspection from "@/pages/Inspection";
 import Ranking from "@/pages/Ranking";
+import Celeb from "@/pages/Celeb";
 
 function BestPage() { return <ContentPage sectionType="best" />; }
 function LivePage() { return <ContentPage sectionType="live" />; }
@@ -106,8 +107,8 @@ function Router() {
       <Route path="/blog" component={Blog} />
       <Route path="/choice/:id" component={Choice} />
       <Route path="/choice" component={Choice} />
-      <Route path="/celeb/:id" component={Choice} />
-      <Route path="/celeb" component={Choice} />
+      <Route path="/celeb/:id" component={Celeb} />
+      <Route path="/celeb" component={Celeb} />
       <Route path="/best" component={BestPage} />
       <Route path="/live" component={LivePage} />
       <Route path="/benefits" component={MonthlyBenefitPage} />
