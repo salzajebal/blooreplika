@@ -5407,13 +5407,13 @@ export default function Admin() {
               </div>
               <div>
                 <h3 className="font-bold text-gray-900">블루스토어 후기 크롤링</h3>
-                <p className="text-sm text-gray-500">bloostore.co.kr 사진후기 게시판에서 제목·이름·사진을 자동 수집합니다</p>
+                <p className="text-sm text-gray-500">bloostore1.co.kr 사진후기 게시판에서 제목·이름·사진을 자동 수집합니다</p>
               </div>
             </div>
 
             <div className="bg-blue-50 rounded-lg p-3 mb-4 text-xs text-blue-700 flex items-start gap-2">
               <span>📋</span>
-              <span>수집 URL: <code className="bg-blue-100 px-1 rounded">bloostore.co.kr/330/?only_photo=Y</code> (사진 후기만 필터)</span>
+              <span>수집 URL: <code className="bg-blue-100 px-1 rounded">bloostore1.co.kr/?only_photo=Y</code> (사진 후기만 필터)</span>
             </div>
 
             <div className="flex flex-wrap gap-4 items-end mb-4">

@@ -7245,9 +7245,9 @@ export async function registerRoutes(
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
         "Accept-Language": "ko-KR,ko;q=0.9",
-        "Referer": "https://www.bloostore.co.kr/",
+        "Referer": "https://bloostore1.co.kr/",
       };
-      const url = `https://www.bloostore.co.kr/330/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&page=${page}&only_photo=Y`;
+      const url = `https://bloostore1.co.kr/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&page=${page}&only_photo=Y`;
       const resp = await fetch(url, { headers });
       const html = await resp.text();
       const $ = cheerio.load(html);
@@ -7281,9 +7281,9 @@ export async function registerRoutes(
       }
 
       // Get all links that look like board posts
-      $('a[href*="/330/"]').each((_i: number, el: any) => {
+      $('a[href*="bmode=view"][href*="idx="]').each((_i: number, el: any) => {
         const href = $(el).attr('href');
-        if (href && href !== '/330/' && !detected.allLinks.includes(href)) {
+        if (href && !detected.allLinks.includes(href)) {
           detected.allLinks.push(href);
         }
       });
@@ -7307,14 +7307,14 @@ export async function registerRoutes(
     } catch {
       return res.status(400).send("invalid url");
     }
-    if (!targetUrl.includes("cdn.imweb.me") && !targetUrl.includes("bloostore.co.kr")) {
+    if (!targetUrl.includes("cdn.imweb.me") && !targetUrl.includes("bloostore.co.kr") && !targetUrl.includes("bloostore1.co.kr")) {
       return res.status(403).send("forbidden");
     }
     try {
       const imgResp = await fetch(targetUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          "Referer": "https://www.bloostore.co.kr/",
+          "Referer": "https://bloostore1.co.kr/",
           "Accept": "image/webp,image/apng,image/*,*/*;q=0.8",
         }
       });
@@ -7362,11 +7362,10 @@ export async function registerRoutes(
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
           "Accept-Language": "ko-KR,ko;q=0.9",
-          "Referer": "https://www.bloostore.co.kr/",
+          "Referer": "https://bloostore1.co.kr/",
         };
         const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
-        const BASE_URL = "https://www.bloostore.co.kr";
-        const BOARD_ID = "330";
+        const BASE_URL = "https://bloostore1.co.kr";
         // imweb q param (base64 encoded board keyword config)
         const Q_PARAM = "YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9";
 
@@ -7406,7 +7405,7 @@ export async function registerRoutes(
         for (let page = 1; page <= maxPages; page++) {
           bloostoreReviewProgress.message = `목록 페이지 ${page}/${maxPages} 수집 중...`;
           try {
-            const listUrl = `${BASE_URL}/${BOARD_ID}/?q=${Q_PARAM}&page=${page}&only_photo=Y`;
+            const listUrl = `${BASE_URL}/?q=${Q_PARAM}&page=${page}&only_photo=Y`;
             const resp = await fetch(listUrl, { headers });
             if (!resp.ok) { console.log(`[bloostore-review] Page ${page} HTTP ${resp.status}`); break; }
             const html = await resp.text();
@@ -7460,7 +7459,7 @@ export async function registerRoutes(
         }
 
         // === STEP 2: Crawl each detail page ===
-        // Detail URL: /330/?q=...&bmode=view&interlock=shop_review&idx=XXXXX&t=board
+        // Detail URL: /?q=...&bmode=view&interlock=shop_review&idx=XXXXX&t=board
         const Q_DETAIL = "YToyOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjtzOjQ6InBhZ2UiO2k6MTt9";
 
         for (let i = 0; i < postIdxList.length; i++) {
@@ -7469,7 +7468,7 @@ export async function registerRoutes(
           bloostoreReviewProgress.message = `(${i + 1}/${postIdxList.length}) 후기 상세 수집 중... (idx: ${idx})`;
 
           try {
-            const detailUrl = `${BASE_URL}/${BOARD_ID}/?q=${Q_DETAIL}&bmode=view&interlock=shop_review&idx=${idx}&t=board`;
+            const detailUrl = `${BASE_URL}/?q=${Q_DETAIL}&bmode=view&interlock=shop_review&idx=${idx}&t=board`;
             const detailResp = await fetch(detailUrl, { headers });
             if (!detailResp.ok) {
               console.log(`[bloostore-review] Detail HTTP ${detailResp.status} for idx=${idx}`);
