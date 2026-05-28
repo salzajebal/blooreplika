@@ -636,6 +636,16 @@ export default function Admin() {
   const bloo1IntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [selectedBloo1Categories, setSelectedBloo1Categories] = useState<string[]>(['803', '1212', '537']);
 
+  const [inspectionCrawlProgress, setInspectionCrawlProgress] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    inserted: number;
+    deleted: number;
+    message: string;
+  }>({ status: 'idle', total: 0, current: 0, inserted: 0, deleted: 0, message: '' });
+  const inspectionIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const [watchDeleteConfirm, setWatchDeleteConfirm] = useState(false);
   const [watchDeleting, setWatchDeleting] = useState(false);
 
@@ -1172,6 +1182,51 @@ export default function Admin() {
       setBloo1Progress({ status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '', category: '' });
       if (bloo1IntervalRef.current) { clearInterval(bloo1IntervalRef.current); bloo1IntervalRef.current = null; }
     } catch {}
+  };
+
+  const fetchInspectionCrawlProgress = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/inspection/progress");
+      const data = await res.json();
+      if (data.success) {
+        setInspectionCrawlProgress({
+          status: data.status,
+          total: data.total || 0,
+          current: data.current || 0,
+          inserted: data.inserted || 0,
+          deleted: data.deleted || 0,
+          message: data.message || '',
+        });
+        if (data.status === 'completed' || data.status === 'error') {
+          if (inspectionIntervalRef.current) {
+            clearInterval(inspectionIntervalRef.current);
+            inspectionIntervalRef.current = null;
+          }
+        }
+      }
+    } catch {}
+  };
+
+  const startInspectionCrawl = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/inspection/start", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "실시간 검수 크롤링 시작", description: "bloostore1/787 검수 목록을 수집합니다." });
+        setInspectionCrawlProgress({ status: 'running', total: 0, current: 0, inserted: 0, deleted: 0, message: '시작 중...' });
+        if (inspectionIntervalRef.current) clearInterval(inspectionIntervalRef.current);
+        inspectionIntervalRef.current = setInterval(fetchInspectionCrawlProgress, 800);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "검수 크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+
+  const resetInspectionCrawl = () => {
+    setInspectionCrawlProgress({ status: 'idle', total: 0, current: 0, inserted: 0, deleted: 0, message: '' });
+    if (inspectionIntervalRef.current) { clearInterval(inspectionIntervalRef.current); inspectionIntervalRef.current = null; }
   };
 
   const fetchWatchDetailProgress = async () => {
@@ -7180,6 +7235,82 @@ export default function Admin() {
               </div>
             </div>
 
+            {/* ── 실시간 검수 크롤링 섹션 ── */}
+            <div className="bg-white rounded-xl shadow-sm border border-orange-100 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <RefreshCw className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">실시간 검수 크롤링</h3>
+                  <p className="text-sm text-gray-500">bloostore1.co.kr/787 검수 목록을 수집하여 DB에 저장합니다</p>
+                </div>
+              </div>
+
+              <div className="bg-orange-50 rounded-lg p-3 mb-4 text-xs text-orange-700 flex items-start gap-2">
+                <span>📋</span>
+                <span>수집 URL: <code className="bg-orange-100 px-1 rounded">bloostore1.co.kr/787</code> (실시간 검수 사진 전체)</span>
+              </div>
+
+              <div className="space-y-3">
+                {inspectionCrawlProgress.status !== 'idle' && (
+                  <div className={`rounded-lg p-4 border space-y-2 ${
+                    inspectionCrawlProgress.status === 'running' ? 'border-orange-300 bg-orange-50' :
+                    inspectionCrawlProgress.status === 'completed' ? 'border-green-300 bg-green-50' :
+                    'border-red-300 bg-red-50'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      {inspectionCrawlProgress.status === 'running' && <Loader2 className="w-4 h-4 text-orange-600 animate-spin" />}
+                      {inspectionCrawlProgress.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                      {inspectionCrawlProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                      <span className={`text-sm font-medium ${
+                        inspectionCrawlProgress.status === 'running' ? 'text-orange-700' :
+                        inspectionCrawlProgress.status === 'completed' ? 'text-green-700' : 'text-red-700'
+                      }`}>
+                        {inspectionCrawlProgress.status === 'running' ? '진행 중' :
+                         inspectionCrawlProgress.status === 'completed' ? '완료' : '오류'}
+                      </span>
+                    </div>
+                    {inspectionCrawlProgress.message && (
+                      <p className="text-xs text-gray-700 font-mono">{inspectionCrawlProgress.message}</p>
+                    )}
+                    {inspectionCrawlProgress.inserted > 0 && (
+                      <div className="flex gap-4 text-xs text-gray-600">
+                        <span>수집 <strong className="text-orange-700">{inspectionCrawlProgress.total.toLocaleString()}</strong>개</span>
+                        <span>저장 <strong className="text-green-700">{inspectionCrawlProgress.inserted.toLocaleString()}</strong>개</span>
+                        {inspectionCrawlProgress.deleted > 0 && (
+                          <span>이전삭제 <strong>{inspectionCrawlProgress.deleted.toLocaleString()}</strong>개</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    data-testid="button-start-inspection-crawl"
+                    onClick={startInspectionCrawl}
+                    disabled={inspectionCrawlProgress.status === 'running'}
+                    className="bg-orange-600 hover:bg-orange-700 text-white flex-1"
+                  >
+                    {inspectionCrawlProgress.status === 'running' ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />크롤링 중...</>
+                    ) : (
+                      <><Download className="w-4 h-4 mr-2" />실시간 검수 크롤링 시작</>
+                    )}
+                  </Button>
+                  {(inspectionCrawlProgress.status === 'completed' || inspectionCrawlProgress.status === 'error') && (
+                    <Button variant="outline" onClick={resetInspectionCrawl}>초기화</Button>
+                  )}
+                </div>
+
+                <div className="text-xs text-gray-400 space-y-1">
+                  <p>• bloostore1/787 AJAX API에서 검수 목록 전체를 수집합니다.</p>
+                  <p>• 크롤링 시 기존 블루스토어 검수 데이터를 삭제하고 최신 데이터로 교체합니다.</p>
+                  <p>• 크롤링 후 실시간 검수 페이지(/inspection)에 자동 반영됩니다.</p>
+                </div>
+              </div>
+            </div>
 
           </div>
         )}

@@ -270,6 +270,7 @@ export interface IStorage {
   createInspection(inspection: InsertInspection): Promise<Inspection>;
   updateInspection(id: string, inspection: Partial<InsertInspection>): Promise<Inspection | undefined>;
   deleteInspection(id: string): Promise<boolean>;
+  deleteAllInspectionsByCategory(category: string): Promise<number>;
 
   // Shipping Photos
   getAllShippingPhotos(): Promise<ShippingPhoto[]>;
@@ -1729,6 +1730,11 @@ export class DatabaseStorage implements IStorage {
   async deleteInspection(id: string): Promise<boolean> {
     const result = await db.delete(inspections).where(eq(inspections.id, id)).returning();
     return result.length > 0;
+  }
+
+  async deleteAllInspectionsByCategory(category: string): Promise<number> {
+    const result = await db.delete(inspections).where(eq(inspections.category, category)).returning();
+    return result.length;
   }
 
   // Shipping Photos

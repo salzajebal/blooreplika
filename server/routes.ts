@@ -3138,6 +3138,18 @@ export async function registerRoutes(
     }
   });
 
+  // ============= INSPECTION ITEMS PUBLIC API =============
+  app.get("/api/inspections", async (req: Request, res: Response) => {
+    try {
+      const category = req.query.category as string | undefined;
+      const items = await storage.getActiveInspections(category);
+      res.json({ success: true, data: items });
+    } catch (error) {
+      console.error("Error fetching inspections:", error);
+      res.status(500).json({ success: false, error: "검수 목록을 불러올 수 없습니다." });
+    }
+  });
+
   app.get("/api/admin/reviews", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const page = parseInt(req.query.page as string) || 1;
@@ -5330,6 +5342,127 @@ export async function registerRoutes(
         bloo1Progress.status = 'error';
         bloo1Progress.message = `오류: ${error.message}`;
         console.error('[bloo1] Crawl error:', error);
+      }
+    })();
+  });
+
+  // ============= INSPECTION CRAWL (bloostore1/787) =============
+  let inspectionCrawlProgress: {
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    inserted: number;
+    deleted: number;
+    message: string;
+    startedAt?: Date;
+    completedAt?: Date;
+  } = { status: 'idle', total: 0, current: 0, inserted: 0, deleted: 0, message: '' };
+
+  app.get("/api/admin/crawl/inspection/progress", requireAdminAuth, (_req: Request, res: Response) => {
+    res.json({ success: true, ...inspectionCrawlProgress });
+  });
+
+  app.post("/api/admin/crawl/inspection/start", requireAdminAuth, async (_req: Request, res: Response) => {
+    if (inspectionCrawlProgress.status === 'running') {
+      return res.status(400).json({ success: false, error: "이미 검수 크롤링이 진행 중입니다." });
+    }
+    inspectionCrawlProgress = { status: 'running', total: 0, current: 0, inserted: 0, deleted: 0, message: '준비 중...', startedAt: new Date() };
+    res.json({ success: true, message: "실시간 검수 크롤링이 시작되었습니다." });
+
+    (async () => {
+      try {
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+        const headers = {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "application/json, text/javascript, */*; q=0.01",
+          "Accept-Language": "ko-KR,ko;q=0.9",
+          "Referer": "https://bloostore1.co.kr/787",
+        };
+
+        inspectionCrawlProgress.message = '기존 블루스토어 검수 데이터 삭제 중...';
+        const deleted = await storage.deleteAllInspectionsByCategory('bloostore');
+        inspectionCrawlProgress.deleted = deleted;
+
+        const allItems: Array<{ name: string; imageUrl: string }> = [];
+        let page = 1;
+        const pageSize = 50;
+        let hasMore = true;
+        let errStreak = 0;
+
+        while (hasMore) {
+          try {
+            const url = `https://bloostore1.co.kr/ajax/get_shop_list_view.cm?page=${page}&pagesize=${pageSize}&menu_url=787&sort=recent`;
+            inspectionCrawlProgress.message = `페이지 ${page} 수집 중...`;
+            const response = await fetch(url, { headers, signal: AbortSignal.timeout(12000) });
+            if (!response.ok) {
+              errStreak++;
+              if (errStreak >= 3) { hasMore = false; }
+              else { await delay(2000); }
+              continue;
+            }
+            errStreak = 0;
+            const data = await response.json() as { html: string; msg: string };
+            if (data.msg !== 'SUCCESS' || !data.html || data.html.trim().length < 10) {
+              hasMore = false;
+              break;
+            }
+            const $ = cheerio.load(data.html);
+            const elements = $('[data-product-properties]');
+            if (elements.length === 0) { hasMore = false; break; }
+
+            elements.each((_i: number, el: any) => {
+              try {
+                const raw = $(el).attr('data-product-properties') || '';
+                const parsed = JSON.parse(raw) as { idx: number; name: string; image_url: string };
+                if (parsed.name && parsed.image_url) {
+                  allItems.push({ name: parsed.name.trim(), imageUrl: parsed.image_url.split('?')[0] });
+                }
+              } catch {}
+            });
+
+            inspectionCrawlProgress.total = allItems.length;
+            inspectionCrawlProgress.message = `총 ${allItems.length}개 수집됨 (페이지 ${page})`;
+
+            if (elements.length < pageSize) { hasMore = false; }
+            page++;
+            await delay(300);
+          } catch (pageErr: any) {
+            errStreak++;
+            if (errStreak >= 3) hasMore = false;
+            else await delay(2000);
+          }
+        }
+
+        inspectionCrawlProgress.message = `${allItems.length}개 저장 중...`;
+        let totalInserted = 0;
+        for (let i = 0; i < allItems.length; i++) {
+          const item = allItems[i];
+          try {
+            await storage.createInspection({
+              productName: item.name,
+              imageUrl: item.imageUrl,
+              mediaType: 'image',
+              category: 'bloostore',
+              brandName: null,
+              sortOrder: i,
+              isActive: true,
+            });
+            totalInserted++;
+            inspectionCrawlProgress.inserted = totalInserted;
+            inspectionCrawlProgress.current = i + 1;
+          } catch (err: any) {
+            console.error('[inspection] insert error:', err.message);
+          }
+        }
+
+        inspectionCrawlProgress.status = 'completed';
+        inspectionCrawlProgress.message = `완료! ${totalInserted}개 검수 항목 저장됨 (이전 ${deleted}개 삭제)`;
+        inspectionCrawlProgress.completedAt = new Date();
+        console.log(`[inspection] Done: inserted=${totalInserted}, deleted=${deleted}`);
+      } catch (error: any) {
+        inspectionCrawlProgress.status = 'error';
+        inspectionCrawlProgress.message = `오류: ${error.message}`;
+        console.error('[inspection] Crawl error:', error);
       }
     })();
   });
