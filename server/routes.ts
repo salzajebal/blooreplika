@@ -5072,6 +5072,210 @@ export async function registerRoutes(
     }
   });
 
+  // ============= BLOO1 (bloostore1.co.kr) CRAWLING =============
+  let bloo1Progress: {
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    inserted: number;
+    skipped: number;
+    message: string;
+    category: string;
+    startedAt?: Date;
+    completedAt?: Date;
+  } = { status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '', category: '' };
+  let bloo1ShouldStop = false;
+
+  app.get("/api/admin/crawl/bloo1/progress", requireAdminAuth, (_req: Request, res: Response) => {
+    res.json({ success: true, ...bloo1Progress });
+  });
+
+  app.post("/api/admin/crawl/bloo1/stop", requireAdminAuth, (_req: Request, res: Response) => {
+    bloo1ShouldStop = true;
+    res.json({ success: true, message: "중지 요청됨" });
+  });
+
+  app.post("/api/admin/crawl/bloo1/reset", requireAdminAuth, (_req: Request, res: Response) => {
+    if (bloo1Progress.status === 'running') {
+      return res.status(400).json({ success: false, error: "크롤링 중에는 초기화할 수 없습니다." });
+    }
+    bloo1Progress = { status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '', category: '' };
+    res.json({ success: true });
+  });
+
+  app.post("/api/admin/crawl/bloo1/start", requireAdminAuth, async (req: Request, res: Response) => {
+    if (bloo1Progress.status === 'running') {
+      return res.status(400).json({ success: false, error: "이미 크롤링이 진행 중입니다." });
+    }
+
+    const { selectedCategories } = req.body as { selectedCategories?: string[] };
+
+    bloo1Progress = { status: 'running', total: 0, current: 0, inserted: 0, skipped: 0, message: '준비 중...', category: '', startedAt: new Date() };
+    bloo1ShouldStop = false;
+
+    res.json({ success: true, message: "BLOO 크롤링이 시작되었습니다." });
+
+    (async () => {
+      try {
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+        const bloo1Headers = {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Accept": "application/json, text/javascript, */*; q=0.01",
+          "Accept-Language": "ko-KR,ko;q=0.9",
+          "Referer": "https://bloostore1.co.kr/",
+        };
+
+        const BLOO1_CATEGORIES = [
+          { menuUrl: '803', name: '셀럽', gender: '공용' },
+          { menuUrl: '1212', name: '남성', gender: '남성' },
+          { menuUrl: '537', name: '여성', gender: '여성' },
+        ].filter(c => !selectedCategories || selectedCategories.length === 0 || selectedCategories.includes(c.menuUrl));
+
+        const inferSubCategory = (name: string, gender: string): string => {
+          const kw = ['가방', '백', '숄더백', '토트백', '클러치', '핸드백', '파우치', '미니백', '크로스백', '버킷백', '새들백'];
+          if (kw.some(k => name.includes(k))) return 'bags';
+          const shoeKw = ['신발', '스니커', '구두', '로퍼', '부츠', '샌들', '슬리퍼', '뮬', '펌프스'];
+          if (shoeKw.some(k => name.includes(k))) return 'shoes';
+          const walletKw = ['지갑', '카드지갑', '장지갑', '반지갑', '머니클립', '카드홀더'];
+          if (walletKw.some(k => name.includes(k))) return 'wallets';
+          const beltKw = ['벨트'];
+          if (beltKw.some(k => name.includes(k))) return 'belts';
+          const glassKw = ['선글라스', '안경'];
+          if (glassKw.some(k => name.includes(k))) return 'sunglasses';
+          const watchKw = ['시계', 'watch'];
+          if (watchKw.some(k => name.toLowerCase().includes(k))) return 'watches';
+          const jewelKw = ['목걸이', '귀걸이', '반지', '팔찌', '브로치', '펜던트'];
+          if (jewelKw.some(k => name.includes(k))) return 'jewelry';
+          return 'clothing';
+        };
+
+        const allBrands = await storage.getAllBrands();
+
+        const allProducts = await storage.getAllProducts();
+        const existingSourceIdx = new Set<number>(
+          allProducts.map(p => p.sourceIdx).filter((v): v is number => v !== null && v !== undefined)
+        );
+
+        let totalInserted = 0;
+        let totalSkipped = 0;
+
+        for (const cat of BLOO1_CATEGORIES) {
+          if (bloo1ShouldStop) break;
+
+          bloo1Progress.category = cat.name;
+          bloo1Progress.message = `[${cat.name}] 상품 수집 중...`;
+
+          let page = 1;
+          const pageSize = 50;
+          let hasMore = true;
+          let pageErrStreak = 0;
+
+          while (hasMore && !bloo1ShouldStop) {
+            try {
+              const url = `https://bloostore1.co.kr/ajax/get_shop_list_view.cm?page=${page}&pagesize=${pageSize}&menu_url=${cat.menuUrl}&sort=recent`;
+              const response = await fetch(url, {
+                headers: bloo1Headers,
+                signal: AbortSignal.timeout(12000),
+              });
+
+              if (!response.ok) {
+                pageErrStreak++;
+                if (pageErrStreak >= 3) { hasMore = false; }
+                else { await delay(2000 * pageErrStreak); }
+                continue;
+              }
+              pageErrStreak = 0;
+
+              const data = await response.json() as { html: string; msg: string };
+              if (data.msg !== 'SUCCESS' || !data.html || data.html.trim().length < 10) {
+                hasMore = false;
+                break;
+              }
+
+              const $ = cheerio.load(data.html);
+              const elements = $('[data-product-properties]');
+              if (elements.length === 0) { hasMore = false; break; }
+
+              bloo1Progress.message = `[${cat.name}] 페이지 ${page} 처리 중 (${elements.length}개)...`;
+
+              for (let i = 0; i < elements.length; i++) {
+                if (bloo1ShouldStop) break;
+                try {
+                  const raw = $(elements[i]).attr('data-product-properties') || '';
+                  const parsed = JSON.parse(raw) as {
+                    idx: number; code: string; name: string;
+                    original_price: number; price: number; image_url: string;
+                  };
+                  const { idx, name, price, original_price, image_url } = parsed;
+
+                  if (!idx || !name) continue;
+
+                  if (existingSourceIdx.has(idx)) {
+                    totalSkipped++;
+                    bloo1Progress.skipped = totalSkipped;
+                    continue;
+                  }
+
+                  const imageUrl = image_url ? image_url.split('?')[0] : '';
+                  const subCat = inferSubCategory(name, cat.gender);
+                  const brandId = matchBrandFromText(name, allBrands);
+
+                  await storage.createProduct({
+                    name: name.trim(),
+                    price: price ?? original_price ?? 0,
+                    originalPrice: (original_price && original_price !== price) ? original_price : null,
+                    categoryId: subCat,
+                    brandId: brandId || null,
+                    imageUrl: imageUrl,
+                    imageUrls: imageUrl ? [imageUrl] : [],
+                    gender: cat.gender,
+                    sourceUrl: `https://bloostore1.co.kr/${cat.menuUrl}?idx=${idx}`,
+                    sourceIdx: idx,
+                    isNew: true,
+                    isActive: true,
+                    isBest: false,
+                    description: null,
+                    options: null,
+                  } as any);
+
+                  existingSourceIdx.add(idx);
+                  totalInserted++;
+                  bloo1Progress.inserted = totalInserted;
+                  bloo1Progress.current = totalInserted + totalSkipped;
+                } catch (prodErr: any) {
+                  console.error('[bloo1] Product save error:', prodErr.message);
+                }
+              }
+
+              if (elements.length < pageSize) { hasMore = false; }
+              page++;
+              await delay(350);
+            } catch (pageErr: any) {
+              console.error(`[bloo1] Page ${page} error:`, pageErr.message);
+              pageErrStreak++;
+              if (pageErrStreak >= 3) hasMore = false;
+              else await delay(2000 * pageErrStreak);
+            }
+          }
+
+          await delay(500);
+        }
+
+        bloo1Progress.status = bloo1ShouldStop ? 'error' : 'completed';
+        bloo1Progress.message = bloo1ShouldStop
+          ? `중단됨 — ${totalInserted}개 저장, ${totalSkipped}개 중복`
+          : `완료! ${totalInserted}개 신규 상품 저장됨, ${totalSkipped}개 중복 스킵`;
+        bloo1Progress.completedAt = new Date();
+        console.log(`[bloo1] Done: inserted=${totalInserted}, skipped=${totalSkipped}`);
+      } catch (error: any) {
+        bloo1Progress.status = 'error';
+        bloo1Progress.message = `오류: ${error.message}`;
+        console.error('[bloo1] Crawl error:', error);
+      }
+    })();
+  });
+
   // ============= WATCH DETAIL IMAGE RE-CRAWL =============
   let watchDetailProgress: {
     status: 'idle' | 'running' | 'completed' | 'error';

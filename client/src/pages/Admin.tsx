@@ -624,6 +624,19 @@ export default function Admin() {
     message: string;
   }>({ status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '' });
   const puluaIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [bloo1Progress, setBloo1Progress] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error';
+    total: number;
+    current: number;
+    inserted: number;
+    skipped: number;
+    message: string;
+    category: string;
+  }>({ status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '', category: '' });
+  const bloo1IntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [selectedBloo1Categories, setSelectedBloo1Categories] = useState<string[]>(['803', '1212', '537']);
+
   const [watchDeleteConfirm, setWatchDeleteConfirm] = useState(false);
   const [watchDeleting, setWatchDeleting] = useState(false);
 
@@ -1096,6 +1109,70 @@ export default function Admin() {
     } catch (error) {
       toast({ title: "오류", description: "시계 크롤링을 시작할 수 없습니다.", variant: "destructive" });
     }
+  };
+
+  const fetchBloo1Progress = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bloo1/progress", { method: "GET" });
+      const data = await res.json();
+      if (data.success) {
+        setBloo1Progress({
+          status: data.status,
+          total: data.total,
+          current: data.current,
+          inserted: data.inserted || 0,
+          skipped: data.skipped || 0,
+          message: data.message || '',
+          category: data.category || '',
+        });
+        if (data.status === 'completed' || data.status === 'error') {
+          if (bloo1IntervalRef.current) {
+            clearInterval(bloo1IntervalRef.current);
+            bloo1IntervalRef.current = null;
+          }
+          fetchProductCount();
+          fetchProducts();
+        }
+      }
+    } catch {}
+  };
+
+  const startBloo1Crawl = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bloo1/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ selectedCategories: selectedBloo1Categories }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        const catNames: Record<string, string> = { '803': '셀럽', '1212': '남성', '537': '여성' };
+        const catText = selectedBloo1Categories.map(c => catNames[c] || c).join(', ');
+        toast({ title: "BLOO 크롤링 시작", description: `[${catText}] 카테고리 크롤링이 시작되었습니다.` });
+        setBloo1Progress({ status: 'running', total: 0, current: 0, inserted: 0, skipped: 0, message: '시작 중...', category: '' });
+        if (bloo1IntervalRef.current) clearInterval(bloo1IntervalRef.current);
+        bloo1IntervalRef.current = setInterval(fetchBloo1Progress, 800);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "BLOO 크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+
+  const stopBloo1Crawl = async () => {
+    try {
+      await fetchWithAuth("/api/admin/crawl/bloo1/stop", { method: "POST" });
+      toast({ title: "중지 요청", description: "BLOO 크롤링 중지를 요청했습니다." });
+    } catch {}
+  };
+
+  const resetBloo1Crawl = async () => {
+    try {
+      await fetchWithAuth("/api/admin/crawl/bloo1/reset", { method: "POST" });
+      setBloo1Progress({ status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '', category: '' });
+      if (bloo1IntervalRef.current) { clearInterval(bloo1IntervalRef.current); bloo1IntervalRef.current = null; }
+    } catch {}
   };
 
   const fetchWatchDetailProgress = async () => {
@@ -7394,6 +7471,118 @@ export default function Admin() {
                 <div className="text-xs text-gray-400 space-y-1">
                   <p>• 블루스토어 시계 카테고리에서 상품명/이미지/가격을 수집합니다.</p>
                   <p>• 성별은 '없음'으로 저장되며 카테고리는 '시계'로 고정됩니다.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* BLOO1 (bloostore1.co.kr) 크롤러 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <Download className="w-5 h-5 text-violet-600" />
+                  BLOO (bloostore1.co.kr) 크롤링
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">bloostore1.co.kr 셀럽/남성/여성 카테고리에서 상품명·이미지·가격을 수집합니다.</p>
+              </div>
+              <div className="p-6 space-y-4">
+                {/* 카테고리 선택 */}
+                <div>
+                  <h4 className="font-semibold text-gray-800 mb-2">카테고리 선택</h4>
+                  <div className="flex flex-wrap gap-3">
+                    {[
+                      { id: '803', name: '셀럽 (menu_url=803)', color: 'violet' },
+                      { id: '1212', name: '남성 (menu_url=1212)', color: 'blue' },
+                      { id: '537', name: '여성 (menu_url=537)', color: 'pink' },
+                    ].map(cat => (
+                      <label key={cat.id} className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={selectedBloo1Categories.includes(cat.id)}
+                          onChange={e => {
+                            if (e.target.checked) setSelectedBloo1Categories(prev => [...prev, cat.id]);
+                            else setSelectedBloo1Categories(prev => prev.filter(c => c !== cat.id));
+                          }}
+                          className="w-4 h-4 accent-violet-600"
+                        />
+                        <span className="text-sm text-gray-700">{cat.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <button onClick={() => setSelectedBloo1Categories(['803', '1212', '537'])} className="text-xs text-violet-600 hover:underline">전체 선택</button>
+                    <span className="text-xs text-gray-300">|</span>
+                    <button onClick={() => setSelectedBloo1Categories([])} className="text-xs text-gray-500 hover:underline">전체 해제</button>
+                  </div>
+                </div>
+
+                {/* 진행 상태 */}
+                {bloo1Progress.status !== 'idle' && (
+                  <div className={`rounded-lg p-4 border space-y-2 ${
+                    bloo1Progress.status === 'running' ? 'border-violet-300 bg-violet-50' :
+                    bloo1Progress.status === 'completed' ? 'border-green-300 bg-green-50' :
+                    'border-red-300 bg-red-50'
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      {bloo1Progress.status === 'running' && <Loader2 className="w-4 h-4 text-violet-600 animate-spin" />}
+                      {bloo1Progress.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                      {bloo1Progress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                      <span className={`text-sm font-medium ${
+                        bloo1Progress.status === 'running' ? 'text-violet-700' :
+                        bloo1Progress.status === 'completed' ? 'text-green-700' : 'text-red-700'
+                      }`}>
+                        {bloo1Progress.status === 'running' ? '진행 중' :
+                         bloo1Progress.status === 'completed' ? '완료' : '오류/중단'}
+                      </span>
+                      {bloo1Progress.category && bloo1Progress.status === 'running' && (
+                        <span className="text-xs bg-violet-200 text-violet-800 px-2 py-0.5 rounded-full">{bloo1Progress.category}</span>
+                      )}
+                    </div>
+                    {bloo1Progress.message && (
+                      <p className="text-xs text-gray-700 font-mono">{bloo1Progress.message}</p>
+                    )}
+                    {(bloo1Progress.inserted > 0 || bloo1Progress.skipped > 0) && (
+                      <div className="flex gap-4 text-xs text-gray-600">
+                        <span>저장 <strong className="text-green-700">{bloo1Progress.inserted.toLocaleString()}</strong>개</span>
+                        <span>중복 스킵 <strong>{bloo1Progress.skipped.toLocaleString()}</strong>개</span>
+                        <span>합계 <strong>{(bloo1Progress.inserted + bloo1Progress.skipped).toLocaleString()}</strong>개</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 버튼 */}
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    data-testid="button-start-bloo1-crawl"
+                    onClick={startBloo1Crawl}
+                    disabled={bloo1Progress.status === 'running' || selectedBloo1Categories.length === 0}
+                    className="bg-violet-600 hover:bg-violet-700 text-white flex-1"
+                  >
+                    {bloo1Progress.status === 'running' ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />크롤링 중...</>
+                    ) : (
+                      <><Download className="w-4 h-4 mr-2" />BLOO 크롤링 시작 ({selectedBloo1Categories.length}개 카테고리)</>
+                    )}
+                  </Button>
+                  {bloo1Progress.status === 'running' && (
+                    <Button
+                      variant="outline"
+                      onClick={stopBloo1Crawl}
+                      className="border-red-300 text-red-600 hover:bg-red-50"
+                    >
+                      중지
+                    </Button>
+                  )}
+                  {(bloo1Progress.status === 'completed' || bloo1Progress.status === 'error') && (
+                    <Button variant="outline" onClick={resetBloo1Crawl}>
+                      초기화
+                    </Button>
+                  )}
+                </div>
+                <div className="text-xs text-gray-400 space-y-1">
+                  <p>• bloostore1.co.kr AJAX API에서 상품명/이미지/가격을 수집합니다.</p>
+                  <p>• 상품명에서 카테고리(가방/신발/지갑/의류 등)와 브랜드를 자동 추론합니다.</p>
+                  <p>• sourceIdx 기준으로 중복 저장을 방지합니다.</p>
                 </div>
               </div>
             </div>
