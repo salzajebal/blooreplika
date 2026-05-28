@@ -106,6 +106,8 @@ function Router() {
       <Route path="/blog" component={Blog} />
       <Route path="/choice/:id" component={Choice} />
       <Route path="/choice" component={Choice} />
+      <Route path="/celeb/:id" component={Choice} />
+      <Route path="/celeb" component={Choice} />
       <Route path="/best" component={BestPage} />
       <Route path="/live" component={LivePage} />
       <Route path="/benefits" component={MonthlyBenefitPage} />
