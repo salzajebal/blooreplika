@@ -64,7 +64,7 @@ export function Header() {
     <>
       <header style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100 }}>
         {/* ── Announcement bar ── */}
-        <div className="bg-[#060133] text-white text-center py-2 text-[13px] tracking-wide font-medium">
+        <div className="bg-[#060133] text-white text-center py-2 text-[15px] tracking-wide font-medium">
           {announcementText.split("15%").map((part, i, arr) =>
             i < arr.length - 1 ? (
               <span key={i}>{part}<span className="text-orange-400 font-bold">15%</span></span>
@@ -115,7 +115,7 @@ export function Header() {
             <div className="ml-auto flex items-center gap-1">
               <Link
                 href={memberName ? "/profile" : "/login"}
-                className="flex items-center gap-1 px-3 py-1.5 text-[13px] text-gray-700 hover:text-black font-medium transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 text-[15px] text-gray-700 hover:text-black font-medium transition-colors"
                 data-testid="header-login-link"
               >
                 <LogIn className="w-4 h-4" />
@@ -123,7 +123,7 @@ export function Header() {
               </Link>
               <Link
                 href="/profile"
-                className="flex items-center gap-1 px-3 py-1.5 text-[13px] text-gray-700 hover:text-black font-medium transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 text-[15px] text-gray-700 hover:text-black font-medium transition-colors"
                 data-testid="header-my-link"
               >
                 <User className="w-4 h-4" />
@@ -131,7 +131,7 @@ export function Header() {
               </Link>
               <Link
                 href="/cart"
-                className="flex items-center gap-1 px-3 py-1.5 text-[13px] text-gray-700 hover:text-black font-medium transition-colors relative"
+                className="flex items-center gap-1 px-3 py-1.5 text-[15px] text-gray-700 hover:text-black font-medium transition-colors relative"
                 data-testid="header-cart-link"
               >
                 <ShoppingBag className="w-4 h-4" />
@@ -144,7 +144,7 @@ export function Header() {
               </Link>
               <Link
                 href="/support"
-                className="flex items-center gap-1 px-3 py-1.5 text-[13px] text-gray-700 hover:text-black font-medium transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 text-[15px] text-gray-700 hover:text-black font-medium transition-colors"
                 data-testid="header-support-link"
               >
                 <MessageCircle className="w-4 h-4" />
@@ -161,7 +161,7 @@ export function Header() {
               <Link
                 key={item.label}
                 href={item.path}
-                className={`flex-shrink-0 flex items-center gap-1 px-3 h-full text-[13px] font-medium transition-colors whitespace-nowrap ${
+                className={`flex-shrink-0 flex items-center gap-1 px-3 h-full text-[15px] font-medium transition-colors whitespace-nowrap ${
                   item.highlight
                     ? "text-[#00a050] hover:text-[#008040]"
                     : "text-gray-700 hover:text-black"
