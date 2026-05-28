@@ -1,8 +1,8 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { Heart, Package, Star, ChevronDown, X, ChevronLeft, ChevronRight, Search, Check, SlidersHorizontal } from "lucide-react";
+import { Heart, Package, ChevronDown, X, Search, SlidersHorizontal, ShoppingBag } from "lucide-react";
 import { useRoute, Link, useLocation, useSearch } from "wouter";
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Product } from "@shared/schema";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -14,45 +14,20 @@ import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
 function LazyProductImage({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
   return (
-    <div className="absolute inset-0 bg-gray-100">
-      {!loaded && <div className="absolute inset-0 bg-gray-100 animate-pulse" />}
+    <div className="absolute inset-0 bg-[#eaecf8]">
+      {!loaded && <div className="absolute inset-0 bg-[#eaecf8] animate-pulse" />}
       <img
         src={src}
         alt={alt}
         loading="lazy"
         decoding="async"
-        className={`w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+        className={`w-full h-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
         onLoad={() => setLoaded(true)}
         onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; setLoaded(true); }}
       />
     </div>
   );
 }
-
-function ProductSkeleton() {
-  return (
-    <div className="bg-white animate-pulse">
-      <div className="aspect-[3/4] bg-gray-100" />
-      <div className="px-2 pt-2 pb-3">
-        <div className="h-2.5 bg-gray-100 rounded w-12 mb-1.5" />
-        <div className="h-3 bg-gray-100 rounded w-full mb-1" />
-        <div className="h-3 bg-gray-100 rounded w-2/3 mb-2" />
-        <div className="h-4 bg-gray-100 rounded w-20" />
-      </div>
-    </div>
-  );
-}
-
-const SHOP_CATEGORY_TABS = [
-  { id: "all", name: "전체", slug: null },
-  { id: "clothing", name: "상의/하의", slug: "clothing" },
-  { id: "bags", name: "가방", slug: "bags" },
-  { id: "shoes", name: "신발", slug: "shoes" },
-  { id: "wallets", name: "지갑", slug: "wallets" },
-  { id: "watches", name: "시계", slug: "watches" },
-  { id: "jewelry", name: "패션잡화", slug: "jewelry" },
-  { id: "golf", name: "골프", slug: "golf" },
-];
 
 const CATEGORIES = [
   { id: "new-arrivals", name: "신상품", slug: "new-arrivals" },
@@ -73,6 +48,44 @@ const CATEGORIES = [
   { id: "discount", name: "할인상품", slug: "discount" },
   { id: "best", name: "베스트상품", slug: "best" },
   { id: "sameday", name: "당일배송", slug: "sameday" },
+];
+
+const SIDEBAR_CATEGORIES = [
+  {
+    id: "men",
+    label: "남성",
+    path: "/products/men",
+    subs: [
+      { id: "clothing", label: "남성 의류", path: "/products/men?tab=clothing", hasBrands: false },
+      { id: "shoes", label: "남성 신발", path: "/products/men?tab=shoes", hasBrands: false },
+      { id: "bags", label: "남성 가방", path: "/products/men?tab=bags", hasBrands: true },
+      { id: "wallets", label: "지갑", path: "/products/men?tab=wallets", hasBrands: false },
+      { id: "jewelry", label: "남성 패션 잡화", path: "/products/men?tab=jewelry", hasBrands: false },
+    ],
+  },
+  {
+    id: "women",
+    label: "여성",
+    path: "/products/women",
+    subs: [
+      { id: "clothing", label: "여성 의류", path: "/products/women?tab=clothing", hasBrands: false },
+      { id: "shoes", label: "여성 신발", path: "/products/women?tab=shoes", hasBrands: false },
+      { id: "bags", label: "여성 가방", path: "/products/women?tab=bags", hasBrands: true },
+      { id: "wallets", label: "지갑", path: "/products/women?tab=wallets", hasBrands: false },
+      { id: "jewelry", label: "여성 패션 잡화", path: "/products/women?tab=jewelry", hasBrands: false },
+    ],
+  },
+  { id: "watches", label: "시계관", path: "/products/watches", subs: [] },
+  { id: "events", label: "기획전", path: "/events", subs: [] },
+  {
+    id: "community",
+    label: "커뮤니티",
+    path: "#",
+    subs: [
+      { id: "sameday", label: "오늘출발", path: "/products/sameday", hasBrands: false },
+      { id: "blog", label: "썸머", path: "/blog", hasBrands: false },
+    ],
+  },
 ];
 
 type SortOption = "newest" | "price_asc" | "price_desc" | "popular";
@@ -187,7 +200,7 @@ export default function ProductList() {
     return data;
   };
 
-  const { data: productsData, isLoading: loading, isFetching } = useQuery({
+  const { data: productsData, isLoading: loading } = useQuery({
     queryKey: ["products", effectiveCategorySlug, subcategoryId, currentPage, searchQuery, selectedBrand, selectedGender || genderParam || genderFromCategory, selectedSubcategory, monthParam, subnameParam, filterCategoryParam],
     queryFn: () => fetchProducts(currentPage, searchQuery || undefined, selectedBrand, selectedGender, selectedSubcategory),
     placeholderData: (prev) => prev,
@@ -221,7 +234,6 @@ export default function ProductList() {
   const products: Product[] = productsData?.success ? productsData.data : [];
   const total = productsData?.total || 0;
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
-  const showLoadingOverlay = isFetching && products.length > 0;
 
   useEffect(() => { if (brandsData) setBrands(brandsData); }, [brandsData]);
 
@@ -266,29 +278,6 @@ export default function ProductList() {
 
   useEffect(() => { sessionStorage.setItem("productListPage", String(currentPage)); }, [currentPage]);
 
-  const goToPage = (page: number) => {
-    if (page >= 1 && page <= totalPages) { setCurrentPage(page); window.scrollTo({ top: 0, behavior: "smooth" }); }
-  };
-
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    if (totalPages <= 7) { for (let i = 1; i <= totalPages; i++) pages.push(i); }
-    else {
-      pages.push(1);
-      if (currentPage > 3) pages.push("...");
-      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
-      if (currentPage < totalPages - 2) pages.push("...");
-      pages.push(totalPages);
-    }
-    return pages;
-  };
-
-  const brandsWithProducts = useMemo(() => {
-    if (!brandSearch.trim()) return brands;
-    const q = brandSearch.toLowerCase();
-    return brands.filter((b: any) => b.name.toLowerCase().includes(q));
-  }, [brands, brandSearch]);
-
   const filteredProducts = useMemo(() => {
     let result = [...products];
     switch (sortBy) {
@@ -317,295 +306,387 @@ export default function ProductList() {
     navigate(`${base}${p.toString() ? "?" + p.toString() : ""}`);
   };
 
-  const getPageTitle = () => {
-    if (isBrandsPage) return "브랜드";
-    if (searchQuery) return `"${searchQuery}" 검색결과`;
-    if (categorySlug === "sameday") return "당일배송";
-    if (categorySlug === "discount" || categorySlug === "sale") return "할인상품";
-    if (categorySlug === "best") return "베스트상품";
-    if (categorySlug === "new" || categorySlug === "new-arrivals") return `신상품${monthParam ? ` — ${monthParam.replace("-", "년")}월` : ""}`;
-    if (isGenderCategory) return categorySlug === "men" ? "남성" : "여성";
-    return categoryInfo?.name || "전체 상품";
-  };
+  const brandsWithProducts = useMemo(() => {
+    if (!brandSearch.trim()) return brands;
+    const q = brandSearch.toLowerCase();
+    return brands.filter((b: any) => b.name.toLowerCase().includes(q));
+  }, [brands, brandSearch]);
+
+  // ── Accumulated products for "더보기" behavior ──
+  const [accumulatedProducts, setAccumulatedProducts] = useState<Product[]>([]);
+  const filterKeyRef = useRef("");
+  const filterKey = `${effectiveCategorySlug}|${selectedBrand}|${selectedGender}|${subnameParam}|${searchQuery}|${genderParam}|${sortBy}`;
+
+  useEffect(() => {
+    const filterChanged = filterKeyRef.current !== filterKey;
+    if (filterChanged) {
+      filterKeyRef.current = filterKey;
+      setAccumulatedProducts(filteredProducts);
+    } else if (currentPage === 1) {
+      setAccumulatedProducts(filteredProducts);
+    } else {
+      setAccumulatedProducts(prev => {
+        const ids = new Set(prev.map(p => p.id));
+        const newOnes = filteredProducts.filter(p => !ids.has(p.id));
+        return newOnes.length > 0 ? [...prev, ...newOnes] : prev;
+      });
+    }
+  }, [filteredProducts, filterKey]);
+
+  const displayProducts = accumulatedProducts;
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header />
 
-      <main className="flex-1 max-w-[640px] w-full mx-auto pb-24 md:pb-8">
-        {/* SHOP Category tabs */}
-        {!isBrandsPage && !searchQuery && (
-          <div className="bg-white border-b border-gray-100 sticky top-0 z-30">
-            <div className="flex overflow-x-auto scrollbar-hide">
-              {SHOP_CATEGORY_TABS.map((tab) => {
-                const isActive =
-                  (tab.slug === null && (categorySlug === "all" || !match)) ||
-                  (tab.slug !== null && categorySlug === tab.slug);
-                return (
-                  <Link
-                    key={tab.id}
-                    href={tab.slug ? `/products/${tab.slug}` : "/products"}
-                    className={`flex-shrink-0 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
-                      isActive ? "border-black text-black" : "border-transparent text-gray-500 hover:text-gray-800"
-                    }`}
-                    data-testid={`shop-tab-${tab.id}`}
-                  >
-                    {tab.name}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
+      {/* ── Main layout ── */}
+      <div className="flex flex-1" style={{ paddingTop: "101px" }}>
 
-        {/* Gender tabs for men/women pages */}
-        {isGenderCategory && (
-          <div className="bg-white border-b border-gray-100 px-4 py-2">
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-              {GENDER_TABS.map((tab) => (
+        {/* ── LEFT SIDEBAR (desktop only) ── */}
+        <aside
+          className="hidden lg:block flex-shrink-0 border-r border-gray-100 py-6"
+          style={{ width: "210px", position: "sticky", top: "101px", maxHeight: "calc(100vh - 101px)", overflowY: "auto", alignSelf: "flex-start" }}
+        >
+          {/* 실시간 검수 사진 */}
+          <Link href="/inspection" className="flex items-center gap-1.5 text-[13px] font-medium text-gray-700 mb-5 pl-5 hover:text-green-600 transition-colors">
+            실시간 검수 사진
+            <span className="text-green-500 font-bold text-base">✓</span>
+          </Link>
+
+          {/* Category tree */}
+          {SIDEBAR_CATEGORIES.map(cat => {
+            const isActive = categorySlug === cat.id || (cat.id === "watches" && categorySlug === "watches");
+            return (
+              <div key={cat.id} className="mb-0.5">
                 <Link
-                  key={tab.id}
-                  href={`/products/${categorySlug}${tab.id !== "all" ? `?tab=${tab.id}` : ""}`}
-                  className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                    activeTab === tab.id ? "bg-black text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                  }`}
-                  data-testid={`gender-tab-${tab.id}`}
+                  href={cat.path}
+                  className={cn(
+                    "block text-[14px] py-1.5 pl-5 border-l-2 transition-colors",
+                    isActive
+                      ? "border-gray-800 font-bold text-gray-900"
+                      : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
+                  )}
                 >
-                  {tab.name}
+                  {cat.label}
                 </Link>
+
+                {/* Sub-categories (only when this main category is active) */}
+                {isActive && cat.subs && cat.subs.length > 0 && (
+                  <div className="pl-7 mb-1.5">
+                    {cat.subs.map((sub: any) => {
+                      const subIsActive = activeTab === sub.id;
+                      return (
+                        <div key={sub.id}>
+                          <Link
+                            href={sub.path}
+                            className={cn(
+                              "block text-[13px] py-0.5 transition-colors",
+                              subIsActive ? "font-bold text-gray-900" : "text-gray-500 hover:text-gray-800"
+                            )}
+                          >
+                            {sub.label}
+                          </Link>
+
+                          {/* Brand sub-items (when this sub-category is active + has brands) */}
+                          {subIsActive && sub.hasBrands && brands.length > 0 && (
+                            <div className="pl-3 mt-0.5 mb-1 space-y-0.5">
+                              {brands.slice(0, 15).map((brand: any) => (
+                                <button
+                                  key={brand.id}
+                                  onClick={() => setSelectedBrand(selectedBrand === brand.id ? null : brand.id)}
+                                  className={cn(
+                                    "block text-[12px] py-0.5 text-left w-full transition-colors",
+                                    selectedBrand === brand.id
+                                      ? "font-semibold text-gray-900"
+                                      : "text-gray-400 hover:text-gray-700"
+                                  )}
+                                  data-testid={`sidebar-brand-${brand.id}`}
+                                >
+                                  {brand.name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </aside>
+
+        {/* ── MAIN CONTENT ── */}
+        <div className="flex-1 min-w-0 pb-20 lg:pb-8">
+
+          {/* Brand logos row (gender pages only) */}
+          {isGenderCategory && brands.length > 0 && (
+            <div className="flex gap-5 overflow-x-auto scrollbar-hide px-4 lg:px-6 py-4 border-b border-gray-100">
+              {brands.slice(0, 15).map((brand: any) => (
+                <button
+                  key={brand.id}
+                  onClick={() => setSelectedBrand(selectedBrand === brand.id ? null : brand.id)}
+                  className="flex flex-col items-center gap-1.5 flex-shrink-0 group"
+                  data-testid={`brand-logo-${brand.id}`}
+                >
+                  <div className={cn(
+                    "w-[56px] h-[56px] rounded-full border-2 flex items-center justify-center bg-white overflow-hidden transition-all",
+                    selectedBrand === brand.id
+                      ? "border-gray-800 shadow-md"
+                      : "border-gray-200 group-hover:border-gray-400"
+                  )}>
+                    {brand.representativeImage ? (
+                      <img
+                        src={getProxiedImageUrl(brand.representativeImage, "thumb")}
+                        alt={brand.name}
+                        className="w-full h-full object-contain p-1.5"
+                        onError={(e) => {
+                          const el = e.target as HTMLImageElement;
+                          el.style.display = "none";
+                          const span = el.parentElement?.querySelector(".brand-fallback") as HTMLElement;
+                          if (span) span.style.display = "flex";
+                        }}
+                      />
+                    ) : null}
+                    <span
+                      className={cn(
+                        "brand-fallback text-[9px] font-bold text-gray-600 text-center leading-tight px-1 break-all",
+                        brand.representativeImage ? "hidden" : "flex items-center justify-center w-full h-full"
+                      )}
+                    >
+                      {brand.name.slice(0, 8)}
+                    </span>
+                  </div>
+                  <span className={cn(
+                    "text-[10px] text-center leading-tight max-w-[64px] break-words",
+                    selectedBrand === brand.id ? "font-bold text-gray-900" : "text-gray-500 group-hover:text-gray-700"
+                  )}>
+                    {brand.name}
+                  </span>
+                </button>
               ))}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Brands page header */}
-        {isBrandsPage && (
-          <div className="px-4 py-4 border-b border-gray-100">
-            <h1 className="text-lg font-bold text-gray-900" data-testid="text-category-title">브랜드</h1>
-          </div>
-        )}
-
-        {/* Filter bar */}
-        <div className="sticky top-[92px] bg-white border-b border-gray-100 z-20" ref={dropdownRef}>
-          <div className="flex items-center gap-0 overflow-x-auto scrollbar-hide px-3 py-2">
-            {/* Filter button */}
-            <button
-              onClick={() => setFilterDrawerOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-full text-xs text-gray-600 hover:border-gray-400 mr-2 flex-shrink-0"
-              data-testid="button-filter-open"
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              필터
-              {hasActiveFilters && <span className="w-1.5 h-1.5 bg-[#FF6100] rounded-full" />}
-            </button>
-
-            {/* Active filter chips */}
-            {selectedBrandName && (
-              <span className="flex items-center gap-1 px-3 py-1.5 bg-black text-white text-xs rounded-full mr-2 flex-shrink-0">
-                {selectedBrandName}
-                <button onClick={() => setSelectedBrand(null)} className="ml-0.5"><X className="w-3 h-3" /></button>
-              </span>
-            )}
-            {selectedGender && (
-              <span className="flex items-center gap-1 px-3 py-1.5 bg-black text-white text-xs rounded-full mr-2 flex-shrink-0">
-                {selectedGender}
-                <button onClick={() => setSelectedGender(null)} className="ml-0.5"><X className="w-3 h-3" /></button>
-              </span>
-            )}
-            {subnameParam && (
-              <span className="flex items-center gap-1 px-3 py-1.5 bg-black text-white text-xs rounded-full mr-2 flex-shrink-0">
-                {subnameParam}
-                <button onClick={() => { const b = location.split("?")[0]; const p = new URLSearchParams(searchString); p.delete("subname"); navigate(`${b}${p.toString() ? "?" + p : ""}`); }} className="ml-0.5"><X className="w-3 h-3" /></button>
-              </span>
+          {/* Subcategory tabs + sort row */}
+          <div className="px-4 lg:px-6 border-b border-gray-100" ref={dropdownRef}>
+            {subcategories.length > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide py-3">
+                <button
+                  onClick={() => { const b = location.split("?")[0]; const p = new URLSearchParams(searchString); p.delete("subname"); navigate(`${b}${p.toString() ? "?" + p : ""}`); }}
+                  className={cn(
+                    "flex-shrink-0 px-4 py-1.5 text-[13px] rounded-full font-medium transition-colors border",
+                    !subnameParam ? "bg-black text-white border-black" : "bg-white border-gray-200 text-gray-600 hover:border-gray-400"
+                  )}
+                >
+                  전체보기
+                </button>
+                {subcategories.map((sub: any) => (
+                  <button
+                    key={sub.slug || sub.id}
+                    onClick={() => { const b = location.split("?")[0]; const p = new URLSearchParams(searchString); p.set("subname", sub.name); navigate(`${b}?${p.toString()}`); }}
+                    className={cn(
+                      "flex-shrink-0 px-4 py-1.5 text-[13px] rounded-full font-medium transition-colors border whitespace-nowrap",
+                      subnameParam === sub.name ? "bg-black text-white border-black" : "bg-white border-gray-200 text-gray-600 hover:border-gray-400"
+                    )}
+                  >
+                    {sub.name}
+                  </button>
+                ))}
+              </div>
             )}
 
-            {/* Sort dropdown */}
-            <div className="relative ml-auto flex-shrink-0">
-              <button
-                onClick={() => setOpenDropdown(openDropdown === "sort" ? null : "sort")}
-                className="flex items-center gap-1 text-xs text-gray-500 px-2 py-1.5 whitespace-nowrap"
-                data-testid="button-sort"
-              >
-                {sortBy === "newest" ? "신상품순" : sortBy === "price_asc" ? "낮은가격순" : sortBy === "price_desc" ? "높은가격순" : "인기순"}
-                <ChevronDown className={`w-3 h-3 transition-transform ${openDropdown === "sort" ? "rotate-180" : ""}`} />
-              </button>
-              {openDropdown === "sort" && (
-                <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 shadow-lg rounded-lg z-50 min-w-[120px] py-1">
-                  {[
-                    { value: "newest", label: "신상품순" },
-                    { value: "popular", label: "인기순" },
-                    { value: "price_asc", label: "낮은가격순" },
-                    { value: "price_desc", label: "높은가격순" },
-                  ].map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => { setSortBy(opt.value as SortOption); setOpenDropdown(null); }}
-                      className={`w-full text-left px-4 py-2.5 text-xs hover:bg-gray-50 ${sortBy === opt.value ? "font-bold text-black" : "text-gray-600"}`}
-                      data-testid={`button-sort-${opt.value}`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+            {/* Sort + count */}
+            <div className="flex items-center justify-between py-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-gray-400">
+                  총 <span className="font-bold text-gray-700" data-testid="text-product-count">{total.toLocaleString()}</span>개
+                </span>
+                {selectedBrandName && (
+                  <span className="flex items-center gap-1 px-2.5 py-1 bg-black text-white text-[11px] rounded-full">
+                    {selectedBrandName}
+                    <button onClick={() => setSelectedBrand(null)} className="ml-0.5"><X className="w-3 h-3" /></button>
+                  </span>
+                )}
+                {subnameParam && (
+                  <span className="flex items-center gap-1 px-2.5 py-1 bg-black text-white text-[11px] rounded-full">
+                    {subnameParam}
+                    <button onClick={() => { const b = location.split("?")[0]; const p = new URLSearchParams(searchString); p.delete("subname"); navigate(`${b}${p.toString() ? "?" + p : ""}`); }} className="ml-0.5"><X className="w-3 h-3" /></button>
+                  </span>
+                )}
+              </div>
+
+              {/* Sort dropdown */}
+              <div className="relative ml-auto flex-shrink-0">
+                <button
+                  onClick={() => setOpenDropdown(openDropdown === "sort" ? null : "sort")}
+                  className="flex items-center gap-1 text-[13px] text-gray-500 px-2 py-1 hover:text-gray-800 transition-colors"
+                  data-testid="button-sort"
+                >
+                  {sortBy === "newest" ? "등록순" : sortBy === "price_asc" ? "낮은가격순" : sortBy === "price_desc" ? "높은가격순" : "인기순"}
+                  <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", openDropdown === "sort" ? "rotate-180" : "")} />
+                </button>
+                {openDropdown === "sort" && (
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 shadow-lg rounded-lg z-50 min-w-[120px] py-1">
+                    {[
+                      { value: "newest", label: "등록순" },
+                      { value: "popular", label: "인기순" },
+                      { value: "price_asc", label: "낮은가격순" },
+                      { value: "price_desc", label: "높은가격순" },
+                    ].map(opt => (
+                      <button
+                        key={opt.value}
+                        onClick={() => { setSortBy(opt.value as SortOption); setOpenDropdown(null); }}
+                        className={cn("w-full text-left px-4 py-2.5 text-xs hover:bg-gray-50", sortBy === opt.value ? "font-bold text-black" : "text-gray-600")}
+                        data-testid={`button-sort-${opt.value}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Product count */}
-          <div className="px-4 pb-2 text-xs text-gray-400">
-            총 <span className="font-bold text-gray-700" data-testid="text-product-count">{total.toLocaleString()}</span>개의 상품
-          </div>
-        </div>
-
-        {/* Product grid */}
-        <div>
-          {loading && !products.length ? (
-            <div className="grid grid-cols-2 gap-2 p-2 bg-[#f5f5f5]">
-              {Array.from({ length: 8 }).map((_, i) => <ProductSkeleton key={i} />)}
-            </div>
-          ) : filteredProducts.length > 0 ? (
-            <>
-              {showLoadingOverlay && (
-                <div className="flex items-center justify-center py-3">
-                  <div className="animate-spin w-4 h-4 border-2 border-[#FF6100] border-t-transparent rounded-full mr-2" />
-                  <span className="text-xs text-gray-400">불러오는 중...</span>
-                </div>
-              )}
-              <div className={cn("grid grid-cols-2 gap-2 p-2 bg-[#f5f5f5]", showLoadingOverlay && "opacity-60 pointer-events-none")}>
-                {filteredProducts.map((product) => {
-                  const discountPct = product.discountPercent && product.discountPercent > 0 ? product.discountPercent : hasSale ? salePercent : 0;
+          {/* ── Product Grid ── */}
+          <div className="px-3 lg:px-5 pt-3">
+            {loading && displayProducts.length === 0 ? (
+              /* Skeleton */
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="bg-[#eaecf8] aspect-square rounded mb-2" />
+                    <div className="h-3 bg-gray-100 rounded w-3/4 mb-1.5" />
+                    <div className="h-4 bg-gray-100 rounded w-1/2" />
+                  </div>
+                ))}
+              </div>
+            ) : displayProducts.length > 0 ? (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">
+                {displayProducts.map((product: any) => {
+                  const discountPct = product.discountPercent && product.discountPercent > 0
+                    ? product.discountPercent
+                    : hasSale ? salePercent : 0;
                   const salePrice = discountPct > 0
                     ? (product.discountPercent && product.discountPercent > 0
                         ? Math.round(Number(product.price) * (100 - product.discountPercent) / 100 / 1000) * 1000
                         : calculateSalePrice(Number(product.price)))
                     : null;
-                  const brandName = brands.find((b: any) => b.id === product.brandId)?.name || "";
 
                   return (
                     <Link
                       key={product.id}
                       href={`/product/${product.id}`}
-                      className="group relative bg-white block rounded-lg overflow-hidden"
+                      className="group block"
                       data-testid={`card-product-${product.id}`}
                     >
-                      {/* Image — portrait 3:4 ratio */}
-                      <div className="relative aspect-[3/4] bg-gray-50 overflow-hidden">
+                      {/* Image area */}
+                      <div className="relative bg-[#eaecf8] overflow-hidden aspect-square">
                         <LazyProductImage src={getProxiedImageUrl(product.imageUrl)} alt={product.name} />
 
                         {product.isSoldOut && (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-20">
-                            <span className="text-white text-[11px] font-bold tracking-widest uppercase border border-white/60 px-3 py-1">SOLD OUT</span>
+                            <span className="text-white text-[11px] font-bold tracking-widest border border-white/60 px-3 py-1">SOLD OUT</span>
                           </div>
                         )}
 
-                        {/* Top-left badges */}
-                        <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
-                          {product.isNew && (
-                            <span className="bg-black text-white text-[9px] font-bold px-2 py-0.5 rounded-full tracking-wider">NEW</span>
-                          )}
-                          {product.isBest && (
-                            <span className="bg-[#FF6100] text-white text-[9px] font-bold px-2 py-0.5 rounded-full">인기</span>
-                          )}
-                          {discountPct > 0 && (
-                            <span className="bg-red-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">-{discountPct}%</span>
-                          )}
-                        </div>
+                        {/* Discount badge */}
+                        {discountPct > 0 && (
+                          <span className="absolute top-2 left-2 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">
+                            -{discountPct}%
+                          </span>
+                        )}
 
-                        {/* Wishlist — top right */}
+                        {/* NEW badge */}
+                        {product.isNew && !discountPct && (
+                          <span className="absolute top-2 left-2 bg-black text-white text-[9px] font-bold px-1.5 py-0.5 rounded z-10">
+                            NEW
+                          </span>
+                        )}
+
+                        {/* Wishlist */}
                         <button
                           onClick={(e) => handleWishlistToggle(e, product)}
-                          className="absolute top-2 right-2 z-10 w-7 h-7 bg-white/85 backdrop-blur-sm rounded-full flex items-center justify-center shadow-sm"
+                          className="absolute top-2 right-2 z-10 w-6 h-6 bg-white/80 rounded-full flex items-center justify-center shadow-sm"
                           data-testid={`button-wishlist-${product.id}`}
                         >
-                          <Heart className={cn("w-3.5 h-3.5", isInWishlist(String(product.id)) ? "fill-red-500 text-red-500" : "text-gray-400")} />
+                          <Heart className={cn("w-3 h-3", isInWishlist(String(product.id)) ? "fill-red-500 text-red-500" : "text-gray-400")} />
                         </button>
-
-                        {/* Brand overlay on bottom of image */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/50 to-transparent px-2.5 pt-6 pb-2 z-10">
-                          <p className="text-white text-[10px] font-bold uppercase tracking-wider truncate leading-none">
-                            {brandName}
-                          </p>
-                        </div>
                       </div>
 
-                      {/* Info below image */}
-                      <div className="px-2.5 pt-2 pb-3">
-                        <h3 className="text-[11px] text-gray-600 line-clamp-2 leading-snug mb-2">
+                      {/* Info */}
+                      <div className="pt-2 pb-1">
+                        <p className="text-[12px] text-gray-700 line-clamp-2 leading-snug mb-1.5">
                           {decodeHtml(product.name)}
-                        </h3>
+                        </p>
                         {salePrice ? (
                           <div>
-                            <p className="text-[10px] text-gray-300 line-through leading-none mb-0.5">
+                            <p className="text-[11px] text-gray-300 line-through leading-none mb-0.5">
                               {Number(product.price).toLocaleString()}원
                             </p>
-                            <p className="text-sm font-black text-gray-900 leading-none" data-testid={`price-product-${product.id}`}>
-                              {salePrice.toLocaleString()}
-                              <span className="text-[10px] font-normal text-gray-400 ml-0.5">원</span>
+                            <p className="text-[13px] font-bold text-gray-900 leading-none" data-testid={`price-product-${product.id}`}>
+                              {salePrice.toLocaleString()}<span className="text-[10px] font-normal text-gray-400 ml-0.5">원</span>
                             </p>
                           </div>
                         ) : (
-                          <p className="text-sm font-black text-gray-900 leading-none" data-testid={`price-product-${product.id}`}>
-                            {Number(product.price).toLocaleString()}
-                            <span className="text-[10px] font-normal text-gray-400 ml-0.5">원</span>
+                          <p className="text-[13px] font-bold text-gray-900 leading-none" data-testid={`price-product-${product.id}`}>
+                            {Number(product.price).toLocaleString()}<span className="text-[10px] font-normal text-gray-400 ml-0.5">원</span>
                           </p>
                         )}
+                        <button
+                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                          className="mt-1.5 block"
+                        >
+                          <ShoppingBag className="w-4 h-4 text-gray-300 hover:text-gray-600 transition-colors" />
+                        </button>
                       </div>
                     </Link>
                   );
                 })}
               </div>
+            ) : (
+              <div className="py-20 text-center">
+                <Package className="w-14 h-14 mx-auto text-gray-200 mb-4" />
+                <p className="text-gray-400 text-sm mb-1">상품이 없습니다.</p>
+                <p className="text-xs text-gray-300">
+                  {searchQuery ? "다른 검색어로 검색해보세요." : "다른 카테고리를 확인해보세요."}
+                </p>
+              </div>
+            )}
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-1 py-6 px-4">
-                  <button
-                    onClick={() => goToPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded disabled:opacity-30 hover:border-gray-400"
-                    data-testid="button-prev-page"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  {getPageNumbers().map((page, idx) =>
-                    typeof page === "number" ? (
-                      <button
-                        key={idx}
-                        onClick={() => goToPage(page)}
-                        className={`w-8 h-8 text-sm rounded transition-colors ${
-                          currentPage === page ? "bg-black text-white" : "text-gray-600 hover:bg-gray-100"
-                        }`}
-                        data-testid={`button-page-${page}`}
-                      >
-                        {page}
-                      </button>
-                    ) : (
-                      <span key={idx} className="px-1 text-gray-300">...</span>
-                    )
-                  )}
-                  <button
-                    onClick={() => goToPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded disabled:opacity-30 hover:border-gray-400"
-                    data-testid="button-next-page"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="py-20 text-center">
-              <Package className="w-14 h-14 mx-auto text-gray-200 mb-4" />
-              <p className="text-gray-400 text-sm mb-1">상품이 없습니다.</p>
-              <p className="text-xs text-gray-300">
-                {searchQuery ? "다른 검색어로 검색해보세요." : "다른 카테고리를 확인해보세요."}
-              </p>
-            </div>
-          )}
+            {/* ── 더보기 button ── */}
+            {currentPage < totalPages && (
+              <div className="flex justify-center mt-8 mb-6">
+                <button
+                  onClick={() => setCurrentPage(p => p + 1)}
+                  disabled={loading}
+                  className="px-20 py-3 border border-gray-300 text-[13px] text-gray-600 hover:border-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50"
+                  data-testid="button-load-more"
+                >
+                  {loading ? "불러오는 중..." : "더보기"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </main>
+      </div>
 
-      {/* Filter Drawer */}
+      <Footer />
+
+      {/* Mobile filter button */}
+      <button
+        onClick={() => setFilterDrawerOpen(true)}
+        className="fixed bottom-20 right-4 z-40 bg-black text-white rounded-full px-4 py-2.5 text-sm flex items-center gap-2 shadow-lg lg:hidden"
+        data-testid="button-filter-open"
+      >
+        <SlidersHorizontal className="w-3.5 h-3.5" />
+        필터
+        {hasActiveFilters && <span className="w-2 h-2 bg-orange-400 rounded-full" />}
+      </button>
+
+      {/* ── Filter Drawer ── */}
       {filterDrawerOpen && (
         <div className="fixed inset-0 z-[150]">
           <div className="absolute inset-0 bg-black/50" onClick={() => setFilterDrawerOpen(false)} />
@@ -684,7 +765,7 @@ export default function ProductList() {
                     {subcategories.map((sub: any) => (
                       <button
                         key={sub.slug || sub.id}
-                        onClick={() => { const b = location.split("?")[0]; const p = new URLSearchParams(searchString); p.set("subname", sub.name); navigate(`${b}?${p.toString()}`); }}
+                        onClick={() => { const b = location.split("?")[0]; const p = new URLSearchParams(searchString); p.set("subname", sub.name); navigate(`${b}?${p.toString()}`); setFilterDrawerOpen(false); }}
                         className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${subnameParam === sub.name ? "bg-black text-white border-black" : "border-gray-200 text-gray-600 hover:border-gray-400"}`}
                       >
                         {sub.name}
@@ -713,10 +794,6 @@ export default function ProductList() {
           </div>
         </div>
       )}
-
-      <div className="max-w-[640px] w-full mx-auto">
-        <Footer />
-      </div>
     </div>
   );
 }
