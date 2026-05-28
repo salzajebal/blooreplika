@@ -69,9 +69,8 @@ const SIDEBAR_CATEGORIES = [
     path: "/products/women",
     subs: [
       { id: "clothing", label: "여성 의류", path: "/products/women?tab=clothing", hasBrands: false },
-      { id: "shoes", label: "여성 신발", path: "/products/women?tab=shoes", hasBrands: false },
       { id: "bags", label: "여성 가방", path: "/products/women?tab=bags", hasBrands: true },
-      { id: "wallets", label: "지갑", path: "/products/women?tab=wallets", hasBrands: false },
+      { id: "shoes", label: "여성 신발", path: "/products/women?tab=shoes", hasBrands: false },
       { id: "jewelry", label: "여성 패션 잡화", path: "/products/women?tab=jewelry", hasBrands: false },
     ],
   },
