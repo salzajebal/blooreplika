@@ -125,94 +125,112 @@ function MainBannerSlider() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Category Grid — 2 rows × 5 cols (BLOO style)
+// Category Image Map — bloostore1.co.kr 파싱 (1800×600 이미지)
+// 2행 × 5열 카테고리 카드 (남성의류 ~ 캐리어)
 // ─────────────────────────────────────────────────────────────
-const MENS_CATS = [
-  { label: "남성 의류", path: "/products?gender=%EB%82%A8%EC%84%B1&category=%EC%9D%98%EB%A5%98", img: "/bloo/cat_men_clothing.jpg" },
-  { label: "남성 가방", path: "/products?gender=%EB%82%A8%EC%84%B1&category=%EA%B0%80%EB%B0%A9", img: "/bloo/cat_men_bag.jpg" },
-  { label: "남성 신발", path: "/products?gender=%EB%82%A8%EC%84%B1&category=%EC%8B%A0%EB%B0%9C", img: "/bloo/cat_men_shoes.jpg" },
-  { label: "남성 패션 잡화", path: "/products?gender=%EB%82%A8%EC%84%B1&category=%EC%9E%A1%ED%99%94", img: "/bloo/cat_men_fashion.jpg" },
-  { label: "시계관", path: "/products/watches", img: "/bloo/cat_watch.jpg" },
-];
-const WOMENS_CATS = [
-  { label: "여성 의류", path: "/products?gender=%EC%97%AC%EC%84%B1&category=%EC%9D%98%EB%A5%98", img: "/bloo/cat_women_clothing.jpg" },
-  { label: "여성 가방", path: "/products?gender=%EC%97%AC%EC%84%B1&category=%EA%B0%80%EB%B0%A9", img: "/bloo/cat_women_bag.jpg" },
-  { label: "여성 신발", path: "/products?gender=%EC%97%AC%EC%84%B1&category=%EC%8B%A0%EB%B0%9C", img: "/bloo/cat_women_shoes.jpg" },
-  { label: "여성 패션 잡화", path: "/products?gender=%EC%97%AC%EC%84%B1&category=%EC%9E%A1%ED%99%94", img: "/bloo/cat_women_fashion.jpg" },
-  { label: "캐리어", path: "/products?category=%EC%BA%90%EB%A6%AC%EC%96%B4", img: "/bloo/cat_women_5th.jpg" },
+
+// 각 cell: 이미지 내 위치(%) + 이동 URL
+// 원본 1800×600 분석 결과 기반 (display 1250px 환산)
+const CAT_CARD_ROWS: { label: string; href: string; left: number; top: number; width: number; height: number }[][] = [
+  // Row 1
+  [
+    { label: "남성의류",   href: "/products?gender=%EB%82%A8%EC%84%B1",                    left:  2.1, top: 3,  width: 11.0, height: 45 },
+    { label: "시계관",    href: "/products/watches",                                       left: 13.2, top: 3,  width: 11.0, height: 45 },
+    { label: "여성",      href: "/products?gender=%EC%97%AC%EC%84%B1",                    left: 24.8, top: 3,  width: 10.6, height: 45 },
+    { label: "남성신발",   href: "/products?gender=%EB%82%A8%EC%84%B1&category=%EC%8B%A0%EB%B0%9C", left: 36.2, top: 3,  width: 10.4, height: 45 },
+    { label: "시계",      href: "/products/watches",                                       left: 47.6, top: 3,  width: 10.7, height: 45 },
+  ],
+  // Row 2
+  [
+    { label: "골프",      href: "/products/golf",                                          left:  1.9, top: 51, width: 11.0, height: 45 },
+    { label: "패션잡화",   href: "/products/accessories",                                  left: 13.2, top: 51, width: 10.8, height: 45 },
+    { label: "여성가방",   href: "/products?gender=%EC%97%AC%EC%84%B1&category=%EA%B0%80%EB%B0%A9", left: 24.6, top: 51, width: 10.6, height: 45 },
+    { label: "캐리어",    href: "/products?category=%EC%BA%90%EB%A6%AC%EC%96%B4",          left: 36.0, top: 51, width: 10.6, height: 45 },
+    { label: "",          href: "",                                                         left: 47.4, top: 51, width: 10.6, height: 45 },
+  ],
 ];
 
 function CategoryGrid() {
-  const renderRow = (cats: typeof MENS_CATS, bgColor: string, testPrefix: string) => (
-    <div className="grid grid-cols-5 gap-2.5">
-      {cats.map((cat, i) => (
-        <Link key={i} href={cat.path} data-testid={`${testPrefix}-${i}`} className="group">
-          <div
-            className="relative rounded-2xl overflow-hidden"
-            style={{ background: bgColor, height: "140px" }}
-          >
-            <img
-              src={cat.img}
-              alt={cat.label}
-              className="absolute inset-0 w-full h-full object-cover"
-              loading="lazy"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-            />
-          </div>
-          <p className="text-[14px] text-gray-800 font-medium text-center mt-2 group-hover:text-[#060133] transition-colors">{cat.label}</p>
-        </Link>
-      ))}
-    </div>
-  );
-
   return (
-    <section className="bg-white py-8 border-b border-gray-100" data-testid="category-grid">
-      <div className="max-w-[1100px] mx-auto px-5 space-y-3">
-        {renderRow(MENS_CATS, "#b5c0e2", "cat-men")}
-        {renderRow(WOMENS_CATS, "#c9a882", "cat-women")}
+    <section className="bg-white py-0 border-b border-gray-100" data-testid="category-grid">
+      <div className="w-full max-w-[1250px] mx-auto">
+        <div className="relative w-full" style={{ paddingBottom: "33.33%" }}>
+          <img
+            src="/bloo/categories/cat_cards_1800x600.jpg"
+            alt="카테고리"
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="lazy"
+          />
+          {CAT_CARD_ROWS.flat().map((cell, idx) =>
+            cell.href ? (
+              <Link
+                key={idx}
+                href={cell.href}
+                data-testid={`cat-card-${idx}`}
+                aria-label={cell.label}
+                style={{
+                  position: "absolute",
+                  left: `${cell.left}%`,
+                  top: `${cell.top}%`,
+                  width: `${cell.width}%`,
+                  height: `${cell.height}%`,
+                  cursor: "pointer",
+                }}
+              />
+            ) : null
+          )}
+        </div>
       </div>
     </section>
   );
 }
 
 // ─────────────────────────────────────────────────────────────
-// Celebrity's dress
+// Celebrity's dress — bloostore1.co.kr gallery2 파싱
+// pages: 819, 836, 868, 771, 755, 147
 // ─────────────────────────────────────────────────────────────
 const CELEBS_DATA = [
   {
-    id: 1, brand: "MIU MIU", photo: "/bloo/cat_w1.jpg",
-    products: [
-      { img: "/bloo/cat_women_bag.jpg", brand: "Miu Miu", name: "미우미우 크로코 미니 숄더백", price: "365,000" },
-      { img: "/bloo/cat_women_fashion.jpg", brand: "Miu Miu", name: "미우미우 위버 탑핸들 백", price: "285,000" },
-    ],
+    id: 819,
+    brand: "CELINE",
+    title: "셀린느 화이트 레터링 로고 후드 스웨트",
+    photo: "/bloo/celeb/celeb_819.jpg",
+    href: "/products?brand=Celine",
   },
   {
-    id: 2, brand: "BVLGARI", photo: "/bloo/cat_m2.jpg",
-    products: [
-      { img: "/bloo/cat_men_bag.jpg", brand: "Bvlgari", name: "불가리 세르펜티 라운드 핸들 숄더백", price: "182,000" },
-      { img: "/bloo/cat_men_fashion.jpg", brand: "Bvlgari", name: "불가리 세르펜티 바이퍼 목걸이", price: "135,000" },
-    ],
+    id: 836,
+    brand: "LOUIS VUITTON",
+    title: "루이비통 키폴 반둘리에 55 M41414",
+    photo: "/bloo/celeb/celeb_836.jpg",
+    href: "/products?brand=Louis+Vuitton",
   },
   {
-    id: 3, brand: "DIOR", photo: "/bloo/cat_m3.jpg",
-    products: [
-      { img: "/bloo/cat_men_clothing.jpg", brand: "Christian Dior", name: "디올 x 테니스 데님 집업 자켓", price: "225,000" },
-      { img: "/bloo/cat_men_bag.jpg", brand: "Christian Dior", name: "디올 쟈르뎅 드 론드 바느니 백 플랙", price: "345,000" },
-    ],
+    id: 868,
+    brand: "DIOR",
+    title: "디올 B27 하이탑 스니커즈 화이트",
+    photo: "/bloo/celeb/celeb_868.jpg",
+    href: "/products?brand=Dior",
   },
   {
-    id: 4, brand: "GUCCI", photo: "/bloo/cat_w2.jpg",
-    products: [
-      { img: "/bloo/cat_women_bag.jpg", brand: "GUCCI", name: "구찌 다이아나 짐업 GG 토트백", price: "415,000" },
-      { img: "/bloo/cat_women_bag.jpg", brand: "GUCCI", name: "구찌 인터로킹 G 토트백", price: "405,000" },
-    ],
+    id: 771,
+    brand: "CELINE",
+    title: "셀린느 유니언 워시 데님 트러커 자켓",
+    photo: "/bloo/celeb/celeb_771.jpg",
+    href: "/products?brand=Celine",
   },
   {
-    id: 5, brand: "CELINE", photo: "/bloo/cat_m4.jpg",
-    products: [
-      { img: "/bloo/cat_men_clothing.jpg", brand: "CELINE", name: "셀린느 화이트 레더링 로고 후드 스웨트", price: "195,000" },
-      { img: "/bloo/cat_men_fashion.jpg", brand: "CELINE", name: "셀린느 트리오프로스 바이셀 줄링 데님", price: "145,000" },
-    ],
+    id: 755,
+    brand: "DIOR",
+    title: "디올 Hit the Road 미니 백 블랙",
+    photo: "/bloo/celeb/celeb_755.jpg",
+    href: "/products?brand=Dior",
+  },
+  {
+    id: 147,
+    brand: "GUCCI",
+    title: "구찌 오피디아 GG 스몰 벨트백",
+    photo: "/bloo/celeb/celeb_147.jpg",
+    href: "/products?brand=Gucci",
   },
 ];
 
@@ -221,13 +239,13 @@ function CelebritySection() {
   const touchX = useRef(0);
   const visible = 4;
   const total = CELEBS_DATA.length;
-  const pages = total - visible + 1;
+  const maxStart = total - visible;
   const canPrev = current > 0;
-  const canNext = current < pages - 1;
+  const canNext = current < maxStart;
 
   return (
     <section className="bg-white py-10 border-b border-gray-100" data-testid="celebrity-section">
-      <div className="max-w-[1100px] mx-auto px-5">
+      <div className="max-w-[1250px] mx-auto px-5">
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Playfair Display', serif" }}>
             Celebrity's dress
@@ -237,7 +255,11 @@ function CelebritySection() {
 
         <div className="relative">
           {canPrev && (
-            <button onClick={() => setCurrent(c => c - 1)} className="absolute -left-5 top-[35%] z-10 w-9 h-9 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow hover:shadow-md" aria-label="이전">
+            <button
+              onClick={() => setCurrent(c => c - 1)}
+              className="absolute -left-5 top-[40%] z-10 w-9 h-9 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow hover:shadow-md"
+              aria-label="이전"
+            >
               <ChevronLeft className="w-5 h-5 text-gray-600" />
             </button>
           )}
@@ -252,54 +274,63 @@ function CelebritySection() {
           >
             <div
               className="flex gap-4 transition-transform duration-300 ease-in-out"
-              style={{ transform: `translateX(calc(-${current * (100 / visible)}% - ${current}px))` }}
+              style={{ transform: `translateX(calc(-${current * (100 / visible)}% - ${current * 16 / visible}px))` }}
             >
               {CELEBS_DATA.map((celeb) => (
-                <div
+                <Link
                   key={celeb.id}
-                  className="flex-shrink-0"
+                  href={celeb.href}
+                  className="flex-shrink-0 group block"
                   style={{ width: `calc(${100 / visible}% - 12px)` }}
                   data-testid={`celeb-card-${celeb.id}`}
                 >
-                  <div className="relative overflow-hidden rounded-lg bg-gray-100" style={{ aspectRatio: "3/4" }}>
-                    <img src={celeb.photo} alt={celeb.brand} className="w-full h-full object-cover" loading="lazy" />
-                    <div className="absolute top-3 left-3 bg-white/90 px-2 py-0.5 rounded text-[11px] font-bold text-gray-800 tracking-wide">
+                  <div className="relative overflow-hidden bg-gray-100" style={{ aspectRatio: "4/5" }}>
+                    <img
+                      src={celeb.photo}
+                      alt={celeb.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-0.5 text-[10px] font-bold text-gray-900 tracking-widest">
                       {celeb.brand}
                     </div>
                   </div>
-                  <div className="mt-0 border border-gray-100 rounded-b-lg overflow-hidden">
-                    {celeb.products.map((p, pi) => (
-                      <Link key={pi} href="/choice" className="flex items-center gap-2 px-3 py-2.5 border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors group">
-                        <ChevronLeft className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                        <img src={p.img} alt={p.name} className="w-11 h-11 object-cover rounded flex-shrink-0 border border-gray-100" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[11px] text-gray-500">{p.brand}</p>
-                          <p className="text-[12px] text-gray-800 line-clamp-1 leading-snug">{p.name}</p>
-                          <p className="text-[12px] font-bold text-gray-900">{p.price}원</p>
-                        </div>
-                        <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                      </Link>
-                    ))}
+                  <div className="mt-2 px-0.5">
+                    <p className="text-[13px] text-gray-800 leading-snug line-clamp-2 group-hover:text-black transition-colors">
+                      {celeb.title}
+                    </p>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
           {canNext && (
-            <button onClick={() => setCurrent(c => c + 1)} className="absolute -right-5 top-[35%] z-10 w-9 h-9 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow hover:shadow-md" aria-label="다음">
+            <button
+              onClick={() => setCurrent(c => c + 1)}
+              className="absolute -right-5 top-[40%] z-10 w-9 h-9 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow hover:shadow-md"
+              aria-label="다음"
+            >
               <ChevronRight className="w-5 h-5 text-gray-600" />
             </button>
           )}
         </div>
 
         <div className="flex justify-center gap-2 mt-5">
-          {Array.from({ length: pages }).map((_, i) => (
-            <button key={i} onClick={() => setCurrent(i)} className={`h-2 rounded-full transition-all ${i === current ? "w-6 bg-gray-800" : "w-2 bg-gray-300"}`} />
+          {Array.from({ length: maxStart + 1 }).map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrent(i)}
+              className={`h-1.5 rounded-full transition-all ${i === current ? "w-6 bg-gray-800" : "w-1.5 bg-gray-300"}`}
+            />
           ))}
         </div>
 
         <div className="flex justify-center mt-8">
-          <Link href="/choice" className="px-16 py-3 bg-black text-white text-sm font-medium rounded-full hover:bg-gray-800 transition-colors" data-testid="celeb-more-btn">
+          <Link
+            href="/products"
+            className="px-16 py-3 bg-black text-white text-sm font-medium tracking-wide hover:bg-gray-800 transition-colors"
+            data-testid="celeb-more-btn"
+          >
             보러가기
           </Link>
         </div>
