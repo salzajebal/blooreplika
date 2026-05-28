@@ -7,8 +7,8 @@ const SUB_NAV = [
   { label: "실시간 검수", path: "/inspection", highlight: true },
   { label: "리뷰", path: "/reviews" },
   { label: "셀럽", path: "/celeb" },
-  { label: "남성", path: "/products?gender=%EB%82%A8%EC%84%B1" },
-  { label: "여성", path: "/products?gender=%EC%97%AC%EC%84%B1" },
+  { label: "남성", path: "/1212" },
+  { label: "여성", path: "/537" },
   { label: "공지사항", path: "/notices" },
 ];
 
