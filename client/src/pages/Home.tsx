@@ -48,13 +48,13 @@ function MainBannerSlider() {
   });
 
   const STATIC_BANNERS = [
-    { imageUrl: "/bloo/banner1.jpg",     linkUrl: "/products", title: "", iw: 1024, ih: 1024 },
-    { imageUrl: "/bloo/banner2.jpg",     linkUrl: "/products", title: "", iw: 1080, ih: 1080 },
-    { imageUrl: "/bloo/banner3.jpg",     linkUrl: "/products", title: "", iw: 750, ih: 750 },
-    { imageUrl: "/bloo/banner4.jpg",     linkUrl: "/products", title: "", iw: 750, ih: 750 },
-    { imageUrl: "/bloo/banner7.jpg",     linkUrl: "/products", title: "", iw: 750, ih: 750 },
-    { imageUrl: "/bloo/banner8.jpg",     linkUrl: "/products", title: "", iw: 750, ih: 750 },
-    { imageUrl: "/bloo/banner_xmas.jpg", linkUrl: "/products", title: "", iw: 750, ih: 750 },
+    { imageUrl: "/bloo/banner1.jpg",     linkUrl: "/products", title: "", iw: 1024, ih: 1024, pos: "50% 22%" },
+    { imageUrl: "/bloo/banner2.jpg",     linkUrl: "/products", title: "", iw: 1080, ih: 1080, pos: "50% 50%" },
+    { imageUrl: "/bloo/banner3.jpg",     linkUrl: "/products", title: "", iw: 750,  ih: 750,  pos: "50% 50%" },
+    { imageUrl: "/bloo/banner4.jpg",     linkUrl: "/products", title: "", iw: 750,  ih: 750,  pos: "50% 50%" },
+    { imageUrl: "/bloo/banner7.jpg",     linkUrl: "/products", title: "", iw: 750,  ih: 750,  pos: "50% 50%" },
+    { imageUrl: "/bloo/banner8.jpg",     linkUrl: "/products", title: "", iw: 750,  ih: 750,  pos: "50% 50%" },
+    { imageUrl: "/bloo/banner_xmas.jpg", linkUrl: "/products", title: "", iw: 750,  ih: 750,  pos: "50% 42%" },
   ];
 
   const displayList = (banners && banners.length > 0) ? banners : STATIC_BANNERS;
@@ -126,7 +126,7 @@ function MainBannerSlider() {
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              objectPosition: "50% 30%",
+              objectPosition: b.pos || "50% 50%",
             }}
           />
         </Link>
