@@ -467,7 +467,7 @@ export async function registerRoutes(
   
   app.get("/api/products", async (req: Request, res: Response) => {
     try {
-      const { category, categoryId, subcategoryId, limit, offset, includeBrands, search, brandId, gender, month, subname, filterCategory } = req.query;
+      const { category, categoryId, subcategoryId, limit, offset, includeBrands, search, brandId, gender, month, subname, filterCategory, categories } = req.query;
       
       const limitNum = limit ? parseInt(limit as string, 10) : 60;
       const offsetNum = offset ? parseInt(offset as string, 10) : 0;
@@ -494,7 +494,8 @@ export async function registerRoutes(
       
       const subnameFilter = subname ? (subname as string) : undefined;
       const filterCategoryFilter = filterCategory ? (filterCategory as string) : undefined;
-      const productCacheKey = `products:${catFilter || 'all'}:${subCatFilter || 'all'}:${searchQuery || 'all'}:${brandFilter || 'all'}:${genderFilter || 'all'}:${monthFilter || 'all'}:${subnameFilter || 'all'}:${filterCategoryFilter || 'all'}:${limitNum}:${offsetNum}`;
+      const categoriesFilter = categories ? (categories as string).split(',').map(s => s.trim()).filter(Boolean) : undefined;
+      const productCacheKey = `products:${catFilter || 'all'}:${subCatFilter || 'all'}:${searchQuery || 'all'}:${brandFilter || 'all'}:${genderFilter || 'all'}:${monthFilter || 'all'}:${subnameFilter || 'all'}:${filterCategoryFilter || 'all'}:${categoriesFilter?.join(',') || 'all'}:${limitNum}:${offsetNum}`;
       type CachedProducts = { products: unknown[]; total: number };
       const cached = getCached<CachedProducts>(productCacheKey);
       
@@ -511,7 +512,7 @@ export async function registerRoutes(
         });
       }
       
-      const { products: productList, total } = await storage.getProductsPaginated(limitNum, offsetNum, catFilter, subCatFilter, searchQuery, brandFilter, genderFilter, monthFilter, subnameFilter, filterCategoryFilter);
+      const { products: productList, total } = await storage.getProductsPaginated(limitNum, offsetNum, catFilter, subCatFilter, searchQuery, brandFilter, genderFilter, monthFilter, subnameFilter, filterCategoryFilter, categoriesFilter);
       
       // Store in cache
       setCache(productCacheKey, { products: productList, total });

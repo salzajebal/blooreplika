@@ -7,8 +7,8 @@ const SUB_NAV = [
   { label: "실시간 검수", path: "/inspection", highlight: true },
   { label: "리뷰", path: "/reviews" },
   { label: "셀럽", path: "/celeb" },
-  { label: "남성", path: "/1212" },
-  { label: "여성", path: "/537" },
+  { label: "남성", path: "/httpstheblooshop1496458051" },
+  { label: "여성", path: "/497" },
   { label: "공지사항", path: "/notices" },
 ];
 
@@ -291,14 +291,14 @@ export function Header() {
                 실시간 검수 사진 <span className="text-green-400 font-bold">✓</span>
               </Link>
               <Link
-                href="/products/men"
+                href="/httpstheblooshop1496458051"
                 onClick={() => setMenuOpen(false)}
                 className="w-full text-center py-3 text-[14px] text-white/90 hover:text-white transition-colors"
               >
                 남성
               </Link>
               <Link
-                href="/products/women"
+                href="/497"
                 onClick={() => setMenuOpen(false)}
                 className="w-full text-center py-3 text-[14px] text-white/90 hover:text-white transition-colors"
               >

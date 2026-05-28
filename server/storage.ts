@@ -47,7 +47,7 @@ export interface IStorage {
   
   // Products
   getAllProducts(): Promise<Product[]>;
-  getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string, month?: string, subname?: string, filterCategory?: string): Promise<{ products: Product[], total: number }>;
+  getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string, month?: string, subname?: string, filterCategory?: string, categories?: string[]): Promise<{ products: Product[], total: number }>;
   getProductsFullPaginated(limit: number, offset: number, categoryId?: string): Promise<{ products: Product[], total: number }>;
   getProductsCount(categoryId?: string): Promise<number>;
   getProductsByCategory(categoryId: string): Promise<Product[]>;
@@ -348,7 +348,7 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(products).orderBy(desc(products.createdAt));
   }
   
-  async getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string, month?: string, subname?: string, filterCategory?: string): Promise<{ products: Product[], total: number }> {
+  async getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string, month?: string, subname?: string, filterCategory?: string, categories?: string[]): Promise<{ products: Product[], total: number }> {
     const leanSelect = {
       id: products.id,
       name: products.name,
@@ -369,7 +369,10 @@ export class DatabaseStorage implements IStorage {
     };
     
     const conditions: any[] = [];
-    if (categoryId) {
+    if (categories && categories.length > 0) {
+      // Multi-category OR filter (e.g. wallets,jewelry,belts for 패션잡화)
+      conditions.push(inArray(products.categoryId, categories));
+    } else if (categoryId) {
       if (categoryId === 'new-arrivals') {
         conditions.push(eq(products.isNew, true));
       } else if (categoryId === 'best') {

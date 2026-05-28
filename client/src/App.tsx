@@ -39,6 +39,7 @@ import Inspection from "@/pages/Inspection";
 import Ranking from "@/pages/Ranking";
 import Celeb from "@/pages/Celeb";
 import BlooGenderPage from "@/pages/BlooGenderPage";
+import BlooStoreCategoryPage from "@/pages/BlooStoreCategoryPage";
 
 function BestPage() { return <ContentPage sectionType="best" />; }
 function LivePage() { return <ContentPage sectionType="live" />; }
@@ -126,7 +127,14 @@ function Router() {
       <Route path="/labs" component={Labs} />
       <Route path="/inspection" component={Inspection} />
       <Route path="/ranking" component={Ranking} />
-      <Route path="/1212">{() => <BlooGenderPage gender="남성" />}</Route>
+      <Route path="/httpstheblooshop1496458051">{() => <BlooStoreCategoryPage pageId="httpstheblooshop1496458051" />}</Route>
+      <Route path="/220">{() => <BlooStoreCategoryPage pageId="220" />}</Route>
+      <Route path="/1212">{() => <BlooStoreCategoryPage pageId="1212" />}</Route>
+      <Route path="/26">{() => <BlooStoreCategoryPage pageId="26" />}</Route>
+      <Route path="/497">{() => <BlooStoreCategoryPage pageId="497" />}</Route>
+      <Route path="/1447">{() => <BlooStoreCategoryPage pageId="1447" />}</Route>
+      <Route path="/656">{() => <BlooStoreCategoryPage pageId="656" />}</Route>
+      <Route path="/716">{() => <BlooStoreCategoryPage pageId="716" />}</Route>
       <Route path="/537">{() => <BlooGenderPage gender="여성" />}</Route>
       <Route component={NotFound} />
     </Switch>
