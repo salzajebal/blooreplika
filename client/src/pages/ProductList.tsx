@@ -491,8 +491,8 @@ export default function ProductList() {
                   {cat.label}
                 </Link>
 
-                {/* Sub-categories (only when this main category is active) */}
-                {isActive && cat.subs && cat.subs.length > 0 && (
+                {/* Sub-categories (always visible) */}
+                {cat.subs && cat.subs.length > 0 && (
                   <div className="pl-7 mb-1.5">
                     {cat.subs.map((sub: any) => {
                       const subIsActive = activeTab === sub.id;
