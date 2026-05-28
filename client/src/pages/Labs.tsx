@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState, useEffect } from "react";
 
@@ -101,7 +100,7 @@ export default function Labs() {
           </ScrollReveal>
         ) : null}
       </main>
-      <Footer />
+
     </div>
   );
 }

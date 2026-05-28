@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
@@ -351,7 +350,7 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
           ) : null}
         </main>
 
-        <Footer />
+
 
         <style>{`
           @keyframes benefitFadeIn {
@@ -421,7 +420,7 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
         </div>
       </main>
 
-      <Footer />
+
     </div>
   );
 }

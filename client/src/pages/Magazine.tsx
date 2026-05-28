@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Link, useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useRef, useEffect } from "react";
@@ -108,7 +107,7 @@ function MagazineList() {
         </div>
       </main>
 
-      <Footer />
+
     </div>
   );
 }
@@ -198,7 +197,7 @@ function MagazineDetail({ id }: { id: string }) {
         )}
       </main>
 
-      <Footer />
+
     </div>
   );
 }

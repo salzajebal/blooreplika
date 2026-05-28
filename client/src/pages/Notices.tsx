@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Bell, Pin } from "lucide-react";
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { cn } from "@/lib/utils";
 
 interface Notice {
@@ -170,7 +169,7 @@ export default function Notices() {
         </div>
       </div>
 
-      <Footer />
+
     </div>
   );
 }

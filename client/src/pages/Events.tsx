@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { getProxiedImageUrl } from "@/lib/imageProxy";
@@ -133,7 +132,7 @@ export default function Events() {
         </div>
       </main>
 
-      <Footer />
+
     </div>
   );
 }

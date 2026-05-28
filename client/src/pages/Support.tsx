@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronUp, MessageCircle, HelpCircle, FileText, Bell } from "lucide-react";
@@ -176,7 +175,7 @@ export default function Support() {
         </div>
       </main>
 
-      <Footer />
+
     </div>
   );
 }

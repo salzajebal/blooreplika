@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Heart, Package, ChevronDown, X, Search, SlidersHorizontal, ShoppingBag } from "lucide-react";
 import { useRoute, Link, useLocation, useSearch } from "wouter";
 import { useState, useEffect, useMemo, useRef } from "react";
@@ -881,7 +880,7 @@ export default function ProductList() {
         </div>
       </div>
 
-      <Footer />
+
 
       {/* Mobile filter button */}
       <button

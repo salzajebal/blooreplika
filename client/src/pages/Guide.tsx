@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Link } from "wouter";
 import { ChevronRight, Home, Truck, RefreshCw, CreditCard, Package, Clock } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -146,7 +145,7 @@ export default function Guide() {
         </div>
       </main>
 
-      <Footer />
+
     </div>
   );
 }

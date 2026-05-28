@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, ArrowUp, Star } from "lucide-react";
@@ -812,7 +811,7 @@ export default function Home() {
         {/* 12. Customer support */}
         <CustomerSupportSection />
       </main>
-      <Footer />
+
       <FloatingButtons />
     </div>
   );

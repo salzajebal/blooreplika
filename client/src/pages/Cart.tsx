@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Trash2, Heart, ShoppingBag, ArrowRight, ShoppingCart } from "lucide-react";
 import { Link } from "wouter";
 import { useWishlist } from "@/contexts/WishlistContext";
@@ -264,7 +263,7 @@ export default function Cart() {
       </main>
 
       <div className="max-w-[640px] w-full mx-auto">
-        <Footer />
+
       </div>
     </div>
   );

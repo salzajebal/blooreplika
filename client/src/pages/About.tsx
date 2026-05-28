@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Link } from "wouter";
 import { getProxiedImageUrl } from "@/lib/imageProxy";
 
@@ -198,7 +197,7 @@ export default function About() {
         </div>
       </main>
 
-      <Footer />
+
     </div>
   );
 }

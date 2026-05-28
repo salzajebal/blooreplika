@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Link, useLocation, useParams } from "wouter";
 import { getProxiedImageUrl } from "@/lib/imageProxy";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
@@ -37,7 +36,7 @@ function ChoiceDetail({ id }: { id: string }) {
           <h1 className="text-xl font-bold text-[#f0f0f0] mb-4">상품을 찾을 수 없습니다</h1>
           <Link href="/choice" className="text-[#c9a96e] hover:underline">목록으로 돌아가기</Link>
         </main>
-        <Footer />
+
       </div>
     );
   }
@@ -179,7 +178,7 @@ function ChoiceDetail({ id }: { id: string }) {
         </div>
       </main>
 
-      <Footer />
+
     </div>
   );
 }
@@ -314,7 +313,7 @@ function ChoiceList() {
         </div>
       </main>
 
-      <Footer />
+
     </div>
   );
 }

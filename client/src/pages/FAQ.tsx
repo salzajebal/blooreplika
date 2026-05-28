@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Link, useSearch } from "wouter";
 import { useState, useMemo } from "react";
 import { Search } from "lucide-react";
@@ -233,7 +232,7 @@ export default function FAQ() {
         </div>
       </div>
 
-      <Footer />
+
     </div>
   );
 }

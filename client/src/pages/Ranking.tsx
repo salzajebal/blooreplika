@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, Trophy, TrendingUp, Package } from "lucide-react";
@@ -287,7 +286,7 @@ export default function Ranking() {
 
       </main>
       <div className="max-w-[640px] w-full mx-auto">
-        <Footer />
+
       </div>
     </div>
   );

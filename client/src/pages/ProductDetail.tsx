@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Heart, ChevronLeft, ChevronRight, Truck, ShoppingBag, Star, Package, AlertTriangle, MessageCircle, Search, Smartphone, Pencil, Image } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -247,7 +246,7 @@ export default function ProductDetail() {
         <main className="flex-1 flex items-center justify-center">
           <div className="text-gray-500">상품 정보를 불러오는 중...</div>
         </main>
-        <Footer />
+
       </div>
     );
   }
@@ -264,7 +263,7 @@ export default function ProductDetail() {
             </Link>
           </div>
         </main>
-        <Footer />
+
       </div>
     );
   }
@@ -851,7 +850,7 @@ export default function ProductDetail() {
         </div>
       </main>
 
-      <Footer />
+
     </div>
   );
 }

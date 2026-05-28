@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Home, ChevronRight, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -249,7 +248,7 @@ export default function Inspection() {
         </section>
       </div>
 
-      <Footer />
+
     </div>
   );
 }

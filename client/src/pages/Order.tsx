@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -557,7 +556,7 @@ export default function Order() {
         <main className="flex-1 flex items-center justify-center">
           <div className="text-[#666666] text-sm">상품 정보를 불러오는 중...</div>
         </main>
-        <Footer />
+
       </div>
     );
   }
@@ -572,7 +571,7 @@ export default function Order() {
             <Button className="bg-[#FF6100] hover:bg-[#e05500] text-white font-semibold" onClick={() => setLocation("/products")}>상품 목록으로 돌아가기</Button>
           </div>
         </main>
-        <Footer />
+
       </div>
     );
   }
@@ -807,7 +806,7 @@ export default function Order() {
             </div>
           </div>
         </main>
-        <Footer />
+
       </div>
     );
   }
@@ -1136,7 +1135,7 @@ export default function Order() {
         </div>
       </main>
 
-      <Footer />
+
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { Link, useLocation, useRoute } from "wouter";
 import { getProxiedImageUrl } from "@/lib/imageProxy";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
@@ -273,7 +272,7 @@ export default function Comparison() {
           </div>
         </main>
 
-        <Footer />
+
       </div>
     );
   }
@@ -361,7 +360,7 @@ export default function Comparison() {
         </div>
       </main>
 
-      <Footer />
+
     </div>
   );
 }

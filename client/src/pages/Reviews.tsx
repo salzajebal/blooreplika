@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Star, ChevronRight, ChevronLeft, Camera, Image, Pencil, X } from "lucide-react";
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
@@ -302,7 +301,7 @@ export default function Reviews() {
         </div>
       </main>
       <div className="max-w-[640px] w-full mx-auto">
-        <Footer />
+
       </div>
     </div>
   );
