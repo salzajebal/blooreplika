@@ -96,7 +96,7 @@ function MainBannerSlider() {
           display: "block",
           width: "100%",
           height: "auto",
-          maxHeight: "clamp(240px, 40vw, 480px)",
+          maxHeight: "clamp(180px, 24vw, 280px)",
           objectFit: "cover",
           visibility: "hidden",
         }}
