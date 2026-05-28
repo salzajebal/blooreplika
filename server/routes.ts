@@ -5197,26 +5197,56 @@ export async function registerRoutes(
           "Referer": "https://bloostore1.co.kr/",
         };
 
-        const BLOO1_CATEGORIES = [
-          { menuUrl: '803', name: '셀럽', gender: '공용' },
-          { menuUrl: '1212', name: '남성', gender: '남성' },
-          { menuUrl: '537', name: '여성', gender: '여성' },
+        // bloostore1 실제 카테고리별 URL — 카테고리 직접 지정 (키워드 추론 최소화)
+        const BLOO1_CATEGORIES: { menuUrl: string; name: string; gender: string; fixedCategoryId: string | null }[] = [
+          // 셀럽 (공용 - 혼합 카테고리, 이름으로 추론)
+          { menuUrl: '803',                      name: '셀럽',       gender: '공용', fixedCategoryId: null },
+          // 남성 - 카테고리 직접 지정
+          { menuUrl: 'httpstheblooshop1496458051', name: '남성 의류', gender: '남성', fixedCategoryId: 'clothing' },
+          { menuUrl: '220',                      name: '남성 신발',   gender: '남성', fixedCategoryId: 'shoes' },
+          { menuUrl: '1212',                     name: '남성 가방',   gender: '남성', fixedCategoryId: 'bags' },
+          { menuUrl: '26',                       name: '남성 패션잡화', gender: '남성', fixedCategoryId: null },
+          // 여성 - 카테고리 직접 지정
+          { menuUrl: '497',                      name: '여성 의류',   gender: '여성', fixedCategoryId: 'clothing' },
+          { menuUrl: '656',                      name: '여성 신발',   gender: '여성', fixedCategoryId: 'shoes' },
+          { menuUrl: '1447',                     name: '여성 가방',   gender: '여성', fixedCategoryId: 'bags' },
+          { menuUrl: '716',                      name: '여성 패션잡화', gender: '여성', fixedCategoryId: null },
         ].filter(c => !selectedCategories || selectedCategories.length === 0 || selectedCategories.includes(c.menuUrl));
 
-        const inferSubCategory = (name: string, gender: string): string => {
-          const kw = ['가방', '백', '숄더백', '토트백', '클러치', '핸드백', '파우치', '미니백', '크로스백', '버킷백', '새들백'];
-          if (kw.some(k => name.includes(k))) return 'bags';
-          const shoeKw = ['신발', '스니커', '구두', '로퍼', '부츠', '샌들', '슬리퍼', '뮬', '펌프스'];
+        // 패션잡화 페이지(26, 716)용 세부 분류 — 기본값은 'accessories' (clothing 아님!)
+        const inferAccessoryCategory = (name: string): string => {
+          const walletKw = ['지갑', '카드지갑', '장지갑', '반지갑', '머니클립', '카드홀더'];
+          if (walletKw.some(k => name.includes(k))) return 'wallets';
+          const beltKw = ['벨트'];
+          if (beltKw.some(k => name.includes(k))) return 'belts';
+          const glassKw = ['선글라스', '안경테', '아이웨어'];
+          if (glassKw.some(k => name.includes(k))) return 'sunglasses';
+          const watchKw = ['시계', 'watch', '워치'];
+          if (watchKw.some(k => name.toLowerCase().includes(k))) return 'watches';
+          const jewelKw = ['목걸이', '귀걸이', '이어링', '반지', '팔찌', '브로치', '펜던트', '주얼리', '쥬얼리'];
+          if (jewelKw.some(k => name.includes(k))) return 'jewelry';
+          const bagKw = ['가방', '백', '숄더백', '토트백', '클러치', '핸드백', '파우치', '미니백', '크로스백', '버킷백', '새들백'];
+          if (bagKw.some(k => name.includes(k))) return 'bags';
+          const shoeKw = ['신발', '스니커', '구두', '로퍼', '부츠', '샌들', '슬리퍼', '뮬', '펌프스', '슈즈'];
+          if (shoeKw.some(k => name.includes(k))) return 'shoes';
+          return 'accessories';
+        };
+
+        // 셀럽 페이지(803)용 — 모든 카테고리 추론 가능, 기본값 clothing
+        const inferCelebCategory = (name: string): string => {
+          const bagKw = ['가방', '백', '숄더백', '토트백', '클러치', '핸드백', '파우치', '미니백', '크로스백', '버킷백', '새들백', '백팩'];
+          if (bagKw.some(k => name.includes(k))) return 'bags';
+          const shoeKw = ['신발', '스니커', '구두', '로퍼', '부츠', '샌들', '슬리퍼', '뮬', '펌프스', '슈즈', '스니커즈'];
           if (shoeKw.some(k => name.includes(k))) return 'shoes';
           const walletKw = ['지갑', '카드지갑', '장지갑', '반지갑', '머니클립', '카드홀더'];
           if (walletKw.some(k => name.includes(k))) return 'wallets';
           const beltKw = ['벨트'];
           if (beltKw.some(k => name.includes(k))) return 'belts';
-          const glassKw = ['선글라스', '안경'];
+          const glassKw = ['선글라스', '안경테', '아이웨어'];
           if (glassKw.some(k => name.includes(k))) return 'sunglasses';
-          const watchKw = ['시계', 'watch'];
+          const watchKw = ['시계', 'watch', '워치'];
           if (watchKw.some(k => name.toLowerCase().includes(k))) return 'watches';
-          const jewelKw = ['목걸이', '귀걸이', '반지', '팔찌', '브로치', '펜던트'];
+          const jewelKw = ['목걸이', '귀걸이', '이어링', '반지', '팔찌', '브로치', '펜던트', '주얼리', '쥬얼리'];
           if (jewelKw.some(k => name.includes(k))) return 'jewelry';
           return 'clothing';
         };
@@ -5289,7 +5319,9 @@ export async function registerRoutes(
                   }
 
                   const imageUrl = image_url ? image_url.split('?')[0] : '';
-                  const subCat = inferSubCategory(name, cat.gender);
+                  // fixedCategoryId가 있으면 직접 사용, 없으면 카테고리별 추론
+                  const subCat = cat.fixedCategoryId
+                    ?? (cat.menuUrl === '803' ? inferCelebCategory(name) : inferAccessoryCategory(name));
                   const brandId = matchBrandFromText(name, allBrands);
 
                   await storage.createProduct({
@@ -7911,6 +7943,82 @@ export async function registerRoutes(
       }
     } catch (error: any) {
       console.error('[reclassify-rules] Error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // ── bloostore1 상품 카테고리 재분류 (기존 clothing 상품을 키워드로 재분류) ──
+  app.post("/api/admin/products/reclassify-bloo1", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const client = await pool.connect();
+      try {
+        // sourceUrl이 bloostore1이거나 sourceUrl이 없는 상품 전체 대상
+        const rows = await client.query(`
+          SELECT id, name, category_id, source_url, gender FROM products
+          WHERE (source_url LIKE '%bloostore1%' OR source_url IS NULL OR source_url = '')
+        `);
+
+        const clothingKw = ['재킷', '자켓', '코트', '니트', '셔츠', '티셔츠', '팬츠', '바지', '스커트', '원피스', '후드', '패딩', '블라우스', '가디건', '블레이저', '수트', '점퍼', '조끼', '베스트', '탑', '데님', '진', '쇼츠', '버뮤다', '스웨터', '맨투맨', '폴로', '가죽옷'];
+        const bagKw = ['가방', '숄더백', '토트백', '클러치', '핸드백', '파우치', '미니백', '크로스백', '버킷백', '새들백', '백팩', '에코백', '쇼퍼백', '호보백', '메신저백'];
+        const shoeKw = ['스니커즈', '운동화', '구두', '로퍼', '부츠', '샌들', '슬리퍼', '뮬', '펌프스', '플랫슈즈', '하이힐', '웨지슈즈', '신발', '스니커'];
+        const walletKw = ['지갑', '카드지갑', '장지갑', '반지갑', '머니클립', '동전지갑', '코인지갑', '퍼스'];
+        const beltKw = ['벨트'];
+        const glassKw = ['선글라스', '안경테', '아이웨어'];
+        const watchKw = ['시계', 'watch', '워치'];
+        const jewelKw = ['목걸이', '귀걸이', '이어링', '반지', '팔찌', '브로치', '펜던트', '주얼리', '쥬얼리'];
+        // 잡화/액세서리 키워드 (의류로 오분류되는 것들)
+        const accKw = ['키홀더', '키 홀더', '참', '스트랩', '폰홀더', '폰 홀더', '아이폰케이스', '카드케이스', '파우치', '넥타이', '스카프', '머플러', '모자', '장갑', '우산', '라이터', '볼펜', '만년필', '커프스', '브레이슬릿'];
+
+        const inferBloo1Category = (name: string): string | null => {
+          const n = name;
+          const nl = name.toLowerCase();
+          // 의류 키워드가 있으면 clothing 유지 (shoes/bags 키워드와 혼용될 때 의류 우선)
+          const isClothing = clothingKw.some(k => n.includes(k));
+          // 신발 - 의류 키워드 없을 때만 신발로 분류
+          if (!isClothing && shoeKw.some(k => n.includes(k))) return 'shoes';
+          if (walletKw.some(k => n.includes(k))) return 'wallets';
+          if (beltKw.some(k => n.includes(k))) return 'belts';
+          if (glassKw.some(k => n.includes(k))) return 'sunglasses';
+          if (watchKw.some(k => nl.includes(k.toLowerCase()))) return 'watches';
+          if (jewelKw.some(k => n.includes(k))) return 'jewelry';
+          if (accKw.some(k => n.includes(k))) return 'jewelry';
+          // 가방 - 단순 '백' 키워드는 의류 키워드 없을 때만 적용
+          if (!isClothing && bagKw.some(k => n.includes(k))) return 'bags';
+          // '백' 단독은 너무 광범위하므로 마지막에 체크
+          if (!isClothing && n.includes('백')) return 'bags';
+          return null; // clothing 유지
+        };
+
+        let changed = 0;
+        let skipped = 0;
+
+        await client.query('BEGIN');
+        try {
+          for (const row of rows.rows) {
+            const inferred = inferBloo1Category(row.name);
+            if (inferred && inferred !== row.category_id) {
+              await client.query(
+                `UPDATE products SET category_id = $1 WHERE id = $2`,
+                [inferred, row.id]
+              );
+              changed++;
+            } else {
+              skipped++;
+            }
+          }
+          await client.query('COMMIT');
+        } catch (err) {
+          await client.query('ROLLBACK');
+          throw err;
+        }
+
+        console.log(`[reclassify-bloo1] changed=${changed}, skipped=${skipped}, total=${rows.rows.length}`);
+        res.json({ success: true, data: { changed, skipped, total: rows.rows.length }, message: `${changed}개 상품 재분류 완료 (${skipped}개 유지)` });
+      } finally {
+        client.release();
+      }
+    } catch (error: any) {
+      console.error('[reclassify-bloo1] Error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   });

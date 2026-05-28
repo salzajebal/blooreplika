@@ -368,7 +368,9 @@ export class DatabaseStorage implements IStorage {
       createdAt: products.createdAt,
     };
     
-    const conditions: any[] = [];
+    const conditions: any[] = [
+      eq(products.isActive, true), // 활성 상품만 표시
+    ];
     if (categories && categories.length > 0) {
       // Multi-category OR filter (e.g. wallets,jewelry,belts for 패션잡화)
       conditions.push(inArray(products.categoryId, categories));

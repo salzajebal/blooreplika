@@ -822,6 +822,9 @@ export default function Admin() {
   const [genderReclassifyRunning, setGenderReclassifyRunning] = useState(false);
   const [genderReclassifyResult, setGenderReclassifyResult] = useState<{ changed: number; skipped: number; total: number } | null>(null);
 
+  const [bloo1ReclassifyRunning, setBloo1ReclassifyRunning] = useState(false);
+  const [bloo1ReclassifyResult, setBloo1ReclassifyResult] = useState<{ changed: number; skipped: number; total: number } | null>(null);
+
   const runReclassifyAnalyze = async () => {
     setReclassifyAnalyzing(true);
     setReclassifyRulesResult(null);
@@ -891,6 +894,21 @@ export default function Admin() {
       } else toast({ title: "실패", description: data.error, variant: "destructive" });
     } catch { toast({ title: "오류", description: "서버 연결 오류", variant: "destructive" }); }
     finally { setGenderReclassifyRunning(false); }
+  };
+
+  const runBloo1Reclassify = async () => {
+    if (!window.confirm("bloostore1 상품의 카테고리를 상품명 키워드로 재분류합니다.\n신발/가방/지갑/벨트/선글라스/쥬얼리가 의류에 섞인 것을 수정합니다. 계속하시겠습니까?")) return;
+    setBloo1ReclassifyRunning(true);
+    setBloo1ReclassifyResult(null);
+    try {
+      const res = await fetchWithAuth("/api/admin/products/reclassify-bloo1", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setBloo1ReclassifyResult(data.data);
+        toast({ title: "재분류 완료", description: data.message });
+      } else toast({ title: "실패", description: data.error, variant: "destructive" });
+    } catch { toast({ title: "오류", description: "서버 연결 오류", variant: "destructive" }); }
+    finally { setBloo1ReclassifyRunning(false); }
   };
 
   const runRematchBrands = async () => {
@@ -4242,6 +4260,26 @@ export default function Admin() {
               </div>
             </div>
             <div className="p-5 space-y-4">
+
+              {/* bloostore1 카테고리 재분류 (핵심 - 의류에 섞인 신발/가방 수정) */}
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 space-y-2">
+                <p className="text-sm font-medium text-orange-800">bloostore1 카테고리 재분류 (우선 실행)</p>
+                <p className="text-xs text-orange-600">의류 카테고리에 잘못 분류된 신발·가방·지갑·벨트·선글라스·쥬얼리를 올바른 카테고리로 이동합니다. 상품명 키워드 기반으로 분류합니다.</p>
+                <Button
+                  data-testid="button-bloo1-reclassify"
+                  onClick={runBloo1Reclassify}
+                  disabled={bloo1ReclassifyRunning}
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  {bloo1ReclassifyRunning
+                    ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />재분류 중...</>
+                    : <><RefreshCw className="w-4 h-4 mr-2" />bloostore1 카테고리 재분류 실행</>
+                  }
+                </Button>
+                {bloo1ReclassifyResult && (
+                  <p className="text-xs text-green-700 font-medium">✓ 완료: {bloo1ReclassifyResult.changed.toLocaleString()}개 재분류, {bloo1ReclassifyResult.skipped.toLocaleString()}개 유지 (총 {bloo1ReclassifyResult.total.toLocaleString()}개)</p>
+                )}
+              </div>
 
               {/* 성별 기반 카테고리 재분류 (ca_id 접두어 기준) */}
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-2">
