@@ -65,11 +65,13 @@ function BrandIconRow({
   selectedBrand,
   onSelect,
   gender,
+  topBrandsImageMap,
 }: {
   brands: any[];
   selectedBrand: string | null;
   onSelect: (id: string) => void;
   gender: "men" | "women";
+  topBrandsImageMap?: Record<string, string>;
 }) {
   const WOMEN_BRAND_ICONS: Record<string, string> = {
     "HERMES": "/bloo/brands/women_hermes.jpg",
@@ -102,8 +104,14 @@ function BrandIconRow({
 
   return (
     <div className="flex gap-4 overflow-x-auto scrollbar-hide px-4 lg:px-6 py-4 border-b border-gray-100">
-      {brands.slice(0, 15).map((brand: any) => {
-        const cdnIcon = iconMap[brand.name] ?? getBrandCdnIcon(brand.name);
+      {brands.slice(0, 20).map((brand: any) => {
+        const staticIcon = iconMap[brand.name] ?? getBrandCdnIcon(brand.name);
+        const dbImage = topBrandsImageMap?.[brand.id];
+        const iconSrc = dbImage
+          ? (dbImage.includes("cdn.imweb.me")
+              ? `/api/bloostore-image-proxy?url=${encodeURIComponent(dbImage)}`
+              : dbImage)
+          : staticIcon;
         const isSelected = selectedBrand === brand.id;
         return (
           <button
@@ -113,16 +121,16 @@ function BrandIconRow({
             data-testid={`brand-logo-${brand.id}`}
           >
             <div className={cn(
-              "w-[68px] h-[68px] rounded-full border-2 flex items-center justify-center bg-white overflow-hidden transition-all",
+              "w-[68px] h-[68px] rounded-full border-2 flex items-center justify-center bg-gray-50 overflow-hidden transition-all",
               isSelected
                 ? "border-gray-800 shadow-md"
                 : "border-gray-200 group-hover:border-gray-500"
             )}>
-              {cdnIcon ? (
+              {iconSrc ? (
                 <img
-                  src={cdnIcon}
+                  src={iconSrc}
                   alt={brand.name}
-                  className="w-full h-full object-contain p-1"
+                  className="w-full h-full object-cover"
                   onError={(e) => {
                     const el = e.target as HTMLImageElement;
                     el.style.display = "none";
@@ -133,7 +141,7 @@ function BrandIconRow({
               ) : null}
               <span
                 className="brand-fb text-[8px] font-bold text-gray-700 text-center leading-tight px-1 break-all"
-                style={{ display: cdnIcon ? "none" : "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}
+                style={{ display: iconSrc ? "none" : "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}
               >
                 {brand.name.length > 10 ? brand.name.slice(0, 9) + "…" : brand.name}
               </span>
@@ -338,6 +346,26 @@ export default function ProductList() {
     },
     staleTime: 600000,
   });
+
+  const { data: topBrandsData } = useQuery({
+    queryKey: ["brands-top-images", isGenderCategory ? categorySlug : ""],
+    queryFn: async () => {
+      if (!isGenderCategory) return [];
+      const res = await fetch(`/api/brands/top?limit=50`);
+      const data = await res.json();
+      return data.success ? data.data : [];
+    },
+    staleTime: 600000,
+    enabled: isGenderCategory,
+  });
+
+  const topBrandsImageMap: Record<string, string> = useMemo(() => {
+    if (!topBrandsData) return {};
+    return topBrandsData.reduce((acc: Record<string, string>, b: any) => {
+      if (b.representativeImage) acc[b.id] = b.representativeImage;
+      return acc;
+    }, {});
+  }, [topBrandsData]);
 
   const { data: subcategoriesData } = useQuery({
     queryKey: ["subcategories", effectiveCategorySlug, selectedGender || genderParam || genderFromCategory],
@@ -548,6 +576,7 @@ export default function ProductList() {
               selectedBrand={selectedBrand}
               onSelect={(id) => setSelectedBrand(selectedBrand === id ? null : id)}
               gender={categorySlug as "men" | "women"}
+              topBrandsImageMap={topBrandsImageMap}
             />
           )}
 
