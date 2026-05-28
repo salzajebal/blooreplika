@@ -47,18 +47,11 @@ function MainBannerSlider() {
   });
 
   const STATIC_BANNERS = [
-    { imageUrl: "/bloo/banner_carrier.jpg", linkUrl: "/products", title: "", pos: "50% 50%" },
-    { imageUrl: "/bloo/banner_xmas2.jpg",   linkUrl: "/products", title: "", pos: "50% 50%" },
-    { imageUrl: "/bloo/banner_acc.jpg",     linkUrl: "/products/accessories", title: "", pos: "50% 50%" },
-    { imageUrl: "/bloo/banner_review_event.jpg", linkUrl: "/reviews", title: "", pos: "50% 50%" },
-    { imageUrl: "/bloo/banner_app.jpg",     linkUrl: "/products", title: "", pos: "50% 50%" },
-    { imageUrl: "/bloo/banner1.jpg",        linkUrl: "/products", title: "", pos: "50% 22%" },
-    { imageUrl: "/bloo/banner2.jpg",        linkUrl: "/products", title: "", pos: "50% 50%" },
-    { imageUrl: "/bloo/banner3.jpg",        linkUrl: "/products", title: "", pos: "50% 50%" },
-    { imageUrl: "/bloo/banner4.jpg",        linkUrl: "/products", title: "", pos: "50% 50%" },
-    { imageUrl: "/bloo/banner7.jpg",        linkUrl: "/products", title: "", pos: "50% 50%" },
-    { imageUrl: "/bloo/banner8.jpg",        linkUrl: "/products", title: "", pos: "50% 50%" },
-    { imageUrl: "/bloo/banner_xmas.jpg",    linkUrl: "/products", title: "", pos: "50% 42%" },
+    { imageUrl: "/bloo/banner_review_event.jpg", linkUrl: "/reviews",              title: "", pos: "50% 50%" },
+    { imageUrl: "/bloo/banner_app.jpg",          linkUrl: "/products",             title: "", pos: "50% 50%" },
+    { imageUrl: "/bloo/banner_carrier.jpg",      linkUrl: "/products",             title: "", pos: "50% 50%" },
+    { imageUrl: "/bloo/banner_acc.jpg",          linkUrl: "/products/accessories", title: "", pos: "50% 50%" },
+    { imageUrl: "/bloo/banner_xmas.jpg",         linkUrl: "/products",             title: "", pos: "50% 50%" },
   ];
 
   const displayList = (banners && banners.length > 0) ? banners : STATIC_BANNERS;
