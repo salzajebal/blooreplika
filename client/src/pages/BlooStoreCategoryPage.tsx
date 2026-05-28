@@ -56,12 +56,14 @@ const PAGE_CONFIGS: Record<string, PageConfig> = {
     name: "남성 의류",
     gender: "남성",
     category: "clothing",
-    iconImageDesktop: "thumbnail/20240603/25347114edc67.jpg",
-    iconImageMobile: "thumbnail/20240603/46772f1597c78.jpg",
+    // Desktop image map (data-widget-parent-is-mobile="N") — 10 clothing category circles
+    iconImageDesktop: "thumbnail/20240603/5606757df3c27.jpg",
+    iconImageMobile: "thumbnail/20240603/25347114edc67.jpg",
     icons: [
+      { label: "티셔츠",       filter: { category: "clothing", search: "티셔츠" } },
       { label: "셔츠",         filter: { category: "clothing", search: "셔츠" } },
       { label: "맨투맨",       filter: { category: "clothing", search: "맨투맨" } },
-      { label: "후드/집업",    filter: { category: "clothing", search: "후드" } },
+      { label: "후드/후드집업", filter: { category: "clothing", search: "후드" } },
       { label: "팬츠",         filter: { category: "clothing", search: "팬츠" } },
       { label: "니트",         filter: { category: "clothing", search: "니트" } },
       { label: "가디건",       filter: { category: "clothing", search: "가디건" } },
@@ -71,11 +73,11 @@ const PAGE_CONFIGS: Record<string, PageConfig> = {
     ],
     pills: [
       { label: "전체보기" },
-      { label: "실시간 랭킹", filter: { sort: "popular" } },
-      { label: "반팔티",       filter: { search: "반팔" } },
-      { label: "피케,카라티",  filter: { search: "피케" } },
-      { label: "반팔 셔츠",   filter: { search: "반팔 셔츠" } },
-      { label: "니트 반팔",   filter: { search: "니트" } },
+      { label: "실시간 랭킹",  filter: { sort: "popular" } },
+      { label: "반팔티",        filter: { search: "반팔" } },
+      { label: "피케,카라티",   filter: { search: "피케" } },
+      { label: "반팔 셔츠",    filter: { search: "반팔 셔츠" } },
+      { label: "니트 반팔",    filter: { search: "니트" } },
       { label: "민소매 티셔츠", filter: { search: "민소매" } },
     ],
   },
@@ -86,23 +88,24 @@ const PAGE_CONFIGS: Record<string, PageConfig> = {
     name: "남성 신발",
     gender: "남성",
     category: "shoes",
-    iconImageDesktop: "thumbnail/20240603/76b893861b53a.jpg",
-    iconImageMobile: "thumbnail/20240603/1001becca943b.jpg",
+    // Desktop image map — 14 brand circles
+    iconImageDesktop: "thumbnail/20240603/1001becca943b.jpg",
+    iconImageMobile: "thumbnail/20240603/76b893861b53a.jpg",
     icons: [
-      { label: "에르메스",      filter: { category: "shoes", brandName: "에르메스" } },
-      { label: "디올",          filter: { category: "shoes", brandName: "디올" } },
-      { label: "구찌",          filter: { category: "shoes", brandName: "구찌" } },
-      { label: "발렌시아가",    filter: { category: "shoes", brandName: "발렌시아가" } },
-      { label: "루이비통",      filter: { category: "shoes", brandName: "루이비통" } },
-      { label: "나이키",        filter: { category: "shoes", brandName: "나이키" } },
-      { label: "뉴발란스",      filter: { category: "shoes", brandName: "뉴발란스" } },
-      { label: "로로피아나",    filter: { category: "shoes", brandName: "로로피아나" } },
-      { label: "프라다",        filter: { category: "shoes", brandName: "프라다" } },
-      { label: "릭오웬스",      filter: { category: "shoes", brandName: "릭오웬스" } },
+      { label: "에르메스",        filter: { category: "shoes", brandName: "에르메스" } },
+      { label: "디올",            filter: { category: "shoes", brandName: "디올" } },
+      { label: "구찌",            filter: { category: "shoes", brandName: "구찌" } },
+      { label: "발렌시아가",      filter: { category: "shoes", brandName: "발렌시아가" } },
+      { label: "루이비통",        filter: { category: "shoes", brandName: "루이비통" } },
+      { label: "나이키",          filter: { category: "shoes", brandName: "나이키" } },
+      { label: "뉴발란스",        filter: { category: "shoes", brandName: "뉴발란스" } },
+      { label: "프라다",          filter: { category: "shoes", brandName: "프라다" } },
+      { label: "릭오웬스",        filter: { category: "shoes", brandName: "릭오웬스" } },
       { label: "미하라 야스히로", filter: { category: "shoes", brandName: "미하라" } },
-      { label: "버버리",        filter: { category: "shoes", brandName: "버버리" } },
-      { label: "이지부스트",    filter: { category: "shoes", brandName: "이지부스트" } },
-      { label: "펜디",          filter: { category: "shoes", brandName: "펜디" } },
+      { label: "버버리",          filter: { category: "shoes", brandName: "버버리" } },
+      { label: "이지부스트",      filter: { category: "shoes", brandName: "이지부스트" } },
+      { label: "펜디",            filter: { category: "shoes", brandName: "펜디" } },
+      { label: "로로피아나",      filter: { category: "shoes", brandName: "로로피아나" } },
     ],
     pills: [
       { label: "전체보기" },
@@ -120,12 +123,13 @@ const PAGE_CONFIGS: Record<string, PageConfig> = {
     name: "남성 가방",
     gender: "남성",
     category: "bags",
-    iconImageDesktop: "thumbnail/20231210/2f8d220e61d51.jpg",
-    iconImageMobile: "thumbnail/20231210/d5ca3dba4ba69.jpg",
+    // Desktop image map — 10 brand circles
+    iconImageDesktop: "thumbnail/20231210/d5ca3dba4ba69.jpg",
+    iconImageMobile: "thumbnail/20231210/2f8d220e61d51.jpg",
     icons: [
       { label: "Louis Vuitton",  filter: { category: "bags", brandName: "루이비통" } },
       { label: "Dior",           filter: { category: "bags", brandName: "디올" } },
-      { label: "Gucci",          filter: { category: "bags", brandName: "구찌" } },
+      { label: "GUCCI",          filter: { category: "bags", brandName: "구찌" } },
       { label: "PRADA",          filter: { category: "bags", brandName: "프라다" } },
       { label: "Balenciaga",     filter: { category: "bags", brandName: "발렌시아가" } },
       { label: "Bottega Veneta", filter: { category: "bags", brandName: "보테가" } },
@@ -152,17 +156,18 @@ const PAGE_CONFIGS: Record<string, PageConfig> = {
     gender: "남성",
     category: "accessories",
     categories: ["wallets", "jewelry", "belts", "accessories"],
-    iconImageDesktop: "thumbnail/20231211/b79a5e83ff1e2.jpg",
+    // Desktop image map — 8 accessory category circles
+    iconImageDesktop: "thumbnail/20231211/b8512dc2d816c.jpg",
     iconImageMobile: "thumbnail/20240116/26132c6c33b65.jpg",
     icons: [
-      { label: "지갑",        filter: { category: "accessories", search: "지갑" } },
-      { label: "모자",        filter: { category: "accessories", search: "모자" } },
-      { label: "벨트",        filter: { category: "accessories", search: "벨트" } },
-      { label: "스카프/머플러", filter: { category: "accessories", search: "스카프" } },
-      { label: "팔찌",        filter: { category: "accessories", search: "팔찌" } },
-      { label: "목걸이",      filter: { category: "accessories", search: "목걸이" } },
-      { label: "반지",        filter: { category: "accessories", search: "반지" } },
-      { label: "키링",        filter: { category: "accessories", search: "키링" } },
+      { label: "지갑",          filter: { category: "accessories", search: "지갑" } },
+      { label: "모자",          filter: { category: "accessories", search: "모자" } },
+      { label: "벨트",          filter: { category: "accessories", search: "벨트" } },
+      { label: "머플러",        filter: { category: "accessories", search: "스카프" } },
+      { label: "팔찌",          filter: { category: "accessories", search: "팔찌" } },
+      { label: "목걸이",        filter: { category: "accessories", search: "목걸이" } },
+      { label: "반지",          filter: { category: "accessories", search: "반지" } },
+      { label: "키링",          filter: { category: "accessories", search: "키링" } },
     ],
     pills: [
       { label: "전체보기" },
@@ -181,7 +186,8 @@ const PAGE_CONFIGS: Record<string, PageConfig> = {
     name: "여성 의류",
     gender: "여성",
     category: "clothing",
-    iconImageDesktop: "thumbnail/20231211/c1f70de64ec87.jpg",
+    // Desktop image map — 10 clothing category circles
+    iconImageDesktop: "thumbnail/20231211/0d1f0d2a1191d.jpg",
     iconImageMobile: "thumbnail/20231211/87864cabc00b9.jpg",
     icons: [
       { label: "티셔츠",      filter: { category: "clothing", search: "티셔츠" } },
@@ -212,32 +218,33 @@ const PAGE_CONFIGS: Record<string, PageConfig> = {
     name: "여성 가방",
     gender: "여성",
     category: "bags",
-    iconImageDesktop: "thumbnail/20240221/1981c89bcddfe.jpg",
-    iconImageMobile: "thumbnail/20240221/fdd55ebed05f2.jpg",
+    // Desktop image map — 15 brand circles
+    iconImageDesktop: "thumbnail/20240221/fdd55ebed05f2.jpg",
+    iconImageMobile: "thumbnail/20240221/1981c89bcddfe.jpg",
     icons: [
-      { label: "Hermes",        filter: { category: "bags", brandName: "에르메스" } },
-      { label: "Louis Vuitton", filter: { category: "bags", brandName: "루이비통" } },
-      { label: "Dior",          filter: { category: "bags", brandName: "디올" } },
-      { label: "GUCCI",         filter: { category: "bags", brandName: "구찌" } },
-      { label: "PRADA",         filter: { category: "bags", brandName: "프라다" } },
-      { label: "Balenciaga",    filter: { category: "bags", brandName: "발렌시아가" } },
-      { label: "Bottega Veneta",filter: { category: "bags", brandName: "보테가" } },
-      { label: "Goyard",        filter: { category: "bags", brandName: "고야드" } },
-      { label: "Burberry",      filter: { category: "bags", brandName: "버버리" } },
-      { label: "LOEWE",         filter: { category: "bags", brandName: "로에베" } },
-      { label: "CELINE",        filter: { category: "bags", brandName: "셀린느" } },
-      { label: "Chanel",        filter: { category: "bags", brandName: "샤넬" } },
-      { label: "Saint Laurent", filter: { category: "bags", brandName: "생로랑" } },
-      { label: "FENDI",         filter: { category: "bags", brandName: "펜디" } },
-      { label: "miu miu",       filter: { category: "bags", brandName: "미우미우" } },
+      { label: "Hermes",         filter: { category: "bags", brandName: "에르메스" } },
+      { label: "Louis Vuitton",  filter: { category: "bags", brandName: "루이비통" } },
+      { label: "Dior",           filter: { category: "bags", brandName: "디올" } },
+      { label: "GUCCI",          filter: { category: "bags", brandName: "구찌" } },
+      { label: "PRADA",          filter: { category: "bags", brandName: "프라다" } },
+      { label: "Balenciaga",     filter: { category: "bags", brandName: "발렌시아가" } },
+      { label: "Bottega Veneta", filter: { category: "bags", brandName: "보테가" } },
+      { label: "Goyard",         filter: { category: "bags", brandName: "고야드" } },
+      { label: "Burberry",       filter: { category: "bags", brandName: "버버리" } },
+      { label: "LOEWE",          filter: { category: "bags", brandName: "로에베" } },
+      { label: "CELINE",         filter: { category: "bags", brandName: "셀린느" } },
+      { label: "Chanel",         filter: { category: "bags", brandName: "샤넬" } },
+      { label: "Saint Laurent",  filter: { category: "bags", brandName: "생로랑" } },
+      { label: "FENDI",          filter: { category: "bags", brandName: "펜디" } },
+      { label: "miu miu",        filter: { category: "bags", brandName: "미우미우" } },
     ],
     pills: [
       { label: "전체보기" },
-      { label: "숄더백",       filter: { search: "숄더" } },
-      { label: "크로스백",     filter: { search: "크로스" } },
-      { label: "토트백",       filter: { search: "토트" } },
-      { label: "클러치",       filter: { search: "클러치" } },
-      { label: "백팩",         filter: { search: "백팩" } },
+      { label: "숄더백",   filter: { search: "숄더" } },
+      { label: "크로스백", filter: { search: "크로스" } },
+      { label: "토트백",   filter: { search: "토트" } },
+      { label: "클러치",   filter: { search: "클러치" } },
+      { label: "백팩",     filter: { search: "백팩" } },
     ],
   },
 
@@ -247,23 +254,24 @@ const PAGE_CONFIGS: Record<string, PageConfig> = {
     name: "여성 신발",
     gender: "여성",
     category: "shoes",
-    iconImageDesktop: "thumbnail/20240603/b138c3b2e1a2d.jpg",
-    iconImageMobile: "thumbnail/20240603/f67fd8626336f.jpg",
+    // Desktop image map — 14 brand circles
+    iconImageDesktop: "thumbnail/20240603/f67fd8626336f.jpg",
+    iconImageMobile: "thumbnail/20240603/b138c3b2e1a2d.jpg",
     icons: [
-      { label: "샤넬",          filter: { category: "shoes", brandName: "샤넬" } },
-      { label: "에르메스",      filter: { category: "shoes", brandName: "에르메스" } },
-      { label: "디올",          filter: { category: "shoes", brandName: "디올" } },
-      { label: "구찌",          filter: { category: "shoes", brandName: "구찌" } },
-      { label: "발렌시아가",    filter: { category: "shoes", brandName: "발렌시아가" } },
-      { label: "루이비통",      filter: { category: "shoes", brandName: "루이비통" } },
-      { label: "나이키",        filter: { category: "shoes", brandName: "나이키" } },
-      { label: "뉴발란스",      filter: { category: "shoes", brandName: "뉴발란스" } },
-      { label: "프라다",        filter: { category: "shoes", brandName: "프라다" } },
-      { label: "릭오웬스",      filter: { category: "shoes", brandName: "릭오웬스" } },
+      { label: "샤넬",            filter: { category: "shoes", brandName: "샤넬" } },
+      { label: "에르메스",        filter: { category: "shoes", brandName: "에르메스" } },
+      { label: "디올",            filter: { category: "shoes", brandName: "디올" } },
+      { label: "구찌",            filter: { category: "shoes", brandName: "구찌" } },
+      { label: "발렌시아가",      filter: { category: "shoes", brandName: "발렌시아가" } },
+      { label: "루이비통",        filter: { category: "shoes", brandName: "루이비통" } },
+      { label: "나이키",          filter: { category: "shoes", brandName: "나이키" } },
+      { label: "뉴발란스",        filter: { category: "shoes", brandName: "뉴발란스" } },
+      { label: "프라다",          filter: { category: "shoes", brandName: "프라다" } },
+      { label: "릭오웬스",        filter: { category: "shoes", brandName: "릭오웬스" } },
       { label: "미하라 야스히로", filter: { category: "shoes", brandName: "미하라" } },
-      { label: "버버리",        filter: { category: "shoes", brandName: "버버리" } },
-      { label: "이지부스트",    filter: { category: "shoes", brandName: "이지부스트" } },
-      { label: "펜디",          filter: { category: "shoes", brandName: "펜디" } },
+      { label: "버버리",          filter: { category: "shoes", brandName: "버버리" } },
+      { label: "이지부스트",      filter: { category: "shoes", brandName: "이지부스트" } },
+      { label: "펜디",            filter: { category: "shoes", brandName: "펜디" } },
     ],
     pills: [
       { label: "전체보기" },
@@ -283,17 +291,18 @@ const PAGE_CONFIGS: Record<string, PageConfig> = {
     gender: "여성",
     category: "accessories",
     categories: ["wallets", "jewelry", "belts", "accessories"],
-    iconImageDesktop: "thumbnail/20231212/864dc8f10874c.jpg",
+    // Desktop image map — 8 accessory category circles
+    iconImageDesktop: "thumbnail/20231212/bd099fb6b9a5e.jpg",
     iconImageMobile: "thumbnail/20240115/8e926bbd9078e.jpg",
     icons: [
-      { label: "지갑",         filter: { category: "accessories", search: "지갑" } },
-      { label: "모자",         filter: { category: "accessories", search: "모자" } },
-      { label: "벨트",         filter: { category: "accessories", search: "벨트" } },
+      { label: "지갑",          filter: { category: "accessories", search: "지갑" } },
+      { label: "모자",          filter: { category: "accessories", search: "모자" } },
+      { label: "벨트",          filter: { category: "accessories", search: "벨트" } },
       { label: "스카프/머플러", filter: { category: "accessories", search: "스카프" } },
-      { label: "팔찌",         filter: { category: "accessories", search: "팔찌" } },
-      { label: "목걸이",       filter: { category: "accessories", search: "목걸이" } },
-      { label: "반지",         filter: { category: "accessories", search: "반지" } },
-      { label: "키링",         filter: { category: "accessories", search: "키링" } },
+      { label: "팔찌",          filter: { category: "accessories", search: "팔찌" } },
+      { label: "목걸이",        filter: { category: "accessories", search: "목걸이" } },
+      { label: "반지",          filter: { category: "accessories", search: "반지" } },
+      { label: "키링",          filter: { category: "accessories", search: "키링" } },
     ],
     pills: [
       { label: "전체보기" },
@@ -350,33 +359,75 @@ function IconImageRow({
   activeLabel?: string;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
+
+  // The image is 1918x218px — a wide horizontal strip of circular category icons
+  // Display at 130px height → renders ~1140px wide (shows all circles in scroll)
+  const DISPLAY_HEIGHT = 130;
 
   return (
-    <div className="mb-4">
-      {/* Image strip — scrollable horizontal */}
+    <div className="mb-3">
+      {/* Scrollable image strip with bloostore1 circular icons */}
       <div
         ref={scrollRef}
-        className="relative overflow-x-auto overflow-y-hidden"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        className="overflow-x-auto overflow-y-hidden select-none"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
       >
-        <div className="flex min-w-max">
+        <div style={{ display: "flex", height: `${DISPLAY_HEIGHT}px`, position: "relative" }}>
+          {/* The combined image map — contains all category/brand circles */}
           <img
-            src={cdnImg(imageUrl)}
-            alt="브랜드 아이콘"
-            className="h-[100px] md:h-[130px] w-auto object-contain"
-            style={{ maxWidth: "none" }}
-            loading="lazy"
+            ref={imgRef}
+            src={proxyImg(`https://cdn.imweb.me/${imageUrl}`)}
+            alt="카테고리 아이콘"
+            onLoad={() => setImgLoaded(true)}
+            onError={() => setImgError(true)}
+            style={{
+              height: `${DISPLAY_HEIGHT}px`,
+              width: "auto",
+              objectFit: "contain",
+              display: "block",
+              maxWidth: "none",
+              flexShrink: 0,
+            }}
           />
+          {/* Clickable overlay divs positioned over each icon */}
+          {imgLoaded && imgRef.current && icons.map((icon, i) => {
+            const imgW = imgRef.current!.naturalWidth;
+            const imgH = imgRef.current!.naturalHeight;
+            const scale = DISPLAY_HEIGHT / imgH;
+            const renderedW = imgW * scale;
+            const iconW = renderedW / icons.length;
+            return (
+              <div
+                key={icon.label}
+                onClick={() => onIconClick(icon)}
+                style={{
+                  position: "absolute",
+                  left: `${i * iconW}px`,
+                  top: 0,
+                  width: `${iconW}px`,
+                  height: `${DISPLAY_HEIGHT}px`,
+                  cursor: "pointer",
+                  outline: activeLabel === icon.label ? "2px solid #3b82f6" : "none",
+                  outlineOffset: "-2px",
+                  borderRadius: "4px",
+                }}
+                title={icon.label}
+              />
+            );
+          })}
         </div>
       </div>
 
-      {/* Individual clickable icon labels */}
+      {/* Fallback + category label pills below the image */}
       <div
-        className="flex gap-1 mt-1 overflow-x-auto pb-1"
+        className="flex gap-1 mt-2 overflow-x-auto pb-1"
         style={{ scrollbarWidth: "none" }}
       >
         <button
-          className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+          className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
             !activeLabel
               ? "bg-black text-white"
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
