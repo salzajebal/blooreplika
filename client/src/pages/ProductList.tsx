@@ -180,17 +180,89 @@ const CATEGORIES = [
   { id: "sameday", name: "당일배송", slug: "sameday" },
 ];
 
+const BRAND_ENGLISH_NAMES: Record<string, string> = {
+  louisvuitton: "Louis Vuitton",
+  gucci: "GUCCI",
+  hermes: "Hermes",
+  prada: "PRADA",
+  dior: "Dior",
+  balenciaga: "Balenciaga",
+  bottegaveneta: "Bottega Veneta",
+  goyard: "GOYARD",
+  burberry: "Burberry",
+  loewe: "LOEWE",
+  celine: "CELINE",
+  chanel: "Chanel",
+  saintlaurent: "Saint Laurent",
+  fendi: "FENDI",
+  miumiu: "miu miu",
+  rolex: "Rolex",
+  versace: "Versace",
+  thombrowne: "Thom Browne",
+  givenchy: "Givenchy",
+  maxmara: "Max Mara",
+  goldengoose: "Golden Goose",
+  alexandermcqueen: "Alexander McQueen",
+  moncler: "Moncler",
+  offwhite: "Off-White",
+  chromehearts: "Chrome Hearts",
+  stoneisland: "Stone Island",
+  kenzo: "KENZO",
+  ami: "AMI",
+  acnestudios: "Acne Studios",
+  maisonmargiela: "Maison Margiela",
+  lanvin: "LANVIN",
+  balmain: "BALMAIN",
+  valentino: "Valentino",
+  dolcegabbana: "Dolce&Gabbana",
+  tods: "Tod's",
+  loropiana: "Loro Piana",
+  nike: "Nike",
+  adidas: "Adidas",
+  newbalance: "New Balance",
+  salomon: "Salomon",
+  asics: "ASICS",
+  jordan: "Jordan",
+  converse: "Converse",
+  vans: "Vans",
+  reebok: "Reebok",
+  puma: "PUMA",
+  ugg: "UGG",
+  miharayasuhiro: "Maison MIHARA YASUHIRO",
+  yeezy: "Yeezy",
+  jilsander: "Jil Sander",
+  isseymiyake: "Issey Miyake",
+  commedesgarcons: "Comme des Garçons",
+  cartier: "Cartier",
+  tiffany: "Tiffany & Co.",
+  bvlgari: "Bvlgari",
+  omega: "OMEGA",
+  iwc: "IWC",
+  patekphilippe: "Patek Philippe",
+  audemarspiguet: "Audemars Piguet",
+  tagheuer: "TAG Heuer",
+  breitling: "Breitling",
+  hublot: "Hublot",
+};
+
+function getBrandDisplayName(brand: any): string {
+  if (brand.slug && BRAND_ENGLISH_NAMES[brand.slug]) {
+    return BRAND_ENGLISH_NAMES[brand.slug];
+  }
+  return brand.name;
+}
+
 const SIDEBAR_CATEGORIES = [
   {
     id: "men",
     label: "남성",
     path: "/products/men",
     subs: [
-      { id: "clothing", label: "남성 의류", path: "/products/men?tab=clothing", hasBrands: false },
-      { id: "shoes", label: "남성 신발", path: "/products/men?tab=shoes", hasBrands: false },
+      { id: "clothing", label: "남성 의류", path: "/products/men?tab=clothing", hasBrands: true },
+      { id: "shoes", label: "남성 신발", path: "/products/men?tab=shoes", hasBrands: true },
       { id: "bags", label: "남성 가방", path: "/products/men?tab=bags", hasBrands: true },
-      { id: "wallets", label: "지갑", path: "/products/men?tab=wallets", hasBrands: false },
-      { id: "jewelry", label: "남성 패션 잡화", path: "/products/men?tab=jewelry", hasBrands: false },
+      { id: "wallets", label: "지갑", path: "/products/men?tab=wallets", hasBrands: true },
+      { id: "jewelry", label: "남성 패션 잡화", path: "/products/men?tab=jewelry", hasBrands: true },
     ],
   },
   {
@@ -198,10 +270,10 @@ const SIDEBAR_CATEGORIES = [
     label: "여성",
     path: "/products/women",
     subs: [
-      { id: "clothing", label: "여성 의류", path: "/products/women?tab=clothing", hasBrands: false },
+      { id: "clothing", label: "여성 의류", path: "/products/women?tab=clothing", hasBrands: true },
       { id: "bags", label: "여성 가방", path: "/products/women?tab=bags", hasBrands: true },
-      { id: "shoes", label: "여성 신발", path: "/products/women?tab=shoes", hasBrands: false },
-      { id: "jewelry", label: "여성 패션 잡화", path: "/products/women?tab=jewelry", hasBrands: false },
+      { id: "shoes", label: "여성 신발", path: "/products/women?tab=shoes", hasBrands: true },
+      { id: "jewelry", label: "여성 패션 잡화", path: "/products/women?tab=jewelry", hasBrands: true },
     ],
   },
   { id: "watches", label: "시계관", path: "/products/watches", subs: [] },
@@ -346,6 +418,24 @@ export default function ProductList() {
     },
     staleTime: 600000,
   });
+
+  // Sidebar-specific brands: filtered by active subcategory tab (e.g. bags, shoes, clothing)
+  const sidebarTabCategory = isGenderCategory && activeTab !== "all" ? activeTab : null;
+  const { data: sidebarBrandsData } = useQuery({
+    queryKey: ["sidebar-brands", sidebarTabCategory],
+    queryFn: async () => {
+      if (!sidebarTabCategory) return [];
+      const res = await fetch(`/api/brands?categoryId=${sidebarTabCategory}`);
+      const data = await res.json();
+      return data.success ? data.data : [];
+    },
+    staleTime: 600000,
+    enabled: !!sidebarTabCategory,
+  });
+
+  const sidebarBrands = sidebarTabCategory && sidebarBrandsData
+    ? sidebarBrandsData.filter((b: any) => b.productCount > 0)
+    : brands.filter((b: any) => b.productCount > 0);
 
   const { data: topBrandsData } = useQuery({
     queryKey: ["brands-top-images", isGenderCategory ? categorySlug : ""],
@@ -493,67 +583,74 @@ export default function ProductList() {
 
         {/* ── LEFT SIDEBAR (desktop only) ── */}
         <aside
-          className="hidden lg:block flex-shrink-0 border-r border-gray-100 py-6"
-          style={{ width: "210px", position: "sticky", top: "101px", maxHeight: "calc(100vh - 101px)", overflowY: "auto", alignSelf: "flex-start" }}
+          className="hidden lg:block flex-shrink-0 border-r border-gray-100 py-4"
+          style={{ width: "200px", position: "sticky", top: "101px", maxHeight: "calc(100vh - 101px)", overflowY: "auto", alignSelf: "flex-start" }}
         >
           {/* 실시간 검수 사진 */}
-          <Link href="/inspection" className="flex items-center gap-1.5 text-[13px] font-medium text-gray-700 mb-5 pl-5 hover:text-green-600 transition-colors">
+          <Link href="/inspection" className="flex items-center gap-1 text-[13px] text-gray-700 mb-4 pl-4 hover:text-green-600 transition-colors">
             실시간 검수 사진
-            <span className="text-green-500 font-bold text-base">✓</span>
+            <span className="text-green-500 font-bold">✓</span>
           </Link>
 
           {/* Category tree */}
           {SIDEBAR_CATEGORIES.map(cat => {
             const isActive = categorySlug === cat.id || (cat.id === "watches" && categorySlug === "watches");
+            const hasActiveSub = isActive && cat.subs && cat.subs.some((s: any) => activeTab === s.id);
             return (
-              <div key={cat.id} className="mb-0.5">
+              <div key={cat.id} className="mb-0">
                 <Link
                   href={cat.path}
                   className={cn(
-                    "block text-[14px] py-1.5 pl-5 border-l-2 transition-colors",
+                    "block text-[14px] py-1.5 pl-4 border-l-2 transition-colors",
                     isActive
                       ? "border-gray-800 font-bold text-gray-900"
-                      : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
+                      : "border-transparent text-gray-500 hover:text-gray-900"
                   )}
                 >
                   {cat.label}
                 </Link>
 
-                {/* Sub-categories (always visible) */}
-                {cat.subs && cat.subs.length > 0 && (
-                  <div className="pl-7 mb-1.5">
+                {/* Sub-categories (only show when parent is active) */}
+                {isActive && cat.subs && cat.subs.length > 0 && (
+                  <div className="mb-1">
                     {cat.subs.map((sub: any) => {
-                      const subIsActive = activeTab === sub.id;
+                      const subIsActive = activeTab === sub.id || (activeTab === "all" && sub.id === "clothing" && false);
+                      const subBrands = brands.filter((b: any) => b.productCount > 0).slice(0, 20);
                       return (
                         <div key={sub.id}>
                           <Link
                             href={sub.path}
                             className={cn(
-                              "block text-[13px] py-0.5 transition-colors",
-                              subIsActive ? "font-bold text-gray-900" : "text-gray-500 hover:text-gray-800"
+                              "block text-[13px] py-1 pl-7 border-l-2 transition-colors",
+                              subIsActive
+                                ? "border-gray-800 font-bold text-gray-900"
+                                : "border-transparent text-gray-500 hover:text-gray-800"
                             )}
                           >
                             {sub.label}
                           </Link>
 
-                          {/* Brand sub-items (when this sub-category is active + has brands) */}
-                          {subIsActive && sub.hasBrands && brands.length > 0 && (
-                            <div className="pl-3 mt-0.5 mb-1 space-y-0.5">
-                              {brands.slice(0, 15).map((brand: any) => (
-                                <button
-                                  key={brand.id}
-                                  onClick={() => setSelectedBrand(selectedBrand === brand.id ? null : brand.id)}
-                                  className={cn(
-                                    "block text-[12px] py-0.5 text-left w-full transition-colors",
-                                    selectedBrand === brand.id
-                                      ? "font-semibold text-gray-900"
-                                      : "text-gray-400 hover:text-gray-700"
-                                  )}
-                                  data-testid={`sidebar-brand-${brand.id}`}
-                                >
-                                  {brand.name}
-                                </button>
-                              ))}
+                          {/* Brand list — shown when this subcategory is active */}
+                          {subIsActive && sidebarBrands.length > 0 && (
+                            <div className="pb-1">
+                              {sidebarBrands.slice(0, 20).map((brand: any) => {
+                                const isSelectedBrand = selectedBrand === brand.id;
+                                return (
+                                  <button
+                                    key={brand.id}
+                                    onClick={() => setSelectedBrand(selectedBrand === brand.id ? null : brand.id)}
+                                    className={cn(
+                                      "block text-[12px] py-[3px] text-left w-full transition-colors border-l-2 pl-10",
+                                      isSelectedBrand
+                                        ? "border-gray-800 font-bold text-gray-900"
+                                        : "border-transparent text-gray-400 hover:text-gray-700"
+                                    )}
+                                    data-testid={`sidebar-brand-${brand.id}`}
+                                  >
+                                    {getBrandDisplayName(brand)}
+                                  </button>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
