@@ -418,10 +418,10 @@ interface WideBannerProps {
   overlayDark?: boolean;
 }
 
-function WideBanner({ imageUrl, title, subtitle, buttonText, href = "/products", objectPos = "50% 50%", height = "clamp(200px, 28vw, 340px)", overlayDark = true }: WideBannerProps) {
+function WideBanner({ imageUrl, title, subtitle, buttonText, href = "/products", objectPos = "50% 50%", height, overlayDark = true }: WideBannerProps) {
   return (
-    <div className="relative w-full overflow-hidden" style={{ height }} data-testid="wide-banner">
-      <img src={imageUrl} alt={title || ""} className="w-full h-full object-cover" style={{ objectPosition: objectPos }} />
+    <div className="relative w-full" data-testid="wide-banner">
+      <img src={imageUrl} alt={title || ""} className="w-full block" style={{ display: "block" }} />
       {(title || subtitle || buttonText) && (
         <div className={`absolute inset-0 flex flex-col items-center justify-center text-center px-4 ${overlayDark ? "bg-black/20" : ""}`}>
           {subtitle && <p className="text-white text-sm font-medium mb-1 drop-shadow-lg">{subtitle}</p>}
@@ -622,8 +622,8 @@ function ReviewEventBanner() {
       <img
         src="/bloo/banner_review_event.jpg"
         alt="Daily & Weekly REVIEW EVENT"
-        className="w-full object-cover"
-        style={{ display: "block", maxHeight: "clamp(160px, 22vw, 290px)", objectFit: "cover", objectPosition: "50% 50%" }}
+        className="w-full block"
+        style={{ display: "block" }}
         loading="lazy"
       />
     </Link>
