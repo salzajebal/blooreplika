@@ -178,51 +178,104 @@ function CategoryGrid() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Celebrity's dress — bloostore1.co.kr gallery2 파싱
-// pages: 819, 836, 868, 771, 755, 147
+// Celebrity's dress — bloostore1.co.kr gallery2 파싱 (10개 항목)
+// 순서: 3개 신규(20240404) + 7개 기존(20240119)
 // ─────────────────────────────────────────────────────────────
+const BP = (url: string) => `/api/bloostore-image-proxy?url=${encodeURIComponent(url)}`;
 const CELEBS_DATA = [
   {
-    id: 819,
-    brand: "CELINE",
-    title: "셀린느 화이트 레터링 로고 후드 스웨트",
-    photo: "/bloo/celeb/celeb_819.jpg",
-    href: "/products?brand=Celine",
+    id: "new1",
+    brand: "MIU MIU",
+    photo: BP("https://cdn.imweb.me/thumbnail/20240404/4bab66d882d51.jpg"),
+    href: "/products?brand=Miu+Miu",
+    product: null,
   },
   {
-    id: 836,
-    brand: "LOUIS VUITTON",
-    title: "루이비통 키폴 반둘리에 55 M41414",
-    photo: "/bloo/celeb/celeb_836.jpg",
-    href: "/products?brand=Louis+Vuitton",
+    id: "new2",
+    brand: "BVLGARI",
+    photo: BP("https://cdn.imweb.me/thumbnail/20240404/b3fb45dfb10e9.jpg"),
+    href: "/products?brand=Bvlgari",
+    product: null,
   },
   {
-    id: 868,
+    id: "new3",
     brand: "DIOR",
-    title: "디올 B27 하이탑 스니커즈 화이트",
-    photo: "/bloo/celeb/celeb_868.jpg",
+    photo: BP("https://cdn.imweb.me/thumbnail/20240404/514ae7ccc23c6.jpg"),
     href: "/products?brand=Dior",
-  },
-  {
-    id: 771,
-    brand: "CELINE",
-    title: "셀린느 유니언 워시 데님 트러커 자켓",
-    photo: "/bloo/celeb/celeb_771.jpg",
-    href: "/products?brand=Celine",
+    product: null,
   },
   {
     id: 755,
     brand: "DIOR",
-    title: "디올 Hit the Road 미니 백 블랙",
-    photo: "/bloo/celeb/celeb_755.jpg",
+    photo: BP("https://cdn.imweb.me/thumbnail/20240119/f4e30050baf84.jpg"),
     href: "/products?brand=Dior",
+    product: {
+      name: "디올 Hit the road 미니 백 블랙",
+      price: 345000,
+      image: BP("https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/3d5a8e626aa0e.jpg?w=800"),
+    },
+  },
+  {
+    id: "no5",
+    brand: "HERMÈS",
+    photo: BP("https://cdn.imweb.me/thumbnail/20240119/1682c785bcd96.jpg"),
+    href: "/products?brand=Hermes",
+    product: null,
   },
   {
     id: 147,
     brand: "GUCCI",
-    title: "구찌 오피디아 GG 스몰 벨트백",
-    photo: "/bloo/celeb/celeb_147.jpg",
+    photo: BP("https://cdn.imweb.me/thumbnail/20240119/ae2ab38846f74.jpg"),
     href: "/products?brand=Gucci",
+    product: {
+      name: "구찌 오피디아 GG 스몰 벨트백",
+      price: 325000,
+      image: BP("https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/afa4652b5f337.jpg?w=800"),
+    },
+  },
+  {
+    id: 819,
+    brand: "CELINE",
+    photo: BP("https://cdn.imweb.me/thumbnail/20240119/290bb5a1ff8c6.jpg"),
+    href: "/products?brand=Celine",
+    product: {
+      name: "셀린느 화이트 레터링 로고 후드 스웨트",
+      price: 195000,
+      image: BP("https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/5656c7a997074.png?w=800"),
+    },
+  },
+  {
+    id: 836,
+    brand: "LOUIS VUITTON",
+    photo: BP("https://cdn.imweb.me/thumbnail/20240119/76fe623fa90e4.jpg"),
+    href: "/products?brand=Louis+Vuitton",
+    product: {
+      name: "루이비통 키폴 반둘리에 55 M41414",
+      price: 496000,
+      image: BP("https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/9b7be9f289df8.jpg?w=800"),
+    },
+  },
+  {
+    id: 868,
+    brand: "DIOR",
+    photo: BP("https://cdn.imweb.me/thumbnail/20240119/5d8d0741241f5.jpg"),
+    href: "/products?brand=Dior",
+    product: {
+      name: "디올 B27 하이탑 스니커즈 화이트",
+      price: 259000,
+      image: BP("https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/7c4747cfdb79e.gif?w=800"),
+    },
+  },
+  {
+    id: 771,
+    brand: "CELINE",
+    photo: BP("https://cdn.imweb.me/thumbnail/20240119/68c3d85ce45bc.jpg"),
+    href: "/products?brand=Celine",
+    product: {
+      name: "셀린느 유니언 워시 데님 트러커 자켓",
+      price: 259000,
+      image: BP("https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/8a0b32c249e74.jpg?w=800"),
+    },
   },
 ];
 
@@ -231,7 +284,7 @@ function CelebritySection() {
   const touchX = useRef(0);
   const visible = 4;
   const total = CELEBS_DATA.length;
-  const maxStart = total - visible;
+  const maxStart = Math.max(0, total - visible);
   const canPrev = current > 0;
   const canNext = current < maxStart;
 
@@ -265,33 +318,50 @@ function CelebritySection() {
             }}
           >
             <div
-              className="flex gap-4 transition-transform duration-300 ease-in-out"
-              style={{ transform: `translateX(calc(-${current * (100 / visible)}% - ${current * 16 / visible}px))` }}
+              className="flex gap-[5px] transition-transform duration-300 ease-in-out"
+              style={{ transform: `translateX(calc(-${current * (100 / visible)}% - ${current * 5 / visible}px))` }}
             >
               {CELEBS_DATA.map((celeb) => (
                 <Link
-                  key={celeb.id}
+                  key={String(celeb.id)}
                   href={celeb.href}
-                  className="flex-shrink-0 group block"
-                  style={{ width: `calc(${100 / visible}% - 12px)` }}
+                  className="flex-shrink-0 group block border border-gray-100 overflow-hidden"
+                  style={{ width: `calc(${100 / visible}% - 4px)` }}
                   data-testid={`celeb-card-${celeb.id}`}
                 >
-                  <div className="relative overflow-hidden bg-gray-100" style={{ aspectRatio: "4/5" }}>
+                  <div className="relative overflow-hidden bg-gray-100" style={{ aspectRatio: "3/4" }}>
                     <img
                       src={celeb.photo}
-                      alt={celeb.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      alt={celeb.brand}
+                      className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
                     />
-                    <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-0.5 text-[10px] font-bold text-gray-900 tracking-widest">
-                      {celeb.brand}
+                    {celeb.brand && (
+                      <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-0.5 text-[9px] font-bold text-gray-900 tracking-widest">
+                        {celeb.brand}
+                      </div>
+                    )}
+                  </div>
+                  {celeb.product ? (
+                    <div className="flex items-center gap-2 p-2 bg-white border-t border-gray-100">
+                      <img
+                        src={celeb.product.image}
+                        alt={celeb.product.name}
+                        className="w-12 h-12 object-cover flex-shrink-0 bg-gray-50"
+                        loading="lazy"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[9px] text-gray-400 font-medium tracking-wider uppercase mb-0.5">{celeb.brand}</p>
+                        <p className="text-[11px] text-gray-800 leading-tight line-clamp-2 group-hover:text-black">{celeb.product.name}</p>
+                        <p className="text-[12px] font-semibold text-gray-900 mt-0.5">{celeb.product.price.toLocaleString()}원</p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     </div>
-                  </div>
-                  <div className="mt-2 px-0.5">
-                    <p className="text-[13px] text-gray-800 leading-snug line-clamp-2 group-hover:text-black transition-colors">
-                      {celeb.title}
-                    </p>
-                  </div>
+                  ) : (
+                    <div className="px-2 py-2 bg-white border-t border-gray-100">
+                      <p className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">{celeb.brand}</p>
+                    </div>
+                  )}
                 </Link>
               ))}
             </div>
@@ -319,7 +389,7 @@ function CelebritySection() {
 
         <div className="flex justify-center mt-8">
           <Link
-            href="/products"
+            href="/celeb"
             className="px-16 py-3 bg-black text-white text-sm font-medium tracking-wide hover:bg-gray-800 transition-colors"
             data-testid="celeb-more-btn"
           >
