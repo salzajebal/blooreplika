@@ -7629,7 +7629,8 @@ export async function registerRoutes(
         for (let page = 1; page <= maxPages; page++) {
           bloostoreReviewProgress.message = `목록 페이지 ${page}/${maxPages} 수집 중...`;
           try {
-            const listUrl = `${BASE_URL}/?q=${Q_PARAM}&page=${page}&only_photo=Y`;
+            // bloostore1.co.kr/330 — 리뷰&후기 게시판
+            const listUrl = page === 1 ? `${BASE_URL}/330` : `${BASE_URL}/330?page=${page}`;
             const resp = await fetch(listUrl, { headers });
             if (!resp.ok) { console.log(`[bloostore-review] Page ${page} HTTP ${resp.status}`); break; }
             const html = await resp.text();
@@ -7637,8 +7638,8 @@ export async function registerRoutes(
 
             let foundOnPage = 0;
 
-            // Extract all links with bmode=view&interlock=shop_review&idx=
-            $('a[href*="bmode=view"][href*="idx="]').each((_i: number, el: any) => {
+            // Extract all links with idx= (board detail links)
+            $('a[href*="idx="]').each((_i: number, el: any) => {
               const href = $(el).attr('href') || '';
               const idxMatch = href.match(/[?&]idx=(\d+)/);
               if (!idxMatch) return;
@@ -7683,16 +7684,14 @@ export async function registerRoutes(
         }
 
         // === STEP 2: Crawl each detail page ===
-        // Detail URL: /?q=...&bmode=view&interlock=shop_review&idx=XXXXX&t=board
-        const Q_DETAIL = "YToyOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjtzOjQ6InBhZ2UiO2k6MTt9";
-
+        // Detail URL: /330/?bmode=view&idx=XXXXX
         for (let i = 0; i < postIdxList.length; i++) {
           const { idx, thumbnail: listThumbnail } = postIdxList[i];
           bloostoreReviewProgress.current = i + 1;
           bloostoreReviewProgress.message = `(${i + 1}/${postIdxList.length}) 후기 상세 수집 중... (idx: ${idx})`;
 
           try {
-            const detailUrl = `${BASE_URL}/?q=${Q_DETAIL}&bmode=view&interlock=shop_review&idx=${idx}&t=board`;
+            const detailUrl = `${BASE_URL}/330/?bmode=view&idx=${idx}`;
             const detailResp = await fetch(detailUrl, { headers });
             if (!detailResp.ok) {
               console.log(`[bloostore-review] Detail HTTP ${detailResp.status} for idx=${idx}`);

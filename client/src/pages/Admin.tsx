@@ -5505,7 +5505,7 @@ export default function Admin() {
 
             <div className="bg-blue-50 rounded-lg p-3 mb-4 text-xs text-blue-700 flex items-start gap-2">
               <span>📋</span>
-              <span>수집 URL: <code className="bg-blue-100 px-1 rounded">bloostore1.co.kr/?only_photo=Y</code> (사진 후기만 필터)</span>
+              <span>수집 URL: <code className="bg-blue-100 px-1 rounded">bloostore1.co.kr/330</code> (리뷰&후기 게시판)</span>
             </div>
 
             <div className="flex flex-wrap gap-4 items-end mb-4">

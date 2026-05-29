@@ -26,6 +26,7 @@ export function Header() {
   const [memberName, setMemberName] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [communityOpen, setCommunityOpen] = useState(false);
   const [announcementText, setAnnouncementText] = useState("5월 쿠폰 지급, 전 상품 15% 할인!");
 
   // Login modal state
@@ -318,13 +319,45 @@ export function Header() {
               >
                 기획전
               </Link>
-              <Link
-                href="/notices"
-                onClick={() => setMenuOpen(false)}
-                className="w-full text-center py-3 text-[14px] text-white/90 hover:text-white transition-colors"
-              >
-                커뮤니티
-              </Link>
+              {/* 커뮤니티 accordion */}
+              <div className="w-full">
+                <button
+                  onClick={() => setCommunityOpen(o => !o)}
+                  className="w-full text-center py-3 text-[14px] text-white/90 hover:text-white transition-colors flex items-center justify-center gap-1"
+                  data-testid="side-menu-community"
+                >
+                  커뮤니티
+                  <ChevronRight className={`w-3 h-3 transition-transform ${communityOpen ? 'rotate-90' : ''}`} />
+                </button>
+                {communityOpen && (
+                  <div className="flex flex-col bg-white/5 pb-1">
+                    <Link
+                      href="/reviews"
+                      onClick={() => { setMenuOpen(false); setCommunityOpen(false); }}
+                      className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white transition-colors"
+                      data-testid="side-menu-reviews"
+                    >
+                      리뷰&후기
+                    </Link>
+                    <Link
+                      href="/notices"
+                      onClick={() => { setMenuOpen(false); setCommunityOpen(false); }}
+                      className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white transition-colors"
+                      data-testid="side-menu-notices"
+                    >
+                      공지사항
+                    </Link>
+                    <Link
+                      href="/faq"
+                      onClick={() => { setMenuOpen(false); setCommunityOpen(false); }}
+                      className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white transition-colors"
+                      data-testid="side-menu-faq"
+                    >
+                      자주묻는질문
+                    </Link>
+                  </div>
+                )}
+              </div>
               <Link
                 href="/products/sameday"
                 onClick={() => setMenuOpen(false)}
