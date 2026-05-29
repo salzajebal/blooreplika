@@ -421,35 +421,6 @@ function IconImageRow({
         </div>
       </div>
 
-      {/* Fallback + category label pills below the image */}
-      <div
-        className="flex gap-1 mt-2 overflow-x-auto pb-1"
-        style={{ scrollbarWidth: "none" }}
-      >
-        <button
-          className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium transition-colors whitespace-nowrap ${
-            !activeLabel
-              ? "bg-black text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-          }`}
-          onClick={() => onIconClick({ label: "전체보기" })}
-        >
-          전체보기
-        </button>
-        {icons.map((icon) => (
-          <button
-            key={icon.label}
-            className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-              activeLabel === icon.label
-                ? "bg-black text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-            onClick={() => onIconClick(icon)}
-          >
-            {icon.label}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }
@@ -467,14 +438,16 @@ function PillFilterRow({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Drag-scroll support
+  // Mouse drag-scroll
   const isDragging = useRef(false);
+  const didDrag = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
 
   const onMouseDown = (e: React.MouseEvent) => {
     if (!scrollRef.current) return;
     isDragging.current = true;
+    didDrag.current = false;
     startX.current = e.pageX - scrollRef.current.offsetLeft;
     scrollLeft.current = scrollRef.current.scrollLeft;
   };
@@ -482,19 +455,37 @@ function PillFilterRow({
     if (!isDragging.current || !scrollRef.current) return;
     e.preventDefault();
     const x = e.pageX - scrollRef.current.offsetLeft;
-    scrollRef.current.scrollLeft = scrollLeft.current - (x - startX.current);
+    const walk = x - startX.current;
+    if (Math.abs(walk) > 4) didDrag.current = true;
+    scrollRef.current.scrollLeft = scrollLeft.current - walk;
   };
   const onMouseUp = () => { isDragging.current = false; };
+
+  // Touch swipe scroll
+  const touchStartX = useRef(0);
+  const touchScrollLeft = useRef(0);
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (!scrollRef.current) return;
+    touchStartX.current = e.touches[0].clientX;
+    touchScrollLeft.current = scrollRef.current.scrollLeft;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!scrollRef.current) return;
+    const dx = touchStartX.current - e.touches[0].clientX;
+    scrollRef.current.scrollLeft = touchScrollLeft.current + dx;
+  };
 
   return (
     <div
       ref={scrollRef}
-      className="flex gap-2 overflow-x-auto pb-1 mb-4 cursor-grab active:cursor-grabbing"
+      className="flex gap-2 overflow-x-auto pb-1 mb-4 cursor-grab active:cursor-grabbing -mx-3 md:mx-0 px-3 md:px-0"
       style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
       onMouseLeave={onMouseUp}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
     >
       {pills.map((pill) => (
         <button
@@ -505,7 +496,7 @@ function PillFilterRow({
               ? "bg-black text-white border-black"
               : "bg-white text-gray-700 border-gray-300 hover:border-gray-500 hover:bg-gray-50"
           }`}
-          onClick={() => onPillClick(pill)}
+          onClick={() => { if (!didDrag.current) onPillClick(pill); }}
         >
           {pill.label}
         </button>
@@ -796,37 +787,6 @@ export default function BlooStoreCategoryPage({ pageId }: { pageId: string }) {
                   />
                 </div>
               </div>
-            </div>
-
-            {/* ── 브랜드/카테고리 레이블 버튼 (icon 필터) ── */}
-            <div
-              className="flex gap-1.5 overflow-x-auto pb-1 mb-3 -mx-3 md:mx-0 px-3 md:px-0"
-              style={{ scrollbarWidth: "none" } as React.CSSProperties}
-            >
-              <button
-                className={`flex-shrink-0 px-3 py-1 rounded-full text-[11px] font-medium transition-colors border ${
-                  !activeIconLabel
-                    ? "bg-black text-white border-black"
-                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-                }`}
-                onClick={selectAll}
-              >
-                전체보기
-              </button>
-              {config.icons.map((icon) => (
-                <button
-                  key={icon.label}
-                  data-testid={`icon-btn-${icon.label}`}
-                  className={`flex-shrink-0 px-3 py-1 rounded-full text-[11px] font-medium whitespace-nowrap transition-colors border ${
-                    activeIconLabel === icon.label
-                      ? "bg-black text-white border-black"
-                      : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-                  }`}
-                  onClick={() => handleIconClick(icon)}
-                >
-                  {icon.label}
-                </button>
-              ))}
             </div>
 
             {/* ── 카테고리 필터 pills ── */}
