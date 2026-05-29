@@ -11,7 +11,7 @@ interface SignupModalProps {
 const inp = "w-full h-11 px-4 border border-gray-200 text-[14px] text-gray-800 placeholder-gray-300 outline-none focus:border-gray-400 transition-colors";
 
 export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalProps) {
-  const [step, setStep] = useState<"choice" | "terms" | "form">("choice");
+  const [step, setStep] = useState<"terms" | "form">("terms");
   const { toast } = useToast();
 
   const [agreeAll, setAgreeAll] = useState(false);
@@ -102,7 +102,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
   };
 
   const handleClose = () => {
-    setStep("choice");
+    setStep("terms");
     setAgreeAll(false); setAgreeTerms(false); setAgreePrivacy(false); setAgreeAge(false);
     setForm({ email: "", password: "", passwordConfirm: "", name: "", phone: "", address: "", addressDetail: "", zipcode: "" });
     setProfilePhotoUrl(null);
@@ -133,7 +133,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
         {/* Header */}
         <div className="relative flex items-center justify-center px-6 pt-7 pb-5 border-b border-gray-100">
           <h2 className="text-[20px] font-bold text-gray-900 tracking-wide">
-            {step === "terms" ? "약관동의" : "회원가입"}
+            {step === "terms" ? "약관동의" : "회원가입 정보 입력"}
           </h2>
           <button
             onClick={handleClose}
@@ -145,40 +145,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
           </button>
         </div>
 
-        {/* ── Step 1: 가입 방법 선택 ── */}
-        {step === "choice" && (
-          <div className="px-8 py-8 space-y-4">
-            <button
-              onClick={() => setStep("terms")}
-              className="w-full h-12 border border-gray-300 text-gray-700 text-[14px] font-medium hover:border-gray-500 hover:text-gray-900 transition-colors"
-              data-testid="signup-idpw-btn"
-            >
-              ID/PW 회원가입
-            </button>
-
-            <div className="relative py-1">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200" />
-              </div>
-              <div className="relative flex justify-center">
-                <span className="bg-white px-4 text-[13px] text-gray-400">또는</span>
-              </div>
-            </div>
-
-            <button
-              className="w-full h-12 text-[14px] font-bold flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
-              style={{ backgroundColor: "#FFDE00", color: "#3A1D1D" }}
-              data-testid="signup-kakao-btn"
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path fillRule="evenodd" clipRule="evenodd" d="M9 1C4.58172 1 1 3.91015 1 7.5C1 9.76993 2.35396 11.762 4.41574 12.9563L3.5 16.5L7.35706 14.0649C7.89394 14.1532 8.44217 14.2 9 14.2C13.4183 14.2 17 11.2899 17 7.7C17 4.11015 13.4183 1 9 1Z" fill="#3A1D1D" fillOpacity="0.85"/>
-              </svg>
-              카카오로 시작하기
-            </button>
-          </div>
-        )}
-
-        {/* ── Step 2: 약관동의 ── */}
+        {/* ── Step 1: 약관동의 ── */}
         {step === "terms" && (
           <div className="px-6 py-5">
             {/* 전체 동의 */}
@@ -255,7 +222,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
             {/* 버튼 */}
             <div className="flex gap-3 mt-3">
               <button
-                onClick={() => setStep("choice")}
+                onClick={handleClose}
                 className="flex-1 h-12 border border-gray-300 text-[14px] text-gray-600 hover:border-gray-500 transition-colors"
                 data-testid="terms-cancel-btn"
               >
