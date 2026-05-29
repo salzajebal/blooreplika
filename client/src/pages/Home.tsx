@@ -819,7 +819,7 @@ export default function Home() {
         <RankedProductsSection
           title="Luxury Bag Collection"
           subtitle="BEST 가방 랭킹"
-          apiUrl="/api/products?limit=10&category=%EA%B0%80%EB%B0%A9"
+          apiUrl="/api/products?limit=10&isBest=true&category=bags"
           moreLink="/products/bags"
           testId="luxury-bag-section"
         />
@@ -837,7 +837,7 @@ export default function Home() {
         <RankedProductsSection
           title="인기 럭셔리 액세서리"
           subtitle="포인트가 되어줄 Best Acc"
-          apiUrl="/api/products?limit=10&category=%EC%9E%A1%ED%99%94"
+          apiUrl="/api/products?limit=10&isBest=true&category=jewelry"
           moreLink="/products/accessories"
           testId="accessory-section"
         />
@@ -855,7 +855,7 @@ export default function Home() {
         <RankedProductsSection
           title="Bright and Luxury"
           subtitle="실시간 시계 순위"
-          apiUrl="/api/products?limit=10&category=%EC%8B%9C%EA%B3%84"
+          apiUrl="/api/products?limit=10&isBest=true&category=watches"
           moreLink="/products/watches"
           testId="watch-section"
         />

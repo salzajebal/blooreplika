@@ -47,7 +47,7 @@ export interface IStorage {
   
   // Products
   getAllProducts(): Promise<Product[]>;
-  getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string, month?: string, subname?: string, filterCategory?: string, categories?: string[]): Promise<{ products: Product[], total: number }>;
+  getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string, month?: string, subname?: string, filterCategory?: string, categories?: string[], isBest?: boolean, brandName?: string): Promise<{ products: Product[], total: number }>;
   getProductsFullPaginated(limit: number, offset: number, categoryId?: string): Promise<{ products: Product[], total: number }>;
   getProductsCount(categoryId?: string): Promise<number>;
   getProductsByCategory(categoryId: string): Promise<Product[]>;
@@ -348,7 +348,7 @@ export class DatabaseStorage implements IStorage {
     return db.select().from(products).orderBy(desc(products.createdAt));
   }
   
-  async getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string, month?: string, subname?: string, filterCategory?: string, categories?: string[]): Promise<{ products: Product[], total: number }> {
+  async getProductsPaginated(limit: number, offset: number, categoryId?: string, subcategoryId?: string, search?: string, brandId?: string, gender?: string, month?: string, subname?: string, filterCategory?: string, categories?: string[], isBest?: boolean, brandName?: string): Promise<{ products: Product[], total: number }> {
     const leanSelect = {
       id: products.id,
       name: products.name,
@@ -398,6 +398,17 @@ export class DatabaseStorage implements IStorage {
     if (subcategoryId) conditions.push(sql`${products.subcategoryId} LIKE ${subcategoryId + '%'}`);
     if (search) conditions.push(sql`${products.name} ILIKE ${'%' + search + '%'}`);
     if (brandId) conditions.push(eq(products.brandId, brandId));
+    if (isBest === true) conditions.push(eq(products.isBest, true));
+    if (brandName) {
+      // brandName으로 brands 테이블 조인 없이 name ILIKE 필터
+      const brandRows = await db.select({ id: brands.id }).from(brands).where(sql`${brands.name} ILIKE ${'%' + brandName + '%'}`);
+      const brandIds = brandRows.map(r => r.id);
+      if (brandIds.length > 0) {
+        conditions.push(inArray(products.brandId, brandIds));
+      } else {
+        conditions.push(sql`1=0`);
+      }
+    }
     
     if (gender) {
       // 시계 카테고리: bloostore 상품은 gender/subcategoryId 미설정(null) → 공용 취급
