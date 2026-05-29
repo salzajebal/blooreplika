@@ -845,7 +845,7 @@ export default function Home() {
         {/* 8. HIGH END WATCH banner */}
         <WideBanner
           imageUrl="/bloo/banner5.jpg"
-          title={"HIGH END WATCH"}
+          title={""}
           objectPos="50% 50%"
           height="clamp(200px, 30vw, 380px)"
           overlayDark={false}
