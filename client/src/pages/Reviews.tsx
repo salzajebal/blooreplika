@@ -1,9 +1,10 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Star, ChevronRight, ChevronLeft, Camera, Image, Pencil, X } from "lucide-react";
+import { Star, Camera, Pencil, X, Search, Image } from "lucide-react";
 import { Header } from "@/components/layout/Header";
+import { Link } from "wouter";
 import { useState, useRef } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { getProxiedImageUrl, DEFAULT_IMAGE } from "@/lib/imageProxy";
+import { DEFAULT_IMAGE } from "@/lib/imageProxy";
 
 interface Review {
   id: string;
@@ -19,7 +20,31 @@ interface Review {
   productImageUrl?: string | null;
 }
 
-const REVIEWS_PER_PAGE = 20;
+const REVIEWS_PER_PAGE = 24;
+
+const SIDEBAR_NAV = [
+  { label: "실시간 검수 사진 ✓", path: "/inspection" },
+  { label: "남성", path: "/httpstheblooshop1496458051" },
+  { label: "여성", path: "/497" },
+  { label: "시계관", path: "/products/watches" },
+  { label: "기획전", path: "/sale" },
+  {
+    label: "커뮤니티",
+    isSection: true,
+    children: [
+      { label: "리뷰&후기", path: "/reviews" },
+      { label: "공지사항", path: "/notices" },
+      { label: "자주 묻는 질문", path: "/faq" },
+      { label: "주문/결제", path: "/faq" },
+      { label: "퀄리티/공장", path: "/support" },
+      { label: "배송/검수", path: "/inspection" },
+      { label: "교환/환불", path: "/support" },
+      { label: "회원/제품 문의", path: "/support" },
+    ],
+  },
+  { label: "오늘출발", path: "/sameday" },
+  { label: "썸머", path: "/summer" },
+];
 
 function timeAgo(dateStr: string | null): string {
   if (!dateStr) return "";
@@ -51,6 +76,15 @@ function isNewReview(dateStr: string | null): boolean {
   return now.getTime() - date.getTime() < 7 * 24 * 60 * 60 * 1000;
 }
 
+function getReviewImageUrl(url: string | null | undefined): string {
+  if (!url) return DEFAULT_IMAGE;
+  if (url.startsWith("/api/") || url.startsWith("/uploads/") || url.startsWith("/objects/")) return url;
+  if (url.includes("imweb.me") || url.includes("cdn.imweb")) {
+    return `/api/bloostore-image-proxy?url=${encodeURIComponent(url)}`;
+  }
+  return url;
+}
+
 export default function Reviews() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -78,235 +112,326 @@ export default function Reviews() {
 
   const handleSearch = () => { setSearchQuery(searchInput); setCurrentPage(1); };
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const toProxyUrl = (url: string): string => {
-    if (!url) return url;
-    if (url.includes("cdn.imweb.me") || (url.includes("bloostore.co.kr") && !url.startsWith("/"))) {
-      return `/api/bloostore-image-proxy?url=${encodeURIComponent(url)}`;
-    }
-    return url;
-  };
-
-  const getThumbImage = (review: Review): string | null => {
-    if (review.imageUrls && review.imageUrls.length > 0) return toProxyUrl(review.imageUrls[0]);
-    if (review.imageUrl) return toProxyUrl(review.imageUrl);
-    if (review.productImageUrl) return review.productImageUrl;
-    return null;
-  };
-
-  const renderPagination = () => {
-    if (totalPages <= 1) return null;
-    const pages: (number | string)[] = [];
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-      if (currentPage > 3) pages.push("...");
-      for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
-      if (currentPage < totalPages - 2) pages.push("...");
-      pages.push(totalPages);
-    }
-    return (
-      <div className="flex items-center justify-center gap-1 mt-6 flex-wrap">
-        <button
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded disabled:opacity-30 hover:border-gray-400"
-          data-testid="button-prev-page"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        {pages.map((page, idx) =>
-          page === "..." ? (
-            <span key={`e-${idx}`} className="px-2 text-gray-300">...</span>
-          ) : (
-            <button
-              key={page}
-              onClick={() => handlePageChange(page as number)}
-              className={`w-8 h-8 text-sm rounded transition-colors ${
-                currentPage === page ? "bg-black text-white" : "text-gray-600 hover:bg-gray-100"
-              }`}
-              data-testid={`button-page-${page}`}
-            >
-              {page}
-            </button>
-          )
-        )}
-        <button
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="w-8 h-8 flex items-center justify-center border border-gray-200 rounded disabled:opacity-30 hover:border-gray-400"
-          data-testid="button-next-page"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-    );
+  const pageWindow = () => {
+    const size = 10;
+    const half = Math.floor(size / 2);
+    let start = Math.max(1, currentPage - half);
+    let end = Math.min(totalPages, start + size - 1);
+    if (end - start + 1 < size) start = Math.max(1, end - size + 1);
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       <Header />
-      <main className="flex-1 max-w-[640px] w-full mx-auto pb-24 md:pb-8 bg-white">
-        {/* Header */}
-        <div className="px-4 py-4 border-b border-gray-100">
-          <div className="flex items-center justify-between mb-3">
-            <div>
-              <h1 className="text-base font-bold text-gray-900">실제 구매후기</h1>
-              <p className="text-xs text-gray-400 mt-0.5">총 {totalReviews.toLocaleString()}건의 후기</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => { setPhotoOnly(!photoOnly); setCurrentPage(1); }}
-                className={`flex items-center gap-1 px-3 py-1.5 text-xs border rounded-full transition-colors ${
-                  photoOnly ? "bg-black text-white border-black" : "border-gray-200 text-gray-600 hover:border-gray-400"
-                }`}
-                data-testid="btn-photo-filter"
-              >
-                <Camera className="w-3 h-3" />
-                포토리뷰
-              </button>
-              <button
-                onClick={() => setShowWriteForm(!showWriteForm)}
-                className="flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-200 text-gray-600 rounded-full hover:border-gray-400 transition-colors"
-                data-testid="btn-write-review-page"
-              >
-                <Pencil className="w-3 h-3" />
-                후기 작성
-              </button>
-            </div>
-          </div>
 
-          {/* Search */}
-          <div className="relative">
-            <input
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="상품명, 후기 내용 검색"
-              className="w-full pr-10 pl-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 placeholder-gray-300"
-              data-testid="input-review-search"
-            />
-            <button onClick={handleSearch} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
-          </div>
-        </div>
+      <div className="flex-1 flex w-full max-w-[1240px] mx-auto">
 
-        {/* Write form */}
-        {showWriteForm && (
-          <div className="px-4 py-4 border-b border-gray-100">
-            <ReviewWriteForm
-              onClose={() => setShowWriteForm(false)}
-              onSuccess={() => {
-                setShowWriteForm(false);
-                queryClient.invalidateQueries({ queryKey: ["reviews"] });
-              }}
-            />
-          </div>
-        )}
-
-        {/* Review list */}
-        <div className="px-4 bg-white">
-          {isLoading ? (
-            <div className="space-y-4 py-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex gap-3 animate-pulse">
-                  <div className="w-16 h-16 bg-gray-100 rounded flex-shrink-0" />
-                  <div className="flex-1 space-y-2 py-1">
-                    <div className="h-3 bg-gray-100 rounded w-3/4" />
-                    <div className="h-3 bg-gray-100 rounded w-1/2" />
-                    <div className="h-3 bg-gray-100 rounded w-1/4" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : reviews.length === 0 ? (
-            <div className="text-center py-16">
-              <Star className="w-12 h-12 mx-auto mb-3 text-gray-200" />
-              <p className="text-sm text-gray-400">등록된 구매후기가 없습니다.</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-50">
-              {reviews.map((review) => {
-                const thumbUrl = getThumbImage(review);
-                const reviewIsNew = isNewReview(review.displayDate);
-                return (
-                  <div key={review.id} className="flex gap-3 py-4" data-testid={`review-item-${review.id}`}>
-                    {/* Thumbnail */}
-                    <div className="w-16 h-16 flex-shrink-0 overflow-hidden bg-gray-50 rounded-lg border border-gray-100">
-                      {thumbUrl ? (
-                        <img
-                          src={
-                            thumbUrl.startsWith("/uploads/") || thumbUrl.startsWith("/api/")
-                              ? thumbUrl
-                              : getProxiedImageUrl(thumbUrl, "thumb")
-                          }
-                          alt=""
-                          className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).src = DEFAULT_IMAGE; }}
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Image className="w-6 h-6 text-gray-200" />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      {review.productName && (
-                        <p className="text-xs text-[#FF6100] font-medium mb-0.5 line-clamp-1">
-                          {review.productName}
-                        </p>
-                      )}
-                      {review.title && (
-                        <p className="text-sm font-semibold text-gray-800 mb-0.5">
-                          {review.title}
-                          {reviewIsNew && (
-                            <span className="inline-block ml-1 text-[10px] bg-green-500 text-white px-1 py-0.5 rounded font-bold align-middle">N</span>
-                          )}
-                        </p>
-                      )}
-                      <p className="text-sm text-gray-600 leading-relaxed mb-1.5 whitespace-pre-line line-clamp-3">
-                        {review.content}
-                        {!review.title && reviewIsNew && (
-                          <span className="inline-block ml-1 text-[10px] bg-green-500 text-white px-1 py-0.5 rounded font-bold align-middle">N</span>
-                        )}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <span className="font-medium">{maskName(review.authorName)}</span>
-                        <span>{timeAgo(review.displayDate)}</span>
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} className={`w-3 h-3 ${i < (review.rating || 5) ? "text-yellow-400 fill-yellow-400" : "text-gray-200"}`} />
-                          ))}
-                        </div>
+        {/* ── Left Sidebar ── */}
+        <aside className="hidden lg:block w-[200px] flex-shrink-0 border-r border-gray-100 bg-white">
+          <nav className="py-6 sticky top-0">
+            <ul>
+              {SIDEBAR_NAV.map((item, i) => {
+                if ("isSection" in item && item.isSection) {
+                  return (
+                    <li key={i} className="mb-1">
+                      <div className="px-5 py-2 text-[13px] font-bold text-gray-900 tracking-tight">
+                        {item.label}
                       </div>
-                    </div>
-                  </div>
+                      <ul>
+                        {item.children?.map((child, j) => (
+                          <li key={j}>
+                            <Link
+                              href={child.path}
+                              className={`block pl-8 pr-4 py-1.5 text-[13px] transition-colors ${
+                                child.path === "/reviews"
+                                  ? "text-gray-900 font-semibold"
+                                  : "text-gray-500 hover:text-gray-900"
+                              }`}
+                            >
+                              {child.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  );
+                }
+                const navItem = item as { label: string; path: string };
+                return (
+                  <li key={i}>
+                    <Link
+                      href={navItem.path}
+                      className="block px-5 py-2.5 text-[13px] text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition-colors"
+                    >
+                      {navItem.label}
+                    </Link>
+                  </li>
                 );
               })}
+            </ul>
+          </nav>
+        </aside>
+
+        {/* ── Main Content ── */}
+        <main className="flex-1 min-w-0 pb-16">
+
+          {/* ── BLOO STYLE Review Event Banner ── */}
+          <div
+            className="w-full relative overflow-hidden"
+            style={{ background: "linear-gradient(135deg, #FF5C2B 0%, #E03A0A 100%)" }}
+          >
+            <div className="max-w-xl mx-auto px-6 py-10 text-center">
+              <div className="inline-block border border-white/50 px-4 py-1 text-white text-[10px] font-bold tracking-[0.2em] mb-4 uppercase">
+                BLOO STYLE
+              </div>
+              <p className="text-white text-[17px] font-light tracking-wide mb-0.5">Daily &amp; Weekly</p>
+              <p className="text-white text-[30px] font-black tracking-wider mb-6 leading-none">REVIEW EVENT</p>
+
+              <div className="inline-block bg-[#111] rounded-2xl px-10 py-5 mb-5">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <span className="bg-[#4ADE80] text-black text-[9px] font-black px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-black rounded-full inline-block" />
+                    580
+                  </span>
+                </div>
+                <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">BLOO POINT</p>
+                <p className="text-white text-[42px] font-black leading-none tracking-tight">300,000</p>
+                <div className="flex items-center justify-center gap-1 mt-2">
+                  <span className="text-red-400 text-[13px]">♥</span>
+                  <span className="text-white text-[11px] font-medium">12587</span>
+                </div>
+              </div>
+
+              <p className="text-white/85 text-[13px] mb-0.5">포토리뷰와 솔직한 내용을 담은 5명의 회원에게</p>
+              <p className="text-white text-[15px] font-bold mb-4">쇼핑 지원금을 드립니다!</p>
+              <p className="text-white/50 text-[10px]">*베스트 리뷰 선정으로 지급된 적립금 사용 기간은 1년입니다</p>
+            </div>
+          </div>
+
+          {/* ── Controls Bar ── */}
+          <div className="px-4 lg:px-6 pt-5 pb-3 border-b border-gray-100">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h1 className="text-[14px] font-bold text-gray-900">실제 구매후기</h1>
+                <p className="text-[11px] text-gray-400 mt-0.5">총 {totalReviews.toLocaleString()}건의 후기</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { setPhotoOnly(!photoOnly); setCurrentPage(1); }}
+                  className={`flex items-center gap-1 px-3 py-1.5 text-[11px] border transition-colors ${
+                    photoOnly ? "bg-black text-white border-black" : "border-gray-200 text-gray-600 hover:border-gray-400"
+                  }`}
+                  data-testid="btn-photo-filter"
+                >
+                  <Camera className="w-3 h-3" />
+                  포토리뷰
+                </button>
+                <button
+                  onClick={() => setShowWriteForm(!showWriteForm)}
+                  className="flex items-center gap-1 px-3 py-1.5 text-[11px] border border-gray-200 text-gray-600 hover:border-gray-400 transition-colors"
+                  data-testid="btn-write-review-page"
+                >
+                  <Pencil className="w-3 h-3" />
+                  후기 작성
+                </button>
+              </div>
+            </div>
+
+            <div className="relative max-w-sm">
+              <input
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                placeholder="상품명, 후기 내용 검색"
+                className="w-full pr-9 pl-4 py-2 text-[12px] bg-gray-50 border border-gray-200 focus:outline-none focus:border-gray-400 placeholder-gray-300"
+                data-testid="input-review-search"
+              />
+              <button onClick={handleSearch} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <Search className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Write Form */}
+          {showWriteForm && (
+            <div className="px-4 lg:px-6 py-4 border-b border-gray-100">
+              <ReviewWriteForm
+                onClose={() => setShowWriteForm(false)}
+                onSuccess={() => {
+                  setShowWriteForm(false);
+                  queryClient.invalidateQueries({ queryKey: ["reviews"] });
+                }}
+              />
             </div>
           )}
 
-          {renderPagination()}
-          <div className="pb-6" />
-        </div>
-      </main>
-      <div className="max-w-[640px] w-full mx-auto">
+          {/* ── Review Card Grid ── */}
+          <div className="px-4 lg:px-6 pt-5">
+            {isLoading ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="bg-gray-100 aspect-square" />
+                    <div className="h-2.5 bg-gray-100 rounded w-3/4 mt-2 mb-1" />
+                    <div className="h-2.5 bg-gray-100 rounded w-1/2" />
+                  </div>
+                ))}
+              </div>
+            ) : reviews.length === 0 ? (
+              <div className="text-center py-20">
+                <Star className="w-10 h-10 mx-auto mb-3 text-gray-200" />
+                <p className="text-[13px] text-gray-400">등록된 구매후기가 없습니다.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 lg:gap-4">
+                {reviews.map((review) => {
+                  const thumbUrl = getReviewImageUrl(review.imageUrl);
+                  const isNew = isNewReview(review.displayDate);
+                  return (
+                    <div key={review.id} className="group" data-testid={`review-card-${review.id}`}>
 
+                      {/* ── card-thumbnail-wrap style ── */}
+                      <div
+                        className="relative aspect-square bg-gray-100 overflow-hidden"
+                        style={{
+                          backgroundImage: `url(${thumbUrl})`,
+                          backgroundSize: "cover",
+                          backgroundPosition: "50% 50%",
+                        }}
+                      >
+                        {/* hidden img for error handling */}
+                        <img
+                          src={thumbUrl}
+                          alt=""
+                          className="absolute inset-0 w-full h-full object-cover opacity-0 pointer-events-none"
+                          onError={(e) => {
+                            const parent = (e.target as HTMLImageElement).parentElement;
+                            if (parent) parent.style.backgroundImage = `url(${DEFAULT_IMAGE})`;
+                          }}
+                        />
+                        {!review.imageUrl && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Image className="w-8 h-8 text-gray-300" />
+                          </div>
+                        )}
+                        {isNew && (
+                          <span
+                            className="absolute top-2 left-2 text-white text-[9px] font-black px-1.5 py-0.5 z-10"
+                            style={{ backgroundColor: "#FF5C2B" }}
+                          >
+                            N
+                          </span>
+                        )}
+                      </div>
+
+                      {/* ── card-body: title ── */}
+                      <div className="mt-2">
+                        <p className="text-[12px] text-gray-800 leading-snug line-clamp-2">
+                          {review.title || review.content}
+                        </p>
+                      </div>
+
+                      {/* ── card-summary: author ── */}
+                      <div className="mt-1.5 flex items-center gap-1.5">
+                        <div className="w-5 h-5 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                          <span className="text-[7px] text-gray-400">👤</span>
+                        </div>
+                        <span className="text-[11px] text-gray-600">{maskName(review.authorName)}</span>
+                        <span className="text-[10px] text-gray-300 ml-auto">{timeAgo(review.displayDate)}</span>
+                      </div>
+
+                      {/* Stars */}
+                      <div className="flex items-center gap-0.5 mt-1">
+                        {[...Array(5)].map((_, si) => (
+                          <Star
+                            key={si}
+                            className={`w-2.5 h-2.5 ${si < (review.rating || 5) ? "text-yellow-400 fill-yellow-400" : "text-gray-200"}`}
+                          />
+                        ))}
+                      </div>
+
+                      {/* ── item-summary: linked product ── */}
+                      {review.productName && review.productId && (
+                        <Link
+                          href={`/product/${review.productId}`}
+                          className="flex items-center gap-1.5 mt-2 group/prod"
+                        >
+                          {review.productImageUrl && (
+                            <img
+                              src={getReviewImageUrl(review.productImageUrl)}
+                              alt=""
+                              className="w-8 h-8 object-cover flex-shrink-0"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                            />
+                          )}
+                          <span className="text-[11px] text-gray-500 line-clamp-1 group-hover/prod:underline">
+                            {review.productName}
+                          </span>
+                        </Link>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* ── Pagination ── */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-1 mt-10 mb-6 flex-wrap">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="w-8 h-8 flex items-center justify-center border border-gray-200 text-[11px] text-gray-500 disabled:opacity-30 hover:border-gray-400 transition-colors"
+                >
+                  «
+                </button>
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="w-8 h-8 flex items-center justify-center border border-gray-200 text-[11px] text-gray-500 disabled:opacity-30 hover:border-gray-400 transition-colors"
+                >
+                  ‹
+                </button>
+                {pageWindow().map((pageNum) => (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-8 h-8 flex items-center justify-center border text-[12px] transition-colors ${
+                      currentPage === pageNum
+                        ? "bg-black text-white border-black"
+                        : "border-gray-200 text-gray-600 hover:border-gray-400"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="w-8 h-8 flex items-center justify-center border border-gray-200 text-[11px] text-gray-500 disabled:opacity-30 hover:border-gray-400 transition-colors"
+                >
+                  ›
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="w-8 h-8 flex items-center justify-center border border-gray-200 text-[11px] text-gray-500 disabled:opacity-30 hover:border-gray-400 transition-colors"
+                >
+                  »
+                </button>
+              </div>
+            )}
+          </div>
+        </main>
       </div>
     </div>
   );
 }
 
+// ══════════════════════════════════════════════════════════════════
+// ReviewWriteForm — shared by Reviews page and ProductDetail page
+// ══════════════════════════════════════════════════════════════════
 export function ReviewWriteForm({
   onClose,
   onSuccess,
