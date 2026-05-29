@@ -43,6 +43,11 @@ export function Header() {
   // Signup modal state
   const [signupModalOpen, setSignupModalOpen] = useState(false);
 
+  // 비회원 주문조회 modal state
+  const [guestOrderModalOpen, setGuestOrderModalOpen] = useState(false);
+  const [guestOrderForm, setGuestOrderForm] = useState({ orderNo: "", contact: "" });
+  const [guestOrderError, setGuestOrderError] = useState("");
+
   useEffect(() => {
     const check = () => setMemberName(localStorage.getItem("memberName"));
     check();
@@ -544,14 +549,81 @@ export function Header() {
               </div>
 
               {/* 비회원주문배송 조회 */}
-              <Link
-                href="/order-inquiry"
-                onClick={closeLoginModal}
-                className="block w-full h-12 bg-[#9ca3af] hover:bg-[#6b7280] text-white text-[14px] font-medium text-center leading-[48px] transition-colors"
+              <button
+                type="button"
+                onClick={() => { closeLoginModal(); setGuestOrderForm({ orderNo: "", contact: "" }); setGuestOrderError(""); setGuestOrderModalOpen(true); }}
+                className="block w-full h-12 bg-[#9ca3af] hover:bg-[#6b7280] text-white text-[14px] font-medium text-center transition-colors"
                 data-testid="login-nonmember-inquiry-link"
               >
                 비회원주문배송 조회
-              </Link>
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── 비회원 주문조회 Modal ── */}
+      {guestOrderModalOpen && (
+        <div
+          className="fixed inset-0 z-[300] flex items-center justify-center"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setGuestOrderModalOpen(false); }}
+          data-testid="guest-order-modal-overlay"
+        >
+          <div className="bg-white shadow-2xl w-full mx-4" style={{ maxWidth: 420 }}>
+            {/* 헤더 */}
+            <div className="relative flex items-center justify-center px-6 pt-8 pb-5">
+              <h2 className="text-[20px] font-bold text-gray-900">비회원 주문조회</h2>
+              <button
+                onClick={() => setGuestOrderModalOpen(false)}
+                className="absolute right-4 top-4 p-1 text-gray-400 hover:text-gray-700 transition-colors"
+                data-testid="guest-order-modal-close"
+                aria-label="닫기"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* 폼 */}
+            <form
+              className="px-8 pb-8 space-y-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!guestOrderForm.orderNo.trim() || !guestOrderForm.contact.trim()) {
+                  setGuestOrderError("주문번호와 연락처를 모두 입력해주세요.");
+                  return;
+                }
+                setGuestOrderModalOpen(false);
+                setLocation(`/orders?orderNo=${encodeURIComponent(guestOrderForm.orderNo.trim())}&contact=${encodeURIComponent(guestOrderForm.contact.trim())}`);
+              }}
+            >
+              <input
+                type="text"
+                placeholder="주문번호"
+                value={guestOrderForm.orderNo}
+                onChange={(e) => setGuestOrderForm({ ...guestOrderForm, orderNo: e.target.value })}
+                className="w-full h-11 px-4 border border-gray-300 text-[14px] text-gray-800 placeholder-gray-400 outline-none focus:border-gray-500 transition-colors rounded-none"
+                data-testid="guest-order-no-input"
+                autoFocus
+              />
+              <input
+                type="text"
+                placeholder="연락처"
+                value={guestOrderForm.contact}
+                onChange={(e) => setGuestOrderForm({ ...guestOrderForm, contact: e.target.value })}
+                className="w-full h-11 px-4 border border-gray-300 text-[14px] text-gray-800 placeholder-gray-400 outline-none focus:border-gray-500 transition-colors rounded-none"
+                data-testid="guest-order-contact-input"
+              />
+              {guestOrderError && (
+                <p className="text-[12px] text-red-500 text-center">{guestOrderError}</p>
+              )}
+              <button
+                type="submit"
+                className="w-full h-12 bg-[#e53e3e] hover:bg-[#c53030] text-white text-[15px] font-bold tracking-wide transition-colors mt-1"
+                data-testid="guest-order-submit-button"
+              >
+                로그인
+              </button>
             </form>
           </div>
         </div>
