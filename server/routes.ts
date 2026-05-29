@@ -7471,7 +7471,7 @@ export async function registerRoutes(
         "Accept-Language": "ko-KR,ko;q=0.9",
         "Referer": "https://bloostore1.co.kr/",
       };
-      const url = `https://bloostore1.co.kr/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&page=${page}&only_photo=Y`;
+      const url = page === 1 ? `https://bloostore1.co.kr/330` : `https://bloostore1.co.kr/330?page=${page}`;
       const resp = await fetch(url, { headers });
       const html = await resp.text();
       const $ = cheerio.load(html);
@@ -7638,7 +7638,7 @@ export async function registerRoutes(
 
             let foundOnPage = 0;
 
-            // Extract all links with idx= (board detail links)
+            // Extract all links with idx= (board detail links) — /330 uses post_link_wrap structure
             $('a[href*="idx="]').each((_i: number, el: any) => {
               const href = $(el).attr('href') || '';
               const idxMatch = href.match(/[?&]idx=(\d+)/);
@@ -7647,17 +7647,29 @@ export async function registerRoutes(
               if (seenIdx.has(idx)) return;
               seenIdx.add(idx);
 
-              // Try to get thumbnail image near this link
+              // Extract thumbnail:
+              // /330 board uses card-thumbnail-wrap with background-image CSS
               let thumbnail: string | null = null;
-              const $parent = $(el).closest('li, div.list_item, div.item, tr');
-              if ($parent.length > 0) {
-                let src = $parent.find('img').first().attr('src') || $parent.find('img').first().attr('data-src') || null;
+
+              // 1) background-image from card-thumbnail-wrap inside this link
+              const $cardThumb = $(el).find('.card-thumbnail-wrap, [class*="card-thumbnail"], .card_wrapper').first();
+              const bgStyle = $cardThumb.attr('style') || '';
+              const bgMatch = bgStyle.match(/background-image:\s*url\s*\(\s*(?:&quot;|["']?)([^'"&\s)]+)/);
+              if (bgMatch) thumbnail = bgMatch[1].replace(/&quot;/g, '');
+
+              // 2) fallback: img tag inside the link
+              if (!thumbnail) {
+                const src = $(el).find('img').first().attr('src') || $(el).find('img').first().attr('data-src') || null;
                 if (src && src.includes('cdn.imweb.me')) thumbnail = src;
               }
+
+              // 3) fallback: parent container img
               if (!thumbnail) {
-                // Try sibling img
-                let src = $(el).find('img').first().attr('src') || null;
-                if (src && src.includes('cdn.imweb.me')) thumbnail = src;
+                const $parent = $(el).closest('li, article, div.card, div.item');
+                if ($parent.length > 0) {
+                  const src = $parent.find('img').first().attr('src') || null;
+                  if (src && src.includes('cdn.imweb.me')) thumbnail = src;
+                }
               }
 
               postIdxList.push({ idx, thumbnail });
@@ -7704,24 +7716,45 @@ export async function registerRoutes(
             // Title: h1.view_tit
             const title = $d('h1.view_tit').first().text().trim() || '블루스토어 구매 후기';
 
-            // Author: .write (shows masked name like "이호****")
+            // Author: .write (shows masked name like "유광****")
             const authorName = $d('.write').first().text().trim() || '고객';
 
-            // Content images: img tags inside .board_txt_area
+            // Content text: inside _comment_body_ div (after img tags)
+            const commentBodyEl = $d('[class*="_comment_body_"]').first();
+            const contentText = commentBodyEl.length > 0
+              ? commentBodyEl.text().trim().replace(/\s+/g, ' ')
+              : $d('.board_txt_area .margin-top-xxl').first().text().trim();
+
+            // Content images: img tags inside board_txt_area BUT excluding .board_summary
+            // (board_summary contains user avatar + product thumbnail — not review photos)
+            // Real review photos are upload/ paths inside _comment_body_ or margin-top-xxl divs
             const contentImgUrls: string[] = [];
-            $d('.board_txt_area img, .board_contents img').each((_ii: number, imgEl: any) => {
+
+            // First try: upload/ images from the comment body (actual review photos)
+            $d('[class*="_comment_body_"] img, .board_txt_area .margin-top-xxl img').each((_ii: number, imgEl: any) => {
               let src = $d(imgEl).attr('src') || $d(imgEl).attr('data-src') || '';
               if (!src) return;
               if (src.startsWith('//')) src = 'https:' + src;
               if (!src.startsWith('http')) src = BASE_URL + src;
-              // Only include content images (from imweb CDN with upload paths)
-              if (!src.includes('cdn.imweb.me/upload') && !src.includes('cdn.imweb.me/thumbnail')) return;
-              // Exclude site logo/icon thumbnails (very small dates or known non-review images)
-              if (src.includes('/20230925/') || src.includes('/20231201/2a1271661af63') || src.includes('/20240119/9e771eb0812b7')) return;
+              if (!src.includes('cdn.imweb.me/upload')) return; // only actual user-uploaded images
               if (!contentImgUrls.includes(src)) contentImgUrls.push(src);
             });
 
-            // Fallback to list thumbnail if no content images
+            // Second try: any upload/ image in board_txt_area (excluding avatar in board_summary)
+            if (contentImgUrls.length === 0) {
+              $d('.board_txt_area img, .board_contents img').each((_ii: number, imgEl: any) => {
+                // Skip avatar/profile images inside board_summary
+                if ($d(imgEl).closest('.board_summary').length > 0) return;
+                let src = $d(imgEl).attr('src') || $d(imgEl).attr('data-src') || '';
+                if (!src) return;
+                if (src.startsWith('//')) src = 'https:' + src;
+                if (!src.startsWith('http')) src = BASE_URL + src;
+                if (!src.includes('cdn.imweb.me/upload')) return;
+                if (!contentImgUrls.includes(src)) contentImgUrls.push(src);
+              });
+            }
+
+            // Fallback to list thumbnail if no content images found
             const rawImageUrls = contentImgUrls.length > 0 ? contentImgUrls : (listThumbnail ? [listThumbnail] : []);
 
             console.log(`[bloostore-review] idx=${idx} title="${title}" author="${authorName}" images=${rawImageUrls.length}`);
@@ -7741,7 +7774,7 @@ export async function registerRoutes(
             const reviewData: any = {
               authorName,
               title,
-              content: '',
+              content: contentText || '',
               imageUrl: finalImageUrls[0] || null,
               imageUrls: finalImageUrls,
               rating: 5,
