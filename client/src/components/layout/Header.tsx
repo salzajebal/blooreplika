@@ -2,6 +2,7 @@ import { Search, Menu, X, ShoppingBag, User, ChevronRight, MessageCircle, LogIn 
 import { Link, useLocation } from "wouter";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useState, useEffect, useRef } from "react";
+import { SignupModal } from "./SignupModal";
 
 const SUB_NAV = [
   { label: "실시간 검수", path: "/inspection", highlight: true },
@@ -35,6 +36,9 @@ export function Header() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
   const emailRef = useRef<HTMLInputElement>(null);
+
+  // Signup modal state
+  const [signupModalOpen, setSignupModalOpen] = useState(false);
 
   useEffect(() => {
     const check = () => setMemberName(localStorage.getItem("memberName"));
@@ -458,14 +462,14 @@ export function Header() {
 
               {/* 회원가입 | 아이디·비밀번호 찾기 */}
               <div className="flex items-center justify-between pt-1">
-                <Link
-                  href="/signup"
-                  onClick={closeLoginModal}
+                <button
+                  type="button"
+                  onClick={() => { closeLoginModal(); setSignupModalOpen(true); }}
                   className="text-[13px] text-gray-600 hover:text-gray-900 transition-colors"
                   data-testid="login-signup-link"
                 >
                   회원가입
-                </Link>
+                </button>
                 <Link
                   href="/find-account"
                   onClick={closeLoginModal}
@@ -499,6 +503,16 @@ export function Header() {
           </div>
         </div>
       )}
+
+      {/* ── Signup Modal ── */}
+      <SignupModal
+        isOpen={signupModalOpen}
+        onClose={() => setSignupModalOpen(false)}
+        onSwitchToLogin={() => {
+          setSignupModalOpen(false);
+          openLoginModal();
+        }}
+      />
     </>
   );
 }
