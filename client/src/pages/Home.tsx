@@ -123,22 +123,25 @@ function MainBannerSlider() {
 
 // 각 cell: 이미지 내 위치(%) + 이동 URL
 // 원본 1800×600 분석 결과 기반 (display 1250px 환산)
+// 이미지 실제 레이아웃: 2행 × 5열 (각 박스 ~19% 너비, 균등 배치)
+// Row1: 남성의류 | 남성가방 | 남성신발 | 남성패션잡화 | 시계관
+// Row2: 여성의류 | 여성가방 | 여성신발 | 여성패션잡화 | 캐리어
 const CAT_CARD_ROWS: { label: string; href: string; left: number; top: number; width: number; height: number }[][] = [
   // Row 1
   [
-    { label: "남성의류",   href: "/httpstheblooshop1496458051",   left:  2.1, top: 3,  width: 11.0, height: 45 },
-    { label: "시계관",    href: "/products/watches",              left: 13.2, top: 3,  width: 11.0, height: 45 },
-    { label: "여성",      href: "/537",                           left: 24.8, top: 3,  width: 10.6, height: 45 },
-    { label: "남성신발",   href: "/220",                          left: 36.2, top: 3,  width: 10.4, height: 45 },
-    { label: "시계",      href: "/products/watches",              left: 47.6, top: 3,  width: 10.7, height: 45 },
+    { label: "남성 의류",    href: "/httpstheblooshop1496458051",  left:  0.5, top: 2, width: 19, height: 48 },
+    { label: "남성 가방",    href: "/1212",                        left: 20.5, top: 2, width: 19, height: 48 },
+    { label: "남성 신발",    href: "/220",                         left: 40.5, top: 2, width: 19, height: 48 },
+    { label: "남성 패션잡화", href: "/26",                          left: 60.5, top: 2, width: 19, height: 48 },
+    { label: "시계관",       href: "/products/watches",            left: 80.5, top: 2, width: 19, height: 48 },
   ],
   // Row 2
   [
-    { label: "골프",      href: "/products/golf",                 left:  1.9, top: 51, width: 11.0, height: 45 },
-    { label: "패션잡화",   href: "/26",                           left: 13.2, top: 51, width: 10.8, height: 45 },
-    { label: "여성가방",   href: "/1447",                         left: 24.6, top: 51, width: 10.6, height: 45 },
-    { label: "캐리어",    href: "/products?search=%EC%BA%90%EB%A6%AC%EC%96%B4", left: 36.0, top: 51, width: 10.6, height: 45 },
-    { label: "",          href: "",                                left: 47.4, top: 51, width: 10.6, height: 45 },
+    { label: "여성 의류",    href: "/497",                          left:  0.5, top: 52, width: 19, height: 48 },
+    { label: "여성 가방",    href: "/1447",                         left: 20.5, top: 52, width: 19, height: 48 },
+    { label: "여성 신발",    href: "/656",                          left: 40.5, top: 52, width: 19, height: 48 },
+    { label: "여성 패션잡화", href: "/716",                          left: 60.5, top: 52, width: 19, height: 48 },
+    { label: "캐리어",       href: "/products?search=%EC%BA%90%EB%A6%AC%EC%96%B4", left: 80.5, top: 52, width: 19, height: 48 },
   ],
 ];
 
