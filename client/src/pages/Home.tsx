@@ -533,7 +533,7 @@ function InspectionSection() {
         <div className="max-w-[1100px] mx-auto px-5 py-10 flex flex-col md:flex-row items-center gap-8">
           <div className="flex-shrink-0 flex flex-col items-center justify-center gap-3">
             <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-white/20 shadow-xl">
-              <img src="/bloo/banner1.jpg" alt="검수" className="w-full h-full object-cover" style={{ objectPosition: "50% 70%" }} />
+              <img src={BP("https://cdn.imweb.me/thumbnail/20240119/93f202eaa7615.jpg")} alt="검수" className="w-full h-full object-cover" style={{ objectPosition: "50% 70%" }} />
             </div>
             <div className="bg-white rounded-lg px-4 py-2 flex items-center gap-2 shadow-md">
               <span className="text-green-500 text-lg">✓</span>
@@ -593,10 +593,10 @@ function InspectionSection() {
 // ─────────────────────────────────────────────────────────────
 function ReviewEventBanner() {
   return (
-    <Link href="/reviews" data-testid="review-event-banner" className="block w-full">
+    <Link href="/notices" data-testid="review-event-banner" className="block w-full">
       <img
-        src="/bloo/banner_review_event.jpg"
-        alt="Daily & Weekly REVIEW EVENT"
+        src={BP("https://cdn.imweb.me/thumbnail/20231214/72c7ff6bcbc3c.jpg")}
+        alt="커뮤니티"
         className="w-full block"
         style={{ display: "block" }}
         loading="lazy"
@@ -758,75 +758,69 @@ export default function Home() {
         {/* 2. Category grid */}
         <CategoryGrid />
 
-        {/* 2.5 Carrier Collection wide banner */}
-        <WideBanner
-          imageUrl="/bloo/banner_carrier.jpg"
-          href="/products"
-          objectPos="50% 50%"
-          height="clamp(160px, 22vw, 290px)"
-        />
-
         {/* 3. Celebrity's dress */}
         <CelebritySection />
 
-        {/* 4. Winter Outer / Most Popular */}
+        {/* 4. 이벤트 배너 */}
         <WideBanner
-          imageUrl="/bloo/banner_xmas2.jpg"
-          href="/products"
+          imageUrl={BP("https://cdn.imweb.me/thumbnail/20231208/b2d53f96c38ee.jpg")}
+          href="/inspection"
           objectPos="50% 50%"
-          height="clamp(160px, 22vw, 290px)"
-        />
-        <RankedProductsSection
-          title="Most Popular"
-          subtitle="아우터 인기 순위"
-          apiUrl="/api/products?limit=10&isBest=true"
-          moreLink="/products"
-          testId="most-popular-section"
         />
 
-        {/* 5. Luxury Bag Collection */}
+        {/* 5. 남성 가방 배너 */}
         <WideBanner
-          imageUrl="/bloo/banner4.jpg"
-          href="/products/bags"
+          imageUrl={BP("https://cdn.imweb.me/thumbnail/20231208/979730d743454.jpg")}
+          href="/1212"
           objectPos="50% 50%"
-          height="clamp(160px, 22vw, 290px)"
         />
         <RankedProductsSection
           title="Luxury Bag Collection"
-          subtitle="BEST 가방 랭킹"
-          apiUrl="/api/products?limit=10&isBest=true&category=bags"
-          moreLink="/products/bags"
-          testId="luxury-bag-section"
+          subtitle="BEST 남성 가방 랭킹"
+          apiUrl="/api/products?limit=10&isBest=true&category=bags&gender=남성"
+          moreLink="/1212"
+          testId="mens-bag-section"
         />
 
-        {/* 6. Inspection section */}
+        {/* 6. 여성 가방 배너 */}
+        <WideBanner
+          imageUrl={BP("https://cdn.imweb.me/thumbnail/20231208/d0be5fcf8b28e.jpg")}
+          href="/1447"
+          objectPos="50% 50%"
+        />
+        <RankedProductsSection
+          title="Luxury Bag Collection"
+          subtitle="BEST 여성 가방 랭킹"
+          apiUrl="/api/products?limit=10&isBest=true&category=bags&gender=여성"
+          moreLink="/1447"
+          testId="womens-bag-section"
+        />
+
+        {/* 7. Inspection section */}
         <InspectionSection />
 
-        {/* 7. 인기 럭셔리 액세서리 */}
+        {/* 8. 남성 패션잡화 배너 */}
         <WideBanner
-          imageUrl="/bloo/banner_acc.jpg"
-          href="/products/accessories"
+          imageUrl={BP("https://cdn.imweb.me/thumbnail/20231208/719e6eec8251b.jpg")}
+          href="/26"
           objectPos="50% 50%"
-          height="clamp(180px, 24vw, 310px)"
         />
         <RankedProductsSection
           title="인기 럭셔리 액세서리"
           subtitle="포인트가 되어줄 Best Acc"
-          apiUrl="/api/products?limit=10&isBest=true&category=jewelry"
-          moreLink="/products/accessories"
+          apiUrl="/api/products?limit=10&isBest=true&category=accessories"
+          moreLink="/26"
           testId="accessory-section"
         />
 
-        {/* 8. HIGH END WATCH banner */}
+        {/* 9. 시계관 배너 */}
         <WideBanner
-          imageUrl="/bloo/banner5.jpg"
-          title={""}
+          imageUrl={BP("https://cdn.imweb.me/thumbnail/20231208/5159c1204eb09.jpg")}
+          href="/412"
           objectPos="50% 50%"
-          height="clamp(200px, 30vw, 380px)"
-          overlayDark={false}
         />
 
-        {/* 9. Bright and Luxury watches */}
+        {/* 10. Bright and Luxury watches */}
         <RankedProductsSection
           title="Bright and Luxury"
           subtitle="실시간 시계 순위"
@@ -835,21 +829,13 @@ export default function Home() {
           testId="watch-section"
         />
 
-        {/* 10. Review event banner */}
+        {/* 11. 커뮤니티 리뷰 배너 */}
         <ReviewEventBanner />
 
-        {/* 11. Reviews */}
+        {/* 12. Reviews */}
         <ReviewsSection />
 
-        {/* 11.5 App download banner */}
-        <WideBanner
-          imageUrl="/bloo/banner_app.jpg"
-          href="/products"
-          objectPos="50% 50%"
-          height="clamp(160px, 22vw, 290px)"
-        />
-
-        {/* 12. Customer support */}
+        {/* 13. Customer support */}
         <CustomerSupportSection />
       </main>
 
