@@ -1368,7 +1368,7 @@ export default function Admin() {
       const res = await fetchWithAuth("/api/admin/crawl/bloostore1/backfill-details/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ onlyMissing: blooDetailOnlyMissing, concurrency: 4 }),
+        body: JSON.stringify({ onlyMissing: blooDetailOnlyMissing, concurrency: 2 }),
       });
       const data = await res.json();
       if (data.success) {
