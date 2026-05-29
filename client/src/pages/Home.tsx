@@ -339,32 +339,7 @@ function CelebritySection() {
                       className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
                     />
-                    {celeb.brand && (
-                      <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-0.5 text-[9px] font-bold text-gray-900 tracking-widest">
-                        {celeb.brand}
-                      </div>
-                    )}
                   </div>
-                  {celeb.product ? (
-                    <div className="flex items-center gap-2 p-2 bg-white border-t border-gray-100">
-                      <img
-                        src={celeb.product.image}
-                        alt={celeb.product.name}
-                        className="w-12 h-12 object-cover flex-shrink-0 bg-gray-50"
-                        loading="lazy"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[9px] text-gray-400 font-medium tracking-wider uppercase mb-0.5">{celeb.brand}</p>
-                        <p className="text-[11px] text-gray-800 leading-tight line-clamp-2 group-hover:text-black">{celeb.product.name}</p>
-                        <p className="text-[12px] font-semibold text-gray-900 mt-0.5">{celeb.product.price.toLocaleString()}원</p>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                    </div>
-                  ) : (
-                    <div className="px-2 py-2 bg-white border-t border-gray-100">
-                      <p className="text-[10px] font-bold text-gray-500 tracking-widest uppercase">{celeb.brand}</p>
-                    </div>
-                  )}
                 </Link>
               ))}
             </div>
