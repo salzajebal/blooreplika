@@ -671,17 +671,39 @@ export default function BlooStoreCategoryPage({ pageId }: { pageId: string }) {
         </div>
         {(config.gender === "남성" || openL2 === "남성_all") && (
           <div className="ml-3 border-l border-gray-200">
-            {SIDEBAR_NAV.filter(n => n.gender === "남성").map(nav => (
-              <Link key={nav.path} href={nav.path}>
-                <div className={`py-1.5 px-3 cursor-pointer hover:text-black flex items-center justify-between text-[12.5px] ${
-                  pageId === nav.path.slice(1) && config.gender === "남성"
-                    ? "font-bold border-l-2 border-black -ml-px pl-3"
-                    : "text-gray-600"
-                }`}>
-                  {nav.label}
+            {SIDEBAR_NAV.filter(n => n.gender === "남성").map(nav => {
+              const isActive = pageId === nav.path.slice(1) && config.gender === "남성";
+              const navPageConfig = PAGE_CONFIGS[nav.path.slice(1)];
+              return (
+                <div key={nav.path}>
+                  <Link href={nav.path}>
+                    <div className={`py-1.5 px-3 cursor-pointer hover:text-black flex items-center justify-between text-[12.5px] ${
+                      isActive ? "font-bold border-l-2 border-black -ml-px pl-3" : "text-gray-600"
+                    }`}>
+                      {nav.label}
+                    </div>
+                  </Link>
+                  {/* 서브카테고리 (아이콘 목록) — 현재 페이지일 때만 펼침 */}
+                  {isActive && navPageConfig?.icons.length > 0 && (
+                    <div className="ml-3 border-l border-gray-100">
+                      {navPageConfig.icons.map(icon => (
+                        <div
+                          key={icon.label}
+                          onClick={() => handleIconClick(icon)}
+                          className={`py-1 px-3 cursor-pointer text-[12px] hover:text-black ${
+                            activeIconLabel === icon.label
+                              ? "font-semibold text-black border-l-2 border-gray-700 -ml-px pl-3"
+                              : "text-gray-500"
+                          }`}
+                        >
+                          {icon.label}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </Link>
-            ))}
+              );
+            })}
           </div>
         )}
         {config.gender !== "남성" && (
@@ -701,17 +723,38 @@ export default function BlooStoreCategoryPage({ pageId }: { pageId: string }) {
         </div>
         {(config.gender === "여성" || openL2 === "여성_all") && (
           <div className="ml-3 border-l border-gray-200">
-            {SIDEBAR_NAV.filter(n => n.gender === "여성").map(nav => (
-              <Link key={nav.path} href={nav.path}>
-                <div className={`py-1.5 px-3 cursor-pointer hover:text-black flex items-center justify-between text-[12.5px] ${
-                  pageId === nav.path.slice(1) && config.gender === "여성"
-                    ? "font-bold border-l-2 border-black -ml-px pl-3"
-                    : "text-gray-600"
-                }`}>
-                  {nav.label}
+            {SIDEBAR_NAV.filter(n => n.gender === "여성").map(nav => {
+              const isActive = pageId === nav.path.slice(1) && config.gender === "여성";
+              const navPageConfig = PAGE_CONFIGS[nav.path.slice(1)];
+              return (
+                <div key={nav.path}>
+                  <Link href={nav.path}>
+                    <div className={`py-1.5 px-3 cursor-pointer hover:text-black flex items-center justify-between text-[12.5px] ${
+                      isActive ? "font-bold border-l-2 border-black -ml-px pl-3" : "text-gray-600"
+                    }`}>
+                      {nav.label}
+                    </div>
+                  </Link>
+                  {isActive && navPageConfig?.icons.length > 0 && (
+                    <div className="ml-3 border-l border-gray-100">
+                      {navPageConfig.icons.map(icon => (
+                        <div
+                          key={icon.label}
+                          onClick={() => handleIconClick(icon)}
+                          className={`py-1 px-3 cursor-pointer text-[12px] hover:text-black ${
+                            activeIconLabel === icon.label
+                              ? "font-semibold text-black border-l-2 border-gray-700 -ml-px pl-3"
+                              : "text-gray-500"
+                          }`}
+                        >
+                          {icon.label}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              </Link>
-            ))}
+              );
+            })}
           </div>
         )}
         {config.gender !== "여성" && (
