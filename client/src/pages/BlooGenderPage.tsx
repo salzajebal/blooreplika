@@ -7,9 +7,9 @@ import { ChevronDown, ChevronRight, Menu, X, Loader2 } from "lucide-react";
 // ─── Sidebar data ──────────────────────────────────────────────────────────────
 
 const WOMEN_CLOTHING = ["티셔츠", "셔츠", "맨투맨", "후드/집업", "팬츠", "니트/가디건", "치마/원피스", "자켓", "패딩/베스트", "코트"];
-const MEN_CLOTHING   = ["티셔츠", "셔츠", "맨투맨", "후드/집업", "팬츠", "니트/가디건", "자켓", "패딩/베스트", "코트"];
+const MEN_CLOTHING   = ["티셔츠", "셔츠", "맨투맨", "후드/후드집업", "팬츠", "니트", "가디건", "자켓", "패딩/베스트", "코트"];
 
-// Display label → DB brand name (for ID lookup)
+// 여성 가방 브랜드 (bloostore1 /1447 기준)
 const BAGS_BRANDS = [
   { label: "Hermes",          dbName: "에르메스" },
   { label: "Louis Vuitton",   dbName: "루이비통" },
@@ -28,10 +28,26 @@ const BAGS_BRANDS = [
   { label: "miu miu",         dbName: "미우미우" },
 ];
 
-const WOMEN_SHOES = ["샤넬", "에르메스", "디올", "구찌", "발렌시아가", "루이비통", "나이키", "뉴발란스", "프라다", "릭오웬스", "미하라 야스히로", "버버리", "이지부스트", "빈디"];
-const MEN_SHOES   = ["발렌시아가", "루이비통", "구찌", "프라다", "릭오웬스", "나이키", "뉴발란스", "버버리", "미하라 야스히로", "이지부스트", "에르메스", "아디다스", "메종마르지엘라"];
+// 남성 가방 브랜드 (bloostore1 /1212 기준)
+const MEN_BAGS_BRANDS = [
+  { label: "Louis Vuitton",  dbName: "루이비통" },
+  { label: "Dior",           dbName: "디올" },
+  { label: "GUCCI",          dbName: "구찌" },
+  { label: "PRADA",          dbName: "프라다" },
+  { label: "Balenciaga",     dbName: "발렌시아가" },
+  { label: "Bottega Veneta", dbName: "보테가 베네타" },
+  { label: "GOYARD",         dbName: "고야드" },
+  { label: "Burberry",       dbName: "버버리" },
+  { label: "LOEWE",          dbName: "로에베" },
+  { label: "CELINE",         dbName: "셀린느" },
+];
 
-const ACCESSORIES = ["지갑", "모자", "벨트", "스카프/머플러", "팔찌", "목걸이", "반지", "키링"];
+// 여성 신발 브랜드 (bloostore1 /656 기준)
+const WOMEN_SHOES = ["샤넬", "에르메스", "디올", "구찌", "발렌시아가", "루이비통", "나이키", "뉴발란스", "프라다", "릭오웬스", "미하라 야스히로", "버버리", "이지부스트", "펜디"];
+// 남성 신발 브랜드 (bloostore1 /220 기준)
+const MEN_SHOES   = ["에르메스", "디올", "구찌", "발렌시아가", "루이비통", "나이키", "뉴발란스", "로로피아나", "프라다", "릭오웬스", "미하라 야스히로", "버버리", "이지부스트", "펜디"];
+
+const ACCESSORIES = ["지갑", "모자", "벨트", "머플러", "팔찌", "목걸이", "반지", "키링"];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -320,7 +336,7 @@ export default function BlooGenderPage({ gender }: { gender: "남성" | "여성"
             </div>
             {openL2 === "bags" && (
               <div className="ml-3 border-l border-gray-100">
-                {BAGS_BRANDS.map(b => (
+                {MEN_BAGS_BRANDS.map(b => (
                   <div
                     key={b.label}
                     className={`py-1 px-3 cursor-pointer hover:text-black text-[12px] ${filter.label === b.label ? "font-semibold border-l-2 border-black -ml-px pl-3" : "text-gray-600"}`}
