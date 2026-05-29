@@ -133,7 +133,7 @@ const CAT_CARD_ROWS: { label: string; href: string; left: number; top: number; w
     { label: "남성 가방",    href: "/1212",                        left: 20.5, top: 2, width: 19, height: 48 },
     { label: "남성 신발",    href: "/220",                         left: 40.5, top: 2, width: 19, height: 48 },
     { label: "남성 패션잡화", href: "/26",                          left: 60.5, top: 2, width: 19, height: 48 },
-    { label: "시계관",       href: "/products/watches",            left: 80.5, top: 2, width: 19, height: 48 },
+    { label: "시계관",       href: "/412",                         left: 80.5, top: 2, width: 19, height: 48 },
   ],
   // Row 2
   [
@@ -831,7 +831,7 @@ export default function Home() {
           title="Bright and Luxury"
           subtitle="실시간 시계 순위"
           apiUrl="/api/products?limit=10&isBest=true&category=watches"
-          moreLink="/products/watches"
+          moreLink="/412"
           testId="watch-section"
         />
 

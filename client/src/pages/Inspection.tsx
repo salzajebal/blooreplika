@@ -9,7 +9,7 @@ const CATEGORIES = [
   { label: "가방", href: "/products/bags" },
   { label: "신발", href: "/products/shoes" },
   { label: "액세서리", href: "/products/accessories" },
-  { label: "시계", href: "/products/watches" },
+  { label: "시계", href: "/412" },
 ];
 
 const SORT_OPTIONS = [

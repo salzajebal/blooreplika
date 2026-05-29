@@ -26,7 +26,7 @@ const SIDEBAR_NAV = [
   { label: "실시간 검수 사진 ✓", path: "/inspection" },
   { label: "남성", path: "/httpstheblooshop1496458051" },
   { label: "여성", path: "/497" },
-  { label: "시계관", path: "/products/watches" },
+  { label: "시계관", path: "/412" },
   { label: "기획전", path: "/sale" },
   {
     label: "커뮤니티",

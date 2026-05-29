@@ -407,7 +407,7 @@ export default function BlooGenderPage({ gender }: { gender: "남성" | "여성"
       <div className="border-t border-gray-100 my-1" />
 
       {/* 시계관 */}
-      <Link href="/products/watches">
+      <Link href="/412">
         <div className="py-2 px-3 cursor-pointer text-gray-500 hover:text-black">시계관</div>
       </Link>
       {/* 기획전 */}

@@ -27,7 +27,7 @@ const CommunitySidebar = ({ active }: { active: "notices" | "faq" | "reviews" })
     {[
       { label: "남성", path: "/products/men" },
       { label: "여성", path: "/products/women" },
-      { label: "시계관", path: "/products/watches" },
+      { label: "시계관", path: "/412" },
       { label: "기획전", path: "/events" },
     ].map(item => (
       <div key={item.label} className="mb-0.5">

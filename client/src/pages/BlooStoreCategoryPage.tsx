@@ -752,7 +752,7 @@ export default function BlooStoreCategoryPage({ pageId }: { pageId: string }) {
       </div>
 
       <div className="border-t border-gray-100 my-1" />
-      <Link href="/products/watches">
+      <Link href="/412">
         <div className="py-2 px-3 cursor-pointer text-gray-500 hover:text-black">시계관</div>
       </Link>
       <Link href="/events">

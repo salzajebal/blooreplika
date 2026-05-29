@@ -40,6 +40,7 @@ import Ranking from "@/pages/Ranking";
 import Celeb from "@/pages/Celeb";
 import BlooGenderPage from "@/pages/BlooGenderPage";
 import BlooStoreCategoryPage from "@/pages/BlooStoreCategoryPage";
+import WatchPage from "@/pages/WatchPage";
 
 function BestPage() { return <ContentPage sectionType="best" />; }
 function LivePage() { return <ContentPage sectionType="live" />; }
@@ -135,6 +136,14 @@ function Router() {
       <Route path="/1447">{() => <BlooStoreCategoryPage pageId="1447" />}</Route>
       <Route path="/656">{() => <BlooStoreCategoryPage pageId="656" />}</Route>
       <Route path="/716">{() => <BlooStoreCategoryPage pageId="716" />}</Route>
+      <Route path="/412">{() => <WatchPage brandPath="/412" />}</Route>
+      <Route path="/413">{() => <WatchPage brandPath="/413" />}</Route>
+      <Route path="/415">{() => <WatchPage brandPath="/415" />}</Route>
+      <Route path="/1337">{() => <WatchPage brandPath="/1337" />}</Route>
+      <Route path="/416">{() => <WatchPage brandPath="/416" />}</Route>
+      <Route path="/417">{() => <WatchPage brandPath="/417" />}</Route>
+      <Route path="/418">{() => <WatchPage brandPath="/418" />}</Route>
+      <Route path="/watch/샤넬">{() => <WatchPage brandPath="/watch/샤넬" />}</Route>
       <Route path="/537">{() => <BlooGenderPage gender="여성" />}</Route>
       <Route component={NotFound} />
     </Switch>

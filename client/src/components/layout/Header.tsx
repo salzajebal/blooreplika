@@ -380,7 +380,7 @@ export function Header() {
               </div>
 
               <Link
-                href="/products/watches"
+                href="/412"
                 onClick={() => setMenuOpen(false)}
                 className="w-full text-left px-5 py-3.5 text-[14px] text-white/90 hover:text-white transition-colors border-b border-white/10"
               >
