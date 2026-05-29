@@ -7238,7 +7238,7 @@ export default function Admin() {
                   <Download className="w-5 h-5 text-violet-600" />
                   BLOO (bloostore1.co.kr) 크롤링
                 </h3>
-                <p className="text-sm text-gray-500 mt-1">bloostore1.co.kr 전체 상품을 페이지 끝까지 수집합니다 (셀럽·남성·여성 3개 카테고리 기본 선택, 중복 방지).</p>
+                <p className="text-sm text-gray-500 mt-1">bloostore1.co.kr 상품을 카테고리별로 수집합니다. 시계 브랜드는 "시계만 선택" 버튼으로 빠르게 선택 가능합니다. 중복 상품은 자동으로 건너뜁니다.</p>
               </div>
               <div className="p-6 space-y-4">
                 {/* 카테고리 선택 */}
@@ -7246,9 +7246,23 @@ export default function Admin() {
                   <h4 className="font-semibold text-gray-800 mb-2">카테고리 선택</h4>
                   <div className="flex flex-wrap gap-3">
                     {[
-                      { id: '803', name: '셀럽 (menu_url=803)', color: 'violet' },
-                      { id: '1212', name: '남성 (menu_url=1212)', color: 'blue' },
-                      { id: '537', name: '여성 (menu_url=537)', color: 'pink' },
+                      { id: '803', name: '셀럽', color: 'violet' },
+                      { id: 'httpstheblooshop1496458051', name: '남성 의류', color: 'blue' },
+                      { id: '220', name: '남성 신발', color: 'blue' },
+                      { id: '1212', name: '남성 가방', color: 'blue' },
+                      { id: '26', name: '남성 패션잡화', color: 'blue' },
+                      { id: '497', name: '여성 의류', color: 'pink' },
+                      { id: '656', name: '여성 신발', color: 'pink' },
+                      { id: '1447', name: '여성 가방', color: 'pink' },
+                      { id: '716', name: '여성 패션잡화', color: 'pink' },
+                      { id: '412', name: '시계-롤렉스', color: 'amber' },
+                      { id: '413', name: '시계-까르띠에', color: 'amber' },
+                      { id: '415', name: '시계-IWC', color: 'amber' },
+                      { id: '1337', name: '시계-파텍필립', color: 'amber' },
+                      { id: '416', name: '시계-오데마피게', color: 'amber' },
+                      { id: '417', name: '시계-브라이틀링', color: 'amber' },
+                      { id: '418', name: '시계-오메가', color: 'amber' },
+                      { id: '419', name: '시계-샤넬', color: 'amber' },
                     ].map(cat => (
                       <label key={cat.id} className="flex items-center gap-2 cursor-pointer select-none">
                         <input
@@ -7260,12 +7274,14 @@ export default function Admin() {
                           }}
                           className="w-4 h-4 accent-violet-600"
                         />
-                        <span className="text-sm text-gray-700">{cat.name}</span>
+                        <span className={`text-sm ${cat.color === 'amber' ? 'text-amber-700 font-medium' : 'text-gray-700'}`}>{cat.name}</span>
                       </label>
                     ))}
                   </div>
-                  <div className="flex gap-2 mt-2">
-                    <button onClick={() => setSelectedBloo1Categories(['803', '1212', '537'])} className="text-xs text-violet-600 hover:underline">전체 선택</button>
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    <button onClick={() => setSelectedBloo1Categories(['803', 'httpstheblooshop1496458051', '220', '1212', '26', '497', '656', '1447', '716', '412', '413', '415', '1337', '416', '417', '418', '419'])} className="text-xs text-violet-600 hover:underline">전체 선택</button>
+                    <span className="text-xs text-gray-300">|</span>
+                    <button onClick={() => setSelectedBloo1Categories(['412', '413', '415', '1337', '416', '417', '418', '419'])} className="text-xs text-amber-600 hover:underline">시계만 선택</button>
                     <span className="text-xs text-gray-300">|</span>
                     <button onClick={() => setSelectedBloo1Categories([])} className="text-xs text-gray-500 hover:underline">전체 해제</button>
                   </div>

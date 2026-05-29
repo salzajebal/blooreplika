@@ -5213,6 +5213,15 @@ export async function registerRoutes(
           { menuUrl: '656',                      name: '여성 신발',   gender: '여성', fixedCategoryId: 'shoes' },
           { menuUrl: '1447',                     name: '여성 가방',   gender: '여성', fixedCategoryId: 'bags' },
           { menuUrl: '716',                      name: '여성 패션잡화', gender: '여성', fixedCategoryId: null },
+          // 시계 브랜드별 (watches)
+          { menuUrl: '412',                      name: '시계-롤렉스',     gender: '공용', fixedCategoryId: 'watches' },
+          { menuUrl: '413',                      name: '시계-까르띠에',   gender: '공용', fixedCategoryId: 'watches' },
+          { menuUrl: '415',                      name: '시계-IWC',        gender: '공용', fixedCategoryId: 'watches' },
+          { menuUrl: '1337',                     name: '시계-파텍필립',   gender: '공용', fixedCategoryId: 'watches' },
+          { menuUrl: '416',                      name: '시계-오데마피게', gender: '공용', fixedCategoryId: 'watches' },
+          { menuUrl: '417',                      name: '시계-브라이틀링', gender: '공용', fixedCategoryId: 'watches' },
+          { menuUrl: '418',                      name: '시계-오메가',     gender: '공용', fixedCategoryId: 'watches' },
+          { menuUrl: '419',                      name: '시계-샤넬',       gender: '공용', fixedCategoryId: 'watches' },
         ].filter(c => !selectedCategories || selectedCategories.length === 0 || selectedCategories.includes(c.menuUrl));
 
         // 패션잡화 페이지(26, 716)용 세부 분류 — 기본값은 'accessories' (clothing 아님!)
@@ -5998,6 +6007,7 @@ export async function registerRoutes(
               await storage.updateProduct(product.id, {
                 imageUrl: finalImageUrl,
                 imageUrls: finalImages.length > 0 ? finalImages : [finalImageUrl],
+                detailImageUrls: detailImages.length > 0 ? detailImages : undefined,
               });
               watchDetailProgress.updated++;
               console.log(`[watch-detail] Updated ${product.name}: listing=${listingImg ? 'yes' : 'no'}, detail=${detailImages.length} imgs`);
