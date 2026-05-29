@@ -806,23 +806,14 @@ export default function BlooStoreCategoryPage({ pageId }: { pageId: string }) {
               <span className="ml-auto text-gray-400">{total.toLocaleString()}개 상품</span>
             </div>
 
-            {/* ── 브랜드/카테고리 아이콘 이미지 스트립 ── */}
-            <div className="mb-3">
-              {/* 이미지 맵 스트립 (horizontal scroll) */}
-              <div
-                className="overflow-x-auto overflow-y-hidden -mx-3 md:mx-0 px-3 md:px-0"
-                style={{ scrollbarWidth: "none" } as React.CSSProperties}
-              >
-                <div className="flex min-w-max">
-                  <img
-                    src={cdnImg(config.iconImageDesktop)}
-                    alt={`${config.name} 브랜드 아이콘`}
-                    className="h-[90px] md:h-[120px] w-auto object-contain"
-                    style={{ maxWidth: "none" }}
-                    loading="lazy"
-                  />
-                </div>
-              </div>
+            {/* ── 브랜드/카테고리 아이콘 이미지 스트립 (클릭 가능) ── */}
+            <div className="-mx-3 md:mx-0 mb-1">
+              <IconImageRow
+                imageUrl={config.iconImageDesktop}
+                icons={config.icons}
+                onIconClick={handleIconClick}
+                activeLabel={activeIconLabel}
+              />
             </div>
 
             {/* ── 카테고리 필터 pills ── */}
