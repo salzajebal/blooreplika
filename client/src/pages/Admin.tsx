@@ -6977,7 +6977,7 @@ export default function Admin() {
                 >
                   사이즈/색상 자동 감지 실행
                 </Button>
-                <p className="text-xs text-gray-500 mt-2">이미 옵션이 설정된 상품은 건너뜁니다. S, M, L, XL, 250~310 등의 사이즈와 블랙, 화이트 등의 색상을 감지합니다.</p>
+                <p className="text-xs text-gray-500 mt-2">이미 옵션이 설정된 상품은 건너뜁니다. 상품명의 괄호 패턴 <code className="bg-gray-100 px-1 rounded">(네이비) (화이트)</code> · <code className="bg-gray-100 px-1 rounded">(S) (M) (L)</code> 및 블랙/화이트/XL 등 키워드를 자동 감지합니다.</p>
               </div>
             </div>
 

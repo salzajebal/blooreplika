@@ -7516,22 +7516,51 @@ export async function registerRoutes(
       function detectOptions(name: string, description?: string | null): { colors: string[]; sizes: string[] } {
         const text = `${name} ${description || ''}`;
         const colors: string[] = [];
-        for (const color of KNOWN_COLORS) {
-          if (text.includes(color)) {
-            if (!colors.includes(color)) colors.push(color);
+        const sizes: string[] = [];
+
+        // 1) 상품명 괄호 패턴 파싱: "(네이비) (화이트)", "(S) (M) (L)" 등
+        const KNOWN_SIZE_VALUES = new Set([
+          'XXS','XS','S','M','L','XL','XXL','XXXL','2XL','3XL','4XL','5XL',
+          'FREE','프리','원사이즈','ONE SIZE',
+          '85','90','95','100','105','110',   // 한국 남성 의류
+          '44','55','66','77','88','99',       // 한국 여성 의류
+          '220','225','230','235','240','245','250','255','260','265','270','275','280','285','290','295','300','305','310', // 신발
+        ]);
+        const parenValues = name.match(/\(([^)]{1,30})\)/g) || [];
+        for (const paren of parenValues) {
+          const val = paren.replace(/[()]/g, '').trim();
+          if (!val) continue;
+          const upper = val.toUpperCase();
+          // 사이즈로 판단: 알려진 사이즈값 또는 숫자만, 또는 S/M/L 단독
+          if (KNOWN_SIZE_VALUES.has(upper) || KNOWN_SIZE_VALUES.has(val) ||
+              /^\d{2,3}$/.test(val) || /^[XSML]+$/i.test(val)) {
+            if (!sizes.includes(val)) sizes.push(val);
+          } else if (val.length <= 20 && !val.match(/^\d+$/) && !val.includes('color') && !val.includes('컬러') && !val.includes('size') && !val.includes('사이즈')) {
+            // 색상으로 판단
+            if (!colors.includes(val)) colors.push(val);
           }
         }
-        const sizes: string[] = [];
-        const sizeLetters = text.match(/\b(XXS|XS|S|M|L|XL|XXL|XXXL|2XL|3XL|4XL|5XL)\b/g);
+
+        // 2) 상품명 키워드 감지: "2color (네이비) (화이트)" 에서 color/size 숫자 접두어 제거 후 처리됨
+        // 추가로 KNOWN_COLORS 키워드 매칭 (괄호에 없는 경우 대비)
+        for (const color of KNOWN_COLORS) {
+          // 괄호 없이 포함된 색상 키워드만 추가 감지
+          const regex = new RegExp(`(?<![가-힣a-zA-Z(])${color}(?![가-힣a-zA-Z)])`);
+          if (regex.test(text) && !colors.includes(color)) {
+            colors.push(color);
+          }
+        }
+
+        // 3) 사이즈 패턴 보완
+        const sizeLetters = name.match(/\b(XXS|XS|S|M|L|XL|XXL|XXXL|2XL|3XL|4XL|5XL)\b/g);
         if (sizeLetters) {
           for (const s of sizeLetters) {
             if (!sizes.includes(s)) sizes.push(s);
           }
         }
         const freeMatch = text.match(/\b(FREE|프리|원사이즈)\b/gi);
-        if (freeMatch) {
-          if (!sizes.includes("FREE")) sizes.push("FREE");
-        }
+        if (freeMatch && !sizes.includes("FREE")) sizes.push("FREE");
+
         const shoeMatch = text.match(/\b(2[2-9]\d|3[0-3]\d)\b/g);
         if (shoeMatch) {
           for (const s of shoeMatch) {
@@ -7541,6 +7570,7 @@ export async function registerRoutes(
             }
           }
         }
+
         return { colors, sizes };
       }
 
