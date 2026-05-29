@@ -361,28 +361,53 @@ function IconImageRow({
   const scrollRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [imgError, setImgError] = useState(false);
 
-  // The image is 1918x218px — a wide horizontal strip of circular category icons
-  // Display at 130px height → renders ~1140px wide (shows all circles in scroll)
   const DISPLAY_HEIGHT = 130;
 
+  // Mouse drag-to-scroll
+  const isDragging = useRef(false);
+  const didDrag = useRef(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    isDragging.current = true;
+    didDrag.current = false;
+    startX.current = e.pageX - scrollRef.current.offsetLeft;
+    scrollLeft.current = scrollRef.current.scrollLeft;
+  };
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current || !scrollRef.current) return;
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = x - startX.current;
+    if (Math.abs(walk) > 5) didDrag.current = true;
+    scrollRef.current.scrollLeft = scrollLeft.current - walk;
+  };
+  const onMouseUp = () => { isDragging.current = false; };
+
   return (
-    <div className="mb-3">
-      {/* Scrollable image strip with bloostore1 circular icons */}
+    <div className="mb-2">
       <div
         ref={scrollRef}
-        className="overflow-x-auto overflow-y-hidden select-none"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" }}
+        className="overflow-x-auto overflow-y-hidden select-none cursor-grab active:cursor-grabbing"
+        style={{
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          WebkitOverflowScrolling: "touch",
+          touchAction: "pan-x",
+        } as React.CSSProperties}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
       >
         <div style={{ display: "flex", height: `${DISPLAY_HEIGHT}px`, position: "relative" }}>
-          {/* The combined image map — contains all category/brand circles */}
           <img
             ref={imgRef}
             src={proxyImg(`https://cdn.imweb.me/${imageUrl}`)}
             alt="카테고리 아이콘"
             onLoad={() => setImgLoaded(true)}
-            onError={() => setImgError(true)}
             style={{
               height: `${DISPLAY_HEIGHT}px`,
               width: "auto",
@@ -390,9 +415,9 @@ function IconImageRow({
               display: "block",
               maxWidth: "none",
               flexShrink: 0,
+              pointerEvents: "none",
             }}
           />
-          {/* Clickable overlay divs positioned over each icon */}
           {imgLoaded && imgRef.current && icons.map((icon, i) => {
             const imgW = imgRef.current!.naturalWidth;
             const imgH = imgRef.current!.naturalHeight;
@@ -402,7 +427,7 @@ function IconImageRow({
             return (
               <div
                 key={icon.label}
-                onClick={() => onIconClick(icon)}
+                onClick={() => { if (!didDrag.current) onIconClick(icon); }}
                 style={{
                   position: "absolute",
                   left: `${i * iconW}px`,
@@ -410,9 +435,9 @@ function IconImageRow({
                   width: `${iconW}px`,
                   height: `${DISPLAY_HEIGHT}px`,
                   cursor: "pointer",
-                  outline: activeLabel === icon.label ? "2px solid #3b82f6" : "none",
-                  outlineOffset: "-2px",
-                  borderRadius: "4px",
+                  borderRadius: "50%",
+                  background: activeLabel === icon.label ? "rgba(59,130,246,0.15)" : "transparent",
+                  boxSizing: "border-box",
                 }}
                 title={icon.label}
               />
@@ -420,7 +445,6 @@ function IconImageRow({
           })}
         </div>
       </div>
-
     </div>
   );
 }
@@ -461,31 +485,20 @@ function PillFilterRow({
   };
   const onMouseUp = () => { isDragging.current = false; };
 
-  // Touch swipe scroll
-  const touchStartX = useRef(0);
-  const touchScrollLeft = useRef(0);
-  const onTouchStart = (e: React.TouchEvent) => {
-    if (!scrollRef.current) return;
-    touchStartX.current = e.touches[0].clientX;
-    touchScrollLeft.current = scrollRef.current.scrollLeft;
-  };
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!scrollRef.current) return;
-    const dx = touchStartX.current - e.touches[0].clientX;
-    scrollRef.current.scrollLeft = touchScrollLeft.current + dx;
-  };
-
   return (
     <div
       ref={scrollRef}
       className="flex gap-2 overflow-x-auto pb-1 mb-4 cursor-grab active:cursor-grabbing -mx-3 md:mx-0 px-3 md:px-0"
-      style={{ scrollbarWidth: "none", msOverflowStyle: "none", WebkitOverflowScrolling: "touch" } as React.CSSProperties}
+      style={{
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+        WebkitOverflowScrolling: "touch",
+        touchAction: "pan-x",
+      } as React.CSSProperties}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
       onMouseLeave={onMouseUp}
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
     >
       {pills.map((pill) => (
         <button
