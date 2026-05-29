@@ -5286,10 +5286,14 @@ export async function registerRoutes(
           while (hasMore && !bloo1ShouldStop) {
             try {
               const url = `https://bloostore1.co.kr/ajax/get_shop_list_view.cm?page=${page}&pagesize=${pageSize}&menu_url=${cat.menuUrl}&sort=recent`;
-              const response = await fetch(url, {
-                headers: bloo1Headers,
-                signal: AbortSignal.timeout(12000),
-              });
+              const bloo1Controller = new AbortController();
+              const bloo1Timeout = setTimeout(() => bloo1Controller.abort(), 15000);
+              let response: globalThis.Response;
+              try {
+                response = await fetch(url, { headers: bloo1Headers, signal: bloo1Controller.signal });
+              } finally {
+                clearTimeout(bloo1Timeout);
+              }
 
               if (!response.ok) {
                 pageErrStreak++;
@@ -5437,7 +5441,14 @@ export async function registerRoutes(
           try {
             const url = `https://bloostore1.co.kr/ajax/get_shop_list_view.cm?page=${page}&pagesize=${pageSize}&menu_url=787&sort=recent`;
             inspectionCrawlProgress.message = `페이지 ${page} 수집 중...`;
-            const response = await fetch(url, { headers, signal: AbortSignal.timeout(12000) });
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+            let response: globalThis.Response;
+            try {
+              response = await fetch(url, { headers, signal: controller.signal });
+            } finally {
+              clearTimeout(timeoutId);
+            }
             if (!response.ok) {
               errStreak++;
               if (errStreak >= 3) { hasMore = false; }
@@ -8388,7 +8399,14 @@ export async function registerRoutes(
           reclassifyUrlProgress.message = `[${reclassifyUrlProgress.current}/${reclassifyUrlProgress.total}] ${row.name.slice(0, 30)} 분석 중...`;
 
           try {
-            const resp = await fetch(row.source_url, { headers, signal: AbortSignal.timeout(8000) });
+            const rcController = new AbortController();
+            const rcTimeout = setTimeout(() => rcController.abort(), 8000);
+            let resp: globalThis.Response;
+            try {
+              resp = await fetch(row.source_url, { headers, signal: rcController.signal });
+            } finally {
+              clearTimeout(rcTimeout);
+            }
             if (!resp.ok) { reclassifyUrlProgress.skipped++; continue; }
 
             const html = await resp.text();
