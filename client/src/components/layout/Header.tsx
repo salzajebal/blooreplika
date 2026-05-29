@@ -10,12 +10,12 @@ const SUB_NAV = [
   { label: "셀럽", path: "/celeb" },
   { label: "남성", path: "/httpstheblooshop1496458051" },
   { label: "여성", path: "/497" },
-  { label: "공지사항", path: "/notices" },
+  { label: "공지사항", path: "/faq" },
 ];
 
 const SIDE_MENU_EXTRA = [
   { label: "주문조회", path: "/orders" },
-  { label: "공지사항", path: "/notices" },
+  { label: "공지사항", path: "/faq" },
   { label: "자주묻는질문", path: "/faq" },
   { label: "1:1 문의", path: "/support" },
   { label: "이용안내", path: "/guide" },
