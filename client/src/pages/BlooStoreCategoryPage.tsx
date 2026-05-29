@@ -364,43 +364,17 @@ function IconImageRow({
 
   const DISPLAY_HEIGHT = 130;
 
-  // Mouse drag-to-scroll
-  const isDragging = useRef(false);
-  const didDrag = useRef(false);
-  const startX = useRef(0);
-  const scrollLeft = useRef(0);
-
-  const onMouseDown = (e: React.MouseEvent) => {
-    if (!scrollRef.current) return;
-    isDragging.current = true;
-    didDrag.current = false;
-    startX.current = e.pageX - scrollRef.current.offsetLeft;
-    scrollLeft.current = scrollRef.current.scrollLeft;
-  };
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging.current || !scrollRef.current) return;
-    const x = e.pageX - scrollRef.current.offsetLeft;
-    const walk = x - startX.current;
-    if (Math.abs(walk) > 5) didDrag.current = true;
-    scrollRef.current.scrollLeft = scrollLeft.current - walk;
-  };
-  const onMouseUp = () => { isDragging.current = false; };
-
   return (
     <div className="mb-2">
       <div
         ref={scrollRef}
-        className="overflow-x-auto overflow-y-hidden select-none cursor-grab active:cursor-grabbing"
+        className="overflow-x-auto overflow-y-hidden select-none"
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
           WebkitOverflowScrolling: "touch",
           touchAction: "pan-x",
         } as React.CSSProperties}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseUp}
       >
         <div style={{ display: "flex", height: `${DISPLAY_HEIGHT}px`, position: "relative" }}>
           <img
@@ -427,7 +401,7 @@ function IconImageRow({
             return (
               <div
                 key={icon.label}
-                onClick={() => { if (!didDrag.current) onIconClick(icon); }}
+                onClick={() => onIconClick(icon)}
                 style={{
                   position: "absolute",
                   left: `${i * iconW}px`,
@@ -435,9 +409,8 @@ function IconImageRow({
                   width: `${iconW}px`,
                   height: `${DISPLAY_HEIGHT}px`,
                   cursor: "pointer",
+                  background: activeLabel === icon.label ? "rgba(59,130,246,0.12)" : "transparent",
                   borderRadius: "50%",
-                  background: activeLabel === icon.label ? "rgba(59,130,246,0.15)" : "transparent",
-                  boxSizing: "border-box",
                 }}
                 title={icon.label}
               />
@@ -472,14 +445,12 @@ function PillFilterRow({
     if (!scrollRef.current) return;
     isDragging.current = true;
     didDrag.current = false;
-    startX.current = e.pageX - scrollRef.current.offsetLeft;
+    startX.current = e.clientX;
     scrollLeft.current = scrollRef.current.scrollLeft;
   };
   const onMouseMove = (e: React.MouseEvent) => {
     if (!isDragging.current || !scrollRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - scrollRef.current.offsetLeft;
-    const walk = x - startX.current;
+    const walk = e.clientX - startX.current;
     if (Math.abs(walk) > 4) didDrag.current = true;
     scrollRef.current.scrollLeft = scrollLeft.current - walk;
   };
