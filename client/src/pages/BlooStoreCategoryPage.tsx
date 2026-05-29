@@ -409,8 +409,8 @@ function IconImageRow({
                   width: `${iconW}px`,
                   height: `${DISPLAY_HEIGHT}px`,
                   cursor: "pointer",
-                  background: activeLabel === icon.label ? "rgba(59,130,246,0.12)" : "transparent",
-                  borderRadius: "50%",
+                  background: "transparent",
+                  WebkitTapHighlightColor: "transparent",
                 }}
                 title={icon.label}
               />
