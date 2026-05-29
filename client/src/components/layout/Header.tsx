@@ -139,7 +139,7 @@ export function Header() {
     <>
       <header style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 100 }}>
         {/* ── Announcement bar ── */}
-        <div className="bg-[#060133] text-white text-center py-2 text-[15px] tracking-wide font-medium">
+        <Link href="/faq" className="block bg-[#060133] text-white text-center py-2 text-[15px] tracking-wide font-medium hover:bg-[#0a0155] transition-colors cursor-pointer">
           {announcementText.split("15%").map((part, i, arr) =>
             i < arr.length - 1 ? (
               <span key={i}>{part}<span className="text-orange-400 font-bold">15%</span></span>
@@ -147,7 +147,7 @@ export function Header() {
               <span key={i}>{part}</span>
             )
           )}
-        </div>
+        </Link>
 
         {/* ── Main header ── */}
         <div className="bg-white border-b border-gray-200">
