@@ -514,7 +514,7 @@ function PillFilterRow({
 
 export default function BlooStoreCategoryPage({ pageId }: { pageId: string }) {
   const config = PAGE_CONFIGS[pageId];
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [filter, setFilter] = useState<ActiveFilter>({});
   const [activePill, setActivePill] = useState("전체보기");
   const [activeIconLabel, setActiveIconLabel] = useState<string | undefined>(undefined);
@@ -591,11 +591,41 @@ export default function BlooStoreCategoryPage({ pageId }: { pageId: string }) {
   const total = productsData?.total ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
+  // ── URL params → filter on mount/location change ──
+  const didInit = useRef(false);
+  useEffect(() => {
+    if (!config) return;
+    const search = window.location.search;
+    const p = new URLSearchParams(search);
+    const subname = p.get("subname");
+    const brand = p.get("brand");
+    if (subname) {
+      // Find matching icon
+      const icon = config.icons.find(i => i.filter?.search === subname || i.label === subname);
+      if (icon?.filter) {
+        setFilter({ ...icon.filter });
+        setActiveIconLabel(icon.label);
+      } else {
+        setFilter({ search: subname });
+      }
+    } else if (brand) {
+      const icon = config.icons.find(i => i.filter?.brandName === brand || i.label === brand);
+      if (icon?.filter) {
+        setFilter({ ...icon.filter });
+        setActiveIconLabel(icon.label);
+      } else {
+        setFilter({ brandName: brand });
+      }
+    }
+    didInit.current = true;
+  }, [pageId]); // eslint-disable-line
+
   function selectAll() {
     setFilter({});
     setActivePill("전체보기");
     setActiveIconLabel(undefined);
     setPage(0);
+    setLocation(`/${pageId}`);
   }
 
   function handleIconClick(icon: IconItem) {
@@ -607,6 +637,12 @@ export default function BlooStoreCategoryPage({ pageId }: { pageId: string }) {
     setActiveIconLabel(icon.label);
     setActivePill("전체보기");
     setPage(0);
+    // Update URL to reflect selected icon (bloostore1 style)
+    if (icon.filter.brandName) {
+      setLocation(`/${pageId}?brand=${encodeURIComponent(icon.filter.brandName)}`);
+    } else if (icon.filter.search) {
+      setLocation(`/${pageId}?subname=${encodeURIComponent(icon.filter.search)}`);
+    }
   }
 
   function handlePillClick(pill: PillItem) {
