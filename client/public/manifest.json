@@ -1,7 +1,7 @@
 {
-  "name": "velour",
-  "short_name": "velour",
-  "description": "프리미엄 럭셔리 편집샵",
+  "name": "BLOO",
+  "short_name": "BLOO",
+  "description": "명품 쇼핑몰",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -9,13 +9,13 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/favicon.png",
+      "src": "https://cdn.imweb.me/thumbnail/20230925/62260e84a05d6.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicon.png",
+      "src": "https://cdn.imweb.me/thumbnail/20230925/6f538ba3c28d5.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
