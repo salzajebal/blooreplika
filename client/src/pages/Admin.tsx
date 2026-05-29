@@ -7472,6 +7472,114 @@ export default function Admin() {
               </div>
             </div>
 
+            {/* ── 시계 상세이미지 크롤링 섹션 ── */}
+            <div className="bg-white rounded-xl shadow-sm border border-blue-100 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <RefreshCw className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">시계 상세이미지 크롤링</h3>
+                  <p className="text-sm text-gray-500">bloostore.co.kr 8개 시계 브랜드 페이지에서 상세이미지를 수집합니다 (롤렉스/까르띠에/IWC/파텍필립/오데마피게/브라이틀링/오메가/샤넬)</p>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 rounded-lg p-3 mb-4 text-xs text-blue-700 flex items-start gap-2">
+                <span>🕐</span>
+                <span>각 브랜드 목록 페이지 → 상품 상세 페이지 방문 → 이미지 추출 순으로 진행됩니다. DB의 시계 상품과 이름으로 매칭합니다.</span>
+              </div>
+
+              <div className="flex items-center gap-3 mb-4">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={watchDetailOnlyMissing}
+                    onChange={e => setWatchDetailOnlyMissing(e.target.checked)}
+                    className="rounded"
+                  />
+                  <span>상세이미지가 없거나 1개인 상품만 처리</span>
+                </label>
+                <span className="text-xs text-gray-400">(체크 해제 시 전체 재수집)</span>
+              </div>
+
+              {watchDetailProgress.status !== 'idle' && (
+                <div className={`rounded-lg p-4 border space-y-2 mb-4 ${
+                  watchDetailProgress.status === 'running' ? 'border-blue-300 bg-blue-50' :
+                  watchDetailProgress.status === 'completed' ? 'border-green-300 bg-green-50' :
+                  'border-red-300 bg-red-50'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    {watchDetailProgress.status === 'running' && <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />}
+                    {watchDetailProgress.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                    {watchDetailProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                    <span className={`text-sm font-medium ${
+                      watchDetailProgress.status === 'running' ? 'text-blue-700' :
+                      watchDetailProgress.status === 'completed' ? 'text-green-700' : 'text-red-700'
+                    }`}>
+                      {watchDetailProgress.status === 'running' ? '진행 중' :
+                       watchDetailProgress.status === 'completed' ? '완료' : '오류'}
+                    </span>
+                    {watchDetailProgress.total > 0 && (
+                      <span className="text-sm text-gray-600 ml-auto">
+                        {watchDetailProgress.current.toLocaleString()} / {watchDetailProgress.total.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                  {watchDetailProgress.message && (
+                    <p className="text-xs text-gray-700 font-mono break-all">{watchDetailProgress.message}</p>
+                  )}
+                  {watchDetailProgress.total > 0 && (
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-500 ${
+                          watchDetailProgress.status === 'completed' ? 'bg-green-500' : 'bg-blue-500'
+                        }`}
+                        style={{ width: `${Math.round((watchDetailProgress.current / watchDetailProgress.total) * 100)}%` }}
+                      />
+                    </div>
+                  )}
+                  {watchDetailProgress.current > 0 && (
+                    <div className="flex flex-wrap gap-3 text-xs text-gray-600">
+                      <span>업데이트 <strong className="text-green-700">{watchDetailProgress.updated.toLocaleString()}</strong>개</span>
+                      <span>건너뜀 <strong className="text-gray-500">{watchDetailProgress.skipped.toLocaleString()}</strong>개</span>
+                      {watchDetailProgress.total > 0 && (
+                        <span>진행률 <strong className="text-blue-700">{Math.round((watchDetailProgress.current / watchDetailProgress.total) * 100)}%</strong></span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  data-testid="button-start-watch-detail-crawl"
+                  onClick={startWatchDetailCrawl}
+                  disabled={watchDetailProgress.status === 'running'}
+                  className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+                >
+                  {watchDetailProgress.status === 'running' ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />크롤링 진행 중...</>
+                  ) : (
+                    <><RefreshCw className="w-4 h-4 mr-2" />시계 상세이미지 크롤링 시작</>
+                  )}
+                </Button>
+                {watchDetailProgress.status !== 'idle' && watchDetailProgress.status !== 'running' && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setWatchDetailProgress({ status: 'idle', total: 0, current: 0, updated: 0, skipped: 0, message: '' })}
+                  >
+                    초기화
+                  </Button>
+                )}
+              </div>
+
+              <div className="text-xs text-gray-400 space-y-1 mt-3">
+                <p>• bloostore.co.kr의 8개 시계 브랜드 페이지를 순서대로 방문하여 상품 목록을 수집합니다.</p>
+                <p>• DB 시계 상품과 이름으로 매칭 후 각 상품 상세 페이지에서 이미지를 추출합니다.</p>
+                <p>• 상품 수에 따라 시간이 걸릴 수 있습니다 (상품당 약 0.3~1초).</p>
+              </div>
+            </div>
+
             {/* ── 실시간 검수 크롤링 섹션 ── */}
             <div className="bg-white rounded-xl shadow-sm border border-orange-100 p-6">
               <div className="flex items-center gap-3 mb-4">
