@@ -126,19 +126,19 @@ function MainBannerSlider() {
 const CAT_CARD_ROWS: { label: string; href: string; left: number; top: number; width: number; height: number }[][] = [
   // Row 1
   [
-    { label: "남성의류",   href: "/products?gender=%EB%82%A8%EC%84%B1",                    left:  2.1, top: 3,  width: 11.0, height: 45 },
-    { label: "시계관",    href: "/products/watches",                                       left: 13.2, top: 3,  width: 11.0, height: 45 },
-    { label: "여성",      href: "/products?gender=%EC%97%AC%EC%84%B1",                    left: 24.8, top: 3,  width: 10.6, height: 45 },
-    { label: "남성신발",   href: "/products?gender=%EB%82%A8%EC%84%B1&category=%EC%8B%A0%EB%B0%9C", left: 36.2, top: 3,  width: 10.4, height: 45 },
-    { label: "시계",      href: "/products/watches",                                       left: 47.6, top: 3,  width: 10.7, height: 45 },
+    { label: "남성의류",   href: "/httpstheblooshop1496458051",   left:  2.1, top: 3,  width: 11.0, height: 45 },
+    { label: "시계관",    href: "/products/watches",              left: 13.2, top: 3,  width: 11.0, height: 45 },
+    { label: "여성",      href: "/537",                           left: 24.8, top: 3,  width: 10.6, height: 45 },
+    { label: "남성신발",   href: "/220",                          left: 36.2, top: 3,  width: 10.4, height: 45 },
+    { label: "시계",      href: "/products/watches",              left: 47.6, top: 3,  width: 10.7, height: 45 },
   ],
   // Row 2
   [
-    { label: "골프",      href: "/products/golf",                                          left:  1.9, top: 51, width: 11.0, height: 45 },
-    { label: "패션잡화",   href: "/products/accessories",                                  left: 13.2, top: 51, width: 10.8, height: 45 },
-    { label: "여성가방",   href: "/products?gender=%EC%97%AC%EC%84%B1&category=%EA%B0%80%EB%B0%A9", left: 24.6, top: 51, width: 10.6, height: 45 },
-    { label: "캐리어",    href: "/products?category=%EC%BA%90%EB%A6%AC%EC%96%B4",          left: 36.0, top: 51, width: 10.6, height: 45 },
-    { label: "",          href: "",                                                         left: 47.4, top: 51, width: 10.6, height: 45 },
+    { label: "골프",      href: "/products/golf",                 left:  1.9, top: 51, width: 11.0, height: 45 },
+    { label: "패션잡화",   href: "/26",                           left: 13.2, top: 51, width: 10.8, height: 45 },
+    { label: "여성가방",   href: "/1447",                         left: 24.6, top: 51, width: 10.6, height: 45 },
+    { label: "캐리어",    href: "/products?search=%EC%BA%90%EB%A6%AC%EC%96%B4", left: 36.0, top: 51, width: 10.6, height: 45 },
+    { label: "",          href: "",                                left: 47.4, top: 51, width: 10.6, height: 45 },
   ],
 ];
 
