@@ -81,7 +81,7 @@ function MainBannerSlider() {
         src={curBanner.imageUrl}
         alt=""
         aria-hidden="true"
-        style={{ display: "block", width: "100%", height: "auto", maxHeight: "clamp(180px, 24vw, 280px)", objectFit: "cover", visibility: "hidden" }}
+        style={{ display: "block", width: "100%", height: "auto", visibility: "hidden" }}
       />
       {displayList.map((b: any, i: number) => (
         <Link
