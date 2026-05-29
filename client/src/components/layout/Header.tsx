@@ -28,6 +28,9 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [communityOpen, setCommunityOpen] = useState(false);
+  const [menOpen, setMenOpen] = useState(false);
+  const [womenOpen, setWomenOpen] = useState(false);
+  const [menAccOpen, setMenAccOpen] = useState(false);
   const [announcementText, setAnnouncementText] = useState("5월 쿠폰 지급, 전 상품 15% 할인!");
 
   // Login modal state
@@ -295,20 +298,82 @@ export function Header() {
               >
                 실시간 검수 사진 <span className="text-green-400 font-bold">✓</span>
               </Link>
-              <Link
-                href="/httpstheblooshop1496458051"
-                onClick={() => setMenuOpen(false)}
-                className="w-full text-center py-3 text-[14px] text-white/90 hover:text-white transition-colors"
-              >
-                남성
-              </Link>
-              <Link
-                href="/497"
-                onClick={() => setMenuOpen(false)}
-                className="w-full text-center py-3 text-[14px] text-white/90 hover:text-white transition-colors"
-              >
-                여성
-              </Link>
+              {/* 남성 accordion */}
+              <div className="w-full">
+                <button
+                  onClick={() => setMenOpen(o => !o)}
+                  className="w-full text-center py-3 text-[14px] text-white/90 hover:text-white transition-colors flex items-center justify-center gap-1"
+                  data-testid="side-menu-men"
+                >
+                  남성
+                  <ChevronRight className={`w-3 h-3 transition-transform ${menOpen ? 'rotate-90' : ''}`} />
+                </button>
+                {menOpen && (
+                  <div className="flex flex-col bg-white/5 pb-1">
+                    <Link href="/httpstheblooshop1496458051" onClick={() => setMenuOpen(false)}
+                      className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white">남성 의류</Link>
+                    <Link href="/220" onClick={() => setMenuOpen(false)}
+                      className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white">남성 신발</Link>
+                    <Link href="/1212" onClick={() => setMenuOpen(false)}
+                      className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white">남성 가방</Link>
+                    {/* 남성 패션 잡화 sub-accordion */}
+                    <div className="w-full">
+                      <button
+                        onClick={() => setMenAccOpen(o => !o)}
+                        className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white flex items-center justify-center gap-1"
+                      >
+                        남성 패션 잡화
+                        <ChevronRight className={`w-3 h-3 transition-transform ${menAccOpen ? 'rotate-90' : ''}`} />
+                      </button>
+                      {menAccOpen && (
+                        <div className="flex flex-col bg-white/5">
+                          <Link href="/26?subname=%EC%A7%80%EA%B0%91" onClick={() => setMenuOpen(false)}
+                            className="w-full text-center py-1.5 text-[12px] text-white/70 hover:text-white">지갑</Link>
+                          <Link href="/26?subname=%EB%AA%A8%EC%9E%90" onClick={() => setMenuOpen(false)}
+                            className="w-full text-center py-1.5 text-[12px] text-white/70 hover:text-white">모자</Link>
+                          <Link href="/26?subname=%EB%B2%A8%ED%8A%B8" onClick={() => setMenuOpen(false)}
+                            className="w-full text-center py-1.5 text-[12px] text-white/70 hover:text-white">벨트</Link>
+                          <Link href="/26?subname=%EB%A8%B8%ED%94%8C%EB%9F%AC" onClick={() => setMenuOpen(false)}
+                            className="w-full text-center py-1.5 text-[12px] text-white/70 hover:text-white">머플러</Link>
+                          <Link href="/26?subname=%ED%8C%94%EC%B0%8C" onClick={() => setMenuOpen(false)}
+                            className="w-full text-center py-1.5 text-[12px] text-white/70 hover:text-white">팔찌</Link>
+                          <Link href="/26?subname=%EB%AA%A9%EA%B1%B8%EC%9D%B4" onClick={() => setMenuOpen(false)}
+                            className="w-full text-center py-1.5 text-[12px] text-white/70 hover:text-white">목걸이</Link>
+                          <Link href="/26?subname=%EB%B0%98%EC%A7%80" onClick={() => setMenuOpen(false)}
+                            className="w-full text-center py-1.5 text-[12px] text-white/70 hover:text-white">반지</Link>
+                          <Link href="/26?subname=%ED%82%A4%EB%A7%81" onClick={() => setMenuOpen(false)}
+                            className="w-full text-center py-1.5 text-[12px] text-white/70 hover:text-white">키링</Link>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 여성 accordion */}
+              <div className="w-full">
+                <button
+                  onClick={() => setWomenOpen(o => !o)}
+                  className="w-full text-center py-3 text-[14px] text-white/90 hover:text-white transition-colors flex items-center justify-center gap-1"
+                  data-testid="side-menu-women"
+                >
+                  여성
+                  <ChevronRight className={`w-3 h-3 transition-transform ${womenOpen ? 'rotate-90' : ''}`} />
+                </button>
+                {womenOpen && (
+                  <div className="flex flex-col bg-white/5 pb-1">
+                    <Link href="/497" onClick={() => setMenuOpen(false)}
+                      className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white">여성 의류</Link>
+                    <Link href="/656" onClick={() => setMenuOpen(false)}
+                      className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white">여성 신발</Link>
+                    <Link href="/1447" onClick={() => setMenuOpen(false)}
+                      className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white">여성 가방</Link>
+                    <Link href="/716" onClick={() => setMenuOpen(false)}
+                      className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white">여성 패션 잡화</Link>
+                  </div>
+                )}
+              </div>
+
               <Link
                 href="/products/watches"
                 onClick={() => setMenuOpen(false)}
@@ -335,28 +400,16 @@ export function Header() {
                 </button>
                 {communityOpen && (
                   <div className="flex flex-col bg-white/5 pb-1">
-                    <Link
-                      href="/reviews"
-                      onClick={() => { setMenuOpen(false); setCommunityOpen(false); }}
-                      className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white transition-colors"
-                      data-testid="side-menu-reviews"
-                    >
+                    <Link href="/reviews" onClick={() => { setMenuOpen(false); setCommunityOpen(false); }}
+                      className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white" data-testid="side-menu-reviews">
                       리뷰&후기
                     </Link>
-                    <Link
-                      href="/notices"
-                      onClick={() => { setMenuOpen(false); setCommunityOpen(false); }}
-                      className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white transition-colors"
-                      data-testid="side-menu-notices"
-                    >
+                    <Link href="/notices" onClick={() => { setMenuOpen(false); setCommunityOpen(false); }}
+                      className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white" data-testid="side-menu-notices">
                       공지사항
                     </Link>
-                    <Link
-                      href="/faq"
-                      onClick={() => { setMenuOpen(false); setCommunityOpen(false); }}
-                      className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white transition-colors"
-                      data-testid="side-menu-faq"
-                    >
+                    <Link href="/faq" onClick={() => { setMenuOpen(false); setCommunityOpen(false); }}
+                      className="w-full text-center py-2 text-[13px] text-white/80 hover:text-white" data-testid="side-menu-faq">
                       자주묻는질문
                     </Link>
                   </div>
