@@ -614,6 +614,18 @@ export default function Admin() {
   const watchDetailIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [watchDetailOnlyMissing, setWatchDetailOnlyMissing] = useState(true);
 
+  const [blooDetailBackfill, setBlooDetailBackfill] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error' | 'stopped';
+    total: number;
+    current: number;
+    updated: number;
+    skipped: number;
+    errors: number;
+    message: string;
+  }>({ status: 'idle', total: 0, current: 0, updated: 0, skipped: 0, errors: 0, message: '' });
+  const blooDetailBackfillIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [blooDetailOnlyMissing, setBlooDetailOnlyMissing] = useState(true);
+
   const [puluaProgress, setPuluaProgress] = useState<{
     status: 'idle' | 'running' | 'completed' | 'error';
     total: number;
@@ -1325,6 +1337,65 @@ export default function Admin() {
       await fetchWithAuth("/api/admin/crawl/pulua/stop", { method: "POST" });
       toast({ title: "중단 요청", description: "현재 상품 처리 후 중단됩니다." });
     } catch {}
+  };
+
+  const fetchBlooDetailBackfillProgress = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bloostore1/backfill-details/progress");
+      const data = await res.json();
+      if (data.success) {
+        setBlooDetailBackfill({
+          status: data.status,
+          total: data.total || 0,
+          current: data.current || 0,
+          updated: data.updated || 0,
+          skipped: data.skipped || 0,
+          errors: data.errors || 0,
+          message: data.message || '',
+        });
+        if (data.status !== 'running') {
+          if (blooDetailBackfillIntervalRef.current) {
+            clearInterval(blooDetailBackfillIntervalRef.current);
+            blooDetailBackfillIntervalRef.current = null;
+          }
+        }
+      }
+    } catch {}
+  };
+
+  const startBlooDetailBackfill = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bloostore1/backfill-details/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ onlyMissing: blooDetailOnlyMissing, concurrency: 4 }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "상세이미지 백필 시작", description: "bloostore1 전체 상품 상세이미지를 수집합니다." });
+        setBlooDetailBackfill({ status: 'running', total: 0, current: 0, updated: 0, skipped: 0, errors: 0, message: '시작 중...' });
+        blooDetailBackfillIntervalRef.current = setInterval(fetchBlooDetailBackfillProgress, 1500);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "백필을 시작할 수 없습니다.", variant: "destructive" });
+    }
+  };
+
+  const stopBlooDetailBackfill = async () => {
+    try {
+      await fetchWithAuth("/api/admin/crawl/bloostore1/backfill-details/stop", { method: "POST" });
+      toast({ title: "중단 요청", description: "현재 처리 중인 상품 완료 후 중단됩니다." });
+    } catch {}
+  };
+
+  const resetBlooDetailBackfill = () => {
+    setBlooDetailBackfill({ status: 'idle', total: 0, current: 0, updated: 0, skipped: 0, errors: 0, message: '' });
+    if (blooDetailBackfillIntervalRef.current) {
+      clearInterval(blooDetailBackfillIntervalRef.current);
+      blooDetailBackfillIntervalRef.current = null;
+    }
   };
 
   const deleteAllWatches = async () => {
@@ -7270,6 +7341,118 @@ export default function Admin() {
                   <p>• sourceIdx 기준으로 중복 저장을 방지하며, 3개 카테고리 모두 선택 시 전체 상품을 커버합니다.</p>
                   <p>• 기본값: 셀럽(803) + 남성(1212) + 여성(537) 모두 선택 = 전체 상품 수집.</p>
                 </div>
+              </div>
+            </div>
+
+            {/* ── 상세이미지/사이즈 백필 섹션 ── */}
+            <div className="bg-white rounded-xl shadow-sm border border-indigo-100 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                  <Download className="w-5 h-5 text-indigo-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">전체 상품 상세이미지 백필</h3>
+                  <p className="text-sm text-gray-500">bloostore1 전체 상품의 상세이미지를 개별 상품 페이지에서 수집합니다</p>
+                </div>
+              </div>
+
+              <div className="bg-indigo-50 rounded-lg p-3 mb-4 text-xs text-indigo-700 flex items-start gap-2">
+                <span>📋</span>
+                <span>각 상품의 <code className="bg-indigo-100 px-1 rounded">shop_view/?idx=XXXXX</code> 페이지에서 이미지를 추출 · 업데이트합니다 (5,600개, 4개 동시)</span>
+              </div>
+
+              <div className="flex items-center gap-3 mb-4">
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={blooDetailOnlyMissing}
+                    onChange={e => setBlooDetailOnlyMissing(e.target.checked)}
+                    className="rounded"
+                  />
+                  <span>이미지가 1개 이하인 상품만 처리</span>
+                </label>
+                <span className="text-xs text-gray-400">(체크 해제 시 전체 재수집)</span>
+              </div>
+
+              {blooDetailBackfill.status !== 'idle' && (
+                <div className={`rounded-lg p-4 border space-y-2 mb-4 ${
+                  blooDetailBackfill.status === 'running' ? 'border-indigo-300 bg-indigo-50' :
+                  blooDetailBackfill.status === 'completed' ? 'border-green-300 bg-green-50' :
+                  blooDetailBackfill.status === 'stopped' ? 'border-yellow-300 bg-yellow-50' :
+                  'border-red-300 bg-red-50'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    {blooDetailBackfill.status === 'running' && <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />}
+                    {blooDetailBackfill.status === 'completed' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                    {blooDetailBackfill.status === 'stopped' && <span className="text-yellow-600 text-sm">⏸</span>}
+                    {blooDetailBackfill.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                    <span className={`text-sm font-medium ${
+                      blooDetailBackfill.status === 'running' ? 'text-indigo-700' :
+                      blooDetailBackfill.status === 'completed' ? 'text-green-700' :
+                      blooDetailBackfill.status === 'stopped' ? 'text-yellow-700' : 'text-red-700'
+                    }`}>
+                      {blooDetailBackfill.status === 'running' ? '진행 중' :
+                       blooDetailBackfill.status === 'completed' ? '완료' :
+                       blooDetailBackfill.status === 'stopped' ? '중단됨' : '오류'}
+                    </span>
+                    {blooDetailBackfill.total > 0 && (
+                      <span className="text-sm text-gray-600 ml-auto">
+                        {blooDetailBackfill.current.toLocaleString()} / {blooDetailBackfill.total.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                  {blooDetailBackfill.message && (
+                    <p className="text-xs text-gray-700 font-mono break-all">{blooDetailBackfill.message}</p>
+                  )}
+                  {blooDetailBackfill.total > 0 && (
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-500 ${
+                          blooDetailBackfill.status === 'completed' ? 'bg-green-500' :
+                          blooDetailBackfill.status === 'stopped' ? 'bg-yellow-500' : 'bg-indigo-500'
+                        }`}
+                        style={{ width: `${Math.round((blooDetailBackfill.current / blooDetailBackfill.total) * 100)}%` }}
+                      />
+                    </div>
+                  )}
+                  {blooDetailBackfill.current > 0 && (
+                    <div className="flex flex-wrap gap-3 text-xs text-gray-600">
+                      <span>업데이트 <strong className="text-green-700">{blooDetailBackfill.updated.toLocaleString()}</strong>개</span>
+                      <span>건너뜀 <strong className="text-gray-500">{blooDetailBackfill.skipped.toLocaleString()}</strong>개</span>
+                      {blooDetailBackfill.errors > 0 && <span>오류 <strong className="text-red-600">{blooDetailBackfill.errors.toLocaleString()}</strong>개</span>}
+                      {blooDetailBackfill.total > 0 && <span>진행률 <strong className="text-indigo-700">{Math.round((blooDetailBackfill.current / blooDetailBackfill.total) * 100)}%</strong></span>}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  data-testid="button-start-bloo-detail-backfill"
+                  onClick={startBlooDetailBackfill}
+                  disabled={blooDetailBackfill.status === 'running'}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white flex-1"
+                >
+                  {blooDetailBackfill.status === 'running' ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />백필 진행 중...</>
+                  ) : (
+                    <><Download className="w-4 h-4 mr-2" />상세이미지 백필 시작</>
+                  )}
+                </Button>
+                {blooDetailBackfill.status === 'running' && (
+                  <Button variant="outline" onClick={stopBlooDetailBackfill} className="border-red-300 text-red-600 hover:bg-red-50">
+                    중단
+                  </Button>
+                )}
+                {(['completed', 'error', 'stopped'] as const).includes(blooDetailBackfill.status) && (
+                  <Button variant="outline" onClick={resetBlooDetailBackfill}>초기화</Button>
+                )}
+              </div>
+
+              <div className="text-xs text-gray-400 space-y-1 mt-3">
+                <p>• 각 상품의 shop_view 페이지를 방문해 #prod_image_list에서 이미지를 추출합니다.</p>
+                <p>• 4개 동시 요청으로 처리 (5,600개 기준 약 15~30분 소요).</p>
+                <p>• "이미지 1개 이하 상품만" 옵션으로 이미 수집된 상품은 건너뜁니다.</p>
               </div>
             </div>
 

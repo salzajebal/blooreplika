@@ -5500,6 +5500,247 @@ export async function registerRoutes(
     })();
   });
 
+  // ============= BLOOSTORE1 ALL-PRODUCT DETAIL BACKFILL =============
+  let blooDetailBackfillProgress: {
+    status: 'idle' | 'running' | 'completed' | 'error' | 'stopped';
+    total: number;
+    current: number;
+    updated: number;
+    skipped: number;
+    errors: number;
+    message: string;
+    startedAt?: Date;
+    completedAt?: Date;
+  } = { status: 'idle', total: 0, current: 0, updated: 0, skipped: 0, errors: 0, message: '' };
+
+  let blooDetailBackfillStopped = false;
+
+  app.get("/api/admin/crawl/bloostore1/backfill-details/progress", requireAdminAuth, (_req: Request, res: Response) => {
+    res.json({ success: true, ...blooDetailBackfillProgress });
+  });
+
+  app.post("/api/admin/crawl/bloostore1/backfill-details/stop", requireAdminAuth, (_req: Request, res: Response) => {
+    blooDetailBackfillStopped = true;
+    blooDetailBackfillProgress.message = '중단 요청됨...';
+    res.json({ success: true });
+  });
+
+  app.post("/api/admin/crawl/bloostore1/backfill-details/start", requireAdminAuth, async (req: Request, res: Response) => {
+    if (blooDetailBackfillProgress.status === 'running') {
+      return res.status(400).json({ success: false, error: "이미 백필이 진행 중입니다." });
+    }
+
+    const { onlyMissing = true, concurrency = 4 } = req.body;
+
+    blooDetailBackfillProgress = {
+      status: 'running', total: 0, current: 0, updated: 0, skipped: 0, errors: 0,
+      message: '상품 목록 조회 중...', startedAt: new Date(),
+    };
+    blooDetailBackfillStopped = false;
+
+    res.json({ success: true, message: "블루스토어1 상세이미지 백필 시작" });
+
+    (async () => {
+      try {
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+        const b1Headers = {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,*/*",
+          "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8",
+          "Referer": "https://bloostore1.co.kr/",
+        };
+
+        const b1Fetch = async (url: string, retries = 3): Promise<string | null> => {
+          for (let attempt = 0; attempt < retries; attempt++) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 12000);
+            try {
+              const r = await fetch(url, { headers: b1Headers, signal: controller.signal });
+              clearTimeout(timer);
+              if (r.ok) return await r.text();
+              if (r.status === 404) return null;
+              if (attempt < retries - 1) await delay(500 * (attempt + 1));
+            } catch (e: any) {
+              clearTimeout(timer);
+              if (attempt < retries - 1) await delay(500 * (attempt + 1));
+            }
+          }
+          return null;
+        };
+
+        // Common UI/decoration images to filter out
+        const COMMON_IMAGE_IDS = [
+          '91dc0b3052412', 'e4211aabdece9', '362326a168295', 'cfe01887db836', '939f0df3a3d23',
+          'afdfe65a9ac1d', '885873f75d2c3', '59d659c00f76c', // logo/banner images
+        ];
+        const isCommonImage = (url: string) => COMMON_IMAGE_IDS.some(id => url.includes(id));
+
+        const extractProductData = (html: string): { images: string[]; sizes: string[]; colors: string[] } => {
+          const $ = cheerio.load(html);
+          const images: string[] = [];
+
+          // 1) Main product image from #prod_image_list / .goods_thumbs_wrap
+          const imgSection = $('#prod_image_list, .goods_thumbs_wrap').first();
+          if (imgSection.length > 0) {
+            const sectionHtml = imgSection.html() || '';
+            const cdnUrls = sectionHtml.match(/https?:\/\/cdn(?:-optimized)?\.imweb\.me\/[^\s"'>\)\\?]+/g) || [];
+            cdnUrls.forEach(u => {
+              const normalized = u.replace('cdn-optimized.imweb.me', 'cdn.imweb.me');
+              if (!images.includes(normalized) && !isCommonImage(normalized)) {
+                images.push(normalized);
+              }
+            });
+          }
+
+          // 2) Fallback: JSON-LD product images
+          if (images.length === 0) {
+            $('script[type="application/ld+json"]').each((_i, el) => {
+              try {
+                const d = JSON.parse($(el).html() || '');
+                if (d['@type'] === 'Product' && d.image) {
+                  const imgs = Array.isArray(d.image) ? d.image : [d.image];
+                  imgs.forEach((img: string) => {
+                    if (typeof img === 'string' && img.includes('cdn.imweb.me') && !images.includes(img) && !isCommonImage(img)) {
+                      images.push(img);
+                    }
+                  });
+                }
+              } catch {}
+            });
+          }
+
+          // 3) Fallback: OG image
+          const ogImg = $('meta[property="og:image"]').attr('content');
+          if (ogImg && ogImg.includes('cdn.imweb.me') && !isCommonImage(ogImg)) {
+            const cleanOg = ogImg.split('?')[0];
+            if (!images.includes(cleanOg)) images.unshift(cleanOg);
+          }
+
+          // 4) Extract sizes from select options
+          const sizes: string[] = [];
+          const colors: string[] = [];
+          $('select.form-control option, select option').each((_i, el) => {
+            const val = $(el).attr('value') || '';
+            const text = $(el).text().trim();
+            if (!val || val === '' || text.includes('선택') || val === 'KR') return;
+            const lower = text.toLowerCase();
+            if (lower.match(/^[xsmlXSML]+$/) || lower.match(/^\d{2,3}(mm|cm)?$/) || lower.match(/^[0-9]+$/)) {
+              if (!sizes.includes(text)) sizes.push(text);
+            } else if (text.length < 20) {
+              if (!colors.includes(text)) colors.push(text);
+            }
+          });
+
+          return { images, sizes, colors };
+        };
+
+        // Get all products with source_idx
+        const allProducts = await storage.getAllProducts();
+        let targetProducts = allProducts.filter(p => p.sourceIdx != null && p.sourceIdx > 0);
+
+        if (onlyMissing) {
+          targetProducts = targetProducts.filter(p =>
+            !p.imageUrls || p.imageUrls.length <= 1
+          );
+        }
+
+        blooDetailBackfillProgress.total = targetProducts.length;
+        blooDetailBackfillProgress.message = `총 ${targetProducts.length}개 상품 백필 시작...`;
+        console.log(`[blooDetailBackfill] Starting: ${targetProducts.length} products, concurrency=${concurrency}`);
+
+        let idx = 0;
+
+        const processOne = async (product: typeof targetProducts[0]) => {
+          if (blooDetailBackfillStopped) return;
+
+          const detailUrl = `https://bloostore1.co.kr/shop_view/?idx=${product.sourceIdx}`;
+          try {
+            await delay(Math.random() * 200 + 100); // 100-300ms jitter
+            const html = await b1Fetch(detailUrl);
+            if (!html) {
+              blooDetailBackfillProgress.skipped++;
+              return;
+            }
+
+            const { images, sizes, colors } = extractProductData(html);
+
+            if (images.length === 0 && sizes.length === 0) {
+              blooDetailBackfillProgress.skipped++;
+              return;
+            }
+
+            const updateData: Record<string, any> = {};
+
+            if (images.length > 0) {
+              const mainImg = product.imageUrl || images[0];
+              const allImgs: string[] = [];
+              if (mainImg && !allImgs.includes(mainImg)) allImgs.push(mainImg);
+              images.forEach(img => { if (!allImgs.includes(img)) allImgs.push(img); });
+
+              updateData.imageUrls = allImgs;
+              updateData.detailImageUrls = images;
+            }
+
+            if (sizes.length > 0 || colors.length > 0) {
+              const existingOpts = (() => {
+                try { return product.options ? JSON.parse(product.options) : {}; } catch { return {}; }
+              })();
+              updateData.options = JSON.stringify({
+                ...existingOpts,
+                sizes: sizes.length > 0 ? sizes : (existingOpts.sizes || []),
+                colors: colors.length > 0 ? colors : (existingOpts.colors || []),
+              });
+            }
+
+            if (Object.keys(updateData).length > 0) {
+              await storage.updateProduct(product.id, updateData);
+              blooDetailBackfillProgress.updated++;
+            } else {
+              blooDetailBackfillProgress.skipped++;
+            }
+          } catch (err: any) {
+            blooDetailBackfillProgress.errors++;
+            console.error(`[blooDetailBackfill] Error for idx=${product.sourceIdx}:`, err.message);
+          }
+
+          blooDetailBackfillProgress.current++;
+          if (blooDetailBackfillProgress.current % 50 === 0) {
+            blooDetailBackfillProgress.message = `${blooDetailBackfillProgress.current}/${blooDetailBackfillProgress.total} 처리 중... (업데이트 ${blooDetailBackfillProgress.updated}개, 건너뜀 ${blooDetailBackfillProgress.skipped}개)`;
+            console.log(`[blooDetailBackfill] Progress: ${blooDetailBackfillProgress.current}/${blooDetailBackfillProgress.total}`);
+          }
+        };
+
+        // Process with concurrency pool
+        const queue = [...targetProducts];
+        const workers = Array.from({ length: concurrency }, async () => {
+          while (queue.length > 0 && !blooDetailBackfillStopped) {
+            const product = queue.shift();
+            if (!product) break;
+            await processOne(product);
+            await delay(150); // rate limit between requests per worker
+          }
+        });
+
+        await Promise.all(workers);
+
+        if (blooDetailBackfillStopped) {
+          blooDetailBackfillProgress.status = 'stopped';
+          blooDetailBackfillProgress.message = `중단됨. ${blooDetailBackfillProgress.updated}개 업데이트, ${blooDetailBackfillProgress.current}/${blooDetailBackfillProgress.total} 처리`;
+        } else {
+          blooDetailBackfillProgress.status = 'completed';
+          blooDetailBackfillProgress.message = `완료! ${blooDetailBackfillProgress.updated}개 상품 업데이트 (건너뜀: ${blooDetailBackfillProgress.skipped}, 오류: ${blooDetailBackfillProgress.errors})`;
+          blooDetailBackfillProgress.completedAt = new Date();
+        }
+        console.log(`[blooDetailBackfill] Done: updated=${blooDetailBackfillProgress.updated}, skipped=${blooDetailBackfillProgress.skipped}, errors=${blooDetailBackfillProgress.errors}`);
+      } catch (error: any) {
+        blooDetailBackfillProgress.status = 'error';
+        blooDetailBackfillProgress.message = `오류: ${error.message}`;
+        console.error('[blooDetailBackfill] Fatal error:', error);
+      }
+    })();
+  });
+
   // ============= WATCH DETAIL IMAGE RE-CRAWL =============
   let watchDetailProgress: {
     status: 'idle' | 'running' | 'completed' | 'error';
