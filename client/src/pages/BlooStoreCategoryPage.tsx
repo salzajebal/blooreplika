@@ -706,14 +706,6 @@ export default function BlooStoreCategoryPage({ pageId }: { pageId: string }) {
             })}
           </div>
         )}
-        {config.gender !== "남성" && (
-          <button
-            className="ml-3 px-3 text-[11px] text-gray-400 hover:text-gray-600"
-            onClick={() => setOpenL2(o => o === "남성_all" ? null : "남성_all")}
-          >
-            {openL2 === "남성_all" ? "▲ 접기" : "▼ 펼치기"}
-          </button>
-        )}
       </div>
 
       {/* 여성 */}
@@ -756,14 +748,6 @@ export default function BlooStoreCategoryPage({ pageId }: { pageId: string }) {
               );
             })}
           </div>
-        )}
-        {config.gender !== "여성" && (
-          <button
-            className="ml-3 px-3 text-[11px] text-gray-400 hover:text-gray-600"
-            onClick={() => setOpenL2(o => o === "여성_all" ? null : "여성_all")}
-          >
-            {openL2 === "여성_all" ? "▲ 접기" : "▼ 펼치기"}
-          </button>
         )}
       </div>
 
