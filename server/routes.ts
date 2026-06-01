@@ -5200,7 +5200,8 @@ export async function registerRoutes(
         };
 
         // bloostore1 실제 카테고리별 URL — 카테고리 직접 지정 (키워드 추론 최소화)
-        const BLOO1_CATEGORIES: { menuUrl: string; name: string; gender: string; fixedCategoryId: string | null }[] = [
+        // blooCategoryId: bloostore1 AJAX의 category= 파라미터 (없으면 menu_url만 사용)
+        const BLOO1_CATEGORIES: { menuUrl: string; name: string; gender: string; fixedCategoryId: string | null; blooCategoryId?: string }[] = [
           // 셀럽 (공용 - 혼합 카테고리, 이름으로 추론)
           { menuUrl: '803',                      name: '셀럽',       gender: '공용', fixedCategoryId: null },
           // 남성 - 카테고리 직접 지정
@@ -5213,9 +5214,15 @@ export async function registerRoutes(
           { menuUrl: '656',                      name: '여성 신발',   gender: '여성', fixedCategoryId: 'shoes' },
           { menuUrl: '1447',                     name: '여성 가방',   gender: '여성', fixedCategoryId: 'bags' },
           { menuUrl: '716',                      name: '여성 패션잡화', gender: '여성', fixedCategoryId: null },
-          // 시계는 bloostore.co.kr 전용 크롤러(관리자 > 블루스토어 시계 크롤링)에서 별도 수집
-          // bloostore1.co.kr의 AJAX API가 menu_url 파라미터를 무시하고 전체 최신 상품을 반환하므로
-          // 여기에 시계 카테고리를 포함하면 의류/잡화 상품이 시계로 잘못 분류됨
+          // 시계 브랜드별 — blooCategoryId 필수 (menu_url만 사용하면 전체 상품이 반환됨)
+          { menuUrl: '412',  name: '시계-롤렉스',     gender: '공용', fixedCategoryId: 'watches', blooCategoryId: 's2023110807dcda38ffad5' },
+          { menuUrl: '413',  name: '시계-까르띠에',   gender: '공용', fixedCategoryId: 'watches', blooCategoryId: 's20231108fa0f625fe8ba0' },
+          { menuUrl: '415',  name: '시계-IWC',        gender: '공용', fixedCategoryId: 'watches', blooCategoryId: 's20231108fca812653a64f' },
+          { menuUrl: '1337', name: '시계-파텍필립',   gender: '공용', fixedCategoryId: 'watches', blooCategoryId: 's2023110872788d66e7746' },
+          { menuUrl: '416',  name: '시계-오데마피게', gender: '공용', fixedCategoryId: 'watches', blooCategoryId: 's2023110864a29e41141d5' },
+          { menuUrl: '417',  name: '시계-브라이틀링', gender: '공용', fixedCategoryId: 'watches', blooCategoryId: 's202311087be8f51ef88b4' },
+          { menuUrl: '418',  name: '시계-오메가',     gender: '공용', fixedCategoryId: 'watches', blooCategoryId: 's20231109d1d44f399a8a8' },
+          { menuUrl: '419',  name: '시계-샤넬',       gender: '공용', fixedCategoryId: 'watches', blooCategoryId: 's202311087294963405bc6' },
         ].filter(c => !selectedCategories || selectedCategories.length === 0 || selectedCategories.includes(c.menuUrl));
 
         // 패션잡화 페이지(26, 716)용 세부 분류 — 기본값은 'accessories' (clothing 아님!)
@@ -5279,7 +5286,9 @@ export async function registerRoutes(
 
           while (hasMore && !bloo1ShouldStop) {
             try {
-              const url = `https://bloostore1.co.kr/ajax/get_shop_list_view.cm?page=${page}&pagesize=${pageSize}&menu_url=${cat.menuUrl}&sort=recent`;
+              const url = cat.blooCategoryId
+                ? `https://bloostore1.co.kr/ajax/get_shop_list_view.cm?page=${page}&pagesize=${pageSize}&category=${cat.blooCategoryId}&sort=recent&menu_url=/${cat.menuUrl}/`
+                : `https://bloostore1.co.kr/ajax/get_shop_list_view.cm?page=${page}&pagesize=${pageSize}&menu_url=${cat.menuUrl}&sort=recent`;
               const bloo1Controller = new AbortController();
               const bloo1Timeout = setTimeout(() => bloo1Controller.abort(), 15000);
               let response: globalThis.Response;

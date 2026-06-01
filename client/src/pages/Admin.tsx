@@ -7238,8 +7238,7 @@ export default function Admin() {
                   <Download className="w-5 h-5 text-violet-600" />
                   BLOO (bloostore1.co.kr) 크롤링
                 </h3>
-                <p className="text-sm text-gray-500 mt-1">bloostore1.co.kr 상품을 카테고리별로 수집합니다. 중복 상품은 자동으로 건너뜁니다.</p>
-                <p className="text-sm text-amber-600 mt-1">⚠️ 시계 상품은 아래 <strong>"블루스토어 시계 크롤링"</strong> 섹션에서 별도로 수집하세요. (bloostore1은 시계 페이지가 올바르게 작동하지 않습니다)</p>
+                <p className="text-sm text-gray-500 mt-1">bloostore1.co.kr 상품을 카테고리별로 수집합니다. 시계 브랜드는 "시계만 선택" 버튼으로 빠르게 선택 가능합니다. 중복 상품은 자동으로 건너뜁니다.</p>
               </div>
               <div className="p-6 space-y-4">
                 {/* 카테고리 선택 */}
@@ -7256,6 +7255,14 @@ export default function Admin() {
                       { id: '656', name: '여성 신발', color: 'pink' },
                       { id: '1447', name: '여성 가방', color: 'pink' },
                       { id: '716', name: '여성 패션잡화', color: 'pink' },
+                      { id: '412', name: '시계-롤렉스', color: 'amber' },
+                      { id: '413', name: '시계-까르띠에', color: 'amber' },
+                      { id: '415', name: '시계-IWC', color: 'amber' },
+                      { id: '1337', name: '시계-파텍필립', color: 'amber' },
+                      { id: '416', name: '시계-오데마피게', color: 'amber' },
+                      { id: '417', name: '시계-브라이틀링', color: 'amber' },
+                      { id: '418', name: '시계-오메가', color: 'amber' },
+                      { id: '419', name: '시계-샤넬', color: 'amber' },
                     ].map(cat => (
                       <label key={cat.id} className="flex items-center gap-2 cursor-pointer select-none">
                         <input
@@ -7272,7 +7279,9 @@ export default function Admin() {
                     ))}
                   </div>
                   <div className="flex gap-2 mt-2 flex-wrap">
-                    <button onClick={() => setSelectedBloo1Categories(['803', 'httpstheblooshop1496458051', '220', '1212', '26', '497', '656', '1447', '716'])} className="text-xs text-violet-600 hover:underline">전체 선택</button>
+                    <button onClick={() => setSelectedBloo1Categories(['803', 'httpstheblooshop1496458051', '220', '1212', '26', '497', '656', '1447', '716', '412', '413', '415', '1337', '416', '417', '418', '419'])} className="text-xs text-violet-600 hover:underline">전체 선택</button>
+                    <span className="text-xs text-gray-300">|</span>
+                    <button onClick={() => setSelectedBloo1Categories(['412', '413', '415', '1337', '416', '417', '418', '419'])} className="text-xs text-amber-600 hover:underline">시계만 선택</button>
                     <span className="text-xs text-gray-300">|</span>
                     <button onClick={() => setSelectedBloo1Categories([])} className="text-xs text-gray-500 hover:underline">전체 해제</button>
                   </div>
