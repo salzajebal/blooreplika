@@ -8699,5 +8699,29 @@ export async function registerRoutes(
     }
   });
 
+  // ── watches 카테고리 비시계 상품 정리 ──────────────────────────────────
+  app.post("/api/admin/products/cleanup-watches", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const client = await pool.connect();
+      try {
+        const result = await client.query(`
+          DELETE FROM products
+          WHERE category_id = 'watches'
+            AND name NOT ILIKE '%시계%'
+            AND name NOT ILIKE '%워치%'
+            AND name NOT ILIKE '%watch%'
+        `);
+        const deleted = result.rowCount ?? 0;
+        console.log(`[cleanup-watches] Deleted ${deleted} non-watch products from watches category`);
+        res.json({ success: true, deleted });
+      } finally {
+        client.release();
+      }
+    } catch (error: any) {
+      console.error('[cleanup-watches] Error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   return httpServer;
 }
