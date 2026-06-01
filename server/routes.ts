@@ -8723,5 +8723,23 @@ export async function registerRoutes(
     }
   });
 
+  // ── watches 카테고리 전체 삭제 (재크롤링용) ─────────────────────────────
+  app.post("/api/admin/products/clear-watches-all", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const client = await pool.connect();
+      try {
+        const result = await client.query(`DELETE FROM products WHERE category_id = 'watches'`);
+        const deleted = result.rowCount ?? 0;
+        console.log(`[clear-watches-all] Deleted ALL ${deleted} products from watches category`);
+        res.json({ success: true, deleted });
+      } finally {
+        client.release();
+      }
+    } catch (error: any) {
+      console.error('[clear-watches-all] Error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   return httpServer;
 }
