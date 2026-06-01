@@ -5270,6 +5270,19 @@ export async function registerRoutes(
           allProducts.map(p => p.sourceIdx).filter((v): v is number => v !== null && v !== undefined)
         );
 
+        // 시계 카테고리 전용: sourceIdx → productId 맵 (카테고리 재분류 용도)
+        const watchProducts = allProducts.filter(p => p.categoryId === 'watches');
+        const watchSourceIdxSet = new Set<number>(
+          watchProducts.map(p => p.sourceIdx).filter((v): v is number => v !== null && v !== undefined)
+        );
+        // 시계가 아닌 카테고리에 있는 상품 중 sourceIdx 있는 것: 시계 페이지 크롤 시 재분류 대상
+        const nonWatchSourceIdxMap = new Map<number, string>(); // idx → productId
+        allProducts.forEach(p => {
+          if (p.categoryId !== 'watches' && p.sourceIdx != null) {
+            nonWatchSourceIdxMap.set(p.sourceIdx, p.id);
+          }
+        });
+
         let totalInserted = 0;
         let totalSkipped = 0;
 
@@ -5330,7 +5343,35 @@ export async function registerRoutes(
 
                   if (!idx || !name) continue;
 
-                  if (existingSourceIdx.has(idx)) {
+                  const isWatchCat = cat.fixedCategoryId === 'watches';
+
+                  // 시계 브랜드 페이지: 이미 watches에 있으면 스킵
+                  if (isWatchCat && watchSourceIdxSet.has(idx)) {
+                    totalSkipped++;
+                    bloo1Progress.skipped = totalSkipped;
+                    continue;
+                  }
+
+                  // 시계 브랜드 페이지: 다른 카테고리에 있으면 → watches로 재분류
+                  if (isWatchCat && nonWatchSourceIdxMap.has(idx)) {
+                    const existingId = nonWatchSourceIdxMap.get(idx)!;
+                    const brandId = matchBrandFromText(name, allBrands);
+                    await storage.updateProduct(existingId, {
+                      categoryId: 'watches',
+                      gender: cat.gender,
+                      brandId: brandId || undefined,
+                      sourceUrl: `https://bloostore1.co.kr/${cat.menuUrl}?idx=${idx}`,
+                    } as any);
+                    watchSourceIdxSet.add(idx);
+                    nonWatchSourceIdxMap.delete(idx);
+                    totalInserted++;
+                    bloo1Progress.inserted = totalInserted;
+                    bloo1Progress.current = totalInserted + totalSkipped;
+                    continue;
+                  }
+
+                  // 시계 외 페이지: 전체 중복 체크
+                  if (!isWatchCat && existingSourceIdx.has(idx)) {
                     totalSkipped++;
                     bloo1Progress.skipped = totalSkipped;
                     continue;
@@ -5361,6 +5402,7 @@ export async function registerRoutes(
                   } as any);
 
                   existingSourceIdx.add(idx);
+                  if (isWatchCat) watchSourceIdxSet.add(idx);
                   totalInserted++;
                   bloo1Progress.inserted = totalInserted;
                   bloo1Progress.current = totalInserted + totalSkipped;
