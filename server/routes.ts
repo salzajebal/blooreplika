@@ -4883,6 +4883,7 @@ export async function registerRoutes(
                     brandId: brandId || undefined,
                     imageUrl: finalImageUrl,
                     imageUrls: finalImages.length > 0 ? finalImages : [finalImageUrl],
+                    detailImageUrls: detailImages,
                     sourceUrl: `https://bloostore.co.kr/shop_view/?idx=${prod.idx}`,
                     sourceIdx: prod.idx,
                     isActive: true,
