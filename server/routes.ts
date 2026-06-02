@@ -5598,7 +5598,7 @@ export async function registerRoutes(
       return res.status(400).json({ success: false, error: "이미 백필이 진행 중입니다." });
     }
 
-    const { onlyMissing = true, concurrency = 4 } = req.body;
+    const { onlyMissing = true, concurrency = 4, minImages = 1 } = req.body;
 
     blooDetailBackfillProgress = {
       status: 'running', total: 0, current: 0, updated: 0, skipped: 0, errors: 0,
@@ -5608,11 +5608,11 @@ export async function registerRoutes(
 
     res.json({ success: true, message: "블루스토어1 상세이미지 백필 시작" });
 
-    runBlooDetailBackfill(onlyMissing, concurrency);
+    runBlooDetailBackfill(onlyMissing, concurrency, minImages);
   });
 
   // ── 백필 핵심 로직 (서버 재시작 후 자동 이어서 실행 지원) ──────────
-  async function runBlooDetailBackfill(onlyMissing: boolean, concurrency: number) {
+  async function runBlooDetailBackfill(onlyMissing: boolean, concurrency: number, minImages = 1) {
     try {
       await storage.setSiteSetting('backfill_detail_autostart', 'true', '상세이미지 백필 자동재시작');
 
@@ -6519,7 +6519,7 @@ export async function registerRoutes(
             for (const p of batch) {
               const url = getSourceUrl(p);
               if (!url) continue;
-              if (onlyMissing && p.detailImageUrls && p.detailImageUrls.length > 0) continue;
+              if (onlyMissing && p.detailImageUrls && p.detailImageUrls.length >= minImages) continue;
               targetProducts.push(p);
             }
             offset += batchSize;
@@ -8778,7 +8778,7 @@ export async function registerRoutes(
           message: '서버 재시작 후 자동 재개 중...', startedAt: new Date(),
         };
         blooDetailBackfillStopped = false;
-        runBlooDetailBackfill(true, 2);
+        runBlooDetailBackfill(true, 2, 2); // minImages=2: 1개짜리도 재크롤
       }
     } catch (e: any) {
       console.error('[blooDetailBackfill] 자동 재시작 체크 오류:', e.message);
