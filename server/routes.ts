@@ -5608,11 +5608,17 @@ export async function registerRoutes(
 
     res.json({ success: true, message: "블루스토어1 상세이미지 백필 시작" });
 
-    (async () => {
-      try {
-        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+    runBlooDetailBackfill(onlyMissing, concurrency);
+  });
 
-        const b1Headers = {
+  // ── 백필 핵심 로직 (서버 재시작 후 자동 이어서 실행 지원) ──────────
+  async function runBlooDetailBackfill(onlyMissing: boolean, concurrency: number) {
+    try {
+      await storage.setSiteSetting('backfill_detail_autostart', 'true', '상세이미지 백필 자동재시작');
+
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+      const b1Headers = {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
           "Accept": "text/html,application/xhtml+xml,*/*",
           "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8",
@@ -5801,13 +5807,16 @@ export async function registerRoutes(
           blooDetailBackfillProgress.completedAt = new Date();
         }
         console.log(`[blooDetailBackfill] Done: updated=${blooDetailBackfillProgress.updated}, skipped=${blooDetailBackfillProgress.skipped}, errors=${blooDetailBackfillProgress.errors}`);
+        // 완료 시 autostart 해제
+        if (!blooDetailBackfillStopped) {
+          await storage.setSiteSetting('backfill_detail_autostart', 'false', '상세이미지 백필 완료됨');
+        }
       } catch (error: any) {
         blooDetailBackfillProgress.status = 'error';
         blooDetailBackfillProgress.message = `오류: ${error.message}`;
         console.error('[blooDetailBackfill] Fatal error:', error);
       }
-    })();
-  });
+  };
 
   // ============= WATCH DETAIL IMAGE RE-CRAWL =============
   let watchDetailProgress: {
@@ -8699,6 +8708,24 @@ export async function registerRoutes(
       res.status(500).json({ success: false, error: error.message });
     }
   });
+
+  // ── 서버 시작 시 백필 자동 재시작 (DB 설정 기반) ─────────────────────
+  setTimeout(async () => {
+    try {
+      const setting = await storage.getSiteSetting('backfill_detail_autostart');
+      if (setting?.value === 'true' && blooDetailBackfillProgress.status !== 'running') {
+        console.log('[blooDetailBackfill] 서버 재시작 감지 → 백필 자동 재시작 중...');
+        blooDetailBackfillProgress = {
+          status: 'running', total: 0, current: 0, updated: 0, skipped: 0, errors: 0,
+          message: '서버 재시작 후 자동 재개 중...', startedAt: new Date(),
+        };
+        blooDetailBackfillStopped = false;
+        runBlooDetailBackfill(true, 4);
+      }
+    } catch (e: any) {
+      console.error('[blooDetailBackfill] 자동 재시작 체크 오류:', e.message);
+    }
+  }, 10000); // 서버 완전히 뜬 후 10초 뒤 체크
 
   // ── watches 카테고리 비시계 상품 정리 ──────────────────────────────────
   app.post("/api/admin/products/cleanup-watches", requireAdminAuth, async (_req: Request, res: Response) => {
