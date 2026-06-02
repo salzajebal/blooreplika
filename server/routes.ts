@@ -5771,9 +5771,9 @@ export async function registerRoutes(
         let targetProducts = allProducts.filter(p => p.sourceIdx != null && p.sourceIdx > 0);
 
         if (onlyMissing) {
-          // detailImageUrls 기준으로 필터 (imageUrls 기준보다 정확)
+          // detailImageUrls 기준으로 필터 (minImages 미만인 상품만 재크롤)
           targetProducts = targetProducts.filter(p =>
-            !p.detailImageUrls || (p.detailImageUrls as string[]).length === 0
+            !p.detailImageUrls || (p.detailImageUrls as string[]).length < minImages
           );
         }
 
