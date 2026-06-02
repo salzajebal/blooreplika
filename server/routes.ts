@@ -5598,7 +5598,7 @@ export async function registerRoutes(
       return res.status(400).json({ success: false, error: "이미 백필이 진행 중입니다." });
     }
 
-    const { onlyMissing = true, concurrency = 4, minImages = 1 } = req.body;
+    const { onlyMissing = true, concurrency = 4, minImages = 2 } = req.body;
 
     blooDetailBackfillProgress = {
       status: 'running', total: 0, current: 0, updated: 0, skipped: 0, errors: 0,
