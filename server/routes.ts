@@ -5620,24 +5620,42 @@ export async function registerRoutes(
 
       const b1Headers = {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-          "Accept": "text/html,application/xhtml+xml,*/*",
-          "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+          "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+          "Accept-Encoding": "gzip, deflate, br",
           "Referer": "https://bloostore1.co.kr/",
+          "Cache-Control": "no-cache",
+          "Pragma": "no-cache",
+          "sec-ch-ua": '"Chromium";v="124", "Google Chrome";v="124"',
+          "sec-ch-ua-mobile": "?0",
+          "sec-ch-ua-platform": '"Windows"',
+          "sec-fetch-dest": "document",
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-site": "same-origin",
+          "sec-fetch-user": "?1",
+          "upgrade-insecure-requests": "1",
         };
 
-        const b1Fetch = async (url: string, retries = 3): Promise<string | null> => {
+        const b1Fetch = async (url: string, retries = 4): Promise<string | null> => {
           for (let attempt = 0; attempt < retries; attempt++) {
             const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), 12000);
+            const timer = setTimeout(() => controller.abort(), 20000);
             try {
               const r = await fetch(url, { headers: b1Headers, signal: controller.signal });
               clearTimeout(timer);
               if (r.ok) return await r.text();
               if (r.status === 404) return null;
-              if (attempt < retries - 1) await delay(500 * (attempt + 1));
+              // 403/429 → 차단/레이트리밋: 긴 대기 후 재시도
+              if (r.status === 403 || r.status === 429) {
+                const waitMs = 15000 * (attempt + 1); // 15s, 30s, 45s
+                console.log(`[blooDetailBackfill] ${r.status} for ${url}, waiting ${waitMs/1000}s...`);
+                if (attempt < retries - 1) await delay(waitMs);
+                continue;
+              }
+              if (attempt < retries - 1) await delay(2000 * (attempt + 1));
             } catch (e: any) {
               clearTimeout(timer);
-              if (attempt < retries - 1) await delay(500 * (attempt + 1));
+              if (attempt < retries - 1) await delay(2000 * (attempt + 1));
             }
           }
           return null;
@@ -5654,44 +5672,80 @@ export async function registerRoutes(
           const $ = cheerio.load(html);
           const images: string[] = [];
 
-          const addImage = (url: string) => {
-            // ?w=750 같은 쿼리 제거, cdn-optimized → cdn 정규화
-            const clean = url.split('?')[0].replace('cdn-optimized.imweb.me', 'cdn.imweb.me');
-            // thumbnail/ 또는 upload/S 패턴인지 확인 (사이트 공통 이미지 제외)
-            if (!clean.includes('cdn.imweb.me')) return;
-            if (isCommonImage(clean)) return;
-            // upload/S20230920d5d5cda65981a/ 는 사이트 공통 자산 폴더 → 제외
-            if (clean.includes('/upload/S20230920d5d5cda65981a/')) return;
-            if (!images.includes(clean)) images.push(clean);
+          // URL에서 파일명 해시만 추출 (중복 판별용)
+          const imgHash = (url: string): string => {
+            const m = url.match(/\/([^/.]+)\.\w+$/);
+            return m ? m[1] : url;
           };
 
-          // 1) JSON-LD Product.image — 원본 사이즈, 가장 신뢰도 높음
+          // bloostore1 사이트 공통 이미지 해시 (모든 상품에 동일하게 나타나는 배너/버튼)
+          // find-common-imgs.ts 분석으로 확인된 5개 공통 해시
+          const COMMON_HASHES = new Set([
+            '91dc0b3052412', // BLOO 검수 배너
+            'e4211aabdece9', // 톡상담 버튼
+            '362326a168295', // 패키지 배너
+            'cfe01887db836', // 공통 이미지
+            '939f0df3a3d23', // 공통 이미지
+            // isCommonImage()에서 이미 걸러지는 것들도 여기에 포함
+            'afdfe65a9ac1d', '885873f75d2c3', '59d659c00f76c',
+          ]);
+
+          const addImage = (url: string) => {
+            const clean = url.split('?')[0].replace('cdn-optimized.imweb.me', 'cdn.imweb.me');
+            if (!clean.includes('cdn.imweb.me')) return;
+            const hash = imgHash(clean);
+            // 사이트 공통 이미지 제외 (해시 기반 — upload 폴더 전체 제외는 하지 않음)
+            if (COMMON_HASHES.has(hash)) return;
+            // 동일 해시 중복 제외
+            if (images.some(e => imgHash(e) === hash)) return;
+            images.push(clean);
+          };
+
+          // 1) #prodDetailPC template — 상품 상세 설명 본문 이미지들 (다각도 사진 8-10장)
+          //    cheerio의 .find()는 <template> 내부를 탐색 못함 → html() + regex 방식 사용
+          const tplHtml = $('#prodDetailPC').html() || '';
+          if (tplHtml) {
+            for (const m of tplHtml.matchAll(/src="([^"]*cdn[^"]*)"/g)) {
+              addImage(m[1]);
+            }
+          }
+
+          // 2) JSON-LD Product.image — 메인 썸네일 (carousel 이미지, 앞에 삽입)
+          //    template에 없는 경우가 있으므로 별도로 수집
+          let jsonldImage = '';
           $('script[type="application/ld+json"]').each((_i, el) => {
+            if (jsonldImage) return;
             try {
               const d = JSON.parse($(el).html() || '');
               if (d['@type'] === 'Product' && d.image) {
                 const imgs = Array.isArray(d.image) ? d.image : [d.image];
-                imgs.forEach((img: string) => { if (typeof img === 'string') addImage(img); });
+                const first = (imgs as string[]).find(img => typeof img === 'string' && img.includes('cdn.imweb.me'));
+                if (first) jsonldImage = first.split('?')[0];
               }
             } catch {}
           });
+          if (jsonldImage) {
+            const hash = imgHash(jsonldImage);
+            if (!COMMON_HASHES.has(hash) && !images.some(e => imgHash(e) === hash)) {
+              images.unshift(jsonldImage); // 메인 이미지를 맨 앞으로
+            }
+          }
 
-          // 2) OG image — 소셜 미리보기용 원본
-          const ogImg = $('meta[property="og:image"]').attr('content') || '';
-          if (ogImg) addImage(ogImg);
+          // 3) Fallback: template 없고 JSON-LD도 없을 때 OG image
+          if (images.length === 0) {
+            const ogImg = $('meta[property="og:image"]').attr('content') || '';
+            if (ogImg) addImage(ogImg);
+          }
 
-          // 3) #prod_image_list 내 <img> src — 표시용 썸네일
-          const imgSection = $('#prod_image_list, .goods_thumbs_wrap').first();
-          if (imgSection.length > 0) {
-            imgSection.find('img').each((_i, el) => {
-              const src = $(el).attr('src') || $(el).attr('data-src') || '';
-              if (src) addImage(src);
-            });
-            // background-image style 속성도 추출
-            imgSection.find('[style]').each((_i, el) => {
-              const m = ($(el).attr('style') || '').match(/url\(['"](https?:\/\/cdn[^'"]+)['"]\)/);
-              if (m) addImage(m[1]);
-            });
+          // 4) Fallback: #prod_image_list (위 모두 실패 시)
+          if (images.length === 0) {
+            const imgSection = $('#prod_image_list, .goods_thumbs_wrap').first();
+            if (imgSection.length > 0) {
+              imgSection.find('img').each((_i, el) => {
+                const src = $(el).attr('src') || $(el).attr('data-src') || '';
+                if (src) addImage(src);
+              });
+            }
           }
 
           // 4) Extract sizes from select options
@@ -5734,7 +5788,7 @@ export async function registerRoutes(
 
           const detailUrl = `https://bloostore1.co.kr/shop_view/?idx=${product.sourceIdx}`;
           try {
-            await delay(Math.random() * 200 + 100); // 100-300ms jitter
+            await delay(Math.random() * 1000 + 1500); // 1.5-2.5s jitter (IP 차단 방지)
             const html = await b1Fetch(detailUrl);
             if (!html) {
               blooDetailBackfillProgress.skipped++;
@@ -5796,7 +5850,7 @@ export async function registerRoutes(
             const product = queue.shift();
             if (!product) break;
             await processOne(product);
-            await delay(150); // rate limit between requests per worker
+            await delay(500); // extra buffer between items per worker
           }
         });
 
@@ -8724,7 +8778,7 @@ export async function registerRoutes(
           message: '서버 재시작 후 자동 재개 중...', startedAt: new Date(),
         };
         blooDetailBackfillStopped = false;
-        runBlooDetailBackfill(true, 4);
+        runBlooDetailBackfill(true, 2);
       }
     } catch (e: any) {
       console.error('[blooDetailBackfill] 자동 재시작 체크 오류:', e.message);
