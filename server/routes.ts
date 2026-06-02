@@ -5654,41 +5654,44 @@ export async function registerRoutes(
           const $ = cheerio.load(html);
           const images: string[] = [];
 
-          // 1) Main product image from #prod_image_list / .goods_thumbs_wrap
+          const addImage = (url: string) => {
+            // ?w=750 같은 쿼리 제거, cdn-optimized → cdn 정규화
+            const clean = url.split('?')[0].replace('cdn-optimized.imweb.me', 'cdn.imweb.me');
+            // thumbnail/ 또는 upload/S 패턴인지 확인 (사이트 공통 이미지 제외)
+            if (!clean.includes('cdn.imweb.me')) return;
+            if (isCommonImage(clean)) return;
+            // upload/S20230920d5d5cda65981a/ 는 사이트 공통 자산 폴더 → 제외
+            if (clean.includes('/upload/S20230920d5d5cda65981a/')) return;
+            if (!images.includes(clean)) images.push(clean);
+          };
+
+          // 1) JSON-LD Product.image — 원본 사이즈, 가장 신뢰도 높음
+          $('script[type="application/ld+json"]').each((_i, el) => {
+            try {
+              const d = JSON.parse($(el).html() || '');
+              if (d['@type'] === 'Product' && d.image) {
+                const imgs = Array.isArray(d.image) ? d.image : [d.image];
+                imgs.forEach((img: string) => { if (typeof img === 'string') addImage(img); });
+              }
+            } catch {}
+          });
+
+          // 2) OG image — 소셜 미리보기용 원본
+          const ogImg = $('meta[property="og:image"]').attr('content') || '';
+          if (ogImg) addImage(ogImg);
+
+          // 3) #prod_image_list 내 <img> src — 표시용 썸네일
           const imgSection = $('#prod_image_list, .goods_thumbs_wrap').first();
           if (imgSection.length > 0) {
-            const sectionHtml = imgSection.html() || '';
-            const cdnUrls = sectionHtml.match(/https?:\/\/cdn(?:-optimized)?\.imweb\.me\/[^\s"'>\)\\?]+/g) || [];
-            cdnUrls.forEach(u => {
-              const normalized = u.replace('cdn-optimized.imweb.me', 'cdn.imweb.me');
-              if (!images.includes(normalized) && !isCommonImage(normalized)) {
-                images.push(normalized);
-              }
+            imgSection.find('img').each((_i, el) => {
+              const src = $(el).attr('src') || $(el).attr('data-src') || '';
+              if (src) addImage(src);
             });
-          }
-
-          // 2) Fallback: JSON-LD product images
-          if (images.length === 0) {
-            $('script[type="application/ld+json"]').each((_i, el) => {
-              try {
-                const d = JSON.parse($(el).html() || '');
-                if (d['@type'] === 'Product' && d.image) {
-                  const imgs = Array.isArray(d.image) ? d.image : [d.image];
-                  imgs.forEach((img: string) => {
-                    if (typeof img === 'string' && img.includes('cdn.imweb.me') && !images.includes(img) && !isCommonImage(img)) {
-                      images.push(img);
-                    }
-                  });
-                }
-              } catch {}
+            // background-image style 속성도 추출
+            imgSection.find('[style]').each((_i, el) => {
+              const m = ($(el).attr('style') || '').match(/url\(['"](https?:\/\/cdn[^'"]+)['"]\)/);
+              if (m) addImage(m[1]);
             });
-          }
-
-          // 3) Fallback: OG image
-          const ogImg = $('meta[property="og:image"]').attr('content');
-          if (ogImg && ogImg.includes('cdn.imweb.me') && !isCommonImage(ogImg)) {
-            const cleanOg = ogImg.split('?')[0];
-            if (!images.includes(cleanOg)) images.unshift(cleanOg);
           }
 
           // 4) Extract sizes from select options
@@ -5714,8 +5717,9 @@ export async function registerRoutes(
         let targetProducts = allProducts.filter(p => p.sourceIdx != null && p.sourceIdx > 0);
 
         if (onlyMissing) {
+          // detailImageUrls 기준으로 필터 (imageUrls 기준보다 정확)
           targetProducts = targetProducts.filter(p =>
-            !p.imageUrls || p.imageUrls.length <= 1
+            !p.detailImageUrls || (p.detailImageUrls as string[]).length === 0
           );
         }
 
