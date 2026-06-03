@@ -10433,7 +10433,7 @@ function HomeSectionAdminTab({ authToken }: { authToken: string }) {
   const fetchCurrent = async (cat: SectionKey) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/products?limit=10&isBest=true&category=${cat}`);
+      const res = await fetch(`/api/products?limit=20&isBest=true&category=${cat}&_t=${Date.now()}`, { cache: "no-store" });
       const data = await res.json();
       setCurrentProducts(data.success ? data.data : []);
     } finally { setLoading(false); }
@@ -10449,33 +10449,52 @@ function HomeSectionAdminTab({ authToken }: { authToken: string }) {
     if (!searchQuery.trim()) return;
     setSearchLoading(true);
     try {
-      const res = await fetch(`/api/products?limit=20&search=${encodeURIComponent(searchQuery.trim())}`);
+      const res = await fetch(
+        `/api/products?limit=30&category=${activeSection}&search=${encodeURIComponent(searchQuery.trim())}&_t=${Date.now()}`,
+        { cache: "no-store" }
+      );
       const data = await res.json();
       setSearchResults(data.success ? data.data : []);
     } finally { setSearchLoading(false); }
   };
 
   const handleAdd = async (productId: string) => {
-    const res = await fetch("/api/admin/products/bulk-update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
-      body: JSON.stringify({ productIds: [productId], updates: { isBest: true, categoryId: activeSection } }),
-    });
-    const data = await res.json();
-    if (data.success) { setMsg({ type: "ok", text: "섹션에 추가됐습니다" }); fetchCurrent(activeSection); }
-    else setMsg({ type: "err", text: data.error || "추가 실패" });
+    try {
+      const res = await fetch("/api/admin/products/bulk-update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ productIds: [productId], updates: { isBest: true } }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMsg({ type: "ok", text: "섹션에 추가됐습니다" });
+        await fetchCurrent(activeSection);
+      } else {
+        setMsg({ type: "err", text: data.error || "추가 실패" });
+      }
+    } catch {
+      setMsg({ type: "err", text: "네트워크 오류" });
+    }
     setTimeout(() => setMsg(null), 2500);
   };
 
   const handleRemove = async (productId: string) => {
-    const res = await fetch("/api/admin/products/bulk-update", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
-      body: JSON.stringify({ productIds: [productId], updates: { isBest: false } }),
-    });
-    const data = await res.json();
-    if (data.success) { setMsg({ type: "ok", text: "섹션에서 제거됐습니다" }); fetchCurrent(activeSection); }
-    else setMsg({ type: "err", text: data.error || "제거 실패" });
+    try {
+      const res = await fetch("/api/admin/products/bulk-update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+        body: JSON.stringify({ productIds: [productId], updates: { isBest: false } }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMsg({ type: "ok", text: "섹션에서 제거됐습니다" });
+        await fetchCurrent(activeSection);
+      } else {
+        setMsg({ type: "err", text: data.error || "제거 실패" });
+      }
+    } catch {
+      setMsg({ type: "err", text: "네트워크 오류" });
+    }
     setTimeout(() => setMsg(null), 2500);
   };
 
@@ -10543,9 +10562,9 @@ function HomeSectionAdminTab({ authToken }: { authToken: string }) {
         </div>
 
         <div>
-          <p className="text-sm font-bold text-gray-700 mb-2">상품 추가</p>
+          <p className="text-sm font-bold text-gray-700 mb-2">상품 추가 <span className="text-xs text-gray-400 font-normal">— {section.label} 카테고리 내 검색</span></p>
           <div className="flex gap-2 mb-3">
-            <input type="text" placeholder="상품명 또는 브랜드 검색..."
+            <input type="text" placeholder={`${section.label} 상품명 또는 브랜드 검색...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
