@@ -768,49 +768,35 @@ export default function Home() {
           objectPos="50% 50%"
         />
 
-        {/* 5. 남성 가방 배너 */}
+        {/* 5. 가방 배너 */}
         <WideBanner
           imageUrl={BP("https://cdn.imweb.me/thumbnail/20231208/979730d743454.jpg")}
-          href="/1212"
+          href="/products/bags"
           objectPos="50% 50%"
         />
         <RankedProductsSection
           title="Luxury Bag Collection"
-          subtitle="BEST 남성 가방 랭킹"
-          apiUrl="/api/products?limit=5&isBest=true&category=bags&gender=남성"
-          moreLink="/1212"
-          testId="mens-bag-section"
-        />
-
-        {/* 6. 여성 가방 배너 */}
-        <WideBanner
-          imageUrl={BP("https://cdn.imweb.me/thumbnail/20231208/d0be5fcf8b28e.jpg")}
-          href="/1447"
-          objectPos="50% 50%"
-        />
-        <RankedProductsSection
-          title="Luxury Bag Collection"
-          subtitle="BEST 여성 가방 랭킹"
-          apiUrl="/api/products?limit=5&isBest=true&category=bags&gender=여성"
-          moreLink="/1447"
-          testId="womens-bag-section"
+          subtitle="BEST 가방 랭킹"
+          apiUrl="/api/products?limit=5&isBest=true&category=bags"
+          moreLink="/products/bags"
+          testId="bag-section"
         />
 
         {/* 7. Inspection section */}
         <InspectionSection />
 
-        {/* 8. 남성 패션잡화 배너 */}
+        {/* 8. 쥬얼리 배너 */}
         <WideBanner
           imageUrl={BP("https://cdn.imweb.me/thumbnail/20231208/719e6eec8251b.jpg")}
-          href="/26"
+          href="/products/jewelry"
           objectPos="50% 50%"
         />
         <RankedProductsSection
-          title="인기 럭셔리 액세서리"
-          subtitle="포인트가 되어줄 Best Acc"
-          apiUrl="/api/products?limit=5&isBest=true&category=accessories"
-          moreLink="/26"
-          testId="accessory-section"
+          title="Luxury Jewelry"
+          subtitle="인기 럭셔리 쥬얼리"
+          apiUrl="/api/products?limit=5&isBest=true&category=jewelry"
+          moreLink="/products/jewelry"
+          testId="jewelry-section"
         />
 
         {/* 9. 시계관 배너 */}
