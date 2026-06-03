@@ -72,6 +72,26 @@ function BrandIconRow({
   gender: "men" | "women";
   topBrandsImageMap?: Record<string, string>;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const didDrag = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftRef = useRef(0);
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    isDragging.current = true;
+    didDrag.current = false;
+    startX.current = e.clientX;
+    scrollLeftRef.current = scrollRef.current.scrollLeft;
+  };
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current || !scrollRef.current) return;
+    const walk = e.clientX - startX.current;
+    if (Math.abs(walk) > 4) didDrag.current = true;
+    scrollRef.current.scrollLeft = scrollLeftRef.current - walk;
+  };
+  const onMouseUp = () => { isDragging.current = false; };
   const WOMEN_BRAND_ICONS: Record<string, string> = {
     "HERMES": "/bloo/brands/women_hermes.jpg",
     "Hermes": "/bloo/brands/women_hermes.jpg",
@@ -102,7 +122,15 @@ function BrandIconRow({
   const iconMap = gender === "women" ? WOMEN_BRAND_ICONS : BLOO_CDN_BRAND_ICONS;
 
   return (
-    <div className="flex gap-4 overflow-x-auto scrollbar-hide px-4 lg:px-6 py-4 border-b border-gray-100">
+    <div
+      ref={scrollRef}
+      className="flex gap-4 overflow-x-auto scrollbar-hide px-4 lg:px-6 py-4 border-b border-gray-100 cursor-grab active:cursor-grabbing"
+      style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseUp}
+    >
       {brands.slice(0, 20).map((brand: any) => {
         const staticIcon = iconMap[brand.name] ?? getBrandCdnIcon(brand.name);
         const dbImage = topBrandsImageMap?.[brand.id];
@@ -115,7 +143,7 @@ function BrandIconRow({
         return (
           <button
             key={brand.id}
-            onClick={() => onSelect(brand.id)}
+            onClick={() => { if (!didDrag.current) onSelect(brand.id); }}
             className="flex flex-col items-center gap-1.5 flex-shrink-0 group"
             data-testid={`brand-logo-${brand.id}`}
           >

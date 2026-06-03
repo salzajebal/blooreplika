@@ -362,19 +362,44 @@ function IconImageRow({
   const imgRef = useRef<HTMLImageElement>(null);
   const [imgLoaded, setImgLoaded] = useState(false);
 
+  // Mouse drag-scroll (desktop)
+  const isDragging = useRef(false);
+  const didDrag = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftRef = useRef(0);
+
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    isDragging.current = true;
+    didDrag.current = false;
+    startX.current = e.clientX;
+    scrollLeftRef.current = scrollRef.current.scrollLeft;
+  };
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current || !scrollRef.current) return;
+    const walk = e.clientX - startX.current;
+    if (Math.abs(walk) > 4) didDrag.current = true;
+    scrollRef.current.scrollLeft = scrollLeftRef.current - walk;
+  };
+  const onMouseUp = () => { isDragging.current = false; };
+
   const DISPLAY_HEIGHT = 130;
 
   return (
     <div className="mb-2">
       <div
         ref={scrollRef}
-        className="overflow-x-auto overflow-y-hidden select-none"
+        className="overflow-x-auto overflow-y-hidden select-none cursor-grab active:cursor-grabbing"
         style={{
           scrollbarWidth: "none",
           msOverflowStyle: "none",
           WebkitOverflowScrolling: "touch",
           touchAction: "pan-x",
         } as React.CSSProperties}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
       >
         <div style={{ display: "flex", height: `${DISPLAY_HEIGHT}px`, position: "relative" }}>
           <img
@@ -401,7 +426,7 @@ function IconImageRow({
             return (
               <div
                 key={icon.label}
-                onClick={() => onIconClick(icon)}
+                onClick={() => { if (!didDrag.current) onIconClick(icon); }}
                 style={{
                   position: "absolute",
                   left: `${i * iconW}px`,

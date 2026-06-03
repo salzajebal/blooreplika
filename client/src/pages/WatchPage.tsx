@@ -97,6 +97,27 @@ export default function WatchPage({ brandPath }: { brandPath: string }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
+  // Mouse drag-scroll for brand icon row
+  const brandIconScrollRef = useRef<HTMLDivElement>(null);
+  const brandIconIsDragging = useRef(false);
+  const brandIconDidDrag = useRef(false);
+  const brandIconStartX = useRef(0);
+  const brandIconScrollLeft = useRef(0);
+  const brandIconMouseDown = (e: React.MouseEvent) => {
+    if (!brandIconScrollRef.current) return;
+    brandIconIsDragging.current = true;
+    brandIconDidDrag.current = false;
+    brandIconStartX.current = e.clientX;
+    brandIconScrollLeft.current = brandIconScrollRef.current.scrollLeft;
+  };
+  const brandIconMouseMove = (e: React.MouseEvent) => {
+    if (!brandIconIsDragging.current || !brandIconScrollRef.current) return;
+    const walk = e.clientX - brandIconStartX.current;
+    if (Math.abs(walk) > 4) brandIconDidDrag.current = true;
+    brandIconScrollRef.current.scrollLeft = brandIconScrollLeft.current - walk;
+  };
+  const brandIconMouseUp = () => { brandIconIsDragging.current = false; };
+
   const activeBrand = WATCH_BRANDS.find(b => b.path === brandPath) ?? WATCH_BRANDS[0];
 
   const { data: brandsData } = useQuery<{ success: boolean; data: Brand[] }>({
@@ -239,15 +260,20 @@ export default function WatchPage({ brandPath }: { brandPath: string }) {
             {/* ── 브랜드 아이콘 원형 (bloostore1 412 스타일) ── */}
             <div className="mb-6 -mx-3 md:mx-0">
               <div
-                className="flex gap-1 md:gap-3 overflow-x-auto px-3 md:px-0 pb-1"
+                ref={brandIconScrollRef}
+                className="flex gap-1 md:gap-3 overflow-x-auto px-3 md:px-0 pb-1 cursor-grab active:cursor-grabbing"
                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}
+                onMouseDown={brandIconMouseDown}
+                onMouseMove={brandIconMouseMove}
+                onMouseUp={brandIconMouseUp}
+                onMouseLeave={brandIconMouseUp}
               >
                 {WATCH_BRANDS.map(brand => {
                   const isActive = brand.path === brandPath;
                   return (
                     <div
                       key={brand.path}
-                      onClick={() => setLocation(brand.path)}
+                      onClick={() => { if (!brandIconDidDrag.current) setLocation(brand.path); }}
                       className="flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0"
                       style={{ minWidth: 70 }}
                       data-testid={`watch-brand-icon-${brand.nameKo}`}
