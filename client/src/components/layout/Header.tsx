@@ -230,14 +230,14 @@ export function Header() {
                   </span>
                 )}
               </Link>
-              <Link
-                href="/support"
+              <button
+                onClick={() => { (window as any).ChannelIO?.('showMessenger'); }}
                 className="flex items-center gap-1 px-3 py-1.5 text-[15px] text-gray-700 hover:text-black font-medium transition-colors"
                 data-testid="header-support-link"
               >
                 <MessageCircle className="w-4 h-4" />
                 <span className="hidden sm:inline">1:1상담</span>
-              </Link>
+              </button>
             </div>
           </div>
         </div>

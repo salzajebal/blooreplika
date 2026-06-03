@@ -8,7 +8,6 @@ import { WishlistProvider } from "@/contexts/WishlistContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { MarketingPixels } from "@/components/MarketingPixels";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { ChatWidget } from "@/components/layout/ChatWidget";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import ProductList from "@/pages/ProductList";
@@ -160,7 +159,6 @@ function AppShell() {
       <MarketingPixels />
       <Router />
       {!isAdminRoute && <BottomNav />}
-      {!isAdminRoute && <ChatWidget />}
     </>
   );
 }
