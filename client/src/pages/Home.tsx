@@ -724,8 +724,7 @@ function CustomerSupportSection() {
         </div>
         <div className="flex flex-col justify-center">
           <div className="text-sm text-gray-500 space-y-1">
-            <p>문의시간 10:00 ~ 24:00 (주말 및 공휴일 포함)</p>
-            <p>점심시간 12:00 ~ 13:00</p>
+            <p>문의시간 10:00 ~ 18:00 (주말 및 공휴일 포함)</p>
           </div>
         </div>
       </div>
