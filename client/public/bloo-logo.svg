@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="120" viewBox="0 0 400 120">
+  <rect width="400" height="120" fill="white"/>
+  <text
+    x="200"
+    y="90"
+    text-anchor="middle"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-weight="900"
+    font-size="78"
+    letter-spacing="14"
+    fill="#060133"
+  >BLOO</text>
+</svg>

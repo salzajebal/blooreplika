@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "sCIV03FTTtIe3QZNL-wJs"
+uri = "file://client/public/bloo-logo.png"
+type = "image"
+title = "BLOO 로고 (PNG)"
+
+[[outputs]]
+id = "O5X_CnLBIoe9XC67qWMry"
+uri = "file://client/public/bloo-logo.svg"
+type = "image"
+title = "BLOO 로고 (SVG - 벡터)"
