@@ -392,9 +392,10 @@ export default function Admin() {
   const [globalSaleLoading, setGlobalSaleLoading] = useState(false);
 
   const [priceReducePercent, setPriceReducePercent] = useState<number>(10);
-  const [priceReduceScope, setPriceReduceScope] = useState<"all" | "category" | "brand">("all");
+  const [priceReduceScope, setPriceReduceScope] = useState<"all" | "category" | "brand" | "category_brand">("all");
   const [priceReduceCategory, setPriceReduceCategory] = useState<string>("clothing");
   const [priceReduceBrand, setPriceReduceBrand] = useState<string>("");
+  const [priceReduceCatBrand, setPriceReduceCatBrand] = useState<string>("");
   const [priceReduceLoading, setPriceReduceLoading] = useState(false);
 
   const [productCount, setProductCount] = useState<number | null>(null);
@@ -2239,15 +2240,20 @@ export default function Admin() {
   };
 
   const applyBulkPriceReduce = async () => {
-    const scopeLabel = priceReduceScope === "all" ? "전체 상품" :
-      priceReduceScope === "category" ? `${CATEGORIES.find(c => c.id === priceReduceCategory)?.name || priceReduceCategory} 카테고리` :
-      `${brands.find(b => b.id === priceReduceBrand)?.name || "선택 브랜드"} 브랜드`;
+    const catName = CATEGORY_OPTIONS.find(c => c.id === priceReduceCategory)?.name || priceReduceCategory;
+    const brandName = (id: string) => brands.find(b => b.id === id)?.name || "선택 브랜드";
+    const scopeLabel =
+      priceReduceScope === "all" ? "전체 상품" :
+      priceReduceScope === "category" ? `${catName} 카테고리` :
+      priceReduceScope === "brand" ? `${brandName(priceReduceBrand)} 브랜드` :
+      `${catName} 카테고리 > ${brandName(priceReduceCatBrand)} 브랜드`;
     if (!confirm(`${scopeLabel}의 가격을 ${priceReducePercent}% 인하하시겠습니까?\n\n※ 할인 표시 없이 실제 가격이 영구 변경됩니다. 되돌릴 수 없습니다.`)) return;
     setPriceReduceLoading(true);
     try {
-      const body: any = { percent: priceReducePercent, scope: priceReduceScope };
+      const body: any = { percent: priceReducePercent };
       if (priceReduceScope === "category") body.categoryId = priceReduceCategory;
       if (priceReduceScope === "brand") body.brandId = priceReduceBrand;
+      if (priceReduceScope === "category_brand") { body.categoryId = priceReduceCategory; body.brandId = priceReduceCatBrand; }
       const res = await fetchWithAuth("/api/admin/bulk-price-reduce", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

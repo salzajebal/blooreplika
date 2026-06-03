@@ -746,14 +746,16 @@ export async function registerRoutes(
       const params: any[] = [multiplier];
       let paramIdx = 2;
 
-      if (scope === "category" && categoryId) {
+      // apply category filter if provided
+      if (categoryId) {
         whereClause += ` AND category_id = $${paramIdx++}`;
         params.push(categoryId);
-      } else if (scope === "brand" && brandId) {
+      }
+      // apply brand filter if provided (can combine with category)
+      if (brandId) {
         whereClause += ` AND brand_id = $${paramIdx++}`;
         params.push(brandId);
       }
-      // scope === "all" → no extra filter
 
       const { pool } = await import("./db");
       const result = await pool.query(
