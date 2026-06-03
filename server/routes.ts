@@ -696,6 +696,90 @@ export async function registerRoutes(
     }
   });
   
+  // ==================== BULK SIZE UPDATE ====================
+
+  app.post("/api/admin/bulk-update-sizes", requireAdminAuth, async (req: Request, res: Response) => {
+    res.json({ success: true, message: "사이즈 일괄 업데이트 시작 (백그라운드 실행)" });
+    (async () => {
+      try {
+        const { db } = await import("./db");
+        const { products } = await import("@shared/schema");
+        const { sql, isNull, inArray } = await import("drizzle-orm");
+
+        const SIZE_CATS = ['shoes', 'clothing', 'golf', 'belts'];
+        const allProds = await db.select().from(products)
+          .where(inArray(products.categoryId, SIZE_CATS));
+
+        const FEMALE_KW = ['샌들', '힐', '펌프스', '뮬', '여성', '레이디', 'ladies', 'women', '플랫', '웨지', '키튼'];
+        const MALE_KW = ['남성', '맨즈', "men's", 'men ', '남자'];
+
+        const detectGender = (name: string): 'female' | 'male' | 'unisex' => {
+          if (FEMALE_KW.some(k => name.includes(k))) return 'female';
+          if (MALE_KW.some(k => name.toLowerCase().includes(k.toLowerCase()))) return 'male';
+          return 'unisex';
+        };
+
+        const extractBeltSizes = (name: string): string[] | null => {
+          const m1 = name.match(/\[\s*size\s*[:\s]+\s*(\d+)/i);
+          if (m1) return [m1[1]];
+          const m2 = name.match(/size\s*[:\s]+\s*(\d+)/i);
+          if (m2) return [m2[1]];
+          return null;
+        };
+
+        const SIZE_TABLE: Record<string, Record<string, string[]>> = {
+          shoes: {
+            female: ['220', '225', '230', '235', '240', '245', '250'],
+            male:   ['255', '260', '265', '270', '275', '280', '285'],
+            unisex: ['220', '225', '230', '235', '240', '245', '250', '255', '260', '265', '270', '275', '280'],
+          },
+          clothing: {
+            female: ['44', '55', '66', '77'],
+            male:   ['90', '95', '100', '105', '110'],
+            unisex: ['44', '55', '66', '77', 'S', 'M', 'L', 'XL', '90', '95', '100', '105', '110'],
+          },
+          golf: {
+            female: ['44', '55', '66', '77'],
+            male:   ['90', '95', '100', '105', '110'],
+            unisex: ['44', '55', '66', '77', 'S', 'M', 'L', 'XL', '90', '95', '100', '105', '110'],
+          },
+          belts: {
+            female: ['70', '75', '80', '85', '90'],
+            male:   ['85', '90', '95', '100', '105', '110', '115'],
+            unisex: ['70', '75', '80', '85', '90', '95', '100', '105', '110', '115'],
+          },
+        };
+
+        let updated = 0;
+        for (const prod of allProds) {
+          const cat = prod.categoryId as string;
+          let sizes: string[];
+
+          if (cat === 'belts') {
+            const extracted = extractBeltSizes(prod.name || '');
+            if (extracted) {
+              sizes = extracted;
+            } else {
+              const g = detectGender(prod.name || '');
+              sizes = SIZE_TABLE.belts[g];
+            }
+          } else {
+            const g = detectGender(prod.name || '');
+            sizes = SIZE_TABLE[cat]?.[g] ?? [];
+          }
+
+          if (sizes.length === 0) continue;
+          const opts = JSON.stringify({ colors: [], sizes, extras: [] });
+          await db.execute(sql`UPDATE products SET options = ${opts} WHERE id = ${prod.id}`);
+          updated++;
+        }
+        console.log(`[bulk-update-sizes] Done: ${updated}/${allProds.length} products updated`);
+      } catch (e) {
+        console.error('[bulk-update-sizes] Error:', e);
+      }
+    })();
+  });
+
   // ==================== CATEGORIES API ====================
   
   app.get("/api/categories", async (req: Request, res: Response) => {

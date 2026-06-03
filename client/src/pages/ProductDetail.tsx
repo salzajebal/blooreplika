@@ -176,6 +176,8 @@ export default function ProductDetail() {
 
   const { colors: productColors, sizes: productSizes, extras: productExtras } = parseOptions(product.options);
   const hasOptions = productColors.length > 0 || productSizes.length > 0 || productExtras.length > 0;
+  const NO_SIZE_CATS = ['bags', 'wallets', 'watches', 'jewelry', 'sunglasses', 'accessories'];
+  const categoryNeedsSize = !NO_SIZE_CATS.includes(product.categoryId || '');
   const isWishlisted = isInWishlist(String(product.id));
 
   const basePrice = Number(product.price);
@@ -414,7 +416,7 @@ export default function ProductDetail() {
                     </div>
                   </div>
                 ))}
-                {!hasOptions && (
+                {!hasOptions && categoryNeedsSize && (
                   <div className="relative">
                     <select
                       className="w-full h-11 pl-3 pr-10 border border-gray-300 rounded text-sm text-gray-400 bg-white appearance-none"
