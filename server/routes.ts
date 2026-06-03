@@ -699,85 +699,57 @@ export async function registerRoutes(
   // ==================== BULK SIZE UPDATE ====================
 
   app.post("/api/admin/bulk-update-sizes", requireAdminAuth, async (req: Request, res: Response) => {
-    res.json({ success: true, message: "사이즈 일괄 업데이트 시작 (백그라운드 실행)" });
-    (async () => {
-      try {
-        const { db } = await import("./db");
-        const { products } = await import("@shared/schema");
-        const { sql, isNull, inArray } = await import("drizzle-orm");
+    try {
+      // 여성 키워드 패턴 (shoes/belts 성별 판단)
+      const femalePattern = `(name LIKE '%샌들%' OR name LIKE '%힐%' OR name LIKE '%펌프스%' OR name LIKE '%뮬%' OR name LIKE '%여성%' OR name LIKE '%레이디%' OR name LIKE '%ladies%' OR name LIKE '%women%' OR name LIKE '%플랫%' OR name LIKE '%웨지%' OR name LIKE '%키튼%')`;
+      const malePattern = `(name LIKE '%남성%' OR name LIKE '%맨즈%' OR name ILIKE '%men''s%' OR name LIKE '%남자%')`;
 
-        const SIZE_CATS = ['shoes', 'clothing', 'golf', 'belts'];
-        const allProds = await db.select().from(products)
-          .where(inArray(products.categoryId, SIZE_CATS));
+      const S_FEMALE = JSON.stringify({ colors: [], sizes: ['220','225','230','235','240','245','250'], extras: [] });
+      const S_MALE   = JSON.stringify({ colors: [], sizes: ['255','260','265','270','275','280','285'], extras: [] });
+      const S_UNISEX = JSON.stringify({ colors: [], sizes: ['220','225','230','235','240','245','250','255','260','265','270','275','280'], extras: [] });
+      const C_FEMALE = JSON.stringify({ colors: [], sizes: ['44','55','66','77'], extras: [] });
+      const C_MALE   = JSON.stringify({ colors: [], sizes: ['90','95','100','105','110'], extras: [] });
+      const C_UNISEX = JSON.stringify({ colors: [], sizes: ['44','55','66','77','S','M','L','XL','90','95','100','105','110'], extras: [] });
+      const B_FEMALE = JSON.stringify({ colors: [], sizes: ['70','75','80','85','90'], extras: [] });
+      const B_MALE   = JSON.stringify({ colors: [], sizes: ['85','90','95','100','105','110','115'], extras: [] });
+      const B_UNISEX = JSON.stringify({ colors: [], sizes: ['70','75','80','85','90','95','100','105','110','115'], extras: [] });
 
-        const FEMALE_KW = ['샌들', '힐', '펌프스', '뮬', '여성', '레이디', 'ladies', 'women', '플랫', '웨지', '키튼'];
-        const MALE_KW = ['남성', '맨즈', "men's", 'men ', '남자'];
+      const sql = `
+        UPDATE products
+        SET options = CASE
+          -- 신발
+          WHEN category_id = 'shoes' AND ${femalePattern} THEN $1
+          WHEN category_id = 'shoes' AND ${malePattern}   THEN $2
+          WHEN category_id = 'shoes'                       THEN $3
+          -- 의류
+          WHEN category_id = 'clothing' AND ${femalePattern} THEN $4
+          WHEN category_id = 'clothing' AND ${malePattern}   THEN $5
+          WHEN category_id = 'clothing'                       THEN $6
+          -- 골프
+          WHEN category_id = 'golf' AND ${femalePattern} THEN $4
+          WHEN category_id = 'golf' AND ${malePattern}   THEN $5
+          WHEN category_id = 'golf'                       THEN $6
+          -- 벨트 (이름에서 사이즈 추출 불가한 경우 기본값)
+          WHEN category_id = 'belts' AND ${femalePattern} THEN $7
+          WHEN category_id = 'belts' AND ${malePattern}   THEN $8
+          WHEN category_id = 'belts'                       THEN $9
+          ELSE options
+        END
+        WHERE category_id IN ('shoes','clothing','golf','belts')
+      `;
 
-        const detectGender = (name: string): 'female' | 'male' | 'unisex' => {
-          if (FEMALE_KW.some(k => name.includes(k))) return 'female';
-          if (MALE_KW.some(k => name.toLowerCase().includes(k.toLowerCase()))) return 'male';
-          return 'unisex';
-        };
+      const r = await pool.query(sql, [
+        S_FEMALE, S_MALE, S_UNISEX,
+        C_FEMALE, C_MALE, C_UNISEX,
+        B_FEMALE, B_MALE, B_UNISEX,
+      ]);
 
-        const extractBeltSizes = (name: string): string[] | null => {
-          const m1 = name.match(/\[\s*size\s*[:\s]+\s*(\d+)/i);
-          if (m1) return [m1[1]];
-          const m2 = name.match(/size\s*[:\s]+\s*(\d+)/i);
-          if (m2) return [m2[1]];
-          return null;
-        };
-
-        const SIZE_TABLE: Record<string, Record<string, string[]>> = {
-          shoes: {
-            female: ['220', '225', '230', '235', '240', '245', '250'],
-            male:   ['255', '260', '265', '270', '275', '280', '285'],
-            unisex: ['220', '225', '230', '235', '240', '245', '250', '255', '260', '265', '270', '275', '280'],
-          },
-          clothing: {
-            female: ['44', '55', '66', '77'],
-            male:   ['90', '95', '100', '105', '110'],
-            unisex: ['44', '55', '66', '77', 'S', 'M', 'L', 'XL', '90', '95', '100', '105', '110'],
-          },
-          golf: {
-            female: ['44', '55', '66', '77'],
-            male:   ['90', '95', '100', '105', '110'],
-            unisex: ['44', '55', '66', '77', 'S', 'M', 'L', 'XL', '90', '95', '100', '105', '110'],
-          },
-          belts: {
-            female: ['70', '75', '80', '85', '90'],
-            male:   ['85', '90', '95', '100', '105', '110', '115'],
-            unisex: ['70', '75', '80', '85', '90', '95', '100', '105', '110', '115'],
-          },
-        };
-
-        let updated = 0;
-        for (const prod of allProds) {
-          const cat = prod.categoryId as string;
-          let sizes: string[];
-
-          if (cat === 'belts') {
-            const extracted = extractBeltSizes(prod.name || '');
-            if (extracted) {
-              sizes = extracted;
-            } else {
-              const g = detectGender(prod.name || '');
-              sizes = SIZE_TABLE.belts[g];
-            }
-          } else {
-            const g = detectGender(prod.name || '');
-            sizes = SIZE_TABLE[cat]?.[g] ?? [];
-          }
-
-          if (sizes.length === 0) continue;
-          const opts = JSON.stringify({ colors: [], sizes, extras: [] });
-          await db.execute(sql`UPDATE products SET options = ${opts} WHERE id = ${prod.id}`);
-          updated++;
-        }
-        console.log(`[bulk-update-sizes] Done: ${updated}/${allProds.length} products updated`);
-      } catch (e) {
-        console.error('[bulk-update-sizes] Error:', e);
-      }
-    })();
+      console.log(`[bulk-update-sizes] Done: ${r.rowCount} products updated`);
+      res.json({ success: true, message: `사이즈 업데이트 완료: ${r.rowCount}개 상품` });
+    } catch (e: any) {
+      console.error('[bulk-update-sizes] Error:', e);
+      res.status(500).json({ success: false, error: e.message });
+    }
   });
 
   // ==================== CATEGORIES API ====================
