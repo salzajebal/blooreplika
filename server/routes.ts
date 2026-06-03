@@ -733,6 +733,41 @@ export async function registerRoutes(
     }
   });
   
+  // ==================== BULK PRICE REDUCE (no discount display) ====================
+  app.post("/api/admin/bulk-price-reduce", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { percent, scope, categoryId, brandId } = req.body;
+      if (typeof percent !== "number" || percent <= 0 || percent >= 100) {
+        return res.status(400).json({ success: false, error: "percent는 1~99 사이 숫자여야 합니다." });
+      }
+      const multiplier = (100 - percent) / 100;
+
+      let whereClause = `price > 0`;
+      const params: any[] = [multiplier];
+      let paramIdx = 2;
+
+      if (scope === "category" && categoryId) {
+        whereClause += ` AND category_id = $${paramIdx++}`;
+        params.push(categoryId);
+      } else if (scope === "brand" && brandId) {
+        whereClause += ` AND brand_id = $${paramIdx++}`;
+        params.push(brandId);
+      }
+      // scope === "all" → no extra filter
+
+      const { pool } = await import("./db");
+      const result = await pool.query(
+        `UPDATE products SET price = ROUND(price * $1::numeric) WHERE ${whereClause}`,
+        params
+      );
+      invalidateProductCache();
+      res.json({ success: true, updated: result.rowCount, message: `${result.rowCount}개 상품 가격이 ${percent}% 인하됐습니다.` });
+    } catch (error) {
+      console.error("Error bulk price reduce:", error);
+      res.status(500).json({ success: false, error: "가격 인하 실패" });
+    }
+  });
+
   // ==================== BULK SIZE UPDATE ====================
 
   app.post("/api/admin/bulk-update-sizes", requireAdminAuth, async (req: Request, res: Response) => {

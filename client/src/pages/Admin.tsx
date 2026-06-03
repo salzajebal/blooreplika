@@ -11,7 +11,7 @@ import {
   Clock, Snowflake, Unlock, Settings, Link2, Upload,
   MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2, Search, Shield, Image, Globe, Gift,
   ChevronUp, ChevronDown, Type, Minus, MousePointer, Palette, GripVertical, Bot, LayoutGrid,
-  ShoppingCart, Trophy
+  ShoppingCart, Trophy, TrendingDown
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage, Order, CouponPayment } from "@shared/schema";
@@ -390,6 +390,12 @@ export default function Admin() {
   
   const [globalSalePercent, setGlobalSalePercent] = useState<number>(0);
   const [globalSaleLoading, setGlobalSaleLoading] = useState(false);
+
+  const [priceReducePercent, setPriceReducePercent] = useState<number>(10);
+  const [priceReduceScope, setPriceReduceScope] = useState<"all" | "category" | "brand">("all");
+  const [priceReduceCategory, setPriceReduceCategory] = useState<string>("clothing");
+  const [priceReduceBrand, setPriceReduceBrand] = useState<string>("");
+  const [priceReduceLoading, setPriceReduceLoading] = useState(false);
 
   const [productCount, setProductCount] = useState<number | null>(null);
   const [productCountLoading, setProductCountLoading] = useState(false);
@@ -2229,6 +2235,34 @@ export default function Admin() {
       toast({ title: "오류", description: "설정 저장에 실패했습니다.", variant: "destructive" });
     } finally {
       setGlobalSaleLoading(false);
+    }
+  };
+
+  const applyBulkPriceReduce = async () => {
+    const scopeLabel = priceReduceScope === "all" ? "전체 상품" :
+      priceReduceScope === "category" ? `${CATEGORIES.find(c => c.id === priceReduceCategory)?.name || priceReduceCategory} 카테고리` :
+      `${brands.find(b => b.id === priceReduceBrand)?.name || "선택 브랜드"} 브랜드`;
+    if (!confirm(`${scopeLabel}의 가격을 ${priceReducePercent}% 인하하시겠습니까?\n\n※ 할인 표시 없이 실제 가격이 영구 변경됩니다. 되돌릴 수 없습니다.`)) return;
+    setPriceReduceLoading(true);
+    try {
+      const body: any = { percent: priceReducePercent, scope: priceReduceScope };
+      if (priceReduceScope === "category") body.categoryId = priceReduceCategory;
+      if (priceReduceScope === "brand") body.brandId = priceReduceBrand;
+      const res = await fetchWithAuth("/api/admin/bulk-price-reduce", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "가격 인하 완료", description: data.message });
+      } else {
+        toast({ title: "오류", description: data.error || "가격 인하 실패", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "요청 실패", variant: "destructive" });
+    } finally {
+      setPriceReduceLoading(false);
     }
   };
 
@@ -7061,6 +7095,80 @@ export default function Admin() {
                     </li>
                   </ul>
                 </div>
+              </div>
+            </div>
+
+            {/* Bulk Price Reduce */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <TrendingDown className="w-5 h-5 text-orange-600" />
+                  가격 일괄 인하
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">할인 표시 없이 실제 가격을 퍼센트로 낮춥니다.</p>
+              </div>
+              <div className="p-6 space-y-5">
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 text-sm text-orange-800">
+                  <strong>⚠ 주의:</strong> 이 기능은 상품의 실제 <code className="bg-orange-100 px-1 rounded">price</code>를 직접 낮춥니다. 할인 배지·정가 표시가 생기지 않으며, 되돌릴 수 없습니다.
+                </div>
+
+                {/* 범위 선택 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">적용 범위</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {([["all","전체 상품"],["category","카테고리별"],["brand","브랜드별"]] as const).map(([val, label]) => (
+                      <button key={val} onClick={() => setPriceReduceScope(val)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${priceReduceScope === val ? "bg-orange-500 text-white border-orange-500" : "bg-white text-gray-600 border-gray-200 hover:border-orange-300"}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 카테고리 선택 */}
+                {priceReduceScope === "category" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
+                    <select value={priceReduceCategory} onChange={e => setPriceReduceCategory(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-orange-400">
+                      {CATEGORIES.filter(c => !["sale","best"].includes(c.id)).map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* 브랜드 선택 */}
+                {priceReduceScope === "brand" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">브랜드</label>
+                    <select value={priceReduceBrand} onChange={e => setPriceReduceBrand(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-orange-400">
+                      <option value="">브랜드를 선택하세요</option>
+                      {brands.filter(b => b.isActive !== false).map(b => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* 인하율 입력 */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">인하율</label>
+                  <div className="flex items-center gap-3">
+                    <input type="number" min={1} max={99} value={priceReducePercent}
+                      onChange={e => setPriceReducePercent(Math.max(1, Math.min(99, parseInt(e.target.value) || 1)))}
+                      className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-center text-lg font-bold focus:outline-none focus:border-orange-400" />
+                    <span className="text-lg font-bold text-gray-700">%</span>
+                    <span className="text-sm text-gray-500">인하 (예: 10% → 100,000원 → 90,000원)</span>
+                  </div>
+                </div>
+
+                <button onClick={applyBulkPriceReduce} disabled={priceReduceLoading || (priceReduceScope === "brand" && !priceReduceBrand)}
+                  className="flex items-center gap-2 px-6 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white rounded-lg text-sm font-medium transition-colors">
+                  {priceReduceLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <TrendingDown className="w-4 h-4" />}
+                  가격 인하 적용
+                </button>
               </div>
             </div>
 
