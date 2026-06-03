@@ -790,7 +790,7 @@ export default function Home() {
         {/* 9. 시계관 배너 */}
         <WideBanner
           imageUrl={BP("https://cdn.imweb.me/thumbnail/20231208/5159c1204eb09.jpg")}
-          href="/412"
+          href="/products/watches"
           objectPos="50% 50%"
         />
 
@@ -799,7 +799,7 @@ export default function Home() {
           title="Bright and Luxury"
           subtitle="실시간 시계 순위"
           apiUrl="/api/products?limit=5&isBest=true&category=watches"
-          moreLink="/412"
+          moreLink="/products/watches"
           testId="watch-section"
         />
 
