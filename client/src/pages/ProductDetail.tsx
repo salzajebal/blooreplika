@@ -663,7 +663,7 @@ export default function ProductDetail() {
                 {relatedProducts.map(p => {
                   const rpPrice = hasSale ? calculateSalePrice(Number(p.price)) : Number(p.price);
                   return (
-                    <Link key={p.id} href={`/products/${p.id}`} className="block group">
+                    <Link key={p.id} href={`/product/${p.id}`} className="block group">
                       <div className="aspect-square bg-gray-50 border border-gray-100 rounded overflow-hidden mb-2">
                         <img
                           src={getProxiedImageUrl(p.imageUrl, "thumb")}
