@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -250,25 +250,25 @@ export default function Profile() {
 
         <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-[#e8e8e8]">
           {/* 프로필 헤더 */}
-          <div className="bg-[#FF6100] p-5">
+          <div className="bg-[#111111] p-5">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white/20 border border-white/30 rounded-full flex items-center justify-center flex-shrink-0">
+              <div className="w-12 h-12 bg-white/10 border border-white/20 rounded-full flex items-center justify-center flex-shrink-0">
                 <User className="w-6 h-6 text-white" />
               </div>
               <div className="min-w-0 flex-1">
                 {isLoggedIn ? (
                   <>
-                    <p className="text-white/70 text-[10px] tracking-[0.2em] uppercase mb-0.5">Member</p>
+                    <p className="text-white/50 text-[10px] tracking-[0.2em] uppercase mb-0.5">Member</p>
                     <h1 className="text-lg font-bold truncate text-white" data-testid="text-profile-name">
                       {memberInfo?.name || localStorage.getItem("memberName") || "회원"}님
                     </h1>
-                    <p className="text-white/80 text-xs mt-0.5 truncate">{memberInfo?.email || localStorage.getItem("memberEmail")}</p>
+                    <p className="text-white/60 text-xs mt-0.5 truncate">{memberInfo?.email || localStorage.getItem("memberEmail")}</p>
                   </>
                 ) : (
                   <>
-                    <p className="text-white/70 text-[10px] tracking-[0.2em] uppercase mb-0.5">VELOUR</p>
+                    <p className="text-white/50 text-[10px] tracking-[0.2em] uppercase mb-0.5">BLOO</p>
                     <h1 className="text-lg font-bold text-white">로그인이 필요합니다</h1>
-                    <p className="text-white/80 text-xs mt-0.5">로그인하시면 더 많은 혜택을 받으실 수 있습니다</p>
+                    <p className="text-white/60 text-xs mt-0.5">로그인하시면 더 많은 혜택을 받으실 수 있습니다</p>
                   </>
                 )}
               </div>
@@ -282,12 +282,12 @@ export default function Profile() {
               </p>
               <div className="flex gap-3 justify-center">
                 <Link href="/login">
-                  <button className="px-8 py-2.5 bg-[#FF6100] hover:bg-[#e05500] text-white text-sm font-semibold tracking-wide transition-colors rounded-lg">
+                  <button className="px-8 py-2.5 bg-[#111111] hover:bg-[#333333] text-white text-sm font-semibold tracking-wide transition-colors rounded-lg">
                     로그인
                   </button>
                 </Link>
                 <Link href="/signup">
-                  <button className="px-8 py-2.5 border border-[#e8e8e8] text-[#666666] hover:border-[#FF6100] hover:text-[#FF6100] text-sm transition-colors rounded-lg">
+                  <button className="px-8 py-2.5 border border-[#e8e8e8] text-[#666666] hover:border-[#111111] hover:text-[#111111] text-sm transition-colors rounded-lg">
                     회원가입
                   </button>
                 </Link>
@@ -298,33 +298,33 @@ export default function Profile() {
               {/* 요약 카드 */}
               <div className="grid grid-cols-3 gap-2 mb-4">
                 <Link href="/cart">
-                  <div className="text-center p-3 bg-[#f8f8f8] border border-[#e8e8e8] hover:border-[#FF6100] transition-colors cursor-pointer rounded-lg">
-                    <Heart className="w-6 h-6 text-[#FF6100] mx-auto mb-1" />
+                  <div className="text-center p-3 bg-[#f8f8f8] border border-[#e8e8e8] hover:border-[#111111] transition-colors cursor-pointer rounded-lg">
+                    <Heart className="w-6 h-6 text-[#111111] mx-auto mb-1" />
                     <div className="text-lg font-bold text-[#111111]">{count}</div>
                     <div className="text-[10px] text-[#999999]">찜 목록</div>
                   </div>
                 </Link>
                 <div className="text-center p-3 bg-[#f8f8f8] border border-[#e8e8e8] rounded-lg">
-                  <Package className="w-6 h-6 text-[#FF6100] mx-auto mb-1" />
+                  <Package className="w-6 h-6 text-[#111111] mx-auto mb-1" />
                   <div className="text-lg font-bold text-[#111111]" data-testid="text-order-count">{memberOrders?.length || 0}</div>
                   <div className="text-[10px] text-[#999999]">주문 내역</div>
                 </div>
-                <div className="text-center p-3 bg-orange-50 border border-orange-100 rounded-lg">
-                  <Wallet className="w-6 h-6 text-[#FF6100] mx-auto mb-1" />
-                  <div className="text-lg font-bold text-[#FF6100]" data-testid="text-point-balance">
+                <div className="text-center p-3 bg-[#f8f8f8] border border-[#e8e8e8] rounded-lg">
+                  <Wallet className="w-6 h-6 text-[#111111] mx-auto mb-1" />
+                  <div className="text-lg font-bold text-[#111111]" data-testid="text-point-balance">
                     {(memberInfo?.pointBalance || 0).toLocaleString()}
                   </div>
-                  <div className="text-[10px] text-[#FF6100] font-medium">포인트</div>
+                  <div className="text-[10px] text-[#999999]">포인트</div>
                 </div>
               </div>
 
               <Tabs defaultValue="info" className="w-full">
                 <TabsList className="w-full grid grid-cols-5 h-auto bg-[#f5f5f5] rounded-lg">
-                  <TabsTrigger value="info" className="text-xs py-2 px-1 rounded-md">내 정보</TabsTrigger>
-                  <TabsTrigger value="orders" className="text-xs py-2 px-1 rounded-md">주문내역</TabsTrigger>
-                  <TabsTrigger value="menu" className="text-xs py-2 px-1 rounded-md">메뉴</TabsTrigger>
-                  <TabsTrigger value="deposit" className="text-xs py-2 px-1 rounded-md">입금신청</TabsTrigger>
-                  <TabsTrigger value="points" className="text-xs py-2 px-1 rounded-md">포인트</TabsTrigger>
+                  <TabsTrigger value="info" className="text-xs py-2 px-1 rounded-md data-[state=active]:bg-[#111111] data-[state=active]:text-white">내 정보</TabsTrigger>
+                  <TabsTrigger value="orders" className="text-xs py-2 px-1 rounded-md data-[state=active]:bg-[#111111] data-[state=active]:text-white">주문내역</TabsTrigger>
+                  <TabsTrigger value="menu" className="text-xs py-2 px-1 rounded-md data-[state=active]:bg-[#111111] data-[state=active]:text-white">메뉴</TabsTrigger>
+                  <TabsTrigger value="deposit" className="text-xs py-2 px-1 rounded-md data-[state=active]:bg-[#111111] data-[state=active]:text-white">입금신청</TabsTrigger>
+                  <TabsTrigger value="points" className="text-xs py-2 px-1 rounded-md data-[state=active]:bg-[#111111] data-[state=active]:text-white">포인트</TabsTrigger>
                 </TabsList>
 
                 {/* 내 정보 탭 */}
@@ -333,7 +333,7 @@ export default function Profile() {
                     {!isEditing && (
                       <div className="flex justify-end">
                         <Button variant="outline" size="sm" onClick={handleStartEditing}
-                          className="gap-2 border-[#e8e8e8] text-[#666666] hover:border-[#FF6100] hover:text-[#FF6100]">
+                          className="gap-2 border-[#e8e8e8] text-[#666666] hover:border-[#111111] hover:text-[#111111]">
                           <Pencil className="w-4 h-4" />정보 수정
                         </Button>
                       </div>
@@ -349,7 +349,7 @@ export default function Profile() {
                               <X className="w-4 h-4" />취소
                             </Button>
                             <Button size="sm" onClick={handleSaveProfile} disabled={profileUpdateMutation.isPending}
-                              className="gap-1 bg-[#FF6100] hover:bg-[#e05500] text-white">
+                              className="gap-1 bg-[#111111] hover:bg-[#333333] text-white">
                               <Save className="w-4 h-4" />저장
                             </Button>
                           </div>
@@ -366,13 +366,13 @@ export default function Profile() {
                               <Input type={type || "text"} value={(editForm as any)[key]}
                                 onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
                                 placeholder={placeholder}
-                                className="bg-white border-[#e8e8e8] text-[#111111] placeholder:text-[#cccccc] focus:border-[#FF6100] focus-visible:ring-0 mt-1" />
+                                className="bg-white border-[#e8e8e8] text-[#111111] placeholder:text-[#cccccc] focus:border-[#111111] focus-visible:ring-0 mt-1" />
                             </div>
                           ))}
-                          <h4 className="font-bold text-[#FF6100] mt-2 text-sm">환급 계좌 정보</h4>
+                          <h4 className="font-bold text-[#111111] mt-2 text-sm">환급 계좌 정보</h4>
                           <div>
                             <Label className="text-xs text-[#666666]">은행</Label>
-                            <select className="w-full h-10 px-3 mt-1 border border-[#e8e8e8] bg-white text-[#111111] rounded-md focus:outline-none focus:border-[#FF6100] text-sm"
+                            <select className="w-full h-10 px-3 mt-1 border border-[#e8e8e8] bg-white text-[#111111] rounded-md focus:outline-none focus:border-[#111111] text-sm"
                               value={editForm.bank} onChange={(e) => setEditForm({ ...editForm, bank: e.target.value })}>
                               <option value="">은행 선택</option>
                               {BANKS.map((bank) => (<option key={bank} value={bank}>{bank}</option>))}
@@ -383,7 +383,7 @@ export default function Profile() {
                             <Input value={editForm.accountNumber}
                               onChange={(e) => setEditForm({ ...editForm, accountNumber: e.target.value })}
                               placeholder="계좌번호"
-                              className="bg-white border-[#e8e8e8] text-[#111111] placeholder:text-[#cccccc] focus:border-[#FF6100] focus-visible:ring-0 mt-1" />
+                              className="bg-white border-[#e8e8e8] text-[#111111] placeholder:text-[#cccccc] focus:border-[#111111] focus-visible:ring-0 mt-1" />
                           </div>
                         </div>
                       </div>
@@ -404,7 +404,7 @@ export default function Profile() {
                             </div>
                           </div>
                         ))}
-                        <h3 className="font-bold text-[#FF6100] mt-4 mb-2 text-sm pt-2">환급 계좌 정보</h3>
+                        <h3 className="font-bold text-[#111111] mt-4 mb-2 text-sm pt-2">환급 계좌 정보</h3>
                         {[
                           { Icon: Building2, label: "은행", value: memberInfo?.bank },
                           { Icon: CreditCard, label: "계좌번호", value: memberInfo?.accountNumber },
@@ -450,7 +450,7 @@ export default function Profile() {
                                 <h4 className="font-medium text-[#111111] text-sm">{order.productName}</h4>
                                 <p className="text-xs text-[#999999]">수량: {order.quantity}개</p>
                               </div>
-                              <p className="font-bold text-[#FF6100]">{Number(order.totalAmount || 0).toLocaleString()}원</p>
+                              <p className="font-bold text-[#111111]">{Number(order.totalAmount || 0).toLocaleString()}원</p>
                             </div>
                             <div className="flex gap-2 mt-2">
                               <span className={`text-xs px-2 py-0.5 rounded-full ${
@@ -521,14 +521,14 @@ export default function Profile() {
                 {/* 입금신청 탭 */}
                 <TabsContent value="deposit" className="mt-4">
                   <div className="space-y-4">
-                    <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
-                      <h3 className="font-bold text-[#FF6100] mb-1 text-sm">입금 안내</h3>
-                      <p className="text-sm text-[#FF6100]/70">입금 관련 상세 안내는 카카오톡 고객센터로 연락 바랍니다.</p>
+                    <div className="p-4 bg-[#f8f8f8] border border-[#e8e8e8] rounded-xl">
+                      <h3 className="font-bold text-[#111111] mb-1 text-sm">입금 안내</h3>
+                      <p className="text-sm text-[#666666]">입금 관련 상세 안내는 카카오톡 고객센터로 연락 바랍니다.</p>
                     </div>
 
                     <Dialog open={showDepositForm} onOpenChange={setShowDepositForm}>
                       <DialogTrigger asChild>
-                        <Button className="w-full bg-[#FF6100] hover:bg-[#e05500] text-white font-semibold rounded-xl"
+                        <Button className="w-full bg-[#111111] hover:bg-[#333333] text-white font-semibold rounded-xl"
                           disabled={memberInfo?.isFrozen}>
                           <Plus className="w-4 h-4 mr-2" />입금 신청하기
                         </Button>
@@ -547,10 +547,10 @@ export default function Profile() {
                               <Label htmlFor={id} className="text-[#666666] text-sm">{label}</Label>
                               <Input id={id} type="text" placeholder={placeholder} value={value}
                                 onChange={(e) => onChange(e.target.value)}
-                                className="bg-white border-[#e8e8e8] text-[#111111] placeholder:text-[#cccccc] focus:border-[#FF6100] focus-visible:ring-0 mt-1" />
+                                className="bg-white border-[#e8e8e8] text-[#111111] placeholder:text-[#cccccc] focus:border-[#111111] focus-visible:ring-0 mt-1" />
                             </div>
                           ))}
-                          <Button className="w-full bg-[#FF6100] hover:bg-[#e05500] text-white font-semibold rounded-xl"
+                          <Button className="w-full bg-[#111111] hover:bg-[#333333] text-white font-semibold rounded-xl"
                             onClick={handleDepositSubmit} disabled={depositMutation.isPending}>
                             {depositMutation.isPending ? "처리중..." : "신청하기"}
                           </Button>
@@ -573,7 +573,7 @@ export default function Profile() {
                               <p>입금자: {request.depositorName} ({request.bankName})</p>
                               <p>신청일: {formatDate(request.requestedAt)}</p>
                               {request.processedAt && <p>처리일: {formatDate(request.processedAt)}</p>}
-                              {request.adminNote && <p className="text-[#FF6100]">메모: {request.adminNote}</p>}
+                              {request.adminNote && <p className="text-[#111111] font-medium">메모: {request.adminNote}</p>}
                             </div>
                           </div>
                         ))
@@ -588,7 +588,7 @@ export default function Profile() {
                     <div className="flex justify-between items-center mb-2">
                       <h3 className="font-bold text-[#111111] text-sm">포인트 사용 내역</h3>
                       <span className="text-sm text-[#666666]">
-                        잔액: <span className="font-bold text-[#FF6100]">{(memberInfo?.pointBalance || 0).toLocaleString()}P</span>
+                        잔액: <span className="font-bold text-[#111111]">{(memberInfo?.pointBalance || 0).toLocaleString()}P</span>
                       </span>
                     </div>
                     {!pointTransactions?.length ? (
@@ -624,14 +624,12 @@ export default function Profile() {
             <span>평일 09:00 - 18:00</span>
           </div>
           <Link href="/support">
-            <Button variant="outline" className="w-full border-[#e8e8e8] text-[#666666] hover:border-[#FF6100] hover:text-[#FF6100] rounded-xl">
+            <Button variant="outline" className="w-full border-[#e8e8e8] text-[#666666] hover:border-[#111111] hover:text-[#111111] rounded-xl">
               고객센터 바로가기
             </Button>
           </Link>
         </div>
       </main>
-
-
     </div>
   );
 }
