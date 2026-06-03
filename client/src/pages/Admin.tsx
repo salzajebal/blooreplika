@@ -7677,7 +7677,10 @@ export default function Admin() {
         )}
 
         {activeTab === "ranking" && adminRole === "super_admin" && (
-          <RankingAdminTab authToken={authToken} />
+          <div className="space-y-8">
+            <HomeSectionAdminTab authToken={authToken} />
+            <RankingAdminTab authToken={authToken} />
+          </div>
         )}
 
         {activeTab === "telegram" && adminRole === "super_admin" && (
@@ -10404,6 +10407,181 @@ function QuickMenuTab({ authToken }: { authToken: string }) {
                 </div>
               ))}
             </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HomeSectionAdminTab({ authToken }: { authToken: string }) {
+  const SECTIONS = [
+    { key: "bags",    label: "가방",   title: "Luxury Bag Collection" },
+    { key: "jewelry", label: "쥬얼리", title: "Luxury Jewelry" },
+    { key: "watches", label: "시계",   title: "Bright and Luxury" },
+  ] as const;
+  type SectionKey = typeof SECTIONS[number]["key"];
+
+  const [activeSection, setActiveSection] = useState<SectionKey>("bags");
+  const [currentProducts, setCurrentProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
+  const fetchCurrent = async (cat: SectionKey) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/products?limit=10&isBest=true&category=${cat}`);
+      const data = await res.json();
+      setCurrentProducts(data.success ? data.data : []);
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => {
+    fetchCurrent(activeSection);
+    setSearchResults([]);
+    setSearchQuery("");
+  }, [activeSection]);
+
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+    setSearchLoading(true);
+    try {
+      const res = await fetch(`/api/products?limit=20&search=${encodeURIComponent(searchQuery.trim())}`);
+      const data = await res.json();
+      setSearchResults(data.success ? data.data : []);
+    } finally { setSearchLoading(false); }
+  };
+
+  const handleAdd = async (productId: string) => {
+    const res = await fetch("/api/admin/products/bulk-update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+      body: JSON.stringify({ productIds: [productId], updates: { isBest: true, categoryId: activeSection } }),
+    });
+    const data = await res.json();
+    if (data.success) { setMsg({ type: "ok", text: "섹션에 추가됐습니다" }); fetchCurrent(activeSection); }
+    else setMsg({ type: "err", text: data.error || "추가 실패" });
+    setTimeout(() => setMsg(null), 2500);
+  };
+
+  const handleRemove = async (productId: string) => {
+    const res = await fetch("/api/admin/products/bulk-update", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
+      body: JSON.stringify({ productIds: [productId], updates: { isBest: false } }),
+    });
+    const data = await res.json();
+    if (data.success) { setMsg({ type: "ok", text: "섹션에서 제거됐습니다" }); fetchCurrent(activeSection); }
+    else setMsg({ type: "err", text: data.error || "제거 실패" });
+    setTimeout(() => setMsg(null), 2500);
+  };
+
+  const section = SECTIONS.find(s => s.key === activeSection)!;
+
+  return (
+    <div className="space-y-4 max-w-2xl">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center">
+            <Trophy className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold">홈 베스트 섹션 상품 관리</h2>
+            <p className="text-sm text-gray-500">홈 화면 랭킹 섹션에 표시되는 상품을 설정합니다. 상위 5개가 노출됩니다.</p>
+          </div>
+        </div>
+
+        <div className="flex gap-2 mb-5">
+          {SECTIONS.map(s => (
+            <button key={s.key} onClick={() => setActiveSection(s.key)}
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                activeSection === s.key ? "bg-black text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        <p className="text-xs text-gray-400 mb-3">섹션 제목: <span className="font-semibold text-gray-700">{section.title}</span></p>
+
+        {msg && (
+          <div className={`mb-3 px-4 py-2 rounded-lg text-sm font-medium ${msg.type === "ok" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+            {msg.text}
+          </div>
+        )}
+
+        <div className="mb-5">
+          <p className="text-sm font-bold text-gray-700 mb-2">현재 표시 상품 ({currentProducts.length}개) — 상위 5개 노출</p>
+          {loading ? (
+            <div className="text-center py-6 text-gray-400 text-sm">불러오는 중...</div>
+          ) : currentProducts.length === 0 ? (
+            <div className="text-center py-6 text-gray-300 text-sm border border-dashed border-gray-200 rounded-lg">상품이 없습니다</div>
+          ) : (
+            <div className="space-y-2">
+              {currentProducts.map((p: any, i: number) => (
+                <div key={p.id} className={`flex items-center gap-3 p-2 rounded-lg border ${i < 5 ? "bg-gray-50 border-gray-100" : "bg-white border-dashed border-gray-200 opacity-60"}`}>
+                  <span className={`w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center flex-shrink-0 ${i < 5 ? "bg-black text-white" : "bg-gray-200 text-gray-500"}`}>{i + 1}</span>
+                  <img src={p.imageUrl} alt={p.name}
+                    className="w-10 h-10 object-cover rounded border border-gray-200 flex-shrink-0"
+                    onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/40"; }} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">{p.name}</p>
+                    <p className="text-xs text-gray-500">{Number(p.price).toLocaleString()}원</p>
+                  </div>
+                  {i < 5 && <span className="text-[10px] bg-black text-white px-2 py-0.5 rounded flex-shrink-0">노출중</span>}
+                  <button onClick={() => handleRemove(p.id)}
+                    className="flex-shrink-0 text-xs px-3 py-1 rounded border border-red-200 text-red-500 hover:bg-red-50 transition-colors">
+                    제거
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <p className="text-sm font-bold text-gray-700 mb-2">상품 추가</p>
+          <div className="flex gap-2 mb-3">
+            <input type="text" placeholder="상품명 또는 브랜드 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
+              className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-black" />
+            <button onClick={handleSearch} disabled={searchLoading}
+              className="px-4 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50">
+              {searchLoading ? "검색중" : "검색"}
+            </button>
+          </div>
+          {searchResults.length > 0 && (
+            <div className="max-h-56 overflow-y-auto space-y-1 border border-gray-100 rounded-lg p-2 bg-gray-50">
+              {searchResults.map((p: any) => {
+                const alreadyIn = currentProducts.some(cp => cp.id === p.id);
+                return (
+                  <div key={p.id}
+                    className={`flex items-center gap-2 p-2 bg-white rounded border cursor-pointer transition-colors ${
+                      alreadyIn ? "border-gray-100 opacity-40 cursor-not-allowed" : "border-gray-100 hover:border-black"
+                    }`}
+                    onClick={() => { if (!alreadyIn) handleAdd(p.id); }}>
+                    <img src={p.imageUrl} alt={p.name}
+                      className="w-8 h-8 object-cover rounded flex-shrink-0"
+                      onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/32"; }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-800 truncate">{p.name}</p>
+                      <p className="text-xs text-gray-400">{Number(p.price).toLocaleString()}원</p>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded flex-shrink-0 ${alreadyIn ? "bg-gray-200 text-gray-500" : "bg-black text-white"}`}>
+                      {alreadyIn ? "추가됨" : "+ 추가"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {searchResults.length === 0 && searchQuery && !searchLoading && (
+            <p className="text-xs text-gray-400 text-center py-3">검색 결과가 없습니다.</p>
           )}
         </div>
       </div>
