@@ -7122,7 +7122,12 @@ export default function Admin() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">적용 범위</label>
                   <div className="flex gap-2 flex-wrap">
-                    {([["all","전체 상품"],["category","카테고리별"],["brand","브랜드별"]] as const).map(([val, label]) => (
+                    {([
+                      ["all", "전체 상품"],
+                      ["category", "카테고리별"],
+                      ["brand", "브랜드별"],
+                      ["category_brand", "카테고리 + 브랜드"],
+                    ] as const).map(([val, label]) => (
                       <button key={val} onClick={() => setPriceReduceScope(val)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${priceReduceScope === val ? "bg-orange-500 text-white border-orange-500" : "bg-white text-gray-600 border-gray-200 hover:border-orange-300"}`}>
                         {label}
@@ -7131,23 +7136,23 @@ export default function Admin() {
                   </div>
                 </div>
 
-                {/* 카테고리 선택 */}
-                {priceReduceScope === "category" && (
+                {/* 카테고리 선택 (category / category_brand) */}
+                {(priceReduceScope === "category" || priceReduceScope === "category_brand") && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
-                    <select value={priceReduceCategory} onChange={e => setPriceReduceCategory(e.target.value)}
+                    <select value={priceReduceCategory} onChange={e => { setPriceReduceCategory(e.target.value); setPriceReduceCatBrand(""); }}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-orange-400">
-                      {CATEGORIES.filter(c => !["sale","best"].includes(c.id)).map(c => (
+                      {CATEGORY_OPTIONS.filter(c => !["sale","best","new-arrivals","men","women"].includes(c.id)).map(c => (
                         <option key={c.id} value={c.id}>{c.name}</option>
                       ))}
                     </select>
                   </div>
                 )}
 
-                {/* 브랜드 선택 */}
+                {/* 브랜드 선택 (brand) */}
                 {priceReduceScope === "brand" && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">브랜드</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">브랜드 <span className="text-xs text-gray-400 font-normal">(전체 카테고리)</span></label>
                     <select value={priceReduceBrand} onChange={e => setPriceReduceBrand(e.target.value)}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-orange-400">
                       <option value="">브랜드를 선택하세요</option>
@@ -7155,6 +7160,26 @@ export default function Admin() {
                         <option key={b.id} value={b.id}>{b.name}</option>
                       ))}
                     </select>
+                  </div>
+                )}
+
+                {/* 브랜드 선택 (category_brand) — 카테고리 선택 후 표시 */}
+                {priceReduceScope === "category_brand" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      브랜드
+                      <span className="text-xs text-gray-400 font-normal ml-1">
+                        — {CATEGORY_OPTIONS.find(c => c.id === priceReduceCategory)?.name} 내 브랜드
+                      </span>
+                    </label>
+                    <select value={priceReduceCatBrand} onChange={e => setPriceReduceCatBrand(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-orange-400">
+                      <option value="">브랜드를 선택하세요</option>
+                      {brands.filter(b => b.isActive !== false).map(b => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-400 mt-1">해당 카테고리에 없는 브랜드는 선택해도 적용 상품이 0개입니다.</p>
                   </div>
                 )}
 
@@ -7170,7 +7195,29 @@ export default function Admin() {
                   </div>
                 </div>
 
-                <button onClick={applyBulkPriceReduce} disabled={priceReduceLoading || (priceReduceScope === "brand" && !priceReduceBrand)}
+                {/* 적용 대상 요약 */}
+                <div className="bg-gray-50 rounded-lg px-4 py-3 text-sm text-gray-700 flex items-center gap-2">
+                  <TrendingDown className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                  <span>
+                    <strong>
+                      {priceReduceScope === "all" && "전체 상품"}
+                      {priceReduceScope === "category" && `${CATEGORY_OPTIONS.find(c => c.id === priceReduceCategory)?.name || ""} 카테고리 전체`}
+                      {priceReduceScope === "brand" && (priceReduceBrand ? `${brands.find(b => b.id === priceReduceBrand)?.name || ""} 브랜드 전체` : "브랜드를 선택하세요")}
+                      {priceReduceScope === "category_brand" && (priceReduceCatBrand
+                        ? `${CATEGORY_OPTIONS.find(c => c.id === priceReduceCategory)?.name || ""} > ${brands.find(b => b.id === priceReduceCatBrand)?.name || ""}`
+                        : `${CATEGORY_OPTIONS.find(c => c.id === priceReduceCategory)?.name || ""} > 브랜드를 선택하세요`)}
+                    </strong>
+                    {" "}의 가격을 {priceReducePercent}% 인하합니다.
+                  </span>
+                </div>
+
+                <button
+                  onClick={applyBulkPriceReduce}
+                  disabled={
+                    priceReduceLoading ||
+                    (priceReduceScope === "brand" && !priceReduceBrand) ||
+                    (priceReduceScope === "category_brand" && !priceReduceCatBrand)
+                  }
                   className="flex items-center gap-2 px-6 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 text-white rounded-lg text-sm font-medium transition-colors">
                   {priceReduceLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <TrendingDown className="w-4 h-4" />}
                   가격 인하 적용
