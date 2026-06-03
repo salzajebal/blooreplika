@@ -723,11 +723,9 @@ function CustomerSupportSection() {
           </div>
         </div>
         <div className="flex flex-col justify-center">
-          <p className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">고객센터 010 - 5960 - 9854</p>
           <div className="text-sm text-gray-500 space-y-1">
             <p>문의시간 10:00 ~ 24:00 (주말 및 공휴일 포함)</p>
             <p>점심시간 12:00 ~ 13:00</p>
-            <p className="mt-2 text-gray-400">1:1문의하기는 카카오톡 상담을 통해서만 가능합니다.</p>
           </div>
         </div>
       </div>
