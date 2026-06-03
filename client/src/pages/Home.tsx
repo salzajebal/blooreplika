@@ -530,16 +530,7 @@ function InspectionSection() {
         className="w-full relative overflow-hidden"
         style={{ background: "#2e2d28", minHeight: "220px" }}
       >
-        <div className="max-w-[1100px] mx-auto px-5 py-10 flex flex-col md:flex-row items-center gap-8">
-          <div className="flex-shrink-0 flex flex-col items-center justify-center gap-3">
-            <div className="w-32 h-32 rounded-2xl overflow-hidden border-4 border-white/20 shadow-xl">
-              <img src={BP("https://cdn.imweb.me/thumbnail/20240119/93f202eaa7615.jpg")} alt="검수" className="w-full h-full object-cover" style={{ objectPosition: "50% 70%" }} />
-            </div>
-            <div className="bg-white rounded-lg px-4 py-2 flex items-center gap-2 shadow-md">
-              <span className="text-green-500 text-lg">✓</span>
-              <span className="text-[14px] font-bold text-gray-800">검수합격</span>
-            </div>
-          </div>
+        <div className="max-w-[1100px] mx-auto px-5 py-10 flex flex-col items-start">
           <div className="text-white">
             <h2 className="text-2xl font-bold mb-3">차별화된 검수 시스템</h2>
             <p className="text-gray-300 text-sm leading-relaxed">
