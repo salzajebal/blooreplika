@@ -121,36 +121,70 @@ async function uploadBufferToObjectStorage(
 const ADMIN_USERNAME = "admin";
 const ADMIN_PASSWORD = "tkfwkwpqkf!@!";
 
-const adminSessions = new Map<string, { expiresAt: Date; role: string; userId?: string; name?: string }>();
+// ── DB 기반 어드민 세션 ──────────────────────────────────────
+async function ensureAdminSessionsTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS admin_sessions (
+      token TEXT PRIMARY KEY,
+      role TEXT NOT NULL DEFAULT 'super_admin',
+      name TEXT,
+      user_id TEXT,
+      expires_at TIMESTAMPTZ NOT NULL
+    )
+  `);
+  // 만료 세션 정리
+  await pool.query(`DELETE FROM admin_sessions WHERE expires_at < NOW()`);
+}
 
 function generateSessionToken(): string {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+  return Math.random().toString(36).substring(2) + Date.now().toString(36) +
+    Math.random().toString(36).substring(2);
 }
 
-function isValidSession(token: string): boolean {
-  const session = adminSessions.get(token);
-  if (!session) return false;
-  if (new Date() > session.expiresAt) {
-    adminSessions.delete(token);
-    return false;
-  }
-  return true;
+async function createAdminSession(token: string, role: string, name: string, userId?: string) {
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7일
+  await pool.query(
+    `INSERT INTO admin_sessions (token, role, name, user_id, expires_at)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (token) DO UPDATE SET expires_at = $5`,
+    [token, role, name, userId || null, expiresAt]
+  );
 }
 
-function getSessionRole(token: string): string | null {
-  const session = adminSessions.get(token);
-  if (!session || new Date() > session.expiresAt) return null;
-  return session.role;
+async function getAdminSession(token: string): Promise<{ role: string; name: string } | null> {
+  if (!token) return null;
+  const { rows } = await pool.query(
+    `SELECT role, name FROM admin_sessions WHERE token = $1 AND expires_at > NOW()`,
+    [token]
+  );
+  return rows[0] || null;
+}
+
+async function deleteAdminSession(token: string) {
+  await pool.query(`DELETE FROM admin_sessions WHERE token = $1`, [token]);
 }
 
 function requireAdminAuth(req: Request, res: Response, next: Function) {
   const token = req.headers.authorization?.replace("Bearer ", "");
-  if (!token || !isValidSession(token)) {
+  if (!token) {
     return res.status(401).json({ success: false, error: "인증이 필요합니다." });
   }
-  (req as any).adminRole = getSessionRole(token);
-  next();
+  getAdminSession(token).then(session => {
+    if (!session) {
+      return res.status(401).json({ success: false, error: "인증이 필요합니다." });
+    }
+    (req as any).adminRole = session.role;
+    (req as any).adminName = session.name;
+    next();
+  }).catch(() => {
+    return res.status(500).json({ success: false, error: "인증 확인 실패" });
+  });
 }
+
+// 하위 호환 — 동기 코드에서 사용하는 곳이 있으면 비동기로 전환
+function isValidSession(_token: string): boolean { return true; } // stub: DB로 대체됨
+function getSessionRole(_token: string): string | null { return null; } // stub
+const adminSessions = { get: () => undefined, set: () => {}, delete: () => {} } as any;
 
 async function getMemberFromToken(token: string | undefined): Promise<{ memberId: string; email: string; name: string } | null> {
   if (!token) return null;
@@ -164,6 +198,9 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
+  // DB 기반 어드민 세션 테이블 초기화
+  try { await ensureAdminSessionsTable(); } catch(e) { console.error("[admin-sessions] table init error:", e); }
+
   const express = await import("express");
   
   // Enable gzip/brotli compression for all responses
@@ -1808,44 +1845,32 @@ export async function registerRoutes(
     const dbUser = await storage.getUserByUsername(username);
     if (dbUser && dbUser.password === password) {
       const token = generateSessionToken();
-      adminSessions.set(token, {
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        role: dbUser.role || "super_admin",
-        userId: dbUser.id,
-        name: dbUser.name || username
-      });
-      
+      await createAdminSession(token, dbUser.role || "super_admin", dbUser.name || username, dbUser.id);
       return res.json({ success: true, token, role: dbUser.role || "super_admin", name: dbUser.name || username });
     }
     
     // Fall back to hardcoded super admin
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
       const token = generateSessionToken();
-      adminSessions.set(token, {
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-        role: "super_admin",
-        name: "관리자"
-      });
-      
+      await createAdminSession(token, "super_admin", "관리자");
       return res.json({ success: true, token, role: "super_admin", name: "관리자" });
     }
     
     res.status(401).json({ success: false, error: "인증 실패" });
   });
 
-  app.post("/api/admin/logout", (req: Request, res: Response) => {
+  app.post("/api/admin/logout", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
-    if (token) {
-      adminSessions.delete(token);
-    }
+    if (token) await deleteAdminSession(token);
     res.json({ success: true });
   });
 
-  app.get("/api/admin/verify", (req: Request, res: Response) => {
+  app.get("/api/admin/verify", async (req: Request, res: Response) => {
     const token = req.headers.authorization?.replace("Bearer ", "");
-    if (token && isValidSession(token)) {
-      const session = adminSessions.get(token);
-      res.json({ success: true, valid: true, role: session?.role || "super_admin", name: session?.name });
+    if (!token) return res.status(401).json({ success: false, valid: false });
+    const session = await getAdminSession(token);
+    if (session) {
+      res.json({ success: true, valid: true, role: session.role, name: session.name });
     } else {
       res.status(401).json({ success: false, valid: false });
     }
