@@ -198,6 +198,56 @@ function ChatAutoReplySettings({ fetchWithAuth, toast }: { fetchWithAuth: (url: 
   );
 }
 
+function MetadataSyncButton({ fetchProducts }: { fetchProducts: () => void }) {
+  const [syncStatus, setSyncStatus] = React.useState<{status: string; message: string; current: number; total: number; updated: number; brandUpdated: number} | null>(null);
+  const [polling, setPolling] = React.useState(false);
+
+  const startSync = async () => {
+    if (!confirm("bagstyle.site에서 성별·카테고리·브랜드를 동기화합니다. 10~30분 소요됩니다. 진행하시겠습니까?")) return;
+    try {
+      const token = localStorage.getItem("adminToken") || "";
+      const res = await fetch("/api/admin/sync-product-metadata", { method: "POST", headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (data.success) {
+        setSyncStatus({ status: 'running', message: data.message, current: 0, total: 0, updated: 0, brandUpdated: 0 });
+        setPolling(true);
+      } else { alert("오류: " + (data.error || "시작 실패")); }
+    } catch { alert("요청 중 오류가 발생했습니다."); }
+  };
+
+  React.useEffect(() => {
+    if (!polling) return;
+    const token = localStorage.getItem("adminToken") || "";
+    const timer = setInterval(async () => {
+      try {
+        const res = await fetch("/api/admin/sync-product-metadata/progress", { headers: { Authorization: `Bearer ${token}` } });
+        const data = await res.json();
+        setSyncStatus({ status: data.status, message: data.message, current: data.current, total: data.total, updated: data.updated, brandUpdated: data.brandUpdated });
+        if (data.status === 'completed' || data.status === 'error') {
+          setPolling(false);
+          fetchProducts();
+        }
+      } catch {}
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [polling, fetchProducts]);
+
+  return (
+    <>
+      <Button data-testid="button-sync-metadata" onClick={startSync} disabled={syncStatus?.status === 'running'} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+        {syncStatus?.status === 'running' ? '동기화 진행 중...' : '브랜드·성별 동기화 실행'}
+      </Button>
+      {syncStatus && (
+        <div className={`mt-2 p-3 rounded text-sm ${syncStatus.status === 'completed' ? 'bg-green-50 text-green-700' : syncStatus.status === 'error' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'}`}>
+          <p>{syncStatus.message}</p>
+          {syncStatus.total > 0 && <p className="text-xs mt-1">진행: {syncStatus.current}/{syncStatus.total} 소분류</p>}
+          {syncStatus.status === 'completed' && <p className="text-xs">성별/카테고리: {syncStatus.updated}개 | 브랜드: {syncStatus.brandUpdated}개 업데이트</p>}
+        </div>
+      )}
+    </>
+  );
+}
+
 export default function Admin() {
   const { toast } = useToast();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -6984,6 +7034,49 @@ export default function Admin() {
                   성별 정보 자동 업데이트 실행
                 </Button>
                 <p className="text-xs text-gray-500 mt-2">상품명에 '남성', '여성', 'Mens', 'Womens' 등의 키워드를 감지합니다.</p>
+              </div>
+            </div>
+
+            {/* 메타데이터 동기화 (bagstyle → gender/category/brand) */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-indigo-600" />
+                  브랜드·성별 정확히 동기화 (블루스토어 기준)
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">bagstyle.site의 각 소분류 페이지에서 상품 ID를 수집해 성별·카테고리·브랜드를 정확히 매핑합니다. 시간이 걸립니다 (10~30분).</p>
+              </div>
+              <div className="p-6 space-y-3">
+                <MetadataSyncButton fetchProducts={fetchProducts} />
+              </div>
+            </div>
+
+            {/* 브랜드 전체 강제 재분류 */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-orange-600" />
+                  브랜드 전체 강제 재분류
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">브랜드가 이미 있는 상품 포함 전체 상품의 브랜드를 상품명으로 강제 재매핑합니다.</p>
+              </div>
+              <div className="p-6">
+                <Button
+                  data-testid="button-force-reclassify-brands"
+                  onClick={async () => {
+                    if (!confirm("전체 상품의 브랜드를 강제로 재분류합니다. 기존 브랜드가 덮어써질 수 있습니다. 진행하시겠습니까?")) return;
+                    try {
+                      const res = await fetchWithAuth("/api/admin/brands/force-reclassify", { method: "POST" });
+                      const data = await res.json();
+                      if (data.success) { alert(data.message); fetchProducts(); }
+                      else alert("오류: " + (data.error || "실패"));
+                    } catch { alert("요청 중 오류가 발생했습니다."); }
+                  }}
+                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  브랜드 전체 강제 재분류 실행
+                </Button>
+                <p className="text-xs text-gray-500 mt-2">상품명에서 브랜드 키워드를 찾아 brand_id를 덮어씁니다.</p>
               </div>
             </div>
 

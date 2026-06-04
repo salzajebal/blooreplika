@@ -8008,6 +8008,180 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== METADATA SYNC (bagstyle ca_id → gender/category/brand) ====================
+
+  let syncMetaProgress: {
+    status: 'idle' | 'running' | 'completed' | 'error';
+    message: string;
+    total: number;
+    current: number;
+    updated: number;
+    brandUpdated: number;
+    startedAt?: Date;
+    completedAt?: Date;
+  } = { status: 'idle', message: '', total: 0, current: 0, updated: 0, brandUpdated: 0 };
+
+  app.get("/api/admin/sync-product-metadata/progress", requireAdminAuth, (_req: Request, res: Response) => {
+    res.json({ success: true, ...syncMetaProgress });
+  });
+
+  app.post("/api/admin/sync-product-metadata", requireAdminAuth, async (_req: Request, res: Response) => {
+    if (syncMetaProgress.status === 'running') {
+      return res.status(400).json({ success: false, error: '이미 동기화가 진행 중입니다.' });
+    }
+    syncMetaProgress = { status: 'running', message: '동기화 시작...', total: 0, current: 0, updated: 0, brandUpdated: 0, startedAt: new Date() };
+    res.json({ success: true, message: '메타데이터 동기화가 시작되었습니다.' });
+
+    (async () => {
+      try {
+        const headers = {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          "Referer": "https://bagstyle.site/",
+        };
+        const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+        const fetchWithRetry = async (url: string, retries = 3): Promise<Response | null> => {
+          for (let i = 0; i < retries; i++) {
+            try {
+              const controller = new AbortController();
+              const timer = setTimeout(() => controller.abort(), 10000);
+              try {
+                const r = await fetch(url, { headers, signal: controller.signal });
+                if (r.ok) return r;
+                if (r.status === 404) return null;
+                if (i < retries - 1) await delay(400 * (i + 1));
+              } finally { clearTimeout(timer); }
+            } catch {
+              if (i < retries - 1) await delay(400 * (i + 1));
+            }
+          }
+          return null;
+        };
+
+        // Build a flat list of ca_id → {gender, categoryId}
+        type CaIdInfo = { caId: string; gender: string; categoryId: string };
+        const caIdList: CaIdInfo[] = [];
+        for (const entry of BAGSTYLE_CRAWL_MAP) {
+          for (const sub of entry.subcategories) {
+            let gender = entry.gender;
+            if (gender === '골프') {
+              if (entry.parentCaId === '7010') gender = '남성';
+              else if (entry.parentCaId === '7020') gender = '여성';
+              else gender = '공용';
+            }
+            caIdList.push({ caId: sub.caId, gender, categoryId: entry.categoryId });
+          }
+        }
+        syncMetaProgress.total = caIdList.length;
+
+        // Get all source_idx from DB
+        const existingRows = await pool.query(`SELECT id, source_idx::text as source_idx FROM products WHERE source_idx IS NOT NULL`);
+        const sourceIdxToProductId = new Map<string, string>();
+        for (const row of existingRows.rows) {
+          sourceIdxToProductId.set(row.source_idx, row.id);
+        }
+
+        // For each ca_id, fetch product IDs from bagstyle.site
+        const sourceIdxToMeta = new Map<string, CaIdInfo>();
+
+        for (let i = 0; i < caIdList.length; i++) {
+          const info = caIdList[i];
+          syncMetaProgress.current = i + 1;
+          syncMetaProgress.message = `[${info.caId}] 상품 ID 수집 중... (${i + 1}/${caIdList.length})`;
+
+          const allIds = new Set<string>();
+          let page = 1;
+          let emptyStreak = 0;
+          let errorStreak = 0;
+
+          while (emptyStreak < 3 && errorStreak < 4) {
+            const url = `https://bagstyle.site/shop/list.php?ca_id=${info.caId}&page=${page}`;
+            const r = await fetchWithRetry(url, 2);
+            if (!r) { errorStreak++; page++; await delay(600); continue; }
+            errorStreak = 0;
+            const html = await r.text();
+            const ids = Array.from(new Set((html.match(/it_id=(\d+)/g) || []).map((m: string) => m.replace('it_id=', ''))));
+            const newIds = ids.filter((id: string) => !allIds.has(id));
+            newIds.forEach((id: string) => allIds.add(id));
+            if (newIds.length === 0) emptyStreak++;
+            else emptyStreak = 0;
+            page++;
+            await delay(100);
+          }
+
+          // First match wins (most specific ca_id)
+          for (const id of allIds) {
+            if (!sourceIdxToMeta.has(id)) sourceIdxToMeta.set(id, info);
+          }
+
+          await delay(150);
+        }
+
+        // Bulk update products in DB
+        syncMetaProgress.message = 'DB 메타데이터 업데이트 중...';
+        let updated = 0;
+        for (const [sourceIdx, meta] of sourceIdxToMeta) {
+          const productId = sourceIdxToProductId.get(sourceIdx);
+          if (!productId) continue;
+          try {
+            await pool.query(
+              `UPDATE products SET subcategory_id = $1, gender = $2, category_id = $3 WHERE id = $4`,
+              [meta.caId, meta.gender, meta.categoryId, productId]
+            );
+            updated++;
+          } catch {}
+        }
+        syncMetaProgress.updated = updated;
+
+        // Brand re-matching for all products
+        syncMetaProgress.message = '브랜드 재분류 중...';
+        const allBrands = await storage.getAllBrands();
+        const allProductRows = await pool.query(`SELECT id, name FROM products`);
+        let brandUpdated = 0;
+        for (const row of allProductRows.rows) {
+          const brandId = matchBrandFromText(row.name, allBrands);
+          if (brandId) {
+            await pool.query(
+              `UPDATE products SET brand_id = $1 WHERE id = $2 AND (brand_id IS NULL OR brand_id != $1)`,
+              [brandId, row.id]
+            );
+            brandUpdated++;
+          }
+        }
+        syncMetaProgress.brandUpdated = brandUpdated;
+
+        syncMetaProgress.status = 'completed';
+        syncMetaProgress.message = `완료: ${updated}개 성별/카테고리 업데이트, ${brandUpdated}개 브랜드 업데이트`;
+        syncMetaProgress.completedAt = new Date();
+        brandsCache.clear();
+        invalidateProductCache();
+      } catch (e: any) {
+        syncMetaProgress.status = 'error';
+        syncMetaProgress.message = '오류: ' + (e?.message || '알 수 없는 오류');
+      }
+    })();
+  });
+
+  // Force-reclassify brands for ALL products (overwrite existing)
+  app.post("/api/admin/brands/force-reclassify", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const allBrands = await storage.getAllBrands();
+      const allProductRows = await pool.query(`SELECT id, name FROM products`);
+      let updated = 0, skipped = 0;
+      for (const row of allProductRows.rows) {
+        const brandId = matchBrandFromText(row.name, allBrands);
+        if (brandId) {
+          await pool.query(`UPDATE products SET brand_id = $1 WHERE id = $2`, [brandId, row.id]);
+          updated++;
+        } else { skipped++; }
+      }
+      brandsCache.clear();
+      invalidateProductCache();
+      res.json({ success: true, message: `${updated}개 브랜드 재분류 완료, ${skipped}개 브랜드 미매칭`, data: { updated, skipped, total: allProductRows.rows.length } });
+    } catch (e: any) {
+      res.status(500).json({ success: false, error: e?.message || '브랜드 재분류 중 오류' });
+    }
+  });
+
   // ==================== BLOOSTORE REVIEW DEBUG ====================
   app.get("/api/admin/crawl/bloostore-reviews/debug", requireAdminAuth, async (req: Request, res: Response) => {
     try {
