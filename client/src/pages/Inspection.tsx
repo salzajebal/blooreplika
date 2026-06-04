@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/layout/Header";
-import { Loader2 } from "lucide-react";
+import { Loader2, ChevronDown } from "lucide-react";
 
 const CATEGORIES = [
   { label: "의류", href: "/products/clothing" },
@@ -21,6 +21,8 @@ const SORT_OPTIONS = [
   { value: "abc", label: "이름순" },
   { value: "descabc", label: "이름역순" },
 ];
+
+const PAGE_SIZE = 20;
 
 const STATIC_ITEMS = [
   { id: "s1", productName: "5월 28일 정호* 제품 검수", imageUrl: "https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/630163ab2ee71.jpg" },
@@ -62,6 +64,7 @@ interface InspectionItem {
 
 export default function Inspection() {
   const [sort, setSort] = useState("recent");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
   const { data: apiData, isLoading } = useQuery<{ success: boolean; data: InspectionItem[] }>({
@@ -83,6 +86,14 @@ export default function Inspection() {
     if (sort === "descabc") return b.productName.localeCompare(a.productName);
     return 0;
   });
+
+  const visibleItems = sortedItems.slice(0, visibleCount);
+  const hasMore = visibleCount < sortedItems.length;
+  const remaining = sortedItems.length - visibleCount;
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + PAGE_SIZE);
+  };
 
   return (
     <div className="min-h-screen bg-white" data-testid="inspection-page">
@@ -147,11 +158,14 @@ export default function Inspection() {
 
         {/* ── 정렬 + 상품 그리드 ── */}
         <div className="mx-auto px-3 md:px-4" style={{ maxWidth: "1200px" }}>
-          {/* 정렬 드롭다운 */}
-          <div className="flex justify-end py-2 md:py-3">
+          {/* 정렬 + 총 건수 */}
+          <div className="flex items-center justify-between py-2 md:py-3">
+            <span className="text-xs text-gray-500">
+              총 <span className="font-semibold text-gray-800">{sortedItems.length}</span>개
+            </span>
             <select
               value={sort}
-              onChange={(e) => setSort(e.target.value)}
+              onChange={(e) => { setSort(e.target.value); setVisibleCount(PAGE_SIZE); }}
               className="text-xs md:text-sm border border-gray-300 rounded px-2 py-1 bg-white focus:outline-none"
               title="정렬 바꾸기"
               data-testid="sort-select"
@@ -171,34 +185,62 @@ export default function Inspection() {
 
           {/* 4열 상품 그리드 */}
           {!isLoading && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 pb-20 md:pb-10">
-              {sortedItems.map((item) => {
-                const rawUrl = item.imageUrl.includes('?') ? item.imageUrl : `${item.imageUrl}?w=800`;
-                const proxied = proxyUrl(rawUrl);
-                const fallback = rawUrl;
-                const hasErr = !!imgErrors[item.id];
-                return (
-                  <div
-                    key={item.id}
-                    data-testid={`inspection-item-${item.id}`}
-                    className="group cursor-pointer"
-                  >
-                    <div className="w-full bg-gray-100 overflow-hidden" style={{ aspectRatio: "1/1" }}>
-                      <img
-                        src={hasErr ? fallback : proxied}
-                        alt={item.productName}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        loading="lazy"
-                        onError={() => setImgErrors((prev) => ({ ...prev, [item.id]: true }))}
-                      />
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+                {visibleItems.map((item) => {
+                  const rawUrl = item.imageUrl.includes('?') ? item.imageUrl : `${item.imageUrl}?w=800`;
+                  const proxied = proxyUrl(rawUrl);
+                  const fallback = rawUrl;
+                  const hasErr = !!imgErrors[item.id];
+                  return (
+                    <div
+                      key={item.id}
+                      data-testid={`inspection-item-${item.id}`}
+                      className="group cursor-pointer"
+                    >
+                      <div className="w-full bg-gray-100 overflow-hidden" style={{ aspectRatio: "1/1" }}>
+                        <img
+                          src={hasErr ? fallback : proxied}
+                          alt={item.productName}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                          onError={() => setImgErrors((prev) => ({ ...prev, [item.id]: true }))}
+                        />
+                      </div>
+                      <p className="text-xs md:text-sm text-gray-700 mt-1 leading-tight line-clamp-2 px-0.5">
+                        {item.productName}
+                      </p>
                     </div>
-                    <p className="text-xs md:text-sm text-gray-700 mt-1 leading-tight line-clamp-2 px-0.5">
-                      {item.productName}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+
+              {/* 더보기 버튼 */}
+              {hasMore && (
+                <div className="flex flex-col items-center py-8 gap-2">
+                  <p className="text-xs text-gray-400">
+                    {visibleCount}개 표시 중 / 총 {sortedItems.length}개
+                  </p>
+                  <button
+                    onClick={handleLoadMore}
+                    data-testid="button-load-more"
+                    className="flex items-center gap-2 px-8 py-3 border border-gray-300 rounded-full text-sm text-gray-700 hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                    더보기 ({Math.min(PAGE_SIZE, remaining)}개 더 보기)
+                  </button>
+                </div>
+              )}
+
+              {/* 전체 로드 완료 */}
+              {!hasMore && sortedItems.length > PAGE_SIZE && (
+                <div className="flex justify-center py-8">
+                  <p className="text-xs text-gray-400">총 {sortedItems.length}개 전체 표시됨</p>
+                </div>
+              )}
+
+              <div className="pb-20 md:pb-10" />
+            </>
           )}
         </div>
       </div>
