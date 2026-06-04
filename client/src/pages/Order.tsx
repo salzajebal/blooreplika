@@ -211,6 +211,17 @@ export default function Order() {
           if (storedMethod === "bank") {
             setPaymentMethod("bank");
           }
+          // Meta Pixel: InitiateCheckout (cart)
+          if ((window as any).fbq) {
+            const total = items.reduce((s: number, i: { price: number }) => s + i.price, 0);
+            (window as any).fbq("track", "InitiateCheckout", {
+              content_ids: items.map((i: { id: string }) => i.id),
+              content_type: "product",
+              num_items: items.length,
+              value: total,
+              currency: "KRW",
+            });
+          }
         } catch {}
       }
       setLoading(false);
@@ -223,6 +234,16 @@ export default function Order() {
         const data = await res.json();
         if (data.success) {
           setProduct(data.data);
+          // Meta Pixel: InitiateCheckout (단일 상품)
+          if ((window as any).fbq) {
+            (window as any).fbq("track", "InitiateCheckout", {
+              content_ids: [String(data.data.id)],
+              content_name: data.data.name,
+              content_type: "product",
+              value: Number(data.data.price),
+              currency: "KRW",
+            });
+          }
         }
       } catch (error) {
         console.error("Error fetching product:", error);

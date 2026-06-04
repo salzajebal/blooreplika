@@ -39,6 +39,16 @@ export default function ProductDetail() {
       .then(d => {
         if (d.success) {
           setProduct(d.data);
+          // Meta Pixel: ViewContent
+          if ((window as any).fbq) {
+            (window as any).fbq("track", "ViewContent", {
+              content_ids: [String(d.data.id)],
+              content_name: d.data.name,
+              content_type: "product",
+              value: Number(d.data.price),
+              currency: "KRW",
+            });
+          }
           // fetch related products from same category
           const cat = d.data.categoryId;
           if (cat) {
@@ -125,6 +135,16 @@ export default function ProductDetail() {
       finalPrice = calculateSalePrice(finalPrice);
     }
     addItem({ id: String(product.id), name: product.name, price: finalPrice, imageUrl: product.imageUrl });
+    // Meta Pixel: AddToCart
+    if ((window as any).fbq) {
+      (window as any).fbq("track", "AddToCart", {
+        content_ids: [String(product.id)],
+        content_name: product.name,
+        content_type: "product",
+        value: finalPrice,
+        currency: "KRW",
+      });
+    }
     toast({ title: "장바구니에 담았습니다", description: product.name });
   };
 
