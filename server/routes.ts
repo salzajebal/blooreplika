@@ -2954,11 +2954,40 @@ export async function registerRoutes(
         offset += BATCH;
       } while (offset < total);
 
+      // ── 실시간 검수 아이템 추가 (전체 피드에만) ──
+      if (!filterCategory) {
+        const inspections = await storage.getActiveInspections("bloostore");
+        for (const insp of inspections) {
+          if (!insp.imageUrl) continue;
+          const rawImg = insp.imageUrl;
+          const imgUrl = rawImg.startsWith("http")
+            ? `${baseUrl}/api/bloostore-image-proxy?url=${encodeURIComponent(rawImg)}`
+            : `${baseUrl}${rawImg}`;
+          const inspUrl = `${baseUrl}/inspection`;
+          const title = escapeXml((insp.productName || "BLOO 실시간 검수").substring(0, 150));
+          const desc = escapeXml(`BLOO 실시간 검수 사진 - ${insp.productName || ""}`.substring(0, 500));
+          const itemId = `insp_${insp.id}`;
+          res.write(`    <item>\n`);
+          res.write(`      <g:id>${itemId}</g:id>\n`);
+          res.write(`      <g:title>${title}</g:title>\n`);
+          res.write(`      <g:description>${desc}</g:description>\n`);
+          res.write(`      <g:link>${inspUrl}</g:link>\n`);
+          res.write(`      <g:image_link>${escapeXml(imgUrl)}</g:image_link>\n`);
+          res.write(`      <g:condition>new</g:condition>\n`);
+          res.write(`      <g:availability>in stock</g:availability>\n`);
+          res.write(`      <g:price>1000 KRW</g:price>\n`);
+          res.write(`      <g:brand>BLOO</g:brand>\n`);
+          res.write(`      <g:custom_label_0>inspection</g:custom_label_0>\n`);
+          res.write(`    </item>\n`);
+          written++;
+        }
+      }
+
       res.write(`  </channel>\n`);
       res.write(`</rss>\n`);
       res.end();
 
-      console.log(`[catalog] feed.xml generated: ${written} products (filter: ${filterCategory || "all"})`);
+      console.log(`[catalog] feed.xml generated: ${written} products+inspections (filter: ${filterCategory || "all"})`);
     } catch (error) {
       console.error("Error generating catalog feed:", error);
       if (!res.headersSent) {
