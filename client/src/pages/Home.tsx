@@ -131,31 +131,41 @@ const CATEGORY_CARDS = [
 ];
 
 function CategoryGrid() {
+  // Row 1: 남성 (인덱스 0~4), Row 2: 여성 (인덱스 5~9)
+  const row1 = CATEGORY_CARDS.slice(0, 5);
+  const row2 = CATEGORY_CARDS.slice(5, 10);
+
+  const CardItem = ({ cat, idx }: { cat: typeof CATEGORY_CARDS[0]; idx: number }) => (
+    <Link
+      href={cat.href}
+      className="flex flex-col items-center gap-1 min-w-0"
+      data-testid={`cat-card-${idx}`}
+      aria-label={cat.label}
+    >
+      <div className="w-full aspect-square rounded-2xl overflow-hidden bg-[#d8e8f8]">
+        <img
+          src={cat.img}
+          alt={cat.label}
+          className="w-full h-full object-cover"
+          loading="lazy"
+        />
+      </div>
+      <span className="text-[10px] md:text-[13px] text-gray-800 text-center leading-tight font-medium break-keep">
+        {cat.label}
+      </span>
+    </Link>
+  );
+
   return (
-    <section className="bg-white pt-3 pb-4 border-b border-gray-100" data-testid="category-grid">
+    <section className="bg-white pt-3 pb-4 border-b border-gray-100 overflow-hidden" data-testid="category-grid">
       <div className="w-full max-w-[1250px] mx-auto px-2 md:px-4">
+        {/* 1행: 남성 5개 */}
+        <div className="grid grid-cols-5 gap-1.5 md:gap-3 mb-1.5 md:mb-3">
+          {row1.map((cat, i) => <CardItem key={i} cat={cat} idx={i} />)}
+        </div>
+        {/* 2행: 여성 5개 */}
         <div className="grid grid-cols-5 gap-1.5 md:gap-3">
-          {CATEGORY_CARDS.map((cat, idx) => (
-            <Link
-              key={idx}
-              href={cat.href}
-              className="flex flex-col items-center gap-1"
-              data-testid={`cat-card-${idx}`}
-              aria-label={cat.label}
-            >
-              <div className="w-full aspect-square rounded-2xl overflow-hidden bg-[#d8e8f8]">
-                <img
-                  src={cat.img}
-                  alt={cat.label}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
-                />
-              </div>
-              <span className="text-[10px] md:text-[13px] text-gray-800 text-center leading-tight font-medium break-keep">
-                {cat.label}
-              </span>
-            </Link>
-          ))}
+          {row2.map((cat, i) => <CardItem key={i + 5} cat={cat} idx={i + 5} />)}
         </div>
       </div>
     </section>
