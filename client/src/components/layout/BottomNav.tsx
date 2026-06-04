@@ -1,4 +1,4 @@
-import { Home, ShoppingBag, TrendingUp, MessageSquare, User, X, LogIn, Search } from "lucide-react";
+import { Home, ShoppingBag, MessageSquare, User, Camera, X, LogIn, Search } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 
@@ -14,19 +14,6 @@ export function BottomNav() {
     const iv = setInterval(check, 1000);
     return () => { window.removeEventListener("storage", check); clearInterval(iv); };
   }, []);
-
-  const navItems = [
-    { label: "홈", path: "/", icon: Home },
-    { label: "SHOP", path: "/products", icon: ShoppingBag },
-    { label: "랭킹", path: "/ranking", icon: TrendingUp },
-    { label: "리뷰", path: "/reviews", icon: MessageSquare },
-  ];
-
-  const isActive = (path: string, label: string) => {
-    if (label === "홈") return location === "/";
-    if (label === "SHOP") return location.startsWith("/products") || location.startsWith("/search");
-    return location === path || location.startsWith(path + "/");
-  };
 
   const isMyActive = location === "/profile" || location === "/login" || location === "/orders";
 
@@ -75,58 +62,86 @@ export function BottomNav() {
       )}
 
       <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 max-w-[640px] mx-auto"
-        style={{
-          paddingBottom: "env(safe-area-inset-bottom)",
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "100%",
-        }}
+        className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         data-testid="bottom-nav"
       >
-        <div className="flex items-center justify-around">
-          {navItems.map((item) => {
-            const active = isActive(item.path, item.label);
-            const IconComponent = item.icon;
-            return (
-              <Link
-                key={item.label}
-                href={item.path}
-                className={`flex flex-col items-center gap-0.5 px-3 py-2.5 min-h-[52px] min-w-[52px] transition-colors touch-manipulation ${
-                  active ? "text-[#FF6100]" : "text-gray-400"
-                }`}
-                data-testid={`bottom-nav-${item.label}`}
-              >
-                <IconComponent className="w-5 h-5" />
-                <span className="text-[10px] font-medium">{item.label}</span>
-              </Link>
-            );
-          })}
+        <div className="flex items-stretch justify-around">
 
-          {/* 마이 버튼 — 로그인 여부에 따라 다르게 */}
+          {/* 퀄리티 체크● */}
+          <Link
+            href="/inspection"
+            className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-2 min-h-[52px] transition-colors touch-manipulation ${
+              location === "/inspection" ? "text-[#FF6100]" : "text-gray-500"
+            }`}
+            data-testid="bottom-nav-inspection"
+          >
+            <div className="relative">
+              <Camera className="w-5 h-5" />
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full" />
+            </div>
+            <span className="text-[10px] font-medium leading-tight text-center">퀄리티 체크</span>
+          </Link>
+
+          {/* 마이페이지 */}
           {isLoggedIn ? (
             <Link
               href="/profile"
-              className={`flex flex-col items-center gap-0.5 px-3 py-2.5 min-h-[52px] min-w-[52px] transition-colors touch-manipulation ${
-                isMyActive ? "text-[#FF6100]" : "text-gray-400"
+              className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-2 min-h-[52px] transition-colors touch-manipulation ${
+                isMyActive ? "text-[#FF6100]" : "text-gray-500"
               }`}
-              data-testid="bottom-nav-마이"
+              data-testid="bottom-nav-profile"
             >
               <User className="w-5 h-5" />
-              <span className="text-[10px] font-medium">마이</span>
+              <span className="text-[10px] font-medium leading-tight">마이페이지</span>
             </Link>
           ) : (
             <button
               onClick={() => setShowGuestMenu(true)}
-              className={`flex flex-col items-center gap-0.5 px-3 py-2.5 min-h-[52px] min-w-[52px] transition-colors touch-manipulation ${
-                isMyActive ? "text-[#FF6100]" : "text-gray-400"
+              className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-2 min-h-[52px] transition-colors touch-manipulation ${
+                isMyActive ? "text-[#FF6100]" : "text-gray-500"
               }`}
-              data-testid="bottom-nav-마이"
+              data-testid="bottom-nav-profile"
             >
               <User className="w-5 h-5" />
-              <span className="text-[10px] font-medium">마이</span>
+              <span className="text-[10px] font-medium leading-tight">마이페이지</span>
             </button>
           )}
+
+          {/* HOME */}
+          <Link
+            href="/"
+            className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-2 min-h-[52px] transition-colors touch-manipulation ${
+              location === "/" ? "text-[#FF6100]" : "text-gray-500"
+            }`}
+            data-testid="bottom-nav-home"
+          >
+            <Home className="w-5 h-5" />
+            <span className="text-[10px] font-medium leading-tight">HOME</span>
+          </Link>
+
+          {/* 상담하기 */}
+          <button
+            onClick={() => { (window as any).ChannelIO?.('showMessenger'); }}
+            className="flex flex-col items-center justify-center gap-0.5 flex-1 py-2 min-h-[52px] text-gray-500 transition-colors touch-manipulation"
+            data-testid="bottom-nav-support"
+          >
+            <MessageSquare className="w-5 h-5" />
+            <span className="text-[10px] font-medium leading-tight">상담하기</span>
+          </button>
+
+          {/* 장바구니 */}
+          <Link
+            href="/cart"
+            className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-2 min-h-[52px] transition-colors touch-manipulation ${
+              location === "/cart" ? "text-[#FF6100]" : "text-gray-500"
+            }`}
+            data-testid="bottom-nav-cart"
+          >
+            <ShoppingBag className="w-5 h-5" />
+            <span className="text-[10px] font-medium leading-tight">장바구니</span>
+          </Link>
+
         </div>
       </nav>
     </>
