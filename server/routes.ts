@@ -2472,17 +2472,25 @@ export async function registerRoutes(
     try {
       const settings = await storage.getAllSiteSettings();
       const token   = settings.find(s => s.key === "telegram_order_bot_token")?.value
-                   || settings.find(s => s.key === "telegram_bot_token")?.value; // 하위 호환
+                   || settings.find(s => s.key === "telegram_bot_token")?.value;
       const chatId  = settings.find(s => s.key === "telegram_order_chat_id")?.value
-                   || settings.find(s => s.key === "telegram_chat_id")?.value;   // 하위 호환
+                   || settings.find(s => s.key === "telegram_chat_id")?.value;
       const enabled = settings.find(s => s.key === "telegram_order_enabled")?.value === "true"
                    || settings.find(s => s.key === "telegram_enabled")?.value === "true";
-      if (!token || !chatId || !enabled) return;
-      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      if (!enabled) { console.warn("[telegram-order] 비활성화 상태 — 어드민에서 주문 알림 봇 활성화 필요"); return; }
+      if (!token)   { console.warn("[telegram-order] 봇 토큰 미설정"); return; }
+      if (!chatId)  { console.warn("[telegram-order] 채팅 ID 미설정"); return; }
+      const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
       });
+      const json = await res.json() as any;
+      if (!json.ok) {
+        console.error(`[telegram-order] API 오류: ${json.description} (error_code: ${json.error_code})`);
+      } else {
+        console.log(`[telegram-order] 알림 전송 완료 → chat_id: ${chatId}`);
+      }
     } catch (e) {
       console.error("[telegram-order] notification failed:", e);
     }
