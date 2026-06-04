@@ -71,7 +71,9 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
     }
     setLoading(true);
     try {
-      const username = form.email.split("@")[0] + "_" + Date.now().toString().slice(-5);
+      const prefix = form.email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "");
+      const suffix = Date.now().toString().slice(-6);
+      const username = (prefix + suffix).slice(0, 20);
       const res = await fetch("/api/members/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
