@@ -2098,7 +2098,7 @@ export async function registerRoutes(
 
   app.post("/api/members/signup", async (req: Request, res: Response) => {
     try {
-      const { username, password, name, phone, address } = req.body;
+      const { username, password, name, phone, address, email } = req.body;
       
       if (!username || !password || !name) {
         return res.status(400).json({ success: false, error: "아이디, 비밀번호, 이름은 필수 입력사항입니다." });
@@ -2117,6 +2117,7 @@ export async function registerRoutes(
         username,
         password,
         name,
+        email: email || null,
         phone: phone || null,
         address: address || null,
         pointBalance: 10000  // 회원가입 시 1만 포인트 지급

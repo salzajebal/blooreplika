@@ -464,11 +464,11 @@ export function Header() {
 
             {/* Form */}
             <form onSubmit={handleLoginSubmit} className="px-8 pb-8 space-y-3">
-              {/* 이메일 */}
+              {/* 아이디 */}
               <input
                 ref={emailRef}
                 type="text"
-                placeholder="이메일"
+                placeholder="아이디"
                 value={loginForm.email}
                 onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                 className="w-full h-11 px-4 border border-gray-300 text-[14px] text-gray-800 placeholder-gray-400 outline-none focus:border-gray-500 transition-colors rounded-none"

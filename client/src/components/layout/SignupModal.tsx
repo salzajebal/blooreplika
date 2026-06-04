@@ -24,7 +24,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
   const [showPw, setShowPw] = useState(false);
   const [showPwConfirm, setShowPwConfirm] = useState(false);
   const [form, setForm] = useState({
-    email: "", password: "", passwordConfirm: "",
+    username: "", email: "", password: "", passwordConfirm: "",
     name: "", phone: "", address: "", addressDetail: "", zipcode: "",
   });
 
@@ -57,8 +57,12 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
   };
 
   const handleSubmit = async () => {
-    if (!form.email || !form.name || !form.phone) {
+    if (!form.username || !form.name || !form.phone) {
       toast({ title: "필수 항목을 입력해주세요.", variant: "destructive" });
+      return;
+    }
+    if (!/^[a-zA-Z0-9]{4,20}$/.test(form.username)) {
+      toast({ title: "아이디는 영문·숫자 4~20자만 가능합니다.", variant: "destructive" });
       return;
     }
     if (form.password.length < 8) {
@@ -71,15 +75,12 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
     }
     setLoading(true);
     try {
-      const prefix = form.email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "");
-      const suffix = Date.now().toString().slice(-6);
-      const username = (prefix + suffix).slice(0, 20);
       const res = await fetch("/api/members/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name,
-          username,
+          username: form.username,
           email: form.email,
           password: form.password,
           phone: form.phone,
@@ -106,7 +107,7 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
   const handleClose = () => {
     setStep("terms");
     setAgreeAll(false); setAgreeTerms(false); setAgreePrivacy(false); setAgreeAge(false);
-    setForm({ email: "", password: "", passwordConfirm: "", name: "", phone: "", address: "", addressDetail: "", zipcode: "" });
+    setForm({ username: "", email: "", password: "", passwordConfirm: "", name: "", phone: "", address: "", addressDetail: "", zipcode: "" });
     setProfilePhotoUrl(null);
     setShowPw(false); setShowPwConfirm(false);
     onClose();
@@ -277,10 +278,26 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
             </div>
 
             <div className="space-y-2.5">
-              {/* 이메일 */}
+              {/* 아이디 */}
+              <div>
+                <p className="text-[13px] text-gray-600 mb-1.5">
+                  아이디 <span className="text-[#e53e3e]">*</span>
+                </p>
+                <input
+                  type="text"
+                  placeholder="영문·숫자 4~20자"
+                  value={form.username}
+                  onChange={(e) => setF("username", e.target.value.replace(/[^a-zA-Z0-9]/g, "").slice(0, 20))}
+                  className={inp}
+                  data-testid="signup-username-input"
+                  autoComplete="username"
+                />
+              </div>
+
+              {/* 이메일 (선택) */}
               <input
                 type="email"
-                placeholder="이메일"
+                placeholder="이메일 (선택)"
                 value={form.email}
                 onChange={(e) => setF("email", e.target.value)}
                 className={inp}
