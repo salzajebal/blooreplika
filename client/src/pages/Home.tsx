@@ -109,21 +109,25 @@ function MainBannerSlider() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Category Cards — 5×2 grid, individual rounded cards
+// Category Cards — 5×2 개별 카드, bloostore CDN 프록시 이미지
 // ─────────────────────────────────────────────────────────────
+const CDN_BASE = "https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/";
+const catImg = (hash: string, ext = "jpg") =>
+  `/api/bloostore-image-proxy?url=${encodeURIComponent(`${CDN_BASE}${hash}.${ext}?w=400`)}`;
+
 const CATEGORY_CARDS = [
   // Row 1 — 남성
-  { label: "남성 의류",    href: "/httpstheblooshop1496458051", img: "/bloo/cat_men_clothing.jpg" },
-  { label: "남성 가방",    href: "/1212",                        img: "/bloo/cat_men_bag.jpg" },
-  { label: "남성 신발",    href: "/220",                         img: "/bloo/cat_men_shoes.jpg" },
-  { label: "남성 잡화",    href: "/26",                          img: "/bloo/cat_men_fashion.jpg" },
-  { label: "시계관",       href: "/412",                         img: "/bloo/cat_m5.jpg" },
+  { label: "남성 의류", href: "/httpstheblooshop1496458051", img: catImg("884a5738a744e") },        // 셀린느 리브드 울 스웨터 그레이
+  { label: "남성 가방", href: "/1212",                        img: catImg("11cd85e03aa22") },        // 고야드 메신저 백
+  { label: "남성 신발", href: "/220",                         img: catImg("7c4747cfdb79e", "gif") }, // 디올 B27 화이트 스니커즈
+  { label: "남성 잡화", href: "/26",                          img: catImg("f0695e555b82f") },        // 에르메스 클릭아슈 골드 팔찌
+  { label: "시계관",    href: "/412",                         img: catImg("5fde45956e083", "gif") }, // 롤렉스 블루
   // Row 2 — 여성
-  { label: "여성 의류",    href: "/497",                         img: "/bloo/cat_women_clothing.jpg" },
-  { label: "여성 가방",    href: "/1447",                        img: "/bloo/cat_women_bag.jpg" },
-  { label: "여성 신발",    href: "/656",                         img: "/bloo/cat_women_shoes.jpg" },
-  { label: "여성 잡화",    href: "/716",                         img: "/bloo/cat_women_fashion.jpg" },
-  { label: "캐리어",       href: "/products?search=%EC%BA%90%EB%A6%AC%EC%96%B4", img: "/bloo/cat_women_5th2.jpg" },
+  { label: "여성 의류", href: "/497",                         img: catImg("9ecfbe7689c3b") },        // 미우미우 패딩 자켓
+  { label: "여성 가방", href: "/1447",                        img: catImg("96aba31c1694e") },        // 샤넬 25 미디엄 블랙
+  { label: "여성 신발", href: "/656",                         img: catImg("47c5dffd03e6b") },        // 디올 B30 화이트 스니커즈
+  { label: "여성 잡화", href: "/716",                         img: catImg("4c876d4dbbd9d") },        // 에르메스 팔찌 오렌지
+  { label: "캐리어",    href: "/products?search=%EC%BA%90%EB%A6%AC%EC%96%B4", img: "/bloo/cat_women_5th2.jpg" },
 ];
 
 function CategoryGrid() {
@@ -139,7 +143,7 @@ function CategoryGrid() {
               data-testid={`cat-card-${idx}`}
               aria-label={cat.label}
             >
-              <div className="w-full aspect-square rounded-2xl overflow-hidden bg-[#dce8f8]">
+              <div className="w-full aspect-square rounded-2xl overflow-hidden bg-[#d8e8f8]">
                 <img
                   src={cat.img}
                   alt={cat.label}
