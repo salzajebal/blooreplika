@@ -35,7 +35,7 @@ import {
   type RankingItem, type InsertRankingItem, rankingItems
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, sql, inArray } from "drizzle-orm";
+import { eq, desc, and, sql, inArray, like } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -1719,7 +1719,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getActiveInspections(category?: string): Promise<Inspection[]> {
-    const conditions: any[] = [eq(inspections.isActive, true)];
+    const conditions: any[] = [
+      eq(inspections.isActive, true),
+      like(inspections.productName, "%검수%"),
+    ];
     if (category && category !== "all") {
       conditions.push(eq(inspections.category, category));
     }
