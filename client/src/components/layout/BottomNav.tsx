@@ -36,7 +36,7 @@ export function BottomNav() {
             <div className="space-y-3">
               <button
                 onClick={() => { setShowGuestMenu(false); setLocation("/login"); }}
-                className="w-full flex items-center gap-3 bg-[#FF6100] text-white rounded-xl px-4 py-4 font-semibold"
+                className="w-full flex items-center gap-3 bg-[#111111] text-white rounded-xl px-4 py-4 font-semibold"
                 data-testid="guest-menu-login"
               >
                 <LogIn className="w-5 h-5" />
@@ -50,7 +50,7 @@ export function BottomNav() {
                 className="w-full flex items-center gap-3 bg-[#f5f5f5] text-[#111111] rounded-xl px-4 py-4"
                 data-testid="guest-menu-order-inquiry"
               >
-                <Search className="w-5 h-5 text-[#FF6100]" />
+                <Search className="w-5 h-5 text-[#555555]" />
                 <div className="text-left">
                   <p className="font-semibold text-sm">주문 조회 (비회원)</p>
                   <p className="text-xs text-[#666666] font-normal mt-0.5">주문번호 + 연락처로 주문 현황을 확인해요</p>

@@ -300,8 +300,8 @@ export function ChatWidget() {
     return (
       <div
         data-testid="chat-widget-login-required"
-        className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] sm:max-w-[calc(100vw-48px)] bg-white sm:rounded-2xl shadow-2xl shadow-gray-200 overflow-hidden flex flex-col safe-area-bottom border border-[#e8e8e8]"
-        style={{ height: "min(65vh, 480px)", maxHeight: "100dvh" }}
+        className="fixed bottom-14 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] sm:max-w-[calc(100vw-48px)] bg-white sm:rounded-2xl shadow-2xl shadow-gray-200 overflow-hidden flex flex-col safe-area-bottom border border-[#e8e8e8]"
+        style={{ height: "min(60vh, 480px)", maxHeight: "calc(100dvh - 56px)" }}
       >
         {/* 헤더 */}
         <div className="bg-white p-4 flex items-center justify-between flex-shrink-0 border-b border-[#e8e8e8]">
@@ -383,8 +383,8 @@ export function ChatWidget() {
     return (
       <div
         data-testid="chat-widget-guest-name"
-        className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] sm:max-w-[calc(100vw-48px)] bg-white sm:rounded-2xl shadow-2xl shadow-gray-200 overflow-hidden flex flex-col safe-area-bottom border border-[#e8e8e8]"
-        style={{ height: "min(55vh, 420px)", maxHeight: "100dvh" }}
+        className="fixed bottom-14 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] sm:max-w-[calc(100vw-48px)] bg-white sm:rounded-2xl shadow-2xl shadow-gray-200 overflow-hidden flex flex-col safe-area-bottom border border-[#e8e8e8]"
+        style={{ height: "min(55vh, 420px)", maxHeight: "calc(100dvh - 56px)" }}
       >
         <div className="bg-white p-4 flex items-center justify-between flex-shrink-0 border-b border-[#e8e8e8]">
           <div className="flex items-center gap-3">
@@ -447,8 +447,8 @@ export function ChatWidget() {
   return (
     <div
       data-testid="chat-widget"
-      className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] sm:max-w-[calc(100vw-48px)] bg-white sm:rounded-2xl shadow-2xl shadow-gray-200 overflow-hidden flex flex-col safe-area-bottom border border-[#e8e8e8]"
-      style={{ height: "min(100vh, 540px)", maxHeight: "100dvh" }}
+      className="fixed bottom-14 right-0 sm:bottom-6 sm:right-6 z-50 w-full sm:w-[380px] sm:max-w-[calc(100vw-48px)] bg-white sm:rounded-2xl shadow-2xl shadow-gray-200 overflow-hidden flex flex-col safe-area-bottom border border-[#e8e8e8]"
+      style={{ height: "min(65vh, 540px)", maxHeight: "calc(100dvh - 56px)" }}
     >
       {/* 헤더 */}
       <div className="bg-white p-3 sm:p-4 flex items-center justify-between flex-shrink-0 border-b border-[#e8e8e8]">

@@ -80,7 +80,7 @@ export default function Login() {
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 required
                 autoComplete="username"
-                className="w-full h-12 px-4 border border-gray-200 bg-white text-gray-900 text-sm placeholder-gray-300 focus:outline-none focus:border-gray-400 transition-colors"
+                className="w-full h-12 px-4 border border-gray-200 bg-white text-gray-900 text-sm placeholder-gray-300 focus:outline-none focus:border-gray-800 transition-colors"
                 data-testid="input-username"
               />
             </div>
@@ -98,7 +98,7 @@ export default function Login() {
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   required
                   autoComplete="current-password"
-                  className="w-full h-12 px-4 pr-11 border border-gray-200 bg-white text-gray-900 text-sm placeholder-gray-300 focus:outline-none focus:border-gray-400 transition-colors"
+                  className="w-full h-12 px-4 pr-11 border border-gray-200 bg-white text-gray-900 text-sm placeholder-gray-300 focus:outline-none focus:border-gray-800 transition-colors"
                   data-testid="input-password"
                 />
                 <button
@@ -116,7 +116,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 bg-[#FF6100] hover:bg-orange-600 active:bg-orange-700 text-white text-sm font-bold tracking-wide disabled:opacity-60 disabled:cursor-not-allowed transition-colors mt-2"
+              className="w-full h-12 bg-[#111111] hover:bg-[#333333] active:bg-black text-white text-sm font-bold tracking-wide disabled:opacity-60 disabled:cursor-not-allowed transition-colors mt-2"
               data-testid="button-login"
             >
               {loading ? (

@@ -11,7 +11,7 @@ const BANKS = [
 ];
 
 const inputCls =
-  "w-full h-12 px-4 border border-gray-200 bg-white text-gray-900 text-sm placeholder-gray-300 focus:outline-none focus:border-gray-400 transition-colors";
+  "w-full h-12 px-4 border border-gray-200 bg-white text-gray-900 text-sm placeholder-gray-300 focus:outline-none focus:border-gray-800 transition-colors";
 const labelCls = "block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide";
 
 export default function Signup() {
@@ -150,7 +150,7 @@ export default function Signup() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* 이름 */}
             <div>
-              <label className={labelCls}>이름 <span className="text-[#FF6100]">*</span></label>
+              <label className={labelCls}>이름 <span className="text-[#111111]">*</span></label>
               <input
                 type="text"
                 placeholder="이름을 입력해주세요"
@@ -164,7 +164,7 @@ export default function Signup() {
 
             {/* 아이디 */}
             <div>
-              <label className={labelCls}>아이디 <span className="text-[#FF6100]">*</span></label>
+              <label className={labelCls}>아이디 <span className="text-[#111111]">*</span></label>
               <input
                 type="text"
                 placeholder="영문, 숫자 4~20자"
@@ -193,7 +193,7 @@ export default function Signup() {
 
             {/* 휴대폰 */}
             <div>
-              <label className={labelCls}>휴대폰 번호 <span className="text-[#FF6100]">*</span></label>
+              <label className={labelCls}>휴대폰 번호 <span className="text-[#111111]">*</span></label>
               <input
                 type="tel"
                 placeholder="010-0000-0000"
@@ -207,7 +207,7 @@ export default function Signup() {
 
             {/* 주소 */}
             <div>
-              <label className={labelCls}>주소 <span className="text-[#FF6100]">*</span></label>
+              <label className={labelCls}>주소 <span className="text-[#111111]">*</span></label>
               <div className="flex gap-2 mb-2">
                 <input
                   type="text"
@@ -251,7 +251,7 @@ export default function Signup() {
 
             {/* 비밀번호 */}
             <div>
-              <label className={labelCls}>비밀번호 <span className="text-[#FF6100]">*</span></label>
+              <label className={labelCls}>비밀번호 <span className="text-[#111111]">*</span></label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -275,7 +275,7 @@ export default function Signup() {
 
             {/* 비밀번호 확인 */}
             <div>
-              <label className={labelCls}>비밀번호 확인 <span className="text-[#FF6100]">*</span></label>
+              <label className={labelCls}>비밀번호 확인 <span className="text-[#111111]">*</span></label>
               <div className="relative">
                 <input
                   type={showPasswordConfirm ? "text" : "password"}
@@ -347,7 +347,7 @@ export default function Signup() {
               <label className="flex items-center gap-3 cursor-pointer p-3 bg-gray-50 border border-gray-100">
                 <div
                   className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                    formData.agreeAll ? "bg-[#FF6100] border-[#FF6100]" : "border-gray-300 bg-white"
+                    formData.agreeAll ? "bg-[#111111] border-[#111111]" : "border-gray-300 bg-white"
                   }`}
                 >
                   {formData.agreeAll && <Check className="w-3 h-3 text-white" />}
@@ -365,7 +365,7 @@ export default function Signup() {
               <label className="flex items-center gap-3 cursor-pointer px-1">
                 <div
                   className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                    formData.agreeTerms ? "bg-[#FF6100] border-[#FF6100]" : "border-gray-300 bg-white"
+                    formData.agreeTerms ? "bg-[#111111] border-[#111111]" : "border-gray-300 bg-white"
                   }`}
                 >
                   {formData.agreeTerms && <Check className="w-2.5 h-2.5 text-white" />}
@@ -373,7 +373,7 @@ export default function Signup() {
                 <input type="checkbox" className="sr-only" checked={formData.agreeTerms}
                   onChange={(e) => { set("agreeTerms", e.target.checked); if (!e.target.checked) set("agreeAll", false); }} required />
                 <span className="text-sm text-gray-600">
-                  <span className="text-[#FF6100] font-medium">[필수]</span> 이용약관 동의
+                  <span className="text-[#111111] font-medium">[필수]</span> 이용약관 동의
                 </span>
               </label>
 
@@ -381,7 +381,7 @@ export default function Signup() {
               <label className="flex items-center gap-3 cursor-pointer px-1">
                 <div
                   className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                    formData.agreePrivacy ? "bg-[#FF6100] border-[#FF6100]" : "border-gray-300 bg-white"
+                    formData.agreePrivacy ? "bg-[#111111] border-[#111111]" : "border-gray-300 bg-white"
                   }`}
                 >
                   {formData.agreePrivacy && <Check className="w-2.5 h-2.5 text-white" />}
@@ -389,7 +389,7 @@ export default function Signup() {
                 <input type="checkbox" className="sr-only" checked={formData.agreePrivacy}
                   onChange={(e) => { set("agreePrivacy", e.target.checked); if (!e.target.checked) set("agreeAll", false); }} required />
                 <span className="text-sm text-gray-600">
-                  <span className="text-[#FF6100] font-medium">[필수]</span> 개인정보 수집 및 이용 동의
+                  <span className="text-[#111111] font-medium">[필수]</span> 개인정보 수집 및 이용 동의
                 </span>
               </label>
 
@@ -397,7 +397,7 @@ export default function Signup() {
               <label className="flex items-center gap-3 cursor-pointer px-1">
                 <div
                   className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                    formData.agreeMarketing ? "bg-[#FF6100] border-[#FF6100]" : "border-gray-300 bg-white"
+                    formData.agreeMarketing ? "bg-[#111111] border-[#111111]" : "border-gray-300 bg-white"
                   }`}
                 >
                   {formData.agreeMarketing && <Check className="w-2.5 h-2.5 text-white" />}
@@ -414,7 +414,7 @@ export default function Signup() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 bg-[#FF6100] hover:bg-orange-600 active:bg-orange-700 text-white text-sm font-bold tracking-wide disabled:opacity-60 disabled:cursor-not-allowed transition-colors mt-2"
+              className="w-full h-12 bg-[#111111] hover:bg-[#333333] active:bg-black text-white text-sm font-bold tracking-wide disabled:opacity-60 disabled:cursor-not-allowed transition-colors mt-2"
               data-testid="button-submit-signup"
             >
               {loading ? (
@@ -452,9 +452,9 @@ export default function Signup() {
           <div className="mt-8 bg-gray-50 border border-gray-100 p-4">
             <p className="text-xs font-semibold text-gray-600 mb-2">회원 혜택</p>
             <ul className="space-y-1 text-xs text-gray-400">
-              <li className="flex items-center gap-1.5"><Check className="w-3 h-3 text-[#FF6100]" />회원 전용 특가 상품 이용 가능</li>
-              <li className="flex items-center gap-1.5"><Check className="w-3 h-3 text-[#FF6100]" />구매 금액 포인트 적립</li>
-              <li className="flex items-center gap-1.5"><Check className="w-3 h-3 text-[#FF6100]" />1:1 전담 상담원 배정</li>
+              <li className="flex items-center gap-1.5"><Check className="w-3 h-3 text-[#111111]" />회원 전용 특가 상품 이용 가능</li>
+              <li className="flex items-center gap-1.5"><Check className="w-3 h-3 text-[#111111]" />구매 금액 포인트 적립</li>
+              <li className="flex items-center gap-1.5"><Check className="w-3 h-3 text-[#111111]" />1:1 전담 상담원 배정</li>
             </ul>
           </div>
         </div>
