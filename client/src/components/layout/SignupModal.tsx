@@ -122,7 +122,8 @@ export function SignupModal({ isOpen, onClose, onSwitchToLogin }: SignupModalPro
     <div
       className="fixed inset-0 z-[350] flex items-center justify-center"
       style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-      onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
+      onClick={(e) => { if (e.target === e.currentTarget && !e.ctrlKey && !e.metaKey) handleClose(); }}
+      onKeyDown={(e) => { if (e.key === "Escape") handleClose(); }}
       data-testid="signup-modal-overlay"
     >
       <div

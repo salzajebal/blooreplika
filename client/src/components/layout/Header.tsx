@@ -444,10 +444,11 @@ export function Header() {
         <div
           className="fixed inset-0 z-[300] flex items-center justify-center"
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-          onClick={(e) => { if (e.target === e.currentTarget) closeLoginModal(); }}
+          onClick={(e) => { if (e.target === e.currentTarget && !e.ctrlKey && !e.metaKey) closeLoginModal(); }}
+          onKeyDown={(e) => { if (e.key === "Escape") closeLoginModal(); }}
           data-testid="login-modal-overlay"
         >
-          <div className="bg-white rounded-sm shadow-2xl w-full mx-4" style={{ maxWidth: 420 }}>
+          <div className="bg-white rounded-sm shadow-2xl w-full mx-4" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
             {/* Modal header */}
             <div className="relative flex items-center justify-center px-6 pt-8 pb-5">
               <h2 className="text-[22px] font-bold text-gray-900 tracking-wide">로그인</h2>
