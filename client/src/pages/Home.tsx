@@ -62,11 +62,9 @@ function MainBannerSlider() {
     return () => clearInterval(t);
   }, [displayList.length]);
 
-  const curBanner = displayList[current] ?? displayList[0];
-
   return (
     <section
-      className="relative w-full overflow-hidden"
+      className="relative w-full overflow-hidden aspect-[390/220] md:aspect-[1902/465]"
       data-testid="main-banner"
       onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
       onTouchEnd={(e) => {
@@ -77,12 +75,6 @@ function MainBannerSlider() {
         }
       }}
     >
-      <img
-        src={curBanner.imageUrl}
-        alt=""
-        aria-hidden="true"
-        style={{ display: "block", width: "100%", height: "auto", visibility: "hidden" }}
-      />
       {displayList.map((b: any, i: number) => (
         <Link
           key={i}
@@ -99,15 +91,15 @@ function MainBannerSlider() {
       ))}
       {displayList.length > 1 && (
         <>
-          <button onClick={() => setCurrent((p) => (p === 0 ? displayList.length - 1 : p - 1))} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow z-10" aria-label="이전">
+          <button onClick={() => setCurrent((p) => (p === 0 ? displayList.length - 1 : p - 1))} className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow z-10 hidden md:flex" aria-label="이전">
             <ChevronLeft className="w-5 h-5 text-gray-700" />
           </button>
-          <button onClick={() => setCurrent((p) => (p + 1) % displayList.length)} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow z-10" aria-label="다음">
+          <button onClick={() => setCurrent((p) => (p + 1) % displayList.length)} className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/80 hover:bg-white rounded-full flex items-center justify-center shadow z-10 hidden md:flex" aria-label="다음">
             <ChevronRight className="w-5 h-5 text-gray-700" />
           </button>
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
             {displayList.map((_: any, i: number) => (
-              <button key={i} onClick={() => setCurrent(i)} className={`h-1.5 rounded-full transition-all duration-300 ${i === current ? "w-6 bg-white" : "w-1.5 bg-white/50"}`} />
+              <button key={i} onClick={() => setCurrent(i)} className={`h-1.5 rounded-full transition-all duration-300 ${i === current ? "w-5 bg-white" : "w-1.5 bg-white/60"}`} />
             ))}
           </div>
         </>
@@ -117,63 +109,49 @@ function MainBannerSlider() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Category Image Map — bloostore1.co.kr 파싱 (1800×600 이미지)
-// 2행 × 5열 카테고리 카드 (남성의류 ~ 캐리어)
+// Category Cards — 5×2 grid, individual rounded cards
 // ─────────────────────────────────────────────────────────────
-
-// 각 cell: 이미지 내 위치(%) + 이동 URL
-// 원본 1800×600 분석 결과 기반 (display 1250px 환산)
-// 이미지 실제 레이아웃: 2행 × 5열 (각 박스 ~19% 너비, 균등 배치)
-// Row1: 남성의류 | 남성가방 | 남성신발 | 남성패션잡화 | 시계관
-// Row2: 여성의류 | 여성가방 | 여성신발 | 여성패션잡화 | 캐리어
-const CAT_CARD_ROWS: { label: string; href: string; left: number; top: number; width: number; height: number }[][] = [
-  // Row 1
-  [
-    { label: "남성 의류",    href: "/httpstheblooshop1496458051",  left:  0.5, top: 2, width: 19, height: 48 },
-    { label: "남성 가방",    href: "/1212",                        left: 20.5, top: 2, width: 19, height: 48 },
-    { label: "남성 신발",    href: "/220",                         left: 40.5, top: 2, width: 19, height: 48 },
-    { label: "남성 패션잡화", href: "/26",                          left: 60.5, top: 2, width: 19, height: 48 },
-    { label: "시계관",       href: "/412",                         left: 80.5, top: 2, width: 19, height: 48 },
-  ],
-  // Row 2
-  [
-    { label: "여성 의류",    href: "/497",                          left:  0.5, top: 52, width: 19, height: 48 },
-    { label: "여성 가방",    href: "/1447",                         left: 20.5, top: 52, width: 19, height: 48 },
-    { label: "여성 신발",    href: "/656",                          left: 40.5, top: 52, width: 19, height: 48 },
-    { label: "여성 패션잡화", href: "/716",                          left: 60.5, top: 52, width: 19, height: 48 },
-    { label: "캐리어",       href: "/products?search=%EC%BA%90%EB%A6%AC%EC%96%B4", left: 80.5, top: 52, width: 19, height: 48 },
-  ],
+const CATEGORY_CARDS = [
+  // Row 1 — 남성
+  { label: "남성 의류",    href: "/httpstheblooshop1496458051", img: "/bloo/cat_men_clothing.jpg" },
+  { label: "남성 가방",    href: "/1212",                        img: "/bloo/cat_men_bag.jpg" },
+  { label: "남성 신발",    href: "/220",                         img: "/bloo/cat_men_shoes.jpg" },
+  { label: "남성 잡화",    href: "/26",                          img: "/bloo/cat_men_fashion.jpg" },
+  { label: "시계관",       href: "/412",                         img: "/bloo/cat_m5.jpg" },
+  // Row 2 — 여성
+  { label: "여성 의류",    href: "/497",                         img: "/bloo/cat_women_clothing.jpg" },
+  { label: "여성 가방",    href: "/1447",                        img: "/bloo/cat_women_bag.jpg" },
+  { label: "여성 신발",    href: "/656",                         img: "/bloo/cat_women_shoes.jpg" },
+  { label: "여성 잡화",    href: "/716",                         img: "/bloo/cat_women_fashion.jpg" },
+  { label: "캐리어",       href: "/products?search=%EC%BA%90%EB%A6%AC%EC%96%B4", img: "/bloo/cat_women_5th2.jpg" },
 ];
 
 function CategoryGrid() {
   return (
-    <section className="bg-white py-0 border-b border-gray-100" data-testid="category-grid">
-      <div className="w-full max-w-[1250px] mx-auto">
-        <div className="relative w-full" style={{ paddingBottom: "33.33%" }}>
-          <img
-            src="/bloo/categories/cat_cards_1800x600.jpg"
-            alt="카테고리"
-            className="absolute inset-0 w-full h-full object-cover"
-            loading="lazy"
-          />
-          {CAT_CARD_ROWS.flat().map((cell, idx) =>
-            cell.href ? (
-              <Link
-                key={idx}
-                href={cell.href}
-                data-testid={`cat-card-${idx}`}
-                aria-label={cell.label}
-                style={{
-                  position: "absolute",
-                  left: `${cell.left}%`,
-                  top: `${cell.top}%`,
-                  width: `${cell.width}%`,
-                  height: `${cell.height}%`,
-                  cursor: "pointer",
-                }}
-              />
-            ) : null
-          )}
+    <section className="bg-white pt-3 pb-4 border-b border-gray-100" data-testid="category-grid">
+      <div className="w-full max-w-[1250px] mx-auto px-2 md:px-4">
+        <div className="grid grid-cols-5 gap-1.5 md:gap-3">
+          {CATEGORY_CARDS.map((cat, idx) => (
+            <Link
+              key={idx}
+              href={cat.href}
+              className="flex flex-col items-center gap-1"
+              data-testid={`cat-card-${idx}`}
+              aria-label={cat.label}
+            >
+              <div className="w-full aspect-square rounded-2xl overflow-hidden bg-[#dce8f8]">
+                <img
+                  src={cat.img}
+                  alt={cat.label}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              </div>
+              <span className="text-[10px] md:text-[13px] text-gray-800 text-center leading-tight font-medium break-keep">
+                {cat.label}
+              </span>
+            </Link>
+          ))}
         </div>
       </div>
     </section>
