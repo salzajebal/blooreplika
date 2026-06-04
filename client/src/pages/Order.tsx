@@ -547,6 +547,15 @@ export default function Order() {
         setOrderNumber(createdOrderNumber);
         setCompletedPaymentMethod(paymentMethod);
         setOrderComplete(true);
+        // Meta Pixel: Purchase (브라우저)
+        if ((window as any).fbq) {
+          (window as any).fbq("track", "Purchase", {
+            value: calculateTotalAmount(),
+            currency: "KRW",
+            order_id: createdOrderNumber,
+            content_type: "product",
+          });
+        }
         // 비회원도 나중에 조회할 수 있도록 주문번호 localStorage 저장
         try {
           const saved = JSON.parse(localStorage.getItem("recentOrders") || "[]");
