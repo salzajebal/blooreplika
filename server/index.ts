@@ -133,6 +133,7 @@ app.use((req, res, next) => {
       runSubcategoryMigrations();
       runCriticalNameFixes();
       runJewelryCaIdFix();
+      runWatchBrandsSeed();
       runStartupMaintenance();
     },
   );
@@ -164,6 +165,47 @@ async function runCategoryMigrations() {
     log('Category migrations completed (all required categories ensured)', 'migration');
   } catch (err: any) {
     console.error('[migration] Category migration error:', err.message);
+  }
+}
+
+async function runWatchBrandsSeed() {
+  try {
+    const watchBrands = [
+      { name: '오메가',         slug: 'omega' },
+      { name: 'IWC',           slug: 'iwc' },
+      { name: '파텍필립',       slug: 'patek-philippe' },
+      { name: '태그호이어',     slug: 'tag-heuer' },
+      { name: '브라이틀링',     slug: 'breitling' },
+      { name: '위블로',         slug: 'hublot' },
+      { name: '롱진',           slug: 'longines' },
+      { name: '오데마 피게',    slug: 'audemars-piguet' },
+      { name: '튜더',           slug: 'tudor' },
+      { name: '예거 르쿨트르',  slug: 'jaeger-lecoultre' },
+      { name: '바쉐론 콘스탄틴', slug: 'vacheron-constantin' },
+      { name: '브레게',         slug: 'breguet' },
+      { name: '블랑팡',         slug: 'blancpain' },
+      { name: '피아제',         slug: 'piaget' },
+      { name: '쇼파드',         slug: 'chopard' },
+      { name: '제니스',         slug: 'zenith' },
+      { name: '파네라이',       slug: 'panerai' },
+      { name: '랑에 운트 죄네', slug: 'a-lange-sohne' },
+      { name: '글라슈테 오리지날', slug: 'glashutte-original' },
+      { name: '프랭크뮬러',     slug: 'franck-muller' },
+      { name: '리차드밀',       slug: 'richard-mille' },
+      { name: '세이코',         slug: 'seiko' },
+      { name: '그랑세이코',     slug: 'grand-seiko' },
+    ];
+    for (const brand of watchBrands) {
+      await pool.query(
+        `INSERT INTO brands (id, name, slug, description, sort_order, is_active)
+         VALUES (gen_random_uuid(), $1, $2, '명품 시계 브랜드', 100, true)
+         ON CONFLICT (slug) DO NOTHING`,
+        [brand.name, brand.slug]
+      );
+    }
+    log('Watch brands seed completed', 'migration');
+  } catch (err: any) {
+    console.error('[migration] Watch brands seed error:', err.message);
   }
 }
 
