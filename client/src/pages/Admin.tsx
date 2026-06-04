@@ -446,7 +446,10 @@ export default function Admin() {
   const [priceReduceCategory, setPriceReduceCategory] = useState<string>("clothing");
   const [priceReduceBrand, setPriceReduceBrand] = useState<string>("");
   const [priceReduceCatBrand, setPriceReduceCatBrand] = useState<string>("");
+
   const [priceReduceLoading, setPriceReduceLoading] = useState(false);
+  const [priceReduceBrandSearch, setPriceReduceBrandSearch] = useState("");
+  const [priceReduceCatBrandSearch, setPriceReduceCatBrandSearch] = useState("");
 
   const [productCount, setProductCount] = useState<number | null>(null);
   const [productCountLoading, setProductCountLoading] = useState(false);
@@ -7280,10 +7283,18 @@ export default function Admin() {
                 {priceReduceScope === "brand" && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">브랜드 <span className="text-xs text-gray-400 font-normal">(전체 카테고리)</span></label>
+                    <input
+                      type="text"
+                      placeholder="브랜드명 검색..."
+                      value={priceReduceBrandSearch}
+                      onChange={e => setPriceReduceBrandSearch(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-orange-400 mb-1"
+                    />
                     <select value={priceReduceBrand} onChange={e => setPriceReduceBrand(e.target.value)}
+                      size={6}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-orange-400">
-                      <option value="">브랜드를 선택하세요</option>
-                      {brands.filter(b => b.isActive !== false).map(b => (
+                      <option value="">-- 브랜드를 선택하세요 --</option>
+                      {brands.filter(b => b.isActive !== false && (!priceReduceBrandSearch || b.name.toLowerCase().includes(priceReduceBrandSearch.toLowerCase()))).map(b => (
                         <option key={b.id} value={b.id}>{b.name}</option>
                       ))}
                     </select>
@@ -7299,10 +7310,18 @@ export default function Admin() {
                         — {CATEGORY_OPTIONS.find(c => c.id === priceReduceCategory)?.name} 내 브랜드
                       </span>
                     </label>
+                    <input
+                      type="text"
+                      placeholder="브랜드명 검색..."
+                      value={priceReduceCatBrandSearch}
+                      onChange={e => setPriceReduceCatBrandSearch(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-orange-400 mb-1"
+                    />
                     <select value={priceReduceCatBrand} onChange={e => setPriceReduceCatBrand(e.target.value)}
+                      size={6}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-orange-400">
-                      <option value="">브랜드를 선택하세요</option>
-                      {brands.filter(b => b.isActive !== false).map(b => (
+                      <option value="">-- 브랜드를 선택하세요 --</option>
+                      {brands.filter(b => b.isActive !== false && (!priceReduceCatBrandSearch || b.name.toLowerCase().includes(priceReduceCatBrandSearch.toLowerCase()))).map(b => (
                         <option key={b.id} value={b.id}>{b.name}</option>
                       ))}
                     </select>
