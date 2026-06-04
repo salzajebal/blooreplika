@@ -7906,20 +7906,35 @@ export default function Admin() {
                     <h3 className="font-bold">알림 받을 채팅 선택</h3>
                   </div>
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 space-y-1">
-                    <p className="font-semibold">📋 채팅 ID 자동 감지</p>
-                    <p>① 봇을 채널/그룹에 초대하거나 봇과 개인 채팅 시작</p>
-                    <p>② 해당 채팅에서 아무 메시지나 1개 전송</p>
+                    <p className="font-semibold">📋 채팅 ID 자동 감지 방법</p>
+                    <p>① 봇을 알림 받을 <b>채널/그룹에 관리자로 초대</b> (또는 봇과 개인 채팅 시작)</p>
+                    <p>② 해당 채널/그룹에서 <b>아무 메시지나 1개 전송</b></p>
                     <p>③ 아래 [자동 감지] 클릭</p>
                   </div>
-                  <Button onClick={async () => {
-                    setTgOrderLoading(true); setTgOrderMsg(null);
-                    const r = await fetchWithAuth("/api/admin/telegram/get-chats", { method: "POST", body: JSON.stringify({ token: tgOrder.token }) });
-                    const d = await r.json(); setTgOrderLoading(false);
-                    if (d.success) { setTgOrderChats(d.data); setTgOrderMsg(d.data.length === 0 ? { type: "err", text: "감지된 채팅이 없습니다." } : { type: "ok", text: `${d.data.length}개 채팅 감지됨` }); }
-                    else setTgOrderMsg({ type: "err", text: d.error });
-                  }} disabled={tgOrderLoading} className="bg-amber-500 hover:bg-amber-600 text-white" data-testid="button-tg-order-get-chats">
-                    {tgOrderLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}채팅 자동 감지
-                  </Button>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button onClick={async () => {
+                      setTgOrderLoading(true); setTgOrderMsg(null);
+                      const r = await fetchWithAuth("/api/admin/telegram/get-chats", { method: "POST", body: JSON.stringify({ token: tgOrder.token }) });
+                      const d = await r.json(); setTgOrderLoading(false);
+                      if (d.success) { setTgOrderChats(d.data); setTgOrderMsg(d.data.length === 0 ? { type: "err", text: "감지된 채팅이 없습니다. 아래 '직접 확인' 버튼을 눌러 채팅 ID를 복사하세요." } : { type: "ok", text: `${d.data.length}개 채팅 감지됨` }); }
+                      else setTgOrderMsg({ type: "err", text: d.error });
+                    }} disabled={tgOrderLoading} className="bg-amber-500 hover:bg-amber-600 text-white" data-testid="button-tg-order-get-chats">
+                      {tgOrderLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}자동 감지
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => window.open(`https://api.telegram.org/bot${tgOrder.token}/getUpdates`, "_blank")}
+                      className="text-sm"
+                    >
+                      🔍 직접 확인 (새 탭)
+                    </Button>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800 space-y-1">
+                    <p className="font-semibold">💡 [직접 확인] 버튼을 눌렀을 때</p>
+                    <p>새 탭에 JSON이 열리면 <b>"chat"</b> 항목에서 <b>"id"</b> 값을 찾아 아래에 붙여넣으세요.</p>
+                    <p>예: <code className="bg-blue-100 px-1 rounded">"id": -1001234567890</code> → <b>-1001234567890</b> 입력</p>
+                  </div>
                   {tgOrderChats.length > 0 && (
                     <div className="space-y-2">
                       {tgOrderChats.map(chat => (

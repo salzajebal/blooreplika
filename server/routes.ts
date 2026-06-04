@@ -2674,13 +2674,21 @@ export async function registerRoutes(
     try {
       const { token } = req.body;
       if (!token) return res.status(400).json({ success: false, error: "토큰을 입력해주세요." });
-      const r = await fetch(`https://api.telegram.org/bot${token}/getUpdates?limit=100&allowed_updates=["message","channel_post"]`);
+      // POST 방식으로 JSON 전달 (URL 인코딩 문제 방지)
+      const r = await fetch(`https://api.telegram.org/bot${token}/getUpdates`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: 100, allowed_updates: ["message", "channel_post", "my_chat_member", "chat_member"] }),
+      });
       const data = await r.json() as any;
-      if (!data.ok) return res.status(400).json({ success: false, error: "업데이트를 가져올 수 없습니다." });
+      if (!data.ok) return res.status(400).json({ success: false, error: `업데이트를 가져올 수 없습니다: ${data.description || ""}` });
       const seen = new Set<string>();
       const chats: { id: string; title: string; type: string }[] = [];
       for (const update of (data.result || [])) {
-        const chat = update.message?.chat || update.channel_post?.chat;
+        const chat = update.message?.chat
+          || update.channel_post?.chat
+          || update.my_chat_member?.chat
+          || update.chat_member?.chat;
         if (!chat) continue;
         const key = String(chat.id);
         if (seen.has(key)) continue;
