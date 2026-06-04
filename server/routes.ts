@@ -2998,6 +2998,60 @@ export async function registerRoutes(
     }
   });
 
+  // ── 검수 전용 XML 피드 ──
+  app.get("/api/catalog/inspection-feed.xml", async (req: Request, res: Response) => {
+    try {
+      const proto = req.headers["x-forwarded-proto"] || (req.secure ? "https" : "http");
+      const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost:5000";
+      const baseUrl = `${proto}://${host}`;
+
+      res.setHeader("Content-Type", "application/xml; charset=utf-8");
+      res.setHeader("Cache-Control", "public, max-age=1800");
+
+      res.write(`<?xml version="1.0" encoding="UTF-8"?>\n`);
+      res.write(`<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">\n`);
+      res.write(`  <channel>\n`);
+      res.write(`    <title>BLOO 실시간 검수 피드</title>\n`);
+      res.write(`    <link>${baseUrl}/inspection</link>\n`);
+      res.write(`    <description>BLOO 실시간 검수 사진 카탈로그</description>\n`);
+
+      const inspections = await storage.getActiveInspections("bloostore");
+      let written = 0;
+
+      for (const insp of inspections) {
+        if (!insp.imageUrl) continue;
+        const rawImg = insp.imageUrl;
+        const imgUrl = rawImg.startsWith("http")
+          ? `${baseUrl}/api/bloostore-image-proxy?url=${encodeURIComponent(rawImg)}`
+          : `${baseUrl}${rawImg}`;
+        const title = escapeXml((insp.productName || "BLOO 실시간 검수").substring(0, 150));
+        const desc = escapeXml(`BLOO 실시간 검수 사진 - ${insp.productName || ""}`.substring(0, 500));
+        res.write(`    <item>\n`);
+        res.write(`      <g:id>insp_${insp.id}</g:id>\n`);
+        res.write(`      <g:title>${title}</g:title>\n`);
+        res.write(`      <g:description>${desc}</g:description>\n`);
+        res.write(`      <g:link>${baseUrl}/inspection</g:link>\n`);
+        res.write(`      <g:image_link>${escapeXml(imgUrl)}</g:image_link>\n`);
+        res.write(`      <g:condition>new</g:condition>\n`);
+        res.write(`      <g:availability>in stock</g:availability>\n`);
+        res.write(`      <g:price>1000 KRW</g:price>\n`);
+        res.write(`      <g:brand>BLOO</g:brand>\n`);
+        res.write(`      <g:custom_label_0>inspection</g:custom_label_0>\n`);
+        res.write(`    </item>\n`);
+        written++;
+      }
+
+      res.write(`  </channel>\n`);
+      res.write(`</rss>\n`);
+      res.end();
+      console.log(`[catalog] inspection-feed.xml generated: ${written} items`);
+    } catch (error) {
+      console.error("Error generating inspection feed:", error);
+      if (!res.headersSent) res.status(500).json({ success: false, error: "검수 피드 생성 실패" });
+      else res.end();
+    }
+  });
+
   app.get("/api/catalog/stats", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const counts = await storage.getProductCountWithCategories();
