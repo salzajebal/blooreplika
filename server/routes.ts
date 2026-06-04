@@ -2954,9 +2954,10 @@ export async function registerRoutes(
         offset += BATCH;
       } while (offset < total);
 
-      // ── 실시간 검수 아이템 추가 (전체 피드에만) ──
+      // ── 실시간 검수 아이템 추가 (전체 피드에만, 검수사진만) ──
       if (!filterCategory) {
-        const inspections = await storage.getActiveInspections("bloostore");
+        const allInsp = await storage.getActiveInspections("bloostore");
+        const inspections = allInsp.filter(insp => insp.productName && insp.productName.includes("검수"));
         for (const insp of inspections) {
           if (!insp.imageUrl) continue;
           const rawImg = insp.imageUrl;
@@ -3015,7 +3016,9 @@ export async function registerRoutes(
       res.write(`    <link>${baseUrl}/inspection</link>\n`);
       res.write(`    <description>BLOO 실시간 검수 사진 카탈로그</description>\n`);
 
-      const inspections = await storage.getActiveInspections("bloostore");
+      const allInspections = await storage.getActiveInspections("bloostore");
+      // 실제 검수사진만 필터링 (이름에 "검수" 포함된 것만)
+      const inspections = allInspections.filter(insp => insp.productName && insp.productName.includes("검수"));
       let written = 0;
 
       for (const insp of inspections) {
@@ -3044,7 +3047,7 @@ export async function registerRoutes(
       res.write(`  </channel>\n`);
       res.write(`</rss>\n`);
       res.end();
-      console.log(`[catalog] inspection-feed.xml generated: ${written} items`);
+      console.log(`[catalog] inspection-feed.xml generated: ${written} items (검수사진만)`);
     } catch (error) {
       console.error("Error generating inspection feed:", error);
       if (!res.headersSent) res.status(500).json({ success: false, error: "검수 피드 생성 실패" });
