@@ -2532,6 +2532,42 @@ export async function registerRoutes(
     return sendTelegramOrderNotification(text);
   }
 
+  // ==================== META CONVERSIONS API ====================
+  async function sendMetaCapiPurchase(order: { orderNumber: string; totalAmount: number | null; memberEmail?: string | null; memberPhone?: string | null; }): Promise<void> {
+    try {
+      const token = process.env.META_CAPI_ACCESS_TOKEN;
+      if (!token) return;
+      const pixelId = "1774048053564819";
+      const crypto = await import("crypto");
+      const hashValue = (val: string) => crypto.createHash("sha256").update(val.trim().toLowerCase()).digest("hex");
+      const userData: Record<string, string> = {};
+      if (order.memberEmail) userData["em"] = hashValue(order.memberEmail);
+      if (order.memberPhone) userData["ph"] = hashValue(order.memberPhone.replace(/-/g, ""));
+      const payload = {
+        data: [{
+          event_name: "Purchase",
+          event_time: Math.floor(Date.now() / 1000),
+          action_source: "website",
+          user_data: userData,
+          custom_data: {
+            value: order.totalAmount ?? 0,
+            currency: "KRW",
+            order_id: order.orderNumber,
+          },
+        }],
+      };
+      const res = await fetch(`https://graph.facebook.com/v19.0/${pixelId}/events?access_token=${token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json() as any;
+      console.log("[meta-capi] Purchase 이벤트 전송:", json);
+    } catch (e) {
+      console.warn("[meta-capi] 이벤트 전송 실패:", e);
+    }
+  }
+
   // ==================== 패스트샌드 SMS 발송 ====================
   async function sendFastSendSMS(to: string, message: string): Promise<void> {
     try {
@@ -3756,6 +3792,7 @@ export async function registerRoutes(
         if (orderData.paymentMethod === "bank" && order.memberPhone) {
           sendBankTransferSMS(order).catch(() => {});
         }
+        sendMetaCapiPurchase({ orderNumber: order.orderNumber, totalAmount: order.totalAmount, memberEmail: order.memberEmail, memberPhone: order.memberPhone }).catch(() => {});
         return res.status(201).json({ success: true, data: order });
       }
       
@@ -3789,6 +3826,7 @@ export async function registerRoutes(
       if (order.paymentMethod === "bank" && order.memberPhone) {
         sendBankTransferSMS(order).catch(() => {});
       }
+      sendMetaCapiPurchase({ orderNumber: order.orderNumber, totalAmount: order.totalAmount, memberEmail: order.memberEmail, memberPhone: order.memberPhone }).catch(() => {});
 
       res.status(201).json({ success: true, data: order });
     } catch (error) {
