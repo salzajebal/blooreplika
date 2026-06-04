@@ -84,6 +84,18 @@ export function Header() {
     setLoginError("");
   };
 
+  // 전역 이벤트로 어디서든 모달 열기
+  useEffect(() => {
+    const onOpenLogin = () => openLoginModal();
+    const onOpenSignup = () => { closeLoginModal(); setSignupModalOpen(true); };
+    window.addEventListener("open-login-modal", onOpenLogin);
+    window.addEventListener("open-signup-modal", onOpenSignup);
+    return () => {
+      window.removeEventListener("open-login-modal", onOpenLogin);
+      window.removeEventListener("open-signup-modal", onOpenSignup);
+    };
+  }, []);
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginForm.email.trim() || !loginForm.password.trim()) {

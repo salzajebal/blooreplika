@@ -281,16 +281,18 @@ export default function Profile() {
                 로그인하여 주문 내역, 찜 목록 등<br />다양한 서비스를 이용해보세요.
               </p>
               <div className="flex gap-3 justify-center">
-                <Link href="/login">
-                  <button className="px-8 py-2.5 bg-[#111111] hover:bg-[#333333] text-white text-sm font-semibold tracking-wide transition-colors rounded-lg">
-                    로그인
-                  </button>
-                </Link>
-                <Link href="/signup">
-                  <button className="px-8 py-2.5 border border-[#e8e8e8] text-[#666666] hover:border-[#111111] hover:text-[#111111] text-sm transition-colors rounded-lg">
-                    회원가입
-                  </button>
-                </Link>
+                <button
+                  onClick={() => window.dispatchEvent(new Event("open-login-modal"))}
+                  className="px-8 py-2.5 bg-[#111111] hover:bg-[#333333] text-white text-sm font-semibold tracking-wide transition-colors rounded-lg"
+                >
+                  로그인
+                </button>
+                <button
+                  onClick={() => window.dispatchEvent(new Event("open-signup-modal"))}
+                  className="px-8 py-2.5 border border-[#e8e8e8] text-[#666666] hover:border-[#111111] hover:text-[#111111] text-sm transition-colors rounded-lg"
+                >
+                  회원가입
+                </button>
               </div>
             </div>
           ) : (
