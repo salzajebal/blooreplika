@@ -246,7 +246,7 @@ export default function WatchPage({ brandPath }: { brandPath: string }) {
           </aside>
 
           {/* 메인 콘텐츠 */}
-          <main className="flex-1 min-w-0">
+          <main className="flex-1 min-w-0 pb-20 lg:pb-8">
             {/* 경로 표시 */}
             <div className="hidden md:flex items-center justify-between mb-4">
               <div className="flex items-center gap-1 text-xs text-gray-500">

@@ -207,7 +207,7 @@ export default function OrderInquiry() {
     <div className="min-h-screen flex flex-col bg-[#f5f5f5]">
       <Header />
 
-      <main className="flex-1 py-6">
+      <main className="flex-1 py-6 pb-20 md:pb-6">
         <div className="max-w-[640px] mx-auto px-4">
           <div className="text-center mb-6">
             <h1 className="text-xl font-bold text-[#111111] mb-1">주문조회</h1>

@@ -190,7 +190,7 @@ export default function Blog() {
       <div className="min-h-screen bg-[#0f0f0f]">
         <Header />
         
-        <main>
+        <main className="pb-20 md:pb-8">
           <div className="bg-[#111111] border-b border-[#2a2a2a] py-4">
             <div className="max-w-[1200px] mx-auto px-4">
               <h1 className="text-lg font-bold text-[#f0f0f0]">블로그</h1>
@@ -276,7 +276,7 @@ export default function Blog() {
     <div className="min-h-screen bg-[#0f0f0f]">
       <Header />
       
-      <main>
+      <main className="pb-20 md:pb-8">
         <div className="bg-[#111111] border-b border-[#2a2a2a] py-4">
           <div className="max-w-[1200px] mx-auto px-4">
             <h1 className="text-lg font-bold text-[#f0f0f0]">블로그</h1>

@@ -17,7 +17,7 @@ function FloatingButtons() {
   }, []);
   if (!show) return null;
   return (
-    <div className="fixed right-5 bottom-8 z-40">
+    <div className="fixed right-5 bottom-20 md:bottom-8 z-40">
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         className="w-11 h-11 bg-white border border-gray-300 rounded-full shadow-lg flex items-center justify-center text-gray-500 hover:border-gray-500 hover:text-gray-800 transition-all"
@@ -285,7 +285,12 @@ const CELEBS_DATA = [
 function CelebritySection() {
   const [current, setCurrent] = useState(0);
   const touchX = useRef(0);
-  const visible = 4;
+  const [visible, setVisible] = useState(() => window.innerWidth < 640 ? 2 : 4);
+  useEffect(() => {
+    const handler = () => setVisible(window.innerWidth < 640 ? 2 : 4);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
   const total = CELEBS_DATA.length;
   const maxStart = Math.max(0, total - visible);
   const canPrev = current > 0;
@@ -486,13 +491,13 @@ function RankedProductsSection({ title, subtitle, apiUrl, moreLink, testId = "ra
           <div className="py-16 text-center text-gray-300 text-sm">어드민에서 상품을 설정해주세요.</div>
         ) : (
           <>
-            <div className="grid grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4">
               {products.slice(0, 5).map((p: any, i: number) => <ProductCard key={p.id} product={p} rank={i + 1} />)}
             </div>
             <MoreBtn />
             {products.length > 5 && (
               <>
-                <div className="grid grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 lg:gap-4">
                   {products.slice(5, 10).map((p: any, i: number) => <ProductCard key={p.id} product={p} rank={i + 1} />)}
                 </div>
                 <MoreBtn />
@@ -545,7 +550,7 @@ function InspectionSection() {
       {reviews.length > 0 && (
         <div className="bg-white py-6 border-b border-gray-100">
           <div className="max-w-[1100px] mx-auto px-5">
-            <div className="grid grid-cols-6 gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
               {reviews.slice(0, 6).map((r: any, i: number) => {
                 const img = r.imageUrls?.[0] || r.imageUrl;
                 return (
@@ -739,7 +744,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <main>
+      <main className="pb-16 md:pb-0">
         {/* 1. Main banner slider */}
         <MainBannerSlider />
 

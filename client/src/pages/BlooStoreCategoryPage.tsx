@@ -829,7 +829,7 @@ export default function BlooStoreCategoryPage({ pageId }: { pageId: string }) {
           </aside>
 
           {/* 메인 콘텐츠 */}
-          <main className="flex-1 min-w-0">
+          <main className="flex-1 min-w-0 pb-20 lg:pb-8">
             {/* 경로 표시 */}
             <div className="hidden md:flex items-center gap-1 text-xs text-gray-400 mb-3">
               <span className="font-medium text-gray-700">{config.name}</span>

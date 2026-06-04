@@ -61,7 +61,7 @@ export default function Events() {
               </nav>
             </aside>
 
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 pb-20 md:pb-8">
               <div className="mb-4">
                 <p className="text-sm text-[#999999]">
                   Total : <strong className="text-[#FF6100]">{items.length}</strong> items

@@ -239,7 +239,7 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
       <div className="min-h-screen bg-[#f5f5f5]">
         <Header />
 
-        <main>
+        <main className="pb-20 md:pb-8">
           <div className="relative w-full bg-white overflow-hidden">
             {heroImageUrl && heroImageUrl.trim() ? (
               <div className="relative">
@@ -366,7 +366,7 @@ export default function ContentPage({ sectionType }: { sectionType: string }) {
     <div className="min-h-screen bg-[#f5f5f5]">
       <Header />
 
-      <main>
+      <main className="pb-20 md:pb-8">
         <div className="bg-white border-b border-[#e8e8e8] py-4">
           <div className="max-w-[640px] mx-auto px-4">
             <h1 className="text-base font-bold text-[#111111]">{config.title}</h1>

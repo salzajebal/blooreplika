@@ -786,7 +786,7 @@ export default function ProductList() {
           </div>
 
           {/* ── Product Grid ── */}
-          <div className="px-3 lg:px-5 pt-3">
+          <div className="px-3 lg:px-5 pt-3 pb-20 lg:pb-8">
             {loading && displayProducts.length === 0 ? (
               /* Skeleton */
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-3">

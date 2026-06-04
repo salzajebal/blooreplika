@@ -205,7 +205,7 @@ export default function ProductDetail() {
     <div className="min-h-screen flex flex-col bg-white">
       <Header />
 
-      <main className="flex-1">
+      <main className="flex-1 pb-20 md:pb-0">
         {/* Breadcrumb */}
         <div className="max-w-screen-xl mx-auto px-4 pt-3 pb-1">
           <nav className="flex items-center gap-1 text-xs text-gray-400">

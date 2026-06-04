@@ -171,7 +171,7 @@ export default function Inspection() {
 
           {/* 4열 상품 그리드 */}
           {!isLoading && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 pb-10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 pb-20 md:pb-10">
               {sortedItems.map((item) => {
                 const rawUrl = item.imageUrl.includes('?') ? item.imageUrl : `${item.imageUrl}?w=800`;
                 const proxied = proxyUrl(rawUrl);

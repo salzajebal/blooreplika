@@ -81,7 +81,7 @@ export default function Labs() {
   return (
     <div className="min-h-screen bg-[#f5f5f5]">
       <Header />
-      <main>
+      <main className="pb-20 md:pb-8">
         {heroBlock ? (
           <HeroBlock block={heroBlock} />
         ) : blocks.length === 0 ? (

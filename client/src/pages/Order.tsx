@@ -580,7 +580,7 @@ export default function Order() {
     return (
       <div className="min-h-screen flex flex-col bg-[#f5f5f5]">
         <Header />
-        <main className="flex-1 py-6">
+        <main className="flex-1 py-6 pb-20 md:pb-6">
           <div className="max-w-[640px] mx-auto px-4 space-y-4">
 
             {/* 완료 헤더 */}
@@ -815,7 +815,7 @@ export default function Order() {
     <div className="min-h-screen flex flex-col bg-[#f5f5f5]">
       <Header />
         
-        <main className="flex-1 py-6">
+        <main className="flex-1 py-6 pb-24 md:pb-6">
           <div className="max-w-[640px] mx-auto px-4">
           <h1 className="text-lg font-bold text-[#111111] mb-4 tracking-wide">
             주문서 작성

@@ -464,7 +464,7 @@ export default function BlooGenderPage({ gender }: { gender: "남성" | "여성"
           </aside>
 
           {/* 메인 콘텐츠 */}
-          <main className="flex-1 min-w-0">
+          <main className="flex-1 min-w-0 pb-20 lg:pb-8">
             {/* 현재 경로 표시 */}
             <div className="hidden md:flex items-center gap-1 text-xs text-gray-400 mb-4 border-b border-gray-100 pb-3">
               <span className="font-medium text-gray-700">{gender}</span>
