@@ -133,7 +133,7 @@ export default function Signup() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <Link href="/" className="mx-auto">
-            <span className="text-base font-black tracking-widest text-gray-900 uppercase">VELOUR</span>
+            <span className="text-base font-black tracking-widest text-gray-900 uppercase">BLOO</span>
           </Link>
           <div className="w-7" />
         </div>
@@ -144,7 +144,7 @@ export default function Signup() {
           {/* Title */}
           <div className="mb-7">
             <h1 className="text-xl font-bold text-gray-900 mb-1">회원가입</h1>
-            <p className="text-sm text-gray-400">velour 회원이 되어 다양한 혜택을 누리세요</p>
+            <p className="text-sm text-gray-400">BLOO 회원이 되어 다양한 혜택을 누리세요</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">

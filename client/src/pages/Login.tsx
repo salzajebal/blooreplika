@@ -52,7 +52,7 @@ export default function Login() {
             <ChevronLeft className="w-5 h-5" />
           </button>
           <Link href="/" className="mx-auto">
-            <span className="text-base font-black tracking-widest text-gray-900 uppercase">VELOUR</span>
+            <span className="text-base font-black tracking-widest text-gray-900 uppercase">BLOO</span>
           </Link>
           <div className="w-7" />
         </div>
@@ -63,7 +63,7 @@ export default function Login() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-xl font-bold text-gray-900 mb-1">로그인</h1>
-            <p className="text-sm text-gray-400">velour 회원이라면 로그인해 주세요</p>
+            <p className="text-sm text-gray-400">BLOO 회원이라면 로그인해 주세요</p>
           </div>
 
           {/* Form */}
