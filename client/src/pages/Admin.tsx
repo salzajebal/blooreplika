@@ -6990,6 +6990,40 @@ export default function Admin() {
             <div className="bg-white rounded-xl shadow-sm border border-gray-100">
               <div className="p-6 border-b border-gray-100">
                 <h3 className="text-lg font-bold flex items-center gap-2">
+                  <RefreshCw className="w-5 h-5 text-green-600" />
+                  성별별 사이즈 일괄 적용
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">의류/신발/골프/벨트 상품에 성별에 맞는 사이즈를 일괄 적용합니다. (여성: 44/55/66/77, 남성: 90/95/100/105/110, 기타: S/M/L/XL)</p>
+              </div>
+              <div className="p-6">
+                <Button
+                  data-testid="button-bulk-update-sizes"
+                  onClick={async () => {
+                    if (!confirm("의류/신발/골프/벨트 상품의 사이즈를 성별에 맞게 일괄 덮어씁니다. 기존 사이즈가 초기화됩니다. 진행하시겠습니까?")) return;
+                    try {
+                      const res = await fetchWithAuth("/api/admin/bulk-update-sizes", { method: "POST" });
+                      const data = await res.json();
+                      if (data.success) {
+                        alert(data.message);
+                        fetchProducts();
+                      } else {
+                        alert("오류: " + (data.error || "업데이트 실패"));
+                      }
+                    } catch (e) {
+                      alert("요청 중 오류가 발생했습니다.");
+                    }
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  성별별 사이즈 일괄 적용 실행
+                </Button>
+                <p className="text-xs text-gray-500 mt-2">⚠️ 성별 정보가 먼저 업데이트된 후 실행하세요. 기존 사이즈 옵션이 덮어써집니다.</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold flex items-center gap-2">
                   <RefreshCw className="w-5 h-5 text-blue-600" />
                   상품 옵션(사이즈/색상) 자동 감지
                 </h3>

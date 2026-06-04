@@ -783,30 +783,35 @@ export async function registerRoutes(
       const S_UNISEX = JSON.stringify({ colors: [], sizes: ['220','225','230','235','240','245','250','255','260','265','270','275','280'], extras: [] });
       const C_FEMALE = JSON.stringify({ colors: [], sizes: ['44','55','66','77'], extras: [] });
       const C_MALE   = JSON.stringify({ colors: [], sizes: ['90','95','100','105','110'], extras: [] });
-      const C_UNISEX = JSON.stringify({ colors: [], sizes: ['44','55','66','77','S','M','L','XL','90','95','100','105','110'], extras: [] });
+      // UNISEX 의류는 국제 사이즈만 (44/55/77/90/110 등 뒤섞이지 않도록)
+      const C_UNISEX = JSON.stringify({ colors: [], sizes: ['S','M','L','XL'], extras: [] });
       const B_FEMALE = JSON.stringify({ colors: [], sizes: ['70','75','80','85','90'], extras: [] });
       const B_MALE   = JSON.stringify({ colors: [], sizes: ['85','90','95','100','105','110','115'], extras: [] });
       const B_UNISEX = JSON.stringify({ colors: [], sizes: ['70','75','80','85','90','95','100','105','110','115'], extras: [] });
 
+      // gender 컬럼을 이름 패턴보다 우선 적용
+      const isFemale = `(gender = '여성' OR (gender IS NULL AND ${femalePattern}) OR (gender = '공용' AND ${femalePattern}))`;
+      const isMale   = `(gender = '남성' OR (gender IS NULL AND ${malePattern}))`;
+
       const sql = `
         UPDATE products
         SET options = CASE
-          -- 신발
-          WHEN category_id = 'shoes' AND ${femalePattern} THEN $1
-          WHEN category_id = 'shoes' AND ${malePattern}   THEN $2
-          WHEN category_id = 'shoes'                       THEN $3
+          -- 신발 (남성 먼저 → 여성 → 기타)
+          WHEN category_id = 'shoes' AND ${isMale}   THEN $2
+          WHEN category_id = 'shoes' AND ${isFemale} THEN $1
+          WHEN category_id = 'shoes'                  THEN $3
           -- 의류
-          WHEN category_id = 'clothing' AND ${femalePattern} THEN $4
-          WHEN category_id = 'clothing' AND ${malePattern}   THEN $5
-          WHEN category_id = 'clothing'                       THEN $6
+          WHEN category_id = 'clothing' AND ${isMale}   THEN $5
+          WHEN category_id = 'clothing' AND ${isFemale} THEN $4
+          WHEN category_id = 'clothing'                  THEN $6
           -- 골프
-          WHEN category_id = 'golf' AND ${femalePattern} THEN $4
-          WHEN category_id = 'golf' AND ${malePattern}   THEN $5
-          WHEN category_id = 'golf'                       THEN $6
-          -- 벨트 (이름에서 사이즈 추출 불가한 경우 기본값)
-          WHEN category_id = 'belts' AND ${femalePattern} THEN $7
-          WHEN category_id = 'belts' AND ${malePattern}   THEN $8
-          WHEN category_id = 'belts'                       THEN $9
+          WHEN category_id = 'golf' AND ${isMale}   THEN $5
+          WHEN category_id = 'golf' AND ${isFemale} THEN $4
+          WHEN category_id = 'golf'                  THEN $6
+          -- 벨트
+          WHEN category_id = 'belts' AND ${isMale}   THEN $8
+          WHEN category_id = 'belts' AND ${isFemale} THEN $7
+          WHEN category_id = 'belts'                  THEN $9
           ELSE options
         END
         WHERE category_id IN ('shoes','clothing','golf','belts')
