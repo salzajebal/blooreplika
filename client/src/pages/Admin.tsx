@@ -900,6 +900,29 @@ export default function Admin() {
   const [deleteInspectionRunning, setDeleteInspectionRunning] = useState(false);
   const [deleteInspectionResult, setDeleteInspectionResult] = useState<{ deleted: number } | null>(null);
 
+  const [deletePlaceholderRunning, setDeletePlaceholderRunning] = useState(false);
+  const [deletePlaceholderResult, setDeletePlaceholderResult] = useState<{ deleted: number } | null>(null);
+
+  const deletePlaceholderImages = async () => {
+    if (!window.confirm(`이미지가 BLOO 로고(플레이스홀더)로 저장된 상품을 삭제합니다.\n크롤링 후 다시 수집하면 실제 이미지로 저장됩니다. 계속하시겠습니까?`)) return;
+    setDeletePlaceholderRunning(true);
+    setDeletePlaceholderResult(null);
+    try {
+      const res = await fetchWithAuth("/api/admin/products/delete-placeholder-images", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setDeletePlaceholderResult({ deleted: data.deleted });
+        toast({ title: "플레이스홀더 이미지 상품 삭제 완료", description: `${data.deleted.toLocaleString()}개 상품을 삭제했습니다. 다시 크롤링하세요.` });
+      } else {
+        toast({ title: "삭제 실패", description: data.error, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "서버 연결 오류", variant: "destructive" });
+    } finally {
+      setDeletePlaceholderRunning(false);
+    }
+  };
+
   const deleteInspectionRecords = async () => {
     if (!window.confirm(`"N월 N일 검수" 형태의 비상품 기록 약 6,400개를 DB에서 영구 삭제합니다.\n실제 판매 상품은 삭제되지 않습니다. 계속하시겠습니까?`)) return;
     setDeleteInspectionRunning(true);
@@ -7719,6 +7742,31 @@ export default function Admin() {
                 <p className="text-sm text-gray-500 mt-1">bloostore1.co.kr 상품을 카테고리별로 수집합니다. 시계 브랜드는 "시계만 선택" 버튼으로 빠르게 선택 가능합니다. 중복 상품은 자동으로 건너뜁니다.</p>
               </div>
               <div className="p-6 space-y-4">
+
+                {/* 🖼️ 플레이스홀더 이미지 상품 삭제 */}
+                <div className="rounded-xl border-2 border-orange-200 bg-orange-50 p-5">
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                      <p className="font-bold text-orange-900 text-base">🖼️ BLOO 로고 이미지 상품 삭제</p>
+                      <p className="text-sm text-orange-700 mt-1">
+                        이미지가 BLOO 로고(플레이스홀더)로 저장된 상품 삭제<br/>
+                        <span className="text-xs text-orange-500">삭제 후 다시 크롤링하면 실제 이미지로 저장됩니다.</span>
+                      </p>
+                      {deletePlaceholderResult && (
+                        <p className="text-xs text-green-700 font-semibold mt-1">✓ {deletePlaceholderResult.deleted.toLocaleString()}개 삭제 완료 — 다시 크롤링하세요</p>
+                      )}
+                    </div>
+                    <Button
+                      data-testid="button-delete-placeholder-images"
+                      onClick={deletePlaceholderImages}
+                      disabled={deletePlaceholderRunning || !!deletePlaceholderResult}
+                      variant="outline"
+                      className="border-orange-400 text-orange-700 hover:bg-orange-100 font-bold"
+                    >
+                      {deletePlaceholderRunning ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />삭제 중...</> : deletePlaceholderResult ? '✓ 삭제 완료' : '플레이스홀더 상품 삭제'}
+                    </Button>
+                  </div>
+                </div>
 
                 {/* 🧹 검수 기록 삭제 */}
                 <div className="rounded-xl border-2 border-red-200 bg-red-50 p-5">

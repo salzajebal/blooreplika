@@ -5603,6 +5603,7 @@ export async function registerRoutes(
           '91dc0b3052412','e4211aabdece9','362326a168295',
           'cfe01887db836','939f0df3a3d23','afdfe65a9ac1d',
           '885873f75d2c3','59d659c00f76c',
+          '979d21dedeec5', // BLOO 로고 플레이스홀더 (S20230920d5d5cda65981a)
         ]);
 
         const fetchBloo1DetailImages = async (menuUrl: string, idx: number): Promise<string[]> => {
@@ -5853,8 +5854,12 @@ export async function registerRoutes(
                   const detailImgs = await fetchBloo1DetailImages(cat.menuUrl, idx);
                   await delay(250); // 상세페이지 요청 간격
 
-                  const finalImageUrl = detailImgs[0] || imageUrl;
-                  const allImgUrls = detailImgs.length > 0 ? detailImgs : (imageUrl ? [imageUrl] : []);
+                  // 리스트 API의 imageUrl도 플레이스홀더이면 제외
+                  const imgHash = (url: string) => { const m = url.match(/\/([^/.]+)\.\w+$/); return m ? m[1] : url; };
+                  const isPlaceholder = (url: string) => !url || BLOO1_COMMON_HASHES.has(imgHash(url));
+                  const cleanListImg = isPlaceholder(imageUrl) ? '' : imageUrl;
+                  const finalImageUrl = detailImgs[0] || cleanListImg;
+                  const allImgUrls = detailImgs.length > 0 ? detailImgs : (cleanListImg ? [cleanListImg] : []);
 
                   // 성별 변환 (bloo1은 '남성'/'여성' 사용 → inferSubcatSlug은 'men'/'women' 지원)
                   const genderNorm = cat.gender === '남성' ? 'men' : cat.gender === '여성' ? 'women' : cat.gender;
@@ -9475,6 +9480,28 @@ export async function registerRoutes(
       }
     } catch (error: any) {
       console.error('[clear-watches-all] Error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // ── 플레이스홀더 이미지 상품 삭제 ────────────────────────────────────────────
+  app.post("/api/admin/products/delete-placeholder-images", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const client = await pool.connect();
+      try {
+        const result = await client.query(`
+          DELETE FROM products
+          WHERE image_url LIKE '%979d21dedeec5%'
+             OR image_url LIKE '%S20230920d5d5cda65981a%'
+        `);
+        const deleted = result.rowCount ?? 0;
+        console.log(`[delete-placeholder] Deleted ${deleted} products with placeholder images`);
+        res.json({ success: true, deleted });
+      } finally {
+        client.release();
+      }
+    } catch (error: any) {
+      console.error('[delete-placeholder] Error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   });
