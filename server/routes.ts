@@ -193,6 +193,131 @@ async function getMemberFromToken(token: string | undefined): Promise<{ memberId
   return { memberId: session.memberId, email: session.email, name: session.name };
 }
 
+// ── 소분류 슬러그 추론 (bloo1 크롤 & 관리자 배정 공용) ──────────────────
+function inferSubcatSlug(name: string, categoryId: string, gender: string): string | null {
+  const n = name;
+  const nl = n.toLowerCase();
+
+  if (categoryId === 'clothing') {
+    const isMen = gender === 'men' || gender === '남성';
+    const isGolf = gender === 'golf';
+    const isCeleb = gender === 'celeb';
+
+    if (isGolf || isCeleb) {
+      const prefix = isCeleb ? '702' : '701';
+      if (['자켓','재킷','점퍼','블레이저','사파리','윈드브레이커','바람막이','아노락','트러커'].some(k=>n.includes(k))) return `${prefix}010`;
+      if (['패딩','다운','구스','덕다운','롱패딩','숏패딩','털코트'].some(k=>n.includes(k))) return prefix==='702' ? '702080' : '701080';
+      if (['긴바지','슬랙스','팬츠','바지','데님','청바지','조거','카고','치노'].some(k=>n.includes(k))) return `${prefix}040`;
+      if (['반바지','쇼츠','버뮤다'].some(k=>n.includes(k))) return `${prefix}070`;
+      if (['반팔','폴로티','피케','폴로셔츠'].some(k=>n.includes(k))) return `${prefix}020`;
+      if (['맨투맨','긴팔티','스웨트셔츠','롱슬리브'].some(k=>n.includes(k))) return `${prefix}030`;
+      if (['코트','트렌치','오버코트'].some(k=>n.includes(k))) return prefix==='702' ? '702080' : '701080';
+      if (['니트','스웨터','케이블'].some(k=>n.includes(k))) return prefix==='702' ? '7020b0' : '701090';
+      if (['원피스'].some(k=>n.includes(k))) return '702090';
+      if (['스커트','미니스커트'].some(k=>n.includes(k))) return '7020a0';
+      if (['조끼','베스트','길레'].some(k=>n.includes(k))) return `${prefix}060`;
+      if (['세트','셋트'].some(k=>n.includes(k))) return prefix==='702' ? '7020c0' : '7010a0';
+      if (['비옷','우비','레인'].some(k=>n.includes(k))) return `${prefix}050`;
+      return `${prefix}030`;
+    }
+
+    const mp = isMen ? 'b' : 'c';
+    if (['패딩','다운재킷','구스다운','덕다운','롱패딩','숏패딩','퍼코트','털'].some(k=>n.includes(k))) return `${mp}01020`;
+    if (['가죽재킷','가죽점퍼','라이더재킷','레더재킷','라이더'].some(k=>n.includes(k))) return isMen ? 'b01030' : 'c01070';
+    if (['자켓','재킷','점퍼','블레이저','바람막이','윈드브레이커','아노락','트러커','사파리재킷','플리스'].some(k=>n.includes(k))) return `${mp}01010`;
+    if (isMen && ['코트','트렌치','오버코트','정장','수트','슈트','턱시도'].some(k=>n.includes(k))) return 'b01040';
+    if (!isMen && ['코트','트렌치','오버코트'].some(k=>n.includes(k))) return 'c01030';
+    if (['가디건'].some(k=>n.includes(k))) return `${mp}01090`;
+    if (['후드티','후드집업','후디','훗드','후드'].some(k=>n.includes(k))) return isMen ? 'b01050' : 'c01040';
+    if (['맨투맨','스웨트셔츠','롱슬리브','긴팔티'].some(k=>n.includes(k))) return isMen ? 'b010b0' : 'c010b0';
+    if (['셔츠','남방','옥스포드','체크셔츠','플란넬','블라우스'].some(k=>n.includes(k))) return isMen ? 'b01060' : 'c01050';
+    if (['니트','스웨터','케이블니트','울니트'].some(k=>n.includes(k))) return `${mp}01080`;
+    if (['조끼','베스트','길레'].some(k=>n.includes(k))) return isMen ? 'b01070' : 'c01060';
+    if (['반팔','폴로티','폴로셔츠','피케','반팔티'].some(k=>n.includes(k))) return isMen ? 'b010a0' : 'c010a0';
+    if (['추리닝','트레이닝복','운동복','스포츠웨어'].some(k=>n.includes(k))) return `${mp}010c0`;
+    if (['팬츠','슬랙스','청바지','데님','조거팬츠','카고팬츠','치노','드레스팬츠'].some(k=>n.includes(k))) return `${mp}010d0`;
+    if (!isMen && ['스커트','미니스커트','롱스커트','플리츠스커트'].some(k=>n.includes(k))) return 'c010e0';
+    if (['반바지','쇼츠','버뮤다'].some(k=>n.includes(k))) return `${mp}010e0`;
+    if (!isMen && ['원피스'].some(k=>n.includes(k))) return 'c010f0';
+    if (!isMen && ['비키니','수영복','수영'].some(k=>n.includes(k))) return 'c010g0';
+    if (['세트','셋트'].some(k=>n.includes(k))) return `${mp}010f0`;
+    if (['바지','하의'].some(k=>n.includes(k))) return `${mp}010d0`;
+    if (['티셔츠','티'].some(k=>n.includes(k))) return isMen ? 'b010b0' : 'c010b0';
+    return isMen ? 'b010b0' : 'c010b0';
+  }
+
+  if (categoryId === 'bags') {
+    const isMen = gender === 'men' || gender === '남성';
+    if (['캐리어','트롤리'].some(k=>n.includes(k))) return isMen ? 'b02080' : 'c02090';
+    if (['여행가방','보스턴백'].some(k=>n.includes(k))) return isMen ? 'b02070' : 'c02080';
+    if (['백팩','배낭','하이킹백'].some(k=>n.includes(k))) return isMen ? 'b02040' : 'c02040';
+    if (['벨트백','힙색','슬링백','새들백','웨이스트백','버킷백'].some(k=>n.includes(k))) return isMen ? 'b02090' : 'c020a0';
+    if (['파우치'].some(k=>n.includes(k))) return isMen ? 'b02060' : 'c02050';
+    if (['클러치'].some(k=>n.includes(k))) return isMen ? 'b02060' : 'c02030';
+    if (['서류가방','브리프케이스','메신저백','메신져백'].some(k=>n.includes(k))) return isMen ? 'b02050' : 'c02070';
+    if (!isMen && ['미니백'].some(k=>n.includes(k))) return 'c020b0';
+    if (['크로스백','크로스바디'].some(k=>n.includes(k))) return isMen ? 'b02020' : 'c02060';
+    if (['숄더백'].some(k=>n.includes(k))) return isMen ? 'b02030' : 'c02010';
+    if (['토트백'].some(k=>n.includes(k))) return isMen ? 'b02010' : 'c02020';
+    return isMen ? 'b020a0' : 'c020c0';
+  }
+
+  if (categoryId === 'shoes') {
+    const isMen = gender === 'men' || gender === '남성';
+    if (['부츠','워커','앵클부츠'].some(k=>n.includes(k)) || nl.includes('chelsea')) return isMen ? 'b0b050' : 'c05050';
+    if (!isMen && ['힐','펌프스','웨지','킬힐','스틸레토'].some(k=>n.includes(k))) return 'c05040';
+    if (['샌들','슬리퍼','뮬'].some(k=>n.includes(k))) return isMen ? 'b0b040' : 'c05030';
+    if (['로퍼','슬립온','슬리폰','모카신'].some(k=>n.includes(k))) return isMen ? 'b0b060' : 'c05070';
+    if (!isMen && ['단화','플랫슈즈','발레'].some(k=>n.includes(k))) return 'c05060';
+    if (['정장구두','더비','옥스포드구두','레이스업'].some(k=>n.includes(k))) return isMen ? 'b0b030' : 'c05010';
+    if (['운동화','트레이닝화','조깅화'].some(k=>n.includes(k))) return isMen ? 'b0b020' : 'c05020';
+    if (['스니커즈','스니커'].some(k=>n.includes(k))) return isMen ? 'b0b010' : 'c05010';
+    if (['구두'].some(k=>n.includes(k))) return isMen ? 'b0b030' : 'c05010';
+    return isMen ? 'b0b010' : 'c05010';
+  }
+
+  if (categoryId === 'wallets') {
+    const isMen = gender === 'men' || gender === '남성';
+    if (['동전지갑','코인지갑','코인케이스'].some(k=>n.includes(k))) return isMen ? 'b04030' : 'c03030';
+    if (['카드지갑','카드케이스','카드홀더'].some(k=>n.includes(k))) return isMen ? 'b04020' : 'c03020';
+    return isMen ? 'b04010' : 'c03010';
+  }
+
+  if (categoryId === 'belts') {
+    const isMen = gender === 'men' || gender === '남성';
+    if (['메쉬'].some(k=>n.includes(k))) return isMen ? 'b07020' : 'c06020';
+    return isMen ? 'b07010' : 'c06010';
+  }
+
+  if (categoryId === 'sunglasses') {
+    const isMen = gender === 'men' || gender === '남성';
+    if (['안경테','안경태','광학','안경'].some(k=>n.includes(k))) return isMen ? 'b0a020' : 'c07020';
+    return isMen ? 'b0a010' : 'c07010';
+  }
+
+  if (categoryId === 'jewelry') {
+    const isMen = gender === 'men' || gender === '남성';
+    if (['라이터','듀퐁'].some(k=>n.includes(k))) return 'b08070';
+    if (['넥타이'].some(k=>n.includes(k))) return 'b08090';
+    if (['커프스','커프링크'].some(k=>n.includes(k))) return 'b080d0';
+    if (['목걸이','네크리스','체인목걸이','펜던트'].some(k=>n.includes(k))) return isMen ? 'b08010' : 'f0a010';
+    if (['귀걸이','이어링','이어클립','이어커프'].some(k=>n.includes(k))) return isMen ? 'b08010' : 'f0a020';
+    if (['팔찌','브레이슬릿','뱅글'].some(k=>n.includes(k))) return isMen ? 'b08020' : 'f0a030';
+    if (['반지','링'].some(k=>n.includes(k))) return isMen ? 'b08030' : 'f0a040';
+    if (['브로치','백참','참','코르사쥬'].some(k=>n.includes(k))) return isMen ? 'b08040' : 'f090';
+    if (['만년필','볼펜','펜'].some(k=>n.includes(k))) return isMen ? 'b08050' : 'f050';
+    if (['장갑'].some(k=>n.includes(k))) return isMen ? 'b08060' : 'f080';
+    if (['우산'].some(k=>n.includes(k))) return isMen ? 'b080b0' : 'f0f0';
+    if (['스카프','머플러','실크스카프','트윌리'].some(k=>n.includes(k))) return isMen ? 'b08080' : 'f030';
+    if (['모자','캡','버킷햇','베레모','니트캡','페도라'].some(k=>n.includes(k))) return isMen ? 'b080a0' : 'f070';
+    if (['키홀더','키링','키체인'].some(k=>n.includes(k))) return isMen ? 'b080e0' : 'f0e0';
+    if (['담요','쿠션'].some(k=>n.includes(k))) return 'f0g0';
+    return isMen ? 'b080f0' : 'f0h0';
+  }
+
+  return null; // watches 등 소분류 없음
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -5719,16 +5844,21 @@ export async function registerRoutes(
                   const finalImageUrl = detailImgs[0] || imageUrl;
                   const allImgUrls = detailImgs.length > 0 ? detailImgs : (imageUrl ? [imageUrl] : []);
 
+                  // 성별 변환 (bloo1은 '남성'/'여성' 사용 → inferSubcatSlug은 'men'/'women' 지원)
+                  const genderNorm = cat.gender === '남성' ? 'men' : cat.gender === '여성' ? 'women' : cat.gender;
+                  const subcatSlug = inferSubcatSlug(name.trim(), subCat, genderNorm);
+
                   await storage.createProduct({
                     name: name.trim(),
                     price: price ?? original_price ?? 0,
                     originalPrice: (original_price && original_price !== price) ? original_price : null,
                     categoryId: subCat,
+                    subcategoryId: subcatSlug || undefined,
                     brandId: brandId || null,
                     imageUrl: finalImageUrl,
                     imageUrls: allImgUrls,
                     detailImageUrls: detailImgs,
-                    gender: cat.gender,
+                    gender: genderNorm,
                     sourceUrl: `https://bloostore1.co.kr/${cat.menuUrl}?idx=${idx}`,
                     sourceIdx: idx,
                     isNew: true,
@@ -9382,174 +9512,6 @@ export async function registerRoutes(
         for (const cat of ['clothing','bags','shoes','wallets','belts','sunglasses','jewelry','watches']) {
           assignSubcatsProgress.byCategory[cat] = { assigned: 0, skipped: 0, total: 0 };
         }
-
-        // ── 키워드 → 소분류 슬러그 매핑 함수
-        const inferSubcatSlug = (name: string, categoryId: string, gender: string): string | null => {
-          const n = name;
-          const nl = n.toLowerCase();
-
-          // ─── 의류 ───────────────────────────────────────────────
-          if (categoryId === 'clothing') {
-            const isMen = gender === 'men';
-            const isGolf = gender === 'golf';
-            const isCeleb = gender === 'celeb';
-
-            // 골프/셀럽 슬러그 (701xx = 남성골프/셀럽, 702xx = 여성골프/셀럽)
-            if (isGolf || isCeleb) {
-              const prefix = (isGolf || isCeleb) ? (isCeleb ? '702' : '701') : '701';
-              if (['자켓','재킷','점퍼','블레이저','사파리','윈드브레이커','바람막이','아노락','트러커'].some(k=>n.includes(k))) return `${prefix}010`;
-              if (['패딩','다운','구스','덕다운','롱패딩','숏패딩','털코트'].some(k=>n.includes(k))) return prefix==='702' ? '702080' : '701080';
-              if (['긴바지','슬랙스','팬츠','바지','데님','청바지','조거','카고','치노'].some(k=>n.includes(k))) return `${prefix}040`;
-              if (['반바지','쇼츠','버뮤다'].some(k=>n.includes(k))) return `${prefix}070`;
-              if (['반팔','폴로티','피케','폴로셔츠'].some(k=>n.includes(k))) return `${prefix}020`;
-              if (['맨투맨','긴팔티','스웨트셔츠','롱슬리브'].some(k=>n.includes(k))) return `${prefix}030`;
-              if (['코트','트렌치','오버코트'].some(k=>n.includes(k))) return prefix==='702' ? '702080' : '701080';
-              if (['니트','스웨터','케이블'].some(k=>n.includes(k))) return prefix==='702' ? '7020b0' : '701090';
-              if (['원피스'].some(k=>n.includes(k))) return '702090';
-              if (['스커트','미니스커트'].some(k=>n.includes(k))) return '7020a0';
-              if (['조끼','베스트','길레'].some(k=>n.includes(k))) return `${prefix}060`;
-              if (['세트','셋트'].some(k=>n.includes(k))) return prefix==='702' ? '7020c0' : '7010a0';
-              if (['비옷','우비','레인'].some(k=>n.includes(k))) return `${prefix}050`;
-              return `${prefix}030`; // 긴팔티 기본
-            }
-
-            // 남성/여성
-            const mp = isMen ? 'b' : 'c'; // men→b01xxx, women→c01xxx
-
-            // 패딩/털 (자켓보다 먼저 - '패딩점퍼' 같은 경우 패딩 우선)
-            if (['패딩','다운재킷','구스다운','덕다운','롱패딩','숏패딩','퍼코트','털'].some(k=>n.includes(k))) return `${mp}01020`;
-            // 가죽옷
-            if (['가죽재킷','가죽점퍼','라이더재킷','레더재킷','라이더'].some(k=>n.includes(k))) return isMen ? 'b01030' : 'c01070';
-            // 자켓/점퍼 (코트/정장보다 먼저)
-            if (['자켓','재킷','점퍼','블레이저','바람막이','윈드브레이커','아노락','트러커','사파리재킷','플리스'].some(k=>n.includes(k))) return `${mp}01010`;
-            // 코트/정장
-            if (isMen && ['코트','트렌치','오버코트','정장','수트','슈트','턱시도'].some(k=>n.includes(k))) return 'b01040';
-            if (!isMen && ['코트','트렌치','오버코트'].some(k=>n.includes(k))) return 'c01030';
-            // 가디건 (후드보다 먼저)
-            if (['가디건'].some(k=>n.includes(k))) return `${mp}01090`;
-            // 후드티/집업
-            if (['후드티','후드집업','후디','훗드','후드'].some(k=>n.includes(k))) return isMen ? 'b01050' : 'c01040';
-            // 맨투맨/긴팔티 (후드 없는 스웨트)
-            if (['맨투맨','스웨트셔츠','롱슬리브','긴팔티'].some(k=>n.includes(k))) return isMen ? 'b010b0' : 'c010b0';
-            // 셔츠/남방
-            if (['셔츠','남방','옥스포드','체크셔츠','플란넬','블라우스'].some(k=>n.includes(k))) return isMen ? 'b01060' : 'c01050';
-            // 니트/스웨터
-            if (['니트','스웨터','케이블니트','울니트'].some(k=>n.includes(k))) return `${mp}01080`;
-            // 베스트/조끼
-            if (['조끼','베스트','길레'].some(k=>n.includes(k))) return isMen ? 'b01070' : 'c01060';
-            // 반팔/폴로
-            if (['반팔','폴로티','폴로셔츠','피케','반팔티'].some(k=>n.includes(k))) return isMen ? 'b010a0' : 'c010a0';
-            // 운동복/추리닝
-            if (['추리닝','트레이닝복','운동복','스포츠웨어'].some(k=>n.includes(k))) return `${mp}010c0`;
-            // 팬츠/청바지 (긴바지)
-            if (['팬츠','슬랙스','청바지','데님','조거팬츠','카고팬츠','치노','드레스팬츠'].some(k=>n.includes(k))) return `${mp}010d0`;
-            if (!isMen && ['스커트','미니스커트','롱스커트','플리츠스커트'].some(k=>n.includes(k))) return 'c010e0';
-            // 반바지
-            if (['반바지','쇼츠','버뮤다'].some(k=>n.includes(k))) return `${mp}010e0`;
-            // 원피스 (여성)
-            if (!isMen && ['원피스'].some(k=>n.includes(k))) return 'c010f0';
-            // 수영복 (여성)
-            if (!isMen && ['비키니','수영복','수영'].some(k=>n.includes(k))) return 'c010g0';
-            // 세트
-            if (['세트','셋트'].some(k=>n.includes(k))) return `${mp}010f0`;
-            // 긴바지 일반 (바지)
-            if (['바지','하의'].some(k=>n.includes(k))) return `${mp}010d0`;
-            // 티셔츠 기본 → 긴팔티로
-            if (['티셔츠','티'].some(k=>n.includes(k))) return isMen ? 'b010b0' : 'c010b0';
-            // 기본값
-            return isMen ? 'b010b0' : 'c010b0'; // 긴팔티/맨투맨
-          }
-
-          // ─── 가방 ───────────────────────────────────────────────
-          if (categoryId === 'bags') {
-            const isMen = gender === 'men';
-            // 캐리어
-            if (['캐리어','트롤리'].some(k=>n.includes(k))) return isMen ? 'b02080' : 'c02090';
-            // 여행가방/보스턴
-            if (['여행가방','보스턴백'].some(k=>n.includes(k))) return isMen ? 'b02070' : 'c02080';
-            // 백팩/배낭
-            if (['백팩','배낭','하이킹백'].some(k=>n.includes(k))) return isMen ? 'b02040' : 'c02040';
-            // 벨트백/슬링/새들
-            if (['벨트백','힙색','슬링백','새들백','웨이스트백','버킷백'].some(k=>n.includes(k))) return isMen ? 'b02090' : 'c020a0';
-            // 파우치/클러치
-            if (['파우치'].some(k=>n.includes(k))) return isMen ? 'b02060' : 'c02050';
-            if (['클러치'].some(k=>n.includes(k))) return isMen ? 'b02060' : 'c02030';
-            // 서류가방/메신저
-            if (['서류가방','브리프케이스','메신저백','메신져백'].some(k=>n.includes(k))) return isMen ? 'b02050' : 'c02070';
-            // 미니백 (여성)
-            if (!isMen && ['미니백','미니백'].some(k=>n.includes(k))) return 'c020b0';
-            // 크로스백
-            if (['크로스백','크로스바디'].some(k=>n.includes(k))) return isMen ? 'b02020' : 'c02060';
-            // 숄더백
-            if (['숄더백'].some(k=>n.includes(k))) return isMen ? 'b02030' : 'c02010';
-            // 토트백
-            if (['토트백'].some(k=>n.includes(k))) return isMen ? 'b02010' : 'c02020';
-            // 기본값
-            return isMen ? 'b020a0' : 'c020c0';
-          }
-
-          // ─── 신발 ───────────────────────────────────────────────
-          if (categoryId === 'shoes') {
-            const isMen = gender === 'men';
-            if (['부츠','워커','앵클부츠','chelsea'].some(k=>nl.includes(k))) return isMen ? 'b0b050' : 'c05050';
-            if (['힐','펌프스','웨지','킬힐','스틸레토'].some(k=>n.includes(k))) return 'c05040'; // 여성만
-            if (['샌들','슬리퍼','뮬','바버'].some(k=>n.includes(k))) return isMen ? 'b0b040' : 'c05030';
-            if (['로퍼','슬립온','슬리폰','모카신'].some(k=>n.includes(k))) return isMen ? 'b0b060' : 'c05070';
-            if (['단화','플랫슈즈','발레'].some(k=>n.includes(k))) return 'c05060'; // 여성
-            if (['정장구두','더비','옥스포드구두','레이스업'].some(k=>n.includes(k))) return isMen ? 'b0b030' : 'c05010';
-            if (['운동화','트레이닝화','조깅화'].some(k=>n.includes(k))) return isMen ? 'b0b020' : 'c05020';
-            if (['스니커즈','스니커','운동화'].some(k=>n.includes(k))) return isMen ? 'b0b010' : 'c05010';
-            if (['구두'].some(k=>n.includes(k))) return isMen ? 'b0b030' : 'c05010';
-            return isMen ? 'b0b010' : 'c05010'; // 스니커즈 기본
-          }
-
-          // ─── 지갑 ───────────────────────────────────────────────
-          if (categoryId === 'wallets') {
-            const isMen = gender === 'men';
-            if (['동전지갑','코인지갑','코인케이스'].some(k=>n.includes(k))) return isMen ? 'b04030' : 'c03030';
-            if (['카드지갑','카드케이스','카드홀더'].some(k=>n.includes(k))) return isMen ? 'b04020' : 'c03020';
-            // 기본: 장지갑/소지갑
-            return isMen ? 'b04010' : 'c03010';
-          }
-
-          // ─── 벨트 ───────────────────────────────────────────────
-          if (categoryId === 'belts') {
-            const isMen = gender === 'men';
-            if (['메쉬'].some(k=>n.includes(k))) return isMen ? 'b07020' : 'c06020';
-            return isMen ? 'b07010' : 'c06010'; // 가죽벨트 기본
-          }
-
-          // ─── 선글라스 ─────────────────────────────────────────
-          if (categoryId === 'sunglasses') {
-            const isMen = gender === 'men';
-            if (['안경테','안경태','광학','안경'].some(k=>n.includes(k))) return isMen ? 'b0a020' : 'c07020';
-            return isMen ? 'b0a010' : 'c07010'; // 선글라스 기본
-          }
-
-          // ─── 쥬얼리/잡화 ──────────────────────────────────────
-          if (categoryId === 'jewelry') {
-            const isMen = gender === 'men';
-            if (['라이터','듀퐁'].some(k=>n.includes(k))) return 'b08070'; // 남성 라이터
-            if (['넥타이'].some(k=>n.includes(k))) return 'b08090';
-            if (['커프스','커프링크'].some(k=>n.includes(k))) return 'b080d0';
-            if (['목걸이','네크리스','체인목걸이','펜던트'].some(k=>n.includes(k))) return isMen ? 'b08010' : 'f0a010';
-            if (['귀걸이','이어링','이어클립','이어커프'].some(k=>n.includes(k))) return isMen ? 'b08010' : 'f0a020';
-            if (['팔찌','브레이슬릿','뱅글'].some(k=>n.includes(k))) return isMen ? 'b08020' : 'f0a030';
-            if (['반지','링'].some(k=>n.includes(k))) return isMen ? 'b08030' : 'f0a040';
-            if (['브로치','백참','참','코르사쥬'].some(k=>n.includes(k))) return isMen ? 'b08040' : 'f090';
-            if (['만년필','볼펜','펜'].some(k=>n.includes(k))) return isMen ? 'b08050' : 'f050';
-            if (['장갑'].some(k=>n.includes(k))) return isMen ? 'b08060' : 'f080';
-            if (['우산'].some(k=>n.includes(k))) return isMen ? 'b080b0' : 'f0f0';
-            if (['스카프','머플러','실크스카프','트윌리'].some(k=>n.includes(k))) return isMen ? 'b08080' : 'f030';
-            if (['모자','캡','버킷햇','베레모','니트캡','페도라'].some(k=>n.includes(k))) return isMen ? 'b080a0' : 'f070';
-            if (['키홀더','키링','키체인'].some(k=>n.includes(k))) return isMen ? 'b080e0' : 'f0e0';
-            if (['담요','쿠션'].some(k=>n.includes(k))) return 'f0g0';
-            return isMen ? 'b080f0' : 'f0h0'; // 기타
-          }
-
-          // ─── 시계 → 소분류 없음 ──────────────────────────────
-          return null;
-        };
 
         let assigned = 0, skipped = 0, current = 0;
         const BATCH = 200;
