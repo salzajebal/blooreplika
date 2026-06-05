@@ -903,6 +903,47 @@ export default function Admin() {
   const [deletePlaceholderRunning, setDeletePlaceholderRunning] = useState(false);
   const [deletePlaceholderResult, setDeletePlaceholderResult] = useState<{ deleted: number } | null>(null);
 
+  const [bloo1DetailImgRunning, setBloo1DetailImgRunning] = useState(false);
+  const [bloo1DetailImgProgress, setBloo1DetailImgProgress] = useState<{
+    status: string; total: number; current: number; updated: number; skipped: number; errors: number; message: string;
+  } | null>(null);
+
+  const startBloo1DetailImages = async () => {
+    if (!window.confirm(`블루스토어 상품 ${(bloo1DetailImgProgress?.total || 1908).toLocaleString()}개의 상세이미지를 수집합니다.\n상품당 약 0.3초 소요 → 전체 약 ${Math.ceil(1908 * 0.3 / 60)}분 예상. 계속하시겠습니까?`)) return;
+    setBloo1DetailImgRunning(true);
+    setBloo1DetailImgProgress({ status: 'running', total: 0, current: 0, updated: 0, skipped: 0, errors: 0, message: '시작 중...' });
+    try {
+      const res = await fetchWithAuth("/api/admin/products/update-bloo1-detail-images/start", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ onlyMissing: true }) });
+      const data = await res.json();
+      if (!data.success) { toast({ title: "오류", description: data.error, variant: "destructive" }); setBloo1DetailImgRunning(false); return; }
+      // 폴링
+      const poll = setInterval(async () => {
+        try {
+          const pr = await fetchWithAuth("/api/admin/products/update-bloo1-detail-images/progress");
+          const pd = await pr.json();
+          if (pd.success) {
+            setBloo1DetailImgProgress(pd.data);
+            if (pd.data.status === 'done' || pd.data.status === 'error') {
+              clearInterval(poll);
+              setBloo1DetailImgRunning(false);
+              if (pd.data.status === 'done') toast({ title: "상세이미지 수집 완료", description: pd.data.message });
+              else toast({ title: "오류 발생", description: pd.data.message, variant: "destructive" });
+            }
+          }
+        } catch {}
+      }, 2000);
+    } catch {
+      toast({ title: "서버 오류", description: "연결 실패", variant: "destructive" });
+      setBloo1DetailImgRunning(false);
+    }
+  };
+
+  const resetBloo1DetailImages = async () => {
+    await fetchWithAuth("/api/admin/products/update-bloo1-detail-images/reset", { method: "POST" });
+    setBloo1DetailImgProgress(null);
+    setBloo1DetailImgRunning(false);
+  };
+
   const deletePlaceholderImages = async () => {
     if (!window.confirm(`이미지가 BLOO 로고(플레이스홀더)로 저장된 상품을 삭제합니다.\n크롤링 후 다시 수집하면 실제 이미지로 저장됩니다. 계속하시겠습니까?`)) return;
     setDeletePlaceholderRunning(true);
@@ -7765,6 +7806,48 @@ export default function Admin() {
                     >
                       {deletePlaceholderRunning ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />삭제 중...</> : deletePlaceholderResult ? '✓ 삭제 완료' : '플레이스홀더 상품 삭제'}
                     </Button>
+                  </div>
+                </div>
+
+                {/* 📷 상세이미지 일괄 수집 */}
+                <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-5">
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div className="flex-1">
+                      <p className="font-bold text-blue-900 text-base">📷 블루스토어 상세이미지 일괄 수집</p>
+                      <p className="text-sm text-blue-700 mt-1">
+                        상세이미지 없는 블루스토어 상품의 상세 페이지에서 이미지를 수집합니다.<br/>
+                        <span className="text-xs text-blue-500">상품당 0.3초 → 1,908개 기준 약 10분 소요. 크롤링 완료 후 실행하세요.</span>
+                      </p>
+                      {bloo1DetailImgProgress && (
+                        <div className="mt-2">
+                          <div className="text-xs text-blue-800 font-medium">{bloo1DetailImgProgress.message}</div>
+                          {bloo1DetailImgProgress.total > 0 && (
+                            <div className="mt-1">
+                              <div className="w-full bg-blue-100 rounded-full h-2">
+                                <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${Math.round(bloo1DetailImgProgress.current / bloo1DetailImgProgress.total * 100)}%` }} />
+                              </div>
+                              <p className="text-xs text-blue-600 mt-1">
+                                {bloo1DetailImgProgress.current.toLocaleString()}/{bloo1DetailImgProgress.total.toLocaleString()} — 업데이트: {bloo1DetailImgProgress.updated.toLocaleString()} / 이미지없음: {bloo1DetailImgProgress.skipped.toLocaleString()} / 오류: {bloo1DetailImgProgress.errors}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        data-testid="button-start-bloo1-detail-images"
+                        onClick={startBloo1DetailImages}
+                        disabled={bloo1DetailImgRunning}
+                        variant="outline"
+                        className="border-blue-400 text-blue-700 hover:bg-blue-100 font-bold"
+                      >
+                        {bloo1DetailImgRunning ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />수집 중...</> : bloo1DetailImgProgress?.status === 'done' ? '✓ 수집 완료' : '상세이미지 수집 시작'}
+                      </Button>
+                      {(bloo1DetailImgProgress?.status === 'done' || bloo1DetailImgProgress?.status === 'error') && (
+                        <Button size="sm" variant="ghost" onClick={resetBloo1DetailImages} className="text-xs text-gray-500">초기화</Button>
+                      )}
+                    </div>
                   </div>
                 </div>
 

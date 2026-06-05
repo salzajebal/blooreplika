@@ -318,6 +318,75 @@ function inferSubcatSlug(name: string, categoryId: string, gender: string): stri
   return null; // watches 등 소분류 없음
 }
 
+// ── bloostore1 공용 상수 & 유틸 (크롤 + 상세이미지 업데이트 양쪽에서 사용) ───
+const BLOO1_DETAIL_HEADERS = {
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+  "Accept-Language": "ko-KR,ko;q=0.9",
+  "Referer": "https://bloostore1.co.kr/",
+  "sec-fetch-dest": "document",
+  "sec-fetch-mode": "navigate",
+  "sec-fetch-site": "same-origin",
+};
+
+const BLOO1_COMMON_HASHES_SET = new Set([
+  '91dc0b3052412','e4211aabdece9','362326a168295',
+  'cfe01887db836','939f0df3a3d23','afdfe65a9ac1d',
+  '885873f75d2c3','59d659c00f76c',
+  '979d21dedeec5', // BLOO 로고 플레이스홀더
+]);
+
+async function fetchBloo1DetailImagesForIdx(idx: number): Promise<string[]> {
+  // menuUrl은 idx 식별에 무관 — 1447(여성 가방) 고정으로 사용
+  const detailUrl = `https://bloostore1.co.kr/1447/?idx=${idx}`;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 18000);
+    let html: string;
+    try {
+      const r = await fetch(detailUrl, { headers: BLOO1_DETAIL_HEADERS, signal: controller.signal });
+      if (!r.ok) return [];
+      html = await r.text();
+    } finally {
+      clearTimeout(timer);
+    }
+    const $d = cheerio.load(html);
+    const images: string[] = [];
+    const imgHash = (url: string) => { const m = url.match(/\/([^/.]+)\.\w+$/); return m ? m[1] : url; };
+    const addImg = (url: string) => {
+      const clean = url.split('?')[0].replace('cdn-optimized.imweb.me', 'cdn.imweb.me');
+      if (!clean.includes('cdn.imweb.me')) return;
+      const hash = imgHash(clean);
+      if (BLOO1_COMMON_HASHES_SET.has(hash)) return;
+      if (images.some(e => imgHash(e) === hash)) return;
+      images.push(clean);
+    };
+    // 1) template#prodDetailPC (Cheerio는 <template> 내용을 못 읽으므로 raw regex)
+    const tplMatch = html.match(/<template[^>]*id="prodDetailPC"[^>]*>([\s\S]*?)<\/template>/);
+    const tplHtml = tplMatch ? tplMatch[1] : ($d('#prodDetailPC').html() || '');
+    if (tplHtml) { for (const m of tplHtml.matchAll(/src="([^"]*cdn[^"]*)"/g)) addImg(m[1]); }
+    // 2) data-src 갤러리 이미지 (lazy loading)
+    for (const m of html.matchAll(/data-src="([^"]*cdn[^"]*imweb\.me[^"]*)"/g)) addImg(m[1]);
+    // 3) JSON-LD 메인 이미지
+    let jsonldImg = '';
+    $d('script[type="application/ld+json"]').each((_i: number, el: any) => {
+      if (jsonldImg) return;
+      try {
+        const d = JSON.parse($d(el).html() || '');
+        if (d['@type'] === 'Product' && d.image) {
+          const imgs = Array.isArray(d.image) ? d.image : [d.image];
+          const first = (imgs as string[]).find((img: string) => typeof img === 'string' && img.includes('cdn.imweb.me'));
+          if (first) jsonldImg = first.split('?')[0];
+        }
+      } catch {}
+    });
+    if (jsonldImg) { const h = imgHash(jsonldImg); if (!BLOO1_COMMON_HASHES_SET.has(h) && !images.some(e => imgHash(e) === h)) images.unshift(jsonldImg); }
+    // 4) OG 이미지 fallback
+    if (images.length === 0) { const og = $d('meta[property="og:image"]').attr('content') || ''; if (og) addImg(og); }
+    return images;
+  } catch { return []; }
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -5589,69 +5658,9 @@ export async function registerRoutes(
           "Referer": "https://bloostore1.co.kr/",
         };
 
-        const bloo1DetailHeaders = {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-          "Accept-Language": "ko-KR,ko;q=0.9",
-          "Referer": "https://bloostore1.co.kr/",
-          "sec-fetch-dest": "document",
-          "sec-fetch-mode": "navigate",
-          "sec-fetch-site": "same-origin",
-        };
-
-        const BLOO1_COMMON_HASHES = new Set([
-          '91dc0b3052412','e4211aabdece9','362326a168295',
-          'cfe01887db836','939f0df3a3d23','afdfe65a9ac1d',
-          '885873f75d2c3','59d659c00f76c',
-          '979d21dedeec5', // BLOO 로고 플레이스홀더 (S20230920d5d5cda65981a)
-        ]);
-
-        const fetchBloo1DetailImages = async (menuUrl: string, idx: number): Promise<string[]> => {
-          const detailUrl = `https://bloostore1.co.kr/${menuUrl}/?idx=${idx}`;
-          try {
-            const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), 18000);
-            let html: string;
-            try {
-              const r = await fetch(detailUrl, { headers: bloo1DetailHeaders, signal: controller.signal });
-              if (!r.ok) return [];
-              html = await r.text();
-            } finally {
-              clearTimeout(timer);
-            }
-            const $d = cheerio.load(html);
-            const images: string[] = [];
-            const imgHash = (url: string) => { const m = url.match(/\/([^/.]+)\.\w+$/); return m ? m[1] : url; };
-            const addImg = (url: string) => {
-              const clean = url.split('?')[0].replace('cdn-optimized.imweb.me', 'cdn.imweb.me');
-              if (!clean.includes('cdn.imweb.me')) return;
-              const hash = imgHash(clean);
-              if (BLOO1_COMMON_HASHES.has(hash)) return;
-              if (images.some(e => imgHash(e) === hash)) return;
-              images.push(clean);
-            };
-            // 1) 상세 설명 본문 이미지
-            const tplHtml = $d('#prodDetailPC').html() || '';
-            if (tplHtml) { for (const m of tplHtml.matchAll(/src="([^"]*cdn[^"]*)"/g)) addImg(m[1]); }
-            // 2) JSON-LD 메인 이미지
-            let jsonldImg = '';
-            $d('script[type="application/ld+json"]').each((_i: number, el: any) => {
-              if (jsonldImg) return;
-              try {
-                const d = JSON.parse($d(el).html() || '');
-                if (d['@type'] === 'Product' && d.image) {
-                  const imgs = Array.isArray(d.image) ? d.image : [d.image];
-                  const first = (imgs as string[]).find((img: string) => typeof img === 'string' && img.includes('cdn.imweb.me'));
-                  if (first) jsonldImg = first.split('?')[0];
-                }
-              } catch {}
-            });
-            if (jsonldImg) { const h = imgHash(jsonldImg); if (!BLOO1_COMMON_HASHES.has(h) && !images.some(e => imgHash(e) === h)) images.unshift(jsonldImg); }
-            // 3) OG 이미지 fallback
-            if (images.length === 0) { const og = $d('meta[property="og:image"]').attr('content') || ''; if (og) addImg(og); }
-            return images;
-          } catch { return []; }
-        };
+        // 모듈 레벨 상수/함수 사용 (BLOO1_DETAIL_HEADERS, BLOO1_COMMON_HASHES_SET, fetchBloo1DetailImagesForIdx)
+        const BLOO1_COMMON_HASHES = BLOO1_COMMON_HASHES_SET; // 하위 호환 alias
+        const fetchBloo1DetailImages = (_menuUrl: string, idx: number) => fetchBloo1DetailImagesForIdx(idx);
 
         // bloostore1 실제 카테고리별 URL — 카테고리 직접 지정 (키워드 추론 최소화)
         // blooCategoryId: bloostore1 AJAX의 category= 파라미터 (없으면 menu_url만 사용)
@@ -9628,6 +9637,96 @@ export async function registerRoutes(
         client.release();
       }
     })();
+  });
+
+
+  // ── bloostore1 상세이미지 일괄 업데이트 ──────────────────────────────────────
+  let bloo1DetailProgress: {
+    status: 'idle' | 'running' | 'done' | 'error';
+    total: number; current: number; updated: number; skipped: number; errors: number;
+    message: string;
+  } = { status: 'idle', total: 0, current: 0, updated: 0, skipped: 0, errors: 0, message: '' };
+
+  app.get("/api/admin/products/update-bloo1-detail-images/progress", requireAdminAuth, (_req, res) => {
+    res.json({ success: true, data: bloo1DetailProgress });
+  });
+
+  app.post("/api/admin/products/update-bloo1-detail-images/start", requireAdminAuth, async (req: Request, res: Response) => {
+    if (bloo1DetailProgress.status === 'running') {
+      return res.status(400).json({ success: false, error: '이미 실행 중입니다.' });
+    }
+    const onlyMissing: boolean = req.body?.onlyMissing !== false; // 기본값: 상세이미지 없는 것만
+    bloo1DetailProgress = { status: 'running', total: 0, current: 0, updated: 0, skipped: 0, errors: 0, message: '준비 중...' };
+    res.json({ success: true, message: '상세이미지 일괄 수집 시작됨' });
+
+    (async () => {
+      const client = await pool.connect();
+      try {
+        const whereClause = onlyMissing
+          ? `source_idx IS NOT NULL AND (detail_image_urls IS NULL OR array_length(detail_image_urls, 1) IS NULL)`
+          : `source_idx IS NOT NULL`;
+        const rows = await client.query(
+          `SELECT id, name, source_idx FROM products WHERE ${whereClause} ORDER BY id`
+        );
+        const products = rows.rows;
+        bloo1DetailProgress.total = products.length;
+        bloo1DetailProgress.message = `총 ${products.length.toLocaleString()}개 상품 상세이미지 수집 시작...`;
+        console.log(`[bloo1-detail] Starting update for ${products.length} products`);
+
+        const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+        let updated = 0, skipped = 0, errors = 0;
+
+        for (let i = 0; i < products.length; i++) {
+          const p = products[i];
+          bloo1DetailProgress.current = i + 1;
+          bloo1DetailProgress.message = `(${i + 1}/${products.length}) ${p.name}`;
+
+          try {
+            const imgs = await fetchBloo1DetailImagesForIdx(p.source_idx as number);
+            if (imgs.length > 0) {
+              await client.query(
+                `UPDATE products SET detail_image_urls = $1, image_urls = $2 WHERE id = $3`,
+                [imgs, imgs, p.id]
+              );
+              updated++;
+              bloo1DetailProgress.updated = updated;
+              console.log(`[bloo1-detail] ${p.name}: ${imgs.length} imgs`);
+            } else {
+              skipped++;
+              bloo1DetailProgress.skipped = skipped;
+            }
+          } catch (err: any) {
+            errors++;
+            bloo1DetailProgress.errors = errors;
+            console.error(`[bloo1-detail] Error for ${p.name}:`, err.message);
+          }
+
+          // 서버 부하 방지 — 300ms 딜레이
+          await delay(300);
+
+          // 50개마다 진행 로그
+          if ((i + 1) % 50 === 0) {
+            console.log(`[bloo1-detail] Progress: ${i + 1}/${products.length}, updated=${updated}, skipped=${skipped}`);
+          }
+        }
+
+        bloo1DetailProgress.status = 'done';
+        bloo1DetailProgress.message = `완료! ${updated.toLocaleString()}개 업데이트, ${skipped.toLocaleString()}개 이미지없음, ${errors}개 오류`;
+        console.log(`[bloo1-detail] Done: updated=${updated}, skipped=${skipped}, errors=${errors}`);
+      } catch (err: any) {
+        bloo1DetailProgress.status = 'error';
+        bloo1DetailProgress.message = `오류: ${err.message}`;
+        console.error('[bloo1-detail] Fatal error:', err);
+      } finally {
+        client.release();
+      }
+    })();
+  });
+
+  app.post("/api/admin/products/update-bloo1-detail-images/reset", requireAdminAuth, (_req, res) => {
+    if (bloo1DetailProgress.status === 'running') return res.status(400).json({ success: false, error: '실행 중에는 초기화 불가' });
+    bloo1DetailProgress = { status: 'idle', total: 0, current: 0, updated: 0, skipped: 0, errors: 0, message: '' };
+    res.json({ success: true });
   });
 
   return httpServer;
