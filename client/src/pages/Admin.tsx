@@ -897,6 +897,29 @@ export default function Admin() {
   const [bloo1ReclassifyRunning, setBloo1ReclassifyRunning] = useState(false);
   const [bloo1ReclassifyResult, setBloo1ReclassifyResult] = useState<{ changed: number; skipped: number; total: number } | null>(null);
 
+  const [deleteInspectionRunning, setDeleteInspectionRunning] = useState(false);
+  const [deleteInspectionResult, setDeleteInspectionResult] = useState<{ deleted: number } | null>(null);
+
+  const deleteInspectionRecords = async () => {
+    if (!window.confirm(`"N월 N일 검수" 형태의 비상품 기록 약 6,400개를 DB에서 영구 삭제합니다.\n실제 판매 상품은 삭제되지 않습니다. 계속하시겠습니까?`)) return;
+    setDeleteInspectionRunning(true);
+    setDeleteInspectionResult(null);
+    try {
+      const res = await fetchWithAuth("/api/admin/products/delete-inspection-records", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setDeleteInspectionResult({ deleted: data.deleted });
+        toast({ title: "검수 기록 삭제 완료", description: `${data.deleted.toLocaleString()}개 비상품 레코드를 삭제했습니다.` });
+      } else {
+        toast({ title: "삭제 실패", description: data.error, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "오류", description: "서버 연결 오류", variant: "destructive" });
+    } finally {
+      setDeleteInspectionRunning(false);
+    }
+  };
+
   // ── 소분류 자동 배정 ─────────────────────────────────────────────────────
   const [assignSubcatsProgress, setAssignSubcatsProgress] = useState<{
     status: 'idle' | 'running' | 'done' | 'error';
@@ -7696,6 +7719,31 @@ export default function Admin() {
                 <p className="text-sm text-gray-500 mt-1">bloostore1.co.kr 상품을 카테고리별로 수집합니다. 시계 브랜드는 "시계만 선택" 버튼으로 빠르게 선택 가능합니다. 중복 상품은 자동으로 건너뜁니다.</p>
               </div>
               <div className="p-6 space-y-4">
+
+                {/* 🧹 검수 기록 삭제 */}
+                <div className="rounded-xl border-2 border-red-200 bg-red-50 p-5">
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                      <p className="font-bold text-red-900 text-base">🧹 검수 기록 삭제 (1회 실행)</p>
+                      <p className="text-sm text-red-700 mt-1">
+                        "N월 N일 이름* 제품 검수" 형태의 비상품 레코드 <span className="font-semibold">약 6,400개</span> 삭제<br/>
+                        <span className="text-xs text-red-500">실제 판매 상품은 삭제되지 않습니다. 크롤링 전에 먼저 실행하세요.</span>
+                      </p>
+                      {deleteInspectionResult && (
+                        <p className="text-xs text-green-700 font-semibold mt-1">✓ {deleteInspectionResult.deleted.toLocaleString()}개 삭제 완료</p>
+                      )}
+                    </div>
+                    <Button
+                      data-testid="button-delete-inspection-records"
+                      onClick={deleteInspectionRecords}
+                      disabled={deleteInspectionRunning || !!deleteInspectionResult}
+                      variant="outline"
+                      className="border-red-400 text-red-700 hover:bg-red-100 font-bold"
+                    >
+                      {deleteInspectionRunning ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />삭제 중...</> : deleteInspectionResult ? '✓ 삭제 완료' : '검수 기록 삭제'}
+                    </Button>
+                  </div>
+                </div>
 
                 {/* ⚡ 전체 패션 크롤링 전용 버튼 */}
                 <div className={`rounded-xl border-2 p-5 ${bloo1Progress.status === 'running' ? 'border-violet-300 bg-violet-50' : 'border-violet-200 bg-gradient-to-br from-violet-50 to-purple-50'}`}>

@@ -5796,6 +5796,18 @@ export async function registerRoutes(
 
                   if (!idx || !name) continue;
 
+                  // 검수 기록 필터 — "N월 N일 이름* 제품 검수" 형태의 비상품 항목 스킵
+                  const isInspectionRecord =
+                    /^[\d]+월[\s\d]+일/.test(name) ||
+                    name.includes('제품 검수') ||
+                    name.includes('검수완료') ||
+                    (name.includes('검수') && /\d+월/.test(name));
+                  if (isInspectionRecord) {
+                    totalSkipped++;
+                    bloo1Progress.skipped = totalSkipped;
+                    continue;
+                  }
+
                   const isWatchCat = cat.fixedCategoryId === 'watches';
 
                   // 시계 브랜드 페이지: 이미 watches에 있으면 스킵
@@ -9463,6 +9475,31 @@ export async function registerRoutes(
       }
     } catch (error: any) {
       console.error('[clear-watches-all] Error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // ── 검수 기록 상품 일괄 삭제 ───────────────────────────────────────────────
+  app.post("/api/admin/products/delete-inspection-records", requireAdminAuth, async (_req: Request, res: Response) => {
+    try {
+      const client = await pool.connect();
+      try {
+        const result = await client.query(`
+          DELETE FROM products
+          WHERE (name ~ '^[0-9]+월[\\s0-9]+일'
+             OR name LIKE '%제품 검수%'
+             OR name LIKE '%검수완료%'
+             OR (name LIKE '%검수%' AND name ~ '[0-9]+월'))
+            AND source_idx IS NOT NULL
+        `);
+        const deleted = result.rowCount ?? 0;
+        console.log(`[delete-inspection] Deleted ${deleted} inspection records`);
+        res.json({ success: true, deleted });
+      } finally {
+        client.release();
+      }
+    } catch (error: any) {
+      console.error('[delete-inspection] Error:', error);
       res.status(500).json({ success: false, error: error.message });
     }
   });
