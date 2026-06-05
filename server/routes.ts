@@ -5464,6 +5464,69 @@ export async function registerRoutes(
           "Referer": "https://bloostore1.co.kr/",
         };
 
+        const bloo1DetailHeaders = {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+          "Accept-Language": "ko-KR,ko;q=0.9",
+          "Referer": "https://bloostore1.co.kr/",
+          "sec-fetch-dest": "document",
+          "sec-fetch-mode": "navigate",
+          "sec-fetch-site": "same-origin",
+        };
+
+        const BLOO1_COMMON_HASHES = new Set([
+          '91dc0b3052412','e4211aabdece9','362326a168295',
+          'cfe01887db836','939f0df3a3d23','afdfe65a9ac1d',
+          '885873f75d2c3','59d659c00f76c',
+        ]);
+
+        const fetchBloo1DetailImages = async (menuUrl: string, idx: number): Promise<string[]> => {
+          const detailUrl = `https://bloostore1.co.kr/${menuUrl}/?idx=${idx}`;
+          try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 18000);
+            let html: string;
+            try {
+              const r = await fetch(detailUrl, { headers: bloo1DetailHeaders, signal: controller.signal });
+              if (!r.ok) return [];
+              html = await r.text();
+            } finally {
+              clearTimeout(timer);
+            }
+            const $d = cheerio.load(html);
+            const images: string[] = [];
+            const imgHash = (url: string) => { const m = url.match(/\/([^/.]+)\.\w+$/); return m ? m[1] : url; };
+            const addImg = (url: string) => {
+              const clean = url.split('?')[0].replace('cdn-optimized.imweb.me', 'cdn.imweb.me');
+              if (!clean.includes('cdn.imweb.me')) return;
+              const hash = imgHash(clean);
+              if (BLOO1_COMMON_HASHES.has(hash)) return;
+              if (images.some(e => imgHash(e) === hash)) return;
+              images.push(clean);
+            };
+            // 1) 상세 설명 본문 이미지
+            const tplHtml = $d('#prodDetailPC').html() || '';
+            if (tplHtml) { for (const m of tplHtml.matchAll(/src="([^"]*cdn[^"]*)"/g)) addImg(m[1]); }
+            // 2) JSON-LD 메인 이미지
+            let jsonldImg = '';
+            $d('script[type="application/ld+json"]').each((_i: number, el: any) => {
+              if (jsonldImg) return;
+              try {
+                const d = JSON.parse($d(el).html() || '');
+                if (d['@type'] === 'Product' && d.image) {
+                  const imgs = Array.isArray(d.image) ? d.image : [d.image];
+                  const first = (imgs as string[]).find((img: string) => typeof img === 'string' && img.includes('cdn.imweb.me'));
+                  if (first) jsonldImg = first.split('?')[0];
+                }
+              } catch {}
+            });
+            if (jsonldImg) { const h = imgHash(jsonldImg); if (!BLOO1_COMMON_HASHES.has(h) && !images.some(e => imgHash(e) === h)) images.unshift(jsonldImg); }
+            // 3) OG 이미지 fallback
+            if (images.length === 0) { const og = $d('meta[property="og:image"]').attr('content') || ''; if (og) addImg(og); }
+            return images;
+          } catch { return []; }
+        };
+
         // bloostore1 실제 카테고리별 URL — 카테고리 직접 지정 (키워드 추론 최소화)
         // blooCategoryId: bloostore1 AJAX의 category= 파라미터 (없으면 menu_url만 사용)
         const BLOO1_CATEGORIES: { menuUrl: string; name: string; gender: string; fixedCategoryId: string | null; blooCategoryId?: string }[] = [
@@ -5648,14 +5711,23 @@ export async function registerRoutes(
                     ?? (cat.menuUrl === '803' ? inferCelebCategory(name) : inferAccessoryCategory(name));
                   const brandId = matchBrandFromText(name, allBrands);
 
+                  // 상세이미지 크롤 (상품 상세 페이지 방문)
+                  bloo1Progress.message = `[${cat.name}] 페이지 ${page} — 상세이미지 수집 중 (${idx})...`;
+                  const detailImgs = await fetchBloo1DetailImages(cat.menuUrl, idx);
+                  await delay(250); // 상세페이지 요청 간격
+
+                  const finalImageUrl = detailImgs[0] || imageUrl;
+                  const allImgUrls = detailImgs.length > 0 ? detailImgs : (imageUrl ? [imageUrl] : []);
+
                   await storage.createProduct({
                     name: name.trim(),
                     price: price ?? original_price ?? 0,
                     originalPrice: (original_price && original_price !== price) ? original_price : null,
                     categoryId: subCat,
                     brandId: brandId || null,
-                    imageUrl: imageUrl,
-                    imageUrls: imageUrl ? [imageUrl] : [],
+                    imageUrl: finalImageUrl,
+                    imageUrls: allImgUrls,
+                    detailImageUrls: detailImgs,
                     gender: cat.gender,
                     sourceUrl: `https://bloostore1.co.kr/${cat.menuUrl}?idx=${idx}`,
                     sourceIdx: idx,
