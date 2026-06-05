@@ -897,6 +897,16 @@ export default function Admin() {
   const [bloo1ReclassifyRunning, setBloo1ReclassifyRunning] = useState(false);
   const [bloo1ReclassifyResult, setBloo1ReclassifyResult] = useState<{ changed: number; skipped: number; total: number } | null>(null);
 
+  // ── 소분류 자동 배정 ─────────────────────────────────────────────────────
+  const [assignSubcatsProgress, setAssignSubcatsProgress] = useState<{
+    status: 'idle' | 'running' | 'done' | 'error';
+    total: number; current: number; assigned: number; skipped: number;
+    message: string;
+    byCategory: Record<string, { assigned: number; skipped: number; total: number }>;
+    errors: string[];
+  }>({ status: 'idle', total: 0, current: 0, assigned: 0, skipped: 0, message: '', byCategory: {}, errors: [] });
+  const assignSubcatsIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const runReclassifyAnalyze = async () => {
     setReclassifyAnalyzing(true);
     setReclassifyRulesResult(null);
@@ -981,6 +991,31 @@ export default function Admin() {
       } else toast({ title: "실패", description: data.error, variant: "destructive" });
     } catch { toast({ title: "오류", description: "서버 연결 오류", variant: "destructive" }); }
     finally { setBloo1ReclassifyRunning(false); }
+  };
+
+  const startAssignSubcats = async () => {
+    if (!window.confirm("모든 상품에 카테고리·소분류·성별 키워드 기반으로 소분류를 자동 배정합니다.\n기존 소분류도 덮어씁니다. 계속하시겠습니까?")) return;
+    try {
+      const res = await fetchWithAuth("/api/admin/products/assign-subcategories/start", { method: "POST" });
+      const data = await res.json();
+      if (!data.success) { toast({ title: "실패", description: data.error, variant: "destructive" }); return; }
+      toast({ title: "소분류 배정 시작", description: "백그라운드에서 진행 중입니다..." });
+      if (assignSubcatsIntervalRef.current) clearInterval(assignSubcatsIntervalRef.current);
+      assignSubcatsIntervalRef.current = setInterval(async () => {
+        try {
+          const r = await fetchWithAuth("/api/admin/products/assign-subcategories/progress");
+          const d = await r.json();
+          if (d.success) {
+            setAssignSubcatsProgress(d.data);
+            if (d.data.status === 'done' || d.data.status === 'error') {
+              clearInterval(assignSubcatsIntervalRef.current!);
+              assignSubcatsIntervalRef.current = null;
+              if (d.data.status === 'done') toast({ title: "소분류 배정 완료", description: d.data.message });
+            }
+          }
+        } catch {}
+      }, 1500);
+    } catch { toast({ title: "오류", description: "서버 연결 오류", variant: "destructive" }); }
   };
 
   const runRematchBrands = async () => {
@@ -4625,6 +4660,102 @@ export default function Admin() {
                 {reclassifyAnalyzing
                   ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />분석 중...</>
                   : <><RefreshCw className="w-4 h-4 mr-2" />현황 분석 시작</>
+                }
+              </Button>
+            </div>
+          </div>
+
+          {/* 소분류 자동 배정 패널 */}
+          <div className="bg-white rounded-xl shadow-sm border border-indigo-100 mt-6">
+            <div className="p-5 border-b border-indigo-100 flex items-center gap-3">
+              <div className="w-8 h-8 bg-indigo-50 rounded-full flex items-center justify-center">
+                <RefreshCw className="w-4 h-4 text-indigo-500" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">소분류 자동 배정</h3>
+                <p className="text-xs text-gray-500">상품명 키워드 + 성별 기반으로 의류/가방/신발/지갑/벨트/선글라스/쥬얼리 소분류를 자동 분류합니다</p>
+              </div>
+            </div>
+            <div className="p-5 space-y-4">
+
+              {/* 카테고리별 소분류 커버리지 */}
+              {assignSubcatsProgress.status !== 'idle' && Object.keys(assignSubcatsProgress.byCategory).length > 0 && (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                  <p className="text-xs font-semibold text-indigo-700 mb-2">카테고리별 배정 현황</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {Object.entries(assignSubcatsProgress.byCategory).map(([cat, v]) => {
+                      const catNames: Record<string,string> = {
+                        clothing:'의류', bags:'가방', shoes:'신발', wallets:'지갑',
+                        belts:'벨트', sunglasses:'선글라스', jewelry:'쥬얼리', watches:'시계'
+                      };
+                      const pct = v.total > 0 ? Math.round(v.assigned/v.total*100) : 0;
+                      return (
+                        <div key={cat} className="bg-white rounded p-2 border border-indigo-100 text-center">
+                          <div className="text-xs font-medium text-gray-700">{catNames[cat] || cat}</div>
+                          <div className="text-sm font-bold text-indigo-600">{v.assigned.toLocaleString()}<span className="text-gray-400 font-normal text-xs">/{v.total.toLocaleString()}</span></div>
+                          <div className="w-full bg-gray-100 rounded-full h-1 mt-1">
+                            <div className="bg-indigo-400 h-1 rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                          <div className="text-xs text-gray-400 mt-0.5">{pct}%</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 진행 상태 바 */}
+              {assignSubcatsProgress.status !== 'idle' && (
+                <div className={`rounded-lg border p-4 space-y-2 ${
+                  assignSubcatsProgress.status === 'running' ? 'bg-indigo-50 border-indigo-200' :
+                  assignSubcatsProgress.status === 'done' ? 'bg-green-50 border-green-200' :
+                  'bg-red-50 border-red-200'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    {assignSubcatsProgress.status === 'running' && <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />}
+                    {assignSubcatsProgress.status === 'done' && <CheckCircle className="w-4 h-4 text-green-600" />}
+                    {assignSubcatsProgress.status === 'error' && <XCircle className="w-4 h-4 text-red-600" />}
+                    <span className="text-sm font-medium">{assignSubcatsProgress.message}</span>
+                  </div>
+                  {assignSubcatsProgress.total > 0 && (
+                    <>
+                      <div className="w-full bg-indigo-100 rounded-full h-2">
+                        <div
+                          className="bg-indigo-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.min(100, Math.round((assignSubcatsProgress.current/assignSubcatsProgress.total)*100))}%` }}
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 gap-1 text-xs text-center">
+                        <div><span className="font-bold">{assignSubcatsProgress.current.toLocaleString()}</span><div className="text-gray-500">처리</div></div>
+                        <div><span className="font-bold text-indigo-600">{assignSubcatsProgress.assigned.toLocaleString()}</span><div className="text-gray-500">배정 완료</div></div>
+                        <div><span className="font-bold text-gray-400">{assignSubcatsProgress.skipped.toLocaleString()}</span><div className="text-gray-500">해당없음</div></div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* 설명 박스 */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-1.5 text-xs text-gray-600">
+                <p className="font-semibold text-gray-700 text-sm">소분류 배정 기준</p>
+                <p>• <strong>의류</strong>: 자켓/점퍼, 패딩/털, 코트/정장, 후드티, 셔츠, 니트, 가디건, 반팔, 맨투맨, 팬츠, 원피스 등 15개 소분류</p>
+                <p>• <strong>가방</strong>: 토트백, 숄더백, 크로스백, 백팩, 클러치, 파우치, 캐리어, 벨트백 등 10개 소분류</p>
+                <p>• <strong>신발</strong>: 스니커즈, 구두, 샌들, 부츠, 로퍼, 힐, 플랫 등 7개 소분류</p>
+                <p>• <strong>지갑</strong>: 장지갑, 카드지갑, 동전지갑 3개 소분류</p>
+                <p>• <strong>쥬얼리/잡화</strong>: 목걸이, 귀걸이, 팔찌, 반지, 스카프, 모자, 키홀더 등 13개 소분류</p>
+                <p>• <strong>성별 자동 구분</strong>: 남성(b prefix) / 여성(c/f prefix) / 골프(70x prefix) 슬러그 자동 선택</p>
+                <p className="text-orange-600">• 시계(watches) 카테고리는 소분류 없음 — 건너뜀</p>
+              </div>
+
+              <Button
+                data-testid="button-assign-subcategories"
+                onClick={startAssignSubcats}
+                disabled={assignSubcatsProgress.status === 'running'}
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+              >
+                {assignSubcatsProgress.status === 'running'
+                  ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />소분류 배정 중... ({assignSubcatsProgress.current.toLocaleString()}/{assignSubcatsProgress.total.toLocaleString()})</>
+                  : <><RefreshCw className="w-4 h-4 mr-2" />소분류 자동 배정 실행 (전체 상품)</>
                 }
               </Button>
             </div>
