@@ -365,6 +365,7 @@ export class DatabaseStorage implements IStorage {
       isActive: products.isActive,
       discountPercent: products.discountPercent,
       sourceIdx: products.sourceIdx,
+      gender: products.gender,
       createdAt: products.createdAt,
     };
     
@@ -413,12 +414,13 @@ export class DatabaseStorage implements IStorage {
     if (gender) {
       // 시계 카테고리: bloostore 상품은 gender/subcategoryId 미설정(null) → 공용 취급
       const isWatches = categoryId === 'watches';
-      if (gender === '남성') {
+      // '남성'/'men' 둘 다 남성 필터로 처리 (크롤은 'men'/'women' 저장, 일반 상품은 '남성'/'여성')
+      if (gender === '남성' || gender === 'men') {
         conditions.push(sql`(
           (
             ${products.subcategoryId} LIKE 'b0%'
             OR ${products.subcategoryId} LIKE '701%'
-            OR ${products.gender} = '남성' OR ${products.gender} = '공용'
+            OR ${products.gender} = '남성' OR ${products.gender} = 'men' OR ${products.gender} = '공용'
             OR (${products.gender} IS NULL AND (
               ${products.name} ILIKE '%남성%' OR ${products.name} ILIKE '%[남성]%'
               OR (${products.name} ~* '\\mMens?\\M' AND ${products.name} !~* '\\mWomens?\\M')
@@ -429,21 +431,24 @@ export class DatabaseStorage implements IStorage {
             ))
           )
           AND NOT (
-            (
-              ${products.name} ILIKE '%여성용%' OR ${products.name} ILIKE '%[여성]%'
-              OR (${products.name} ~* '\\mWomens?\\M' AND ${products.name} !~* '\\mMens?\\M')
-              OR (${products.name} ~* '\\mWomen''s\\M' AND ${products.name} !~* '\\mMen''s\\M')
-              OR ${products.name} ILIKE '%ladies%'
+            ${products.gender} = 'women' OR ${products.gender} = '여성'
+            OR (
+              (
+                ${products.name} ILIKE '%여성용%' OR ${products.name} ILIKE '%[여성]%'
+                OR (${products.name} ~* '\\mWomens?\\M' AND ${products.name} !~* '\\mMens?\\M')
+                OR (${products.name} ~* '\\mWomen''s\\M' AND ${products.name} !~* '\\mMen''s\\M')
+                OR ${products.name} ILIKE '%ladies%'
+              )
+              AND NOT (${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%Unisex%')
             )
-            AND NOT (${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%Unisex%')
           )
         )`);
-      } else if (gender === '여성') {
+      } else if (gender === '여성' || gender === 'women') {
         conditions.push(sql`(
           (
             ${products.subcategoryId} LIKE 'c0%' OR ${products.subcategoryId} LIKE 'f0%'
             OR ${products.subcategoryId} LIKE '702%' OR ${products.subcategoryId} LIKE 'g0%'
-            OR ${products.gender} = '여성' OR ${products.gender} = '공용'
+            OR ${products.gender} = '여성' OR ${products.gender} = 'women' OR ${products.gender} = '공용'
             OR (${products.gender} IS NULL AND (
               ${products.name} ILIKE '%여성%' OR ${products.name} ILIKE '%[여성]%'
               OR ${products.name} ~* '\\mWomens?\\M' OR ${products.name} ~* '\\mWomen''s\\M'
@@ -454,12 +459,15 @@ export class DatabaseStorage implements IStorage {
             ))
           )
           AND NOT (
-            (
-              ${products.name} ILIKE '%남성용%' OR ${products.name} ILIKE '%[남성]%'
-              OR (${products.name} ~* '\\mMens?\\M' AND ${products.name} !~* '\\mWomens?\\M')
-              OR (${products.name} ~* '\\mMen''s\\M' AND ${products.name} !~* '\\mWomen''s\\M')
+            ${products.gender} = 'men' OR ${products.gender} = '남성'
+            OR (
+              (
+                ${products.name} ILIKE '%남성용%' OR ${products.name} ILIKE '%[남성]%'
+                OR (${products.name} ~* '\\mMens?\\M' AND ${products.name} !~* '\\mWomens?\\M')
+                OR (${products.name} ~* '\\mMen''s\\M' AND ${products.name} !~* '\\mWomen''s\\M')
+              )
+              AND NOT (${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%Unisex%')
             )
-            AND NOT (${products.name} ILIKE '%공용%' OR ${products.name} ILIKE '%Unisex%')
           )
         )`);
       } else if (gender === '공용') {
