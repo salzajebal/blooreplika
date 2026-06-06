@@ -10,6 +10,7 @@ interface ProductOptions {
   colors: string[];
   sizes: string[];
   categoryId?: string;
+  sourceIdx?: number | null;
 }
 
 const parseProductOptions = (optionsString?: string | null): ProductOptions => {
@@ -45,6 +46,7 @@ export default function Cart() {
           if (data.success) {
             const opts = parseProductOptions(data.data?.options);
             opts.categoryId = data.data?.categoryId;
+            opts.sourceIdx = data.data?.sourceIdx ?? null;
             map[item.id] = opts;
           }
         } catch {}
@@ -64,6 +66,7 @@ export default function Cart() {
   const handleCheckout = () => {
     const itemsWithOptions = items.map((item) => ({
       ...item,
+      sourceIdx: item.sourceIdx ?? productOptionsMap[item.id]?.sourceIdx ?? null,
       selectedSize: itemOptions[item.id]?.size || "",
       selectedColor: itemOptions[item.id]?.color || "",
     }));

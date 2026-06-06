@@ -5,6 +5,7 @@ export interface WishlistItem {
   name: string;
   price: number;
   imageUrl?: string | null;
+  sourceIdx?: number | null;
 }
 
 interface WishlistContextType {

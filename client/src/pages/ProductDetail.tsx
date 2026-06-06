@@ -134,7 +134,7 @@ export default function ProductDetail() {
     } else if (hasSale) {
       finalPrice = calculateSalePrice(finalPrice);
     }
-    addItem({ id: String(product.id), name: product.name, price: finalPrice, imageUrl: product.imageUrl });
+    addItem({ id: String(product.id), name: product.name, price: finalPrice, imageUrl: product.imageUrl, sourceIdx: (product as any).sourceIdx ?? null });
     // Meta Pixel: AddToCart
     if ((window as any).fbq) {
       (window as any).fbq("track", "AddToCart", {

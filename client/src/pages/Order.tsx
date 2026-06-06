@@ -215,7 +215,7 @@ export default function Order() {
           if ((window as any).fbq) {
             const total = items.reduce((s: number, i: { price: number }) => s + i.price, 0);
             (window as any).fbq("track", "InitiateCheckout", {
-              content_ids: items.map((i: { id: string }) => i.id),
+              content_ids: items.map((i: any) => String(i.sourceIdx ?? i.id)),
               content_type: "product",
               num_items: items.length,
               value: total,
