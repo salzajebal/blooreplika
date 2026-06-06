@@ -1405,8 +1405,9 @@ export default function Admin() {
       } else {
         toast({ title: "오류", description: data.error, variant: "destructive" });
       }
-    } catch {
-      toast({ title: "오류", description: "BLOO 크롤링을 시작할 수 없습니다.", variant: "destructive" });
+    } catch (err: any) {
+      console.error("[startBloo1Crawl] error:", err);
+      toast({ title: "오류", description: err?.message ? `크롤링 시작 실패: ${err.message}` : "BLOO 크롤링을 시작할 수 없습니다.", variant: "destructive" });
     }
   };
 
@@ -1702,6 +1703,37 @@ export default function Admin() {
       } catch {}
     };
     checkBagstyleStatus();
+
+    // bloo1 크롤 상태도 페이지 로드 시 확인
+    const checkBloo1Status = async () => {
+      try {
+        const token = localStorage.getItem("adminToken");
+        if (!token) return;
+        const res = await fetch("/api/admin/crawl/bloo1/progress", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!data.success) return;
+        setBloo1Progress({
+          status: data.status,
+          total: data.total || 0,
+          current: data.current || 0,
+          inserted: data.inserted || 0,
+          skipped: data.skipped || 0,
+          message: data.message || '',
+          category: data.category || '',
+          completedCategories: data.completedCategories || [],
+        });
+        if (data.status === 'running') {
+          if (!bloo1IntervalRef.current) {
+            bloo1IntervalRef.current = setInterval(fetchBloo1Progress, 800);
+          }
+        } else if (data.status === 'error' && (data.completedCategories || []).length > 0) {
+          setCanResumeBloo1(true);
+        }
+      } catch {}
+    };
+    checkBloo1Status();
   }, []);
 
   const verifyToken = async (token: string) => {
