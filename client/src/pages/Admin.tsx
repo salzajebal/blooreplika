@@ -704,8 +704,10 @@ export default function Admin() {
     skipped: number;
     message: string;
     category: string;
-  }>({ status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '', category: '' });
+    completedCategories?: string[];
+  }>({ status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '', category: '', completedCategories: [] });
   const bloo1IntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [canResumeBloo1, setCanResumeBloo1] = useState(false);
   const [selectedBloo1Categories, setSelectedBloo1Categories] = useState<string[]>(['803', '1212', '537']);
 
   const [inspectionCrawlProgress, setInspectionCrawlProgress] = useState<{
@@ -1345,7 +1347,14 @@ export default function Admin() {
           skipped: data.skipped || 0,
           message: data.message || '',
           category: data.category || '',
+          completedCategories: data.completedCategories || [],
         });
+        if (data.status === 'error' && (data.completedCategories || []).length > 0) {
+          setCanResumeBloo1(true);
+        }
+        if (data.status === 'completed') {
+          setCanResumeBloo1(false);
+        }
         if (data.status === 'completed' || data.status === 'error') {
           if (bloo1IntervalRef.current) {
             clearInterval(bloo1IntervalRef.current);
@@ -1370,18 +1379,27 @@ export default function Admin() {
     '716',
   ];
 
-  const startBloo1Crawl = async (overrideCategories?: string[]) => {
+  const startBloo1Crawl = async (overrideCategories?: string[], resume?: boolean) => {
     const cats = overrideCategories ?? selectedBloo1Categories;
     try {
       const res = await fetchWithAuth("/api/admin/crawl/bloo1/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ selectedCategories: cats }),
+        body: JSON.stringify({ selectedCategories: cats, resume: resume ?? false }),
       });
       const data = await res.json();
       if (data.success) {
-        toast({ title: "BLOO 크롤링 시작", description: `${cats.length}개 카테고리 크롤링이 시작되었습니다.` });
-        setBloo1Progress({ status: 'running', total: 0, current: 0, inserted: 0, skipped: 0, message: '시작 중...', category: '' });
+        if (resume) {
+          toast({ title: "이어서 크롤링", description: "중단된 위치부터 크롤링을 재개합니다." });
+        } else {
+          toast({ title: "BLOO 크롤링 시작", description: `${cats.length}개 카테고리 크롤링이 시작되었습니다.` });
+        }
+        setCanResumeBloo1(false);
+        if (!resume) {
+          setBloo1Progress({ status: 'running', total: 0, current: 0, inserted: 0, skipped: 0, message: '시작 중...', category: '', completedCategories: [] });
+        } else {
+          setBloo1Progress(prev => ({ ...prev, status: 'running', message: '이어서 크롤링 중...' }));
+        }
         if (bloo1IntervalRef.current) clearInterval(bloo1IntervalRef.current);
         bloo1IntervalRef.current = setInterval(fetchBloo1Progress, 800);
       } else {
@@ -1391,6 +1409,8 @@ export default function Admin() {
       toast({ title: "오류", description: "BLOO 크롤링을 시작할 수 없습니다.", variant: "destructive" });
     }
   };
+
+  const resumeBloo1Crawl = () => startBloo1Crawl(undefined, true);
 
   const startFullFashionCrawl = async () => {
     if (!window.confirm("패션 전체 카테고리(의류/신발/가방/잡화/셀럽 남성+여성, 총 9개)를 처음부터 크롤링합니다.\n이미 저장된 상품은 자동으로 건너뜁니다. 계속하시겠습니까?")) return;
@@ -8048,6 +8068,15 @@ export default function Admin() {
                       className="border-red-300 text-red-600 hover:bg-red-50"
                     >
                       중지
+                    </Button>
+                  )}
+                  {bloo1Progress.status === 'error' && canResumeBloo1 && (
+                    <Button
+                      variant="outline"
+                      onClick={resumeBloo1Crawl}
+                      className="border-green-400 text-green-700 hover:bg-green-50"
+                    >
+                      이어서 하기 ({(bloo1Progress.completedCategories || []).length}개 완료)
                     </Button>
                   )}
                   {(bloo1Progress.status === 'completed' || bloo1Progress.status === 'error') && (

@@ -5615,7 +5615,8 @@ export async function registerRoutes(
     category: string;
     startedAt?: Date;
     completedAt?: Date;
-  } = { status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '', category: '' };
+    completedCategories: string[];
+  } = { status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '', category: '', completedCategories: [] };
   let bloo1ShouldStop = false;
 
   app.get("/api/admin/crawl/bloo1/progress", requireAdminAuth, (_req: Request, res: Response) => {
@@ -5631,8 +5632,13 @@ export async function registerRoutes(
     if (bloo1Progress.status === 'running') {
       return res.status(400).json({ success: false, error: "크롤링 중에는 초기화할 수 없습니다." });
     }
-    bloo1Progress = { status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '', category: '' };
+    bloo1Progress = { status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '', category: '', completedCategories: [] };
     res.json({ success: true });
+  });
+
+  app.get("/api/admin/crawl/bloo1/can-resume", requireAdminAuth, (_req: Request, res: Response) => {
+    const canResume = bloo1Progress.status === 'error' && bloo1Progress.completedCategories.length > 0;
+    res.json({ success: true, canResume, completedCategories: bloo1Progress.completedCategories, completedCount: bloo1Progress.completedCategories.length, inserted: bloo1Progress.inserted, skipped: bloo1Progress.skipped });
   });
 
   app.post("/api/admin/crawl/bloo1/start", requireAdminAuth, async (req: Request, res: Response) => {
@@ -5640,9 +5646,13 @@ export async function registerRoutes(
       return res.status(400).json({ success: false, error: "이미 크롤링이 진행 중입니다." });
     }
 
-    const { selectedCategories } = req.body as { selectedCategories?: string[] };
+    const { selectedCategories, resume } = req.body as { selectedCategories?: string[]; resume?: boolean };
 
-    bloo1Progress = { status: 'running', total: 0, current: 0, inserted: 0, skipped: 0, message: '준비 중...', category: '', startedAt: new Date() };
+    const prevCompleted = resume ? (bloo1Progress.completedCategories || []) : [];
+    const prevInserted = resume ? (bloo1Progress.inserted || 0) : 0;
+    const prevSkipped = resume ? (bloo1Progress.skipped || 0) : 0;
+
+    bloo1Progress = { status: 'running', total: 0, current: 0, inserted: prevInserted, skipped: prevSkipped, message: resume ? '이어서 크롤링 중...' : '준비 중...', category: '', startedAt: new Date(), completedCategories: prevCompleted };
     bloo1ShouldStop = false;
 
     res.json({ success: true, message: "BLOO 크롤링이 시작되었습니다." });
@@ -5686,7 +5696,10 @@ export async function registerRoutes(
           { menuUrl: '417',  name: '시계-브라이틀링', gender: '공용', fixedCategoryId: 'watches', blooCategoryId: 's202311087be8f51ef88b4' },
           { menuUrl: '418',  name: '시계-오메가',     gender: '공용', fixedCategoryId: 'watches', blooCategoryId: 's20231109d1d44f399a8a8' },
           { menuUrl: '419',  name: '시계-샤넬',       gender: '공용', fixedCategoryId: 'watches', blooCategoryId: 's202311087294963405bc6' },
-        ].filter(c => !selectedCategories || selectedCategories.length === 0 || selectedCategories.includes(c.menuUrl));
+        ].filter(c =>
+          (!selectedCategories || selectedCategories.length === 0 || selectedCategories.includes(c.menuUrl)) &&
+          !prevCompleted.includes(c.menuUrl)
+        );
 
         // 패션잡화 페이지(26, 716)용 세부 분류 — 기본값은 'accessories' (clothing 아님!)
         const inferAccessoryCategory = (name: string): string => {
@@ -5915,6 +5928,9 @@ export async function registerRoutes(
             }
           }
 
+          if (!bloo1ShouldStop) {
+            bloo1Progress.completedCategories = [...bloo1Progress.completedCategories, cat.menuUrl];
+          }
           await delay(500);
         }
 
