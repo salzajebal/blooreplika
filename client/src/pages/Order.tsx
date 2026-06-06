@@ -619,46 +619,47 @@ export default function Order() {
 
             {/* 완료 헤더 */}
             <div className="bg-white border border-[#e8e8e8] p-8 text-center">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${completedPaymentMethod === "bank" ? "bg-blue-50 border border-blue-200" : "bg-[#fff5ee] border border-[#FF6100]/30"}`}>
-                <CheckCircle className={`w-9 h-9 ${completedPaymentMethod === "bank" ? "text-blue-500" : "text-[#FF6100]"}`} />
+              <div className="w-16 h-16 bg-[#111111] flex items-center justify-center mx-auto mb-5">
+                <CheckCircle className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-xl font-bold text-[#111111] mb-1">
+              <p className="text-[10px] tracking-[0.25em] text-[#999] uppercase font-medium mb-2">ORDER CONFIRMED</p>
+              <h1 className="text-xl font-bold text-[#111111] mb-1 tracking-wide">
                 {completedPaymentMethod === "bank" ? "입금 신청이 완료되었습니다" : "주문이 완료되었습니다"}
               </h1>
-              <p className="text-sm text-[#666666] mb-3">
-                주문번호: <span className="font-bold text-[#FF6100]">{orderNumber}</span>
+              <p className="text-sm text-[#888] mb-5">
+                {completedPaymentMethod === "bank" ? "아래 계좌로 기한 내 입금해 주세요" : "주문해 주셔서 감사합니다"}
               </p>
-              {/* 주문번호 복사 + 조회 안내 */}
-              <div className="bg-[#f8f8f8] border border-[#e8e8e8] rounded-xl p-3 text-left space-y-2">
-                <p className="text-xs text-[#666666] font-medium">📋 주문번호를 저장해두세요</p>
+              {/* 주문번호 */}
+              <div className="border-t border-b border-[#e8e8e8] py-4 space-y-3">
+                <p className="text-xs text-[#999] tracking-widest uppercase">Order Number</p>
                 <div className="flex items-center gap-2">
-                  <span className="flex-1 font-mono text-sm font-bold text-[#111111] bg-white border border-[#e8e8e8] rounded-lg px-3 py-2 select-all">{orderNumber}</span>
+                  <span className="flex-1 font-mono text-sm font-bold text-[#111111] bg-[#f8f8f8] border border-[#e8e8e8] px-3 py-2.5 select-all text-center tracking-wider">{orderNumber}</span>
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(orderNumber);
                       const el = document.getElementById("order-copy-toast");
                       if (el) { el.style.opacity = "1"; setTimeout(() => { el.style.opacity = "0"; }, 1500); }
                     }}
-                    className="flex-shrink-0 text-xs px-3 py-2 bg-[#111111] text-white rounded-lg hover:bg-[#333] transition-colors font-medium"
+                    className="flex-shrink-0 text-xs px-4 py-2.5 bg-[#111111] text-white hover:bg-[#333] transition-colors font-medium tracking-wide"
                     data-testid="button-copy-order-number"
                   >복사</button>
                 </div>
-                <div id="order-copy-toast" style={{opacity: 0, transition: "opacity 0.3s"}} className="text-xs text-green-600 font-medium text-center">✓ 주문번호가 복사되었습니다</div>
-                <p className="text-xs text-[#999999]">이 번호로 <a href={`/orders?orderNumber=${encodeURIComponent(orderNumber)}`} className="text-[#FF6100] underline font-medium">주문 조회</a>를 언제든 할 수 있습니다</p>
+                <div id="order-copy-toast" style={{opacity: 0, transition: "opacity 0.3s"}} className="text-xs text-[#FF6100] font-medium text-center">✓ 주문번호가 복사되었습니다</div>
               </div>
+              <p className="text-xs text-[#aaa] mt-4"><a href={`/orders?orderNumber=${encodeURIComponent(orderNumber)}`} className="text-[#666] underline underline-offset-2 hover:text-[#111]">주문 조회 페이지</a>에서 언제든 확인하실 수 있습니다</p>
             </div>
 
             {/* 계좌이체 긴급 안내 배너 */}
             {completedPaymentMethod === "bank" && (
-              <div className="bg-red-50 border border-red-300 rounded-lg p-4">
+              <div className="bg-[#111111] p-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-white text-xs font-bold">!</span>
+                  <div className="w-5 h-5 bg-[#FF6100] flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <span className="text-white text-[10px] font-bold">!</span>
                   </div>
                   <div>
-                    <p className="font-bold text-red-700 text-sm">입금 기한 안내 — 반드시 확인해주세요</p>
-                    <p className="text-red-600 text-xs mt-1 leading-relaxed">
-                      주문 후 <strong>1시간 이내 미입금 시 주문이 자동 취소</strong>됩니다.<br />
+                    <p className="font-bold text-white text-sm tracking-wide">입금 기한 안내 — 반드시 확인해주세요</p>
+                    <p className="text-[#aaa] text-xs mt-1 leading-relaxed">
+                      주문 후 <strong className="text-[#FF6100]">1시간 이내 미입금 시 주문이 자동 취소</strong>됩니다.<br />
                       아래 계좌로 정확한 금액을 입금해 주셔야 주문이 확정됩니다.
                     </p>
                   </div>
@@ -738,7 +739,7 @@ export default function Order() {
                     </div>
                     {/* 복사 완료 토스트 */}
                     <div id="copy-toast" style={{opacity: 0, transition: "opacity 0.3s"}}
-                      className="text-center text-xs text-green-600 font-medium">
+                      className="text-center text-xs text-[#FF6100] font-medium">
                       ✓ 계좌번호가 복사되었습니다
                     </div>
 
@@ -851,9 +852,11 @@ export default function Order() {
         
         <main className="flex-1 py-6 pb-24 md:pb-6">
           <div className="max-w-[640px] mx-auto px-4">
-          <h1 className="text-lg font-bold text-[#111111] mb-4 tracking-wide">
-            주문서 작성
-          </h1>
+          <div className="mb-6">
+            <p className="text-[10px] tracking-[0.25em] text-[#999] uppercase font-medium mb-1">BLOO</p>
+            <h1 className="text-xl font-bold text-[#111111] tracking-wide">주문서 작성</h1>
+            <div className="w-8 h-[2px] bg-[#111111] mt-2"></div>
+          </div>
 
           {!isLoggedIn && (
             <div className="bg-[#f8f8f8] border border-[#e8e8e8] p-4 flex items-start gap-3 mb-5">
