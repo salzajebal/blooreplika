@@ -7988,20 +7988,34 @@ export default function Admin() {
                       { id: '417', name: '시계-브라이틀링', color: 'amber' },
                       { id: '418', name: '시계-오메가', color: 'amber' },
                       { id: '419', name: '시계-샤넬', color: 'amber' },
-                    ].map(cat => (
-                      <label key={cat.id} className="flex items-center gap-2 cursor-pointer select-none">
-                        <input
-                          type="checkbox"
-                          checked={selectedBloo1Categories.includes(cat.id)}
-                          onChange={e => {
-                            if (e.target.checked) setSelectedBloo1Categories(prev => [...prev, cat.id]);
-                            else setSelectedBloo1Categories(prev => prev.filter(c => c !== cat.id));
-                          }}
-                          className="w-4 h-4 accent-violet-600"
-                        />
-                        <span className={`text-sm ${cat.color === 'amber' ? 'text-amber-700 font-medium' : 'text-gray-700'}`}>{cat.name}</span>
-                      </label>
-                    ))}
+                    ].map(cat => {
+                      const isDone = (bloo1Progress.completedCategories || []).includes(cat.id);
+                      const isCurrent = bloo1Progress.status === 'running' && bloo1Progress.category === cat.name;
+                      return (
+                        <label key={cat.id} className={`flex items-center gap-2 cursor-pointer select-none rounded-md px-2 py-1 transition-colors ${
+                          isDone ? 'bg-green-50 border border-green-200' :
+                          isCurrent ? 'bg-violet-100 border border-violet-300 animate-pulse' :
+                          'border border-transparent'
+                        }`}>
+                          <input
+                            type="checkbox"
+                            checked={selectedBloo1Categories.includes(cat.id)}
+                            onChange={e => {
+                              if (e.target.checked) setSelectedBloo1Categories(prev => [...prev, cat.id]);
+                              else setSelectedBloo1Categories(prev => prev.filter(c => c !== cat.id));
+                            }}
+                            className="w-4 h-4 accent-violet-600"
+                          />
+                          <span className={`text-sm ${
+                            isDone ? 'text-green-700 font-medium' :
+                            isCurrent ? 'text-violet-700 font-semibold' :
+                            cat.color === 'amber' ? 'text-amber-700 font-medium' : 'text-gray-700'
+                          }`}>{cat.name}</span>
+                          {isDone && <span className="text-green-600 text-xs font-bold">✓</span>}
+                          {isCurrent && <span className="text-violet-600 text-xs">▶</span>}
+                        </label>
+                      );
+                    })}
                   </div>
                   <div className="flex gap-2 mt-2 flex-wrap">
                     <button onClick={() => setSelectedBloo1Categories(['803', 'httpstheblooshop1496458051', '220', '1212', '26', '497', '656', '1447', '716', '412', '413', '415', '1337', '416', '417', '418', '419'])} className="text-xs text-violet-600 hover:underline">전체 선택</button>
