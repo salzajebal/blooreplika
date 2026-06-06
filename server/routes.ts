@@ -5641,6 +5641,180 @@ export async function registerRoutes(
     res.json({ success: true, canResume, completedCategories: bloo1Progress.completedCategories, completedCount: bloo1Progress.completedCategories.length, inserted: bloo1Progress.inserted, skipped: bloo1Progress.skipped });
   });
 
+  // ---- gender 수정 전용 (셀럽→공용으로 저장된 상품을 남성/여성으로 패치) ----
+  let bloo1GenderFixProgress: {
+    status: 'idle' | 'running' | 'completed' | 'error';
+    updated: number;
+    skipped: number;
+    category: string;
+    message: string;
+  } = { status: 'idle', updated: 0, skipped: 0, category: '', message: '' };
+  let bloo1GenderFixShouldStop = false;
+
+  app.get("/api/admin/crawl/bloo1/fix-gender/progress", requireAdminAuth, (_req: Request, res: Response) => {
+    res.json({ success: true, ...bloo1GenderFixProgress });
+  });
+
+  app.post("/api/admin/crawl/bloo1/fix-gender/stop", requireAdminAuth, (_req: Request, res: Response) => {
+    bloo1GenderFixShouldStop = true;
+    res.json({ success: true });
+  });
+
+  app.post("/api/admin/crawl/bloo1/fix-gender/start", requireAdminAuth, async (_req: Request, res: Response) => {
+    if (bloo1GenderFixProgress.status === 'running') {
+      return res.status(400).json({ success: false, error: "이미 실행 중입니다." });
+    }
+    if (bloo1Progress.status === 'running') {
+      return res.status(400).json({ success: false, error: "크롤링 진행 중에는 실행할 수 없습니다." });
+    }
+
+    bloo1GenderFixProgress = { status: 'running', updated: 0, skipped: 0, category: '', message: '준비 중...' };
+    bloo1GenderFixShouldStop = false;
+    res.json({ success: true, message: "성별 수정이 시작되었습니다." });
+
+    (async () => {
+      try {
+        const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+        const headers = {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept": "application/json, text/javascript, */*; q=0.01",
+          "Accept-Language": "ko-KR,ko;q=0.9",
+          "Referer": "https://bloostore1.co.kr/",
+        };
+
+        // 성별이 명확한 카테고리만 (셀럽/시계 제외)
+        const GENDER_CATS = [
+          { menuUrl: 'httpstheblooshop1496458051', name: '남성 의류',     gender: 'men',   fixedCatId: 'clothing' },
+          { menuUrl: '220',                        name: '남성 신발',     gender: 'men',   fixedCatId: 'shoes' },
+          { menuUrl: '1212',                       name: '남성 가방',     gender: 'men',   fixedCatId: 'bags' },
+          { menuUrl: '26',                         name: '남성 패션잡화', gender: 'men',   fixedCatId: null },
+          { menuUrl: '497',                        name: '여성 의류',     gender: 'women', fixedCatId: 'clothing' },
+          { menuUrl: '656',                        name: '여성 신발',     gender: 'women', fixedCatId: 'shoes' },
+          { menuUrl: '1447',                       name: '여성 가방',     gender: 'women', fixedCatId: 'bags' },
+          { menuUrl: '716',                        name: '여성 패션잡화', gender: 'women', fixedCatId: null },
+        ];
+
+        const inferAccessoryCatLocal = (name: string): string => {
+          if (['지갑','카드지갑','장지갑','반지갑','머니클립','카드홀더'].some(k=>name.includes(k))) return 'wallets';
+          if (['벨트'].some(k=>name.includes(k))) return 'belts';
+          if (['선글라스','안경테','아이웨어'].some(k=>name.includes(k))) return 'sunglasses';
+          if (['시계','watch','워치'].some(k=>name.toLowerCase().includes(k))) return 'watches';
+          if (['목걸이','귀걸이','이어링','반지','팔찌','브로치','펜던트','주얼리','쥬얼리'].some(k=>name.includes(k))) return 'jewelry';
+          if (['가방','백','숄더백','토트백','클러치','핸드백','파우치','미니백','크로스백','버킷백','새들백'].some(k=>name.includes(k))) return 'bags';
+          if (['신발','스니커','구두','로퍼','부츠','샌들','슬리퍼','뮬','펌프스','슈즈'].some(k=>name.includes(k))) return 'shoes';
+          return 'accessories';
+        };
+
+        // 셀럽(803)에서 저장된 상품들만 대상 (gender='공용', sourceUrl like '%/803?%')
+        const existingRows = await pool.query(
+          `SELECT id, source_idx, name, category_id, gender FROM products WHERE gender = '공용' AND source_url LIKE '%/803?%' AND source_idx IS NOT NULL`
+        );
+        // idx → { id, name, categoryId } 맵
+        const celebIdxMap = new Map<number, { id: string; name: string; categoryId: string }>();
+        for (const row of existingRows.rows) {
+          celebIdxMap.set(row.source_idx, { id: row.id, name: row.name, categoryId: row.category_id });
+        }
+
+        bloo1GenderFixProgress.message = `셀럽 출처 상품 ${celebIdxMap.size}개 로드 완료. 성별 페이지 순회 시작...`;
+
+        let totalUpdated = 0;
+        let totalSkipped = 0;
+
+        for (const cat of GENDER_CATS) {
+          if (bloo1GenderFixShouldStop) break;
+          bloo1GenderFixProgress.category = cat.name;
+          bloo1GenderFixProgress.message = `[${cat.name}] 페이지 순회 중...`;
+
+          let page = 1;
+          const pageSize = 50;
+          let hasMore = true;
+          let errStreak = 0;
+
+          while (hasMore && !bloo1GenderFixShouldStop) {
+            try {
+              const url = `https://bloostore1.co.kr/ajax/get_shop_list_view.cm?page=${page}&pagesize=${pageSize}&menu_url=${cat.menuUrl}&sort=recent`;
+              const ctrl = new AbortController();
+              const t = setTimeout(() => ctrl.abort(), 15000);
+              let resp: globalThis.Response;
+              try { resp = await fetch(url, { headers, signal: ctrl.signal }); }
+              finally { clearTimeout(t); }
+
+              if (!resp.ok) {
+                errStreak++;
+                if (errStreak >= 3) { hasMore = false; }
+                else await delay(2000 * errStreak);
+                continue;
+              }
+              errStreak = 0;
+
+              const data = await resp.json() as { html: string; msg: string };
+              if (data.msg !== 'SUCCESS' || !data.html || data.html.trim().length < 10) { hasMore = false; break; }
+
+              const cheerio2 = await import('cheerio');
+              const $ = cheerio2.load(data.html);
+              const elements = $('[data-product-properties]');
+              if (elements.length === 0) { hasMore = false; break; }
+
+              for (let i = 0; i < elements.length; i++) {
+                if (bloo1GenderFixShouldStop) break;
+                try {
+                  const raw = $(elements[i]).attr('data-product-properties') || '';
+                  const parsed = JSON.parse(raw) as { idx: number; name: string };
+                  const { idx, name } = parsed;
+                  if (!idx || !name) continue;
+
+                  // 검수 기록 스킵
+                  if (/^[\d]+월[\s\d]+일/.test(name) || name.includes('검수')) continue;
+
+                  const existing = celebIdxMap.get(idx);
+                  if (!existing) { totalSkipped++; continue; }
+
+                  // 올바른 categoryId 결정
+                  const newCatId = cat.fixedCatId ?? inferAccessoryCatLocal(name);
+                  // subcategoryId 재추론
+                  const newSubcatId = inferSubcatSlug(name.trim(), newCatId, cat.gender);
+                  const newSourceUrl = `https://bloostore1.co.kr/${cat.menuUrl}?idx=${idx}`;
+
+                  await pool.query(
+                    `UPDATE products SET gender=$1, category_id=$2, subcategory_id=$3, source_url=$4 WHERE id=$5`,
+                    [cat.gender, newCatId, newSubcatId || null, newSourceUrl, existing.id]
+                  );
+
+                  celebIdxMap.delete(idx); // 이미 처리된 항목 제거 (중복 처리 방지)
+                  totalUpdated++;
+                  bloo1GenderFixProgress.updated = totalUpdated;
+                  bloo1GenderFixProgress.skipped = totalSkipped;
+                } catch (e: any) {
+                  console.error('[fix-gender] row error:', e.message);
+                }
+              }
+
+              if (elements.length < pageSize) { hasMore = false; }
+              page++;
+              await delay(300);
+            } catch (pageErr: any) {
+              console.error(`[fix-gender] page error:`, pageErr.message);
+              errStreak++;
+              if (errStreak >= 3) hasMore = false;
+              else await delay(2000 * errStreak);
+            }
+          }
+
+          bloo1GenderFixProgress.message = `[${cat.name}] 완료`;
+          await delay(500);
+        }
+
+        bloo1GenderFixProgress.status = 'completed';
+        bloo1GenderFixProgress.message = `완료! ${totalUpdated}개 성별 수정, ${totalSkipped}개 스킵`;
+        console.log(`[fix-gender] 완료: updated=${totalUpdated}, skipped=${totalSkipped}`);
+      } catch (err: any) {
+        bloo1GenderFixProgress.status = 'error';
+        bloo1GenderFixProgress.message = `오류: ${err.message}`;
+        console.error('[fix-gender] fatal:', err);
+      }
+    })();
+  });
+
   app.post("/api/admin/crawl/bloo1/start", requireAdminAuth, async (req: Request, res: Response) => {
     if (bloo1Progress.status === 'running') {
       return res.status(400).json({ success: false, error: "이미 크롤링이 진행 중입니다." });

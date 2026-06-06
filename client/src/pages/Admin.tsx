@@ -710,6 +710,15 @@ export default function Admin() {
   const [canResumeBloo1, setCanResumeBloo1] = useState(false);
   const [selectedBloo1Categories, setSelectedBloo1Categories] = useState<string[]>(['803', '1212', '537']);
 
+  const [genderFixProgress, setGenderFixProgress] = useState<{
+    status: 'idle' | 'running' | 'completed' | 'error';
+    updated: number;
+    skipped: number;
+    category: string;
+    message: string;
+  }>({ status: 'idle', updated: 0, skipped: 0, category: '', message: '' });
+  const genderFixIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
   const [inspectionCrawlProgress, setInspectionCrawlProgress] = useState<{
     status: 'idle' | 'running' | 'completed' | 'error';
     total: number;
@@ -1431,6 +1440,44 @@ export default function Admin() {
       await fetchWithAuth("/api/admin/crawl/bloo1/reset", { method: "POST" });
       setBloo1Progress({ status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '', category: '' });
       if (bloo1IntervalRef.current) { clearInterval(bloo1IntervalRef.current); bloo1IntervalRef.current = null; }
+    } catch {}
+  };
+
+  const fetchGenderFixProgress = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bloo1/fix-gender/progress");
+      const data = await res.json();
+      if (data.success) {
+        setGenderFixProgress({ status: data.status, updated: data.updated, skipped: data.skipped, category: data.category, message: data.message });
+        if (data.status !== 'running' && genderFixIntervalRef.current) {
+          clearInterval(genderFixIntervalRef.current);
+          genderFixIntervalRef.current = null;
+        }
+      }
+    } catch {}
+  };
+
+  const startGenderFix = async () => {
+    try {
+      const res = await fetchWithAuth("/api/admin/crawl/bloo1/fix-gender/start", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "성별 수정 시작", description: "남성/여성 전용 페이지를 순회하며 성별을 업데이트합니다." });
+        setGenderFixProgress({ status: 'running', updated: 0, skipped: 0, category: '', message: '시작 중...' });
+        if (genderFixIntervalRef.current) clearInterval(genderFixIntervalRef.current);
+        genderFixIntervalRef.current = setInterval(fetchGenderFixProgress, 1000);
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (err: any) {
+      toast({ title: "오류", description: err?.message || "시작 실패", variant: "destructive" });
+    }
+  };
+
+  const stopGenderFix = async () => {
+    try {
+      await fetchWithAuth("/api/admin/crawl/bloo1/fix-gender/stop", { method: "POST" });
+      toast({ title: "중지 요청됨" });
     } catch {}
   };
 
@@ -8137,6 +8184,61 @@ export default function Admin() {
                   <p>• sourceIdx 기준으로 중복 저장을 방지하며, 3개 카테고리 모두 선택 시 전체 상품을 커버합니다.</p>
                   <p>• 기본값: 셀럽(803) + 남성(1212) + 여성(537) 모두 선택 = 전체 상품 수집.</p>
                 </div>
+              </div>
+            </div>
+
+            {/* ── 성별 수정 섹션 ── */}
+            <div className="bg-white rounded-xl shadow-sm border border-orange-100 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <span className="text-orange-600 font-bold text-sm">성별</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">성별/카테고리 수정</h3>
+                  <p className="text-sm text-gray-500">셀럽(803)에서 공용으로 저장된 상품을 남성/여성으로 재분류합니다</p>
+                </div>
+              </div>
+
+              <div className="bg-orange-50 rounded-lg p-3 mb-4 text-xs text-orange-700 flex items-start gap-2">
+                <span>⚠️</span>
+                <span>남성·여성 전용 페이지(의류/신발/가방/패션잡화)를 순회하며, 셀럽 출처 상품의 <strong>gender · category_id · subcategory_id · source_url</strong>을 올바르게 업데이트합니다. 삭제 없이 패치만 합니다.</span>
+              </div>
+
+              {genderFixProgress.status !== 'idle' && (
+                <div className="bg-gray-50 rounded-lg p-3 mb-4 space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    {genderFixProgress.status === 'running' && <Loader2 className="w-4 h-4 animate-spin text-orange-500" />}
+                    {genderFixProgress.status === 'completed' && <span className="text-green-600">✓</span>}
+                    {genderFixProgress.status === 'error' && <span className="text-red-500">✗</span>}
+                    <span className="text-gray-700 text-xs">{genderFixProgress.message}</span>
+                  </div>
+                  {genderFixProgress.category && (
+                    <div className="text-xs text-gray-500">현재 카테고리: <strong>{genderFixProgress.category}</strong></div>
+                  )}
+                  <div className="flex gap-4 text-xs text-gray-600">
+                    <span>수정됨 <strong className="text-orange-600">{genderFixProgress.updated.toLocaleString()}</strong>개</span>
+                    <span>스킵 <strong>{genderFixProgress.skipped.toLocaleString()}</strong>개</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={startGenderFix}
+                  disabled={genderFixProgress.status === 'running' || bloo1Progress.status === 'running'}
+                  className="bg-orange-500 hover:bg-orange-600 text-white"
+                >
+                  {genderFixProgress.status === 'running' ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />수정 중...</>
+                  ) : (
+                    <>성별 수정 시작</>
+                  )}
+                </Button>
+                {genderFixProgress.status === 'running' && (
+                  <Button variant="outline" onClick={stopGenderFix} className="border-red-300 text-red-600 hover:bg-red-50">
+                    중지
+                  </Button>
+                )}
               </div>
             </div>
 
