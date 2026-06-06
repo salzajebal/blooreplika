@@ -5847,20 +5847,21 @@ export async function registerRoutes(
         const fetchBloo1DetailImages = (_menuUrl: string, idx: number) => fetchBloo1DetailImagesForIdx(idx);
 
         // bloostore1 실제 카테고리별 URL — 카테고리 직접 지정 (키워드 추론 최소화)
-        // blooCategoryId: bloostore1 AJAX의 category= 파라미터 (없으면 menu_url만 사용)
-        const BLOO1_CATEGORIES: { menuUrl: string; name: string; gender: string; fixedCategoryId: string | null; blooCategoryId?: string }[] = [
-          // 셀럽 (공용 - 혼합 카테고리, 이름으로 추론)
-          { menuUrl: '803',                      name: '셀럽',       gender: '공용', fixedCategoryId: null },
-          // 남성 - 카테고리 직접 지정
-          { menuUrl: 'httpstheblooshop1496458051', name: '남성 의류', gender: '남성', fixedCategoryId: 'clothing' },
-          { menuUrl: '220',                      name: '남성 신발',   gender: '남성', fixedCategoryId: 'shoes' },
-          { menuUrl: '1212',                     name: '남성 가방',   gender: '남성', fixedCategoryId: 'bags' },
-          { menuUrl: '26',                       name: '남성 패션잡화', gender: '남성', fixedCategoryId: null },
-          // 여성 - 카테고리 직접 지정
-          { menuUrl: '497',                      name: '여성 의류',   gender: '여성', fixedCategoryId: 'clothing' },
-          { menuUrl: '656',                      name: '여성 신발',   gender: '여성', fixedCategoryId: 'shoes' },
-          { menuUrl: '1447',                     name: '여성 가방',   gender: '여성', fixedCategoryId: 'bags' },
-          { menuUrl: '716',                      name: '여성 패션잡화', gender: '여성', fixedCategoryId: null },
+        // blooCategoryId: bloostore1 AJAX의 category= 파라미터 (필수! 없으면 AJAX 0개 반환)
+        // 순서: 성별 카테고리 먼저 → 정확한 gender/category 설정. 셀럽(803)은 마지막으로.
+        const BLOO1_CATEGORIES: { menuUrl: string; name: string; gender: string; fixedCategoryId: string | null; blooCategoryId?: string; isCeleb?: boolean }[] = [
+          // 남성 - 카테고리 직접 지정 (blooCategoryId 필수)
+          { menuUrl: 'httpstheblooshop1496458051', name: '남성 의류', gender: '남성', fixedCategoryId: 'clothing', blooCategoryId: 's202311131635242451067' },
+          { menuUrl: '220',                      name: '남성 신발',   gender: '남성', fixedCategoryId: 'shoes',    blooCategoryId: 's202310180e2662c7ad792' },
+          { menuUrl: '1212',                     name: '남성 가방',   gender: '남성', fixedCategoryId: 'bags',     blooCategoryId: 's20240106a43d2751f87bf' },
+          { menuUrl: '26',                       name: '남성 패션잡화', gender: '남성', fixedCategoryId: null,    blooCategoryId: 's20231018cd6b80c9e9a83' },
+          // 여성 - 카테고리 직접 지정 (blooCategoryId 필수)
+          { menuUrl: '497',                      name: '여성 의류',   gender: '여성', fixedCategoryId: 'clothing', blooCategoryId: 's2023112717b5809df6b7b' },
+          { menuUrl: '656',                      name: '여성 신발',   gender: '여성', fixedCategoryId: 'shoes',    blooCategoryId: 's202310189abb3090fd1b1' },
+          { menuUrl: '1447',                     name: '여성 가방',   gender: '여성', fixedCategoryId: 'bags',     blooCategoryId: 's20240213054063dfa2e89' },
+          { menuUrl: '716',                      name: '여성 패션잡화', gender: '여성', fixedCategoryId: null,    blooCategoryId: 's20231018d7d1ff1c02939' },
+          // 셀럽 (공용 - 마지막 처리. 성별 카테고리에 없는 상품만 추가됨)
+          { menuUrl: '803', name: '셀럽', gender: '공용', fixedCategoryId: null, isCeleb: true },
           // 시계 브랜드별 — blooCategoryId 필수 (menu_url만 사용하면 전체 상품이 반환됨)
           { menuUrl: '412',  name: '시계-롤렉스',     gender: '공용', fixedCategoryId: 'watches', blooCategoryId: 's2023110807dcda38ffad5' },
           { menuUrl: '413',  name: '시계-까르띠에',   gender: '공용', fixedCategoryId: 'watches', blooCategoryId: 's20231108fa0f625fe8ba0' },
@@ -5916,8 +5917,11 @@ export async function registerRoutes(
         const allBrands = await storage.getAllBrands();
 
         const allProducts = await storage.getAllProducts();
-        const existingSourceIdx = new Set<number>(
-          allProducts.map(p => p.sourceIdx).filter((v): v is number => v !== null && v !== undefined)
+        // idx → {id, gender, categoryId} 맵: skip 대신 UPDATE 판단에 사용
+        const existingSourceIdxMap = new Map<number, { id: string; gender: string; categoryId: string | null }>(
+          allProducts
+            .filter(p => p.sourceIdx != null)
+            .map(p => [p.sourceIdx!, { id: p.id, gender: p.gender || '공용', categoryId: p.categoryId || null }])
         );
 
         // 시계 카테고리 전용: sourceIdx → productId 맵 (카테고리 재분류 용도)
@@ -5932,6 +5936,8 @@ export async function registerRoutes(
             nonWatchSourceIdxMap.set(p.sourceIdx, p.id);
           }
         });
+        // 하위 호환: existingSourceIdx Set (시계 로직 외에는 Map 직접 사용)
+        const existingSourceIdx = new Set<number>(existingSourceIdxMap.keys());
 
         let totalInserted = 0;
         let totalSkipped = 0;
@@ -6032,20 +6038,50 @@ export async function registerRoutes(
                     continue;
                   }
 
-                  // 시계 외 페이지: 전체 중복 체크
-                  if (!isWatchCat && existingSourceIdx.has(idx)) {
+                  const imageUrl = image_url ? image_url.split('?')[0] : '';
+                  // fixedCategoryId가 있으면 직접 사용, 없으면 카테고리별 추론
+                  const subCat = cat.fixedCategoryId
+                    ?? (cat.isCeleb ? inferCelebCategory(name) : inferAccessoryCategory(name));
+                  const brandId = matchBrandFromText(name, allBrands);
+                  // 성별 변환 (bloo1은 '남성'/'여성' → 'men'/'women')
+                  const genderNorm = cat.gender === '남성' ? 'men' : cat.gender === '여성' ? 'women' : cat.gender;
+
+                  // ─── 시계 외 페이지: 중복 처리 ───────────────────────────────
+                  if (!isWatchCat && existingSourceIdxMap.has(idx)) {
+                    const existing = existingSourceIdxMap.get(idx)!;
+
+                    // 셀럽(공용): 이미 DB에 있으면 skip (재실행 시 중복 방지)
+                    if (cat.isCeleb) {
+                      totalSkipped++;
+                      bloo1Progress.skipped = totalSkipped;
+                      continue;
+                    }
+
+                    // 성별 카테고리: gender='공용'(셀럽에서 온 것)이면 올바른 성별/카테고리로 UPDATE
+                    if (existing.gender === '공용' || existing.gender === null) {
+                      const subcatSlug = inferSubcatSlug(name.trim(), subCat, genderNorm);
+                      await storage.updateProduct(existing.id, {
+                        gender: genderNorm,
+                        categoryId: subCat,
+                        subcategoryId: subcatSlug || undefined,
+                        brandId: brandId || null,
+                        sourceUrl: `https://bloostore1.co.kr/${cat.menuUrl}?idx=${idx}`,
+                      } as any);
+                      existingSourceIdxMap.set(idx, { id: existing.id, gender: genderNorm, categoryId: subCat });
+                      totalInserted++;
+                      bloo1Progress.inserted = totalInserted;
+                      bloo1Progress.current = totalInserted + totalSkipped;
+                      continue;
+                    }
+
+                    // 이미 성별이 올바르게 설정된 경우 skip
                     totalSkipped++;
                     bloo1Progress.skipped = totalSkipped;
                     continue;
                   }
+                  // ─────────────────────────────────────────────────────────────
 
-                  const imageUrl = image_url ? image_url.split('?')[0] : '';
-                  // fixedCategoryId가 있으면 직접 사용, 없으면 카테고리별 추론
-                  const subCat = cat.fixedCategoryId
-                    ?? (cat.menuUrl === '803' ? inferCelebCategory(name) : inferAccessoryCategory(name));
-                  const brandId = matchBrandFromText(name, allBrands);
-
-                  // 상세이미지 크롤 (상품 상세 페이지 방문)
+                  // 상세이미지 크롤 (새 상품만)
                   bloo1Progress.message = `[${cat.name}] 페이지 ${page} — 상세이미지 수집 중 (${idx})...`;
                   const detailImgs = await fetchBloo1DetailImages(cat.menuUrl, idx);
                   await delay(250); // 상세페이지 요청 간격
@@ -6057,8 +6093,6 @@ export async function registerRoutes(
                   const finalImageUrl = detailImgs[0] || cleanListImg;
                   const allImgUrls = detailImgs.length > 0 ? detailImgs : (cleanListImg ? [cleanListImg] : []);
 
-                  // 성별 변환 (bloo1은 '남성'/'여성' 사용 → inferSubcatSlug은 'men'/'women' 지원)
-                  const genderNorm = cat.gender === '남성' ? 'men' : cat.gender === '여성' ? 'women' : cat.gender;
                   const subcatSlug = inferSubcatSlug(name.trim(), subCat, genderNorm);
 
                   await storage.createProduct({
@@ -6081,6 +6115,7 @@ export async function registerRoutes(
                     options: null,
                   } as any);
 
+                  existingSourceIdxMap.set(idx, { id: '', gender: genderNorm, categoryId: subCat });
                   existingSourceIdx.add(idx);
                   if (isWatchCat) watchSourceIdxSet.add(idx);
                   totalInserted++;

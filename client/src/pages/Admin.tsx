@@ -708,7 +708,7 @@ export default function Admin() {
   }>({ status: 'idle', total: 0, current: 0, inserted: 0, skipped: 0, message: '', category: '', completedCategories: [] });
   const bloo1IntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [canResumeBloo1, setCanResumeBloo1] = useState(false);
-  const [selectedBloo1Categories, setSelectedBloo1Categories] = useState<string[]>(['803', '1212', '537']);
+  const [selectedBloo1Categories, setSelectedBloo1Categories] = useState<string[]>(['httpstheblooshop1496458051', '220', '1212', '26', '497', '656', '1447', '716']);
 
   const [genderFixProgress, setGenderFixProgress] = useState<{
     status: 'idle' | 'running' | 'completed' | 'error';
@@ -1377,7 +1377,6 @@ export default function Admin() {
   };
 
   const ALL_FASHION_CATEGORIES = [
-    '803',
     'httpstheblooshop1496458051',
     '220',
     '1212',
@@ -1423,7 +1422,7 @@ export default function Admin() {
   const resumeBloo1Crawl = () => startBloo1Crawl(undefined, true);
 
   const startFullFashionCrawl = async () => {
-    if (!window.confirm("패션 전체 카테고리(의류/신발/가방/잡화/셀럽 남성+여성, 총 9개)를 처음부터 크롤링합니다.\n이미 저장된 상품은 자동으로 건너뜁니다. 계속하시겠습니까?")) return;
+    if (!window.confirm("패션 전체 카테고리(의류/신발/가방/잡화 남성+여성, 총 8개)를 처음부터 크롤링합니다.\n셀럽(803)은 포함되지 않습니다. 계속하시겠습니까?")) return;
     setSelectedBloo1Categories(ALL_FASHION_CATEGORIES);
     await startBloo1Crawl(ALL_FASHION_CATEGORIES);
   };
@@ -8097,7 +8096,7 @@ export default function Admin() {
                     })}
                   </div>
                   <div className="flex gap-2 mt-2 flex-wrap">
-                    <button onClick={() => setSelectedBloo1Categories(['803', 'httpstheblooshop1496458051', '220', '1212', '26', '497', '656', '1447', '716', '412', '413', '415', '1337', '416', '417', '418', '419'])} className="text-xs text-violet-600 hover:underline">전체 선택</button>
+                    <button onClick={() => setSelectedBloo1Categories(['httpstheblooshop1496458051', '220', '1212', '26', '497', '656', '1447', '716', '412', '413', '415', '1337', '416', '417', '418', '419'])} className="text-xs text-violet-600 hover:underline">전체 선택</button>
                     <span className="text-xs text-gray-300">|</span>
                     <button onClick={() => setSelectedBloo1Categories(['412', '413', '415', '1337', '416', '417', '418', '419'])} className="text-xs text-amber-600 hover:underline">시계만 선택</button>
                     <span className="text-xs text-gray-300">|</span>
@@ -8182,7 +8181,9 @@ export default function Admin() {
                   <p>• bloostore1.co.kr AJAX API에서 상품명/이미지/가격을 페이지 끝까지 수집합니다.</p>
                   <p>• 상품명에서 카테고리(가방/신발/지갑/의류/시계 등)와 브랜드를 자동 추론합니다.</p>
                   <p>• sourceIdx 기준으로 중복 저장을 방지하며, 3개 카테고리 모두 선택 시 전체 상품을 커버합니다.</p>
-                  <p>• 기본값: 셀럽(803) + 남성(1212) + 여성(537) 모두 선택 = 전체 상품 수집.</p>
+                  <p>• 기본값: 남성/여성 의류·신발·가방·패션잡화 8개 카테고리 선택 = 전체 상품 수집.</p>
+                  <p>• 셀럽(803)은 선택적으로 추가 가능. 성별 카테고리 먼저 크롤 후 나머지 상품만 보완합니다.</p>
+                  <p>• 이미 DB에 있는 공용(셀럽) 상품은 올바른 성별/카테고리로 자동 업데이트됩니다.</p>
                 </div>
               </div>
             </div>
