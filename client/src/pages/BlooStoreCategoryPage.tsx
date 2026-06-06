@@ -160,14 +160,14 @@ const PAGE_CONFIGS: Record<string, PageConfig> = {
     iconImageDesktop: "thumbnail/20231211/b8512dc2d816c.jpg",
     iconImageMobile: "thumbnail/20240116/26132c6c33b65.jpg",
     icons: [
-      { label: "지갑",          filter: { category: "accessories", search: "지갑" } },
-      { label: "모자",          filter: { category: "accessories", search: "모자" } },
-      { label: "벨트",          filter: { category: "accessories", search: "벨트" } },
-      { label: "머플러",        filter: { category: "accessories", search: "스카프" } },
-      { label: "팔찌",          filter: { category: "accessories", search: "팔찌" } },
-      { label: "목걸이",        filter: { category: "accessories", search: "목걸이" } },
-      { label: "반지",          filter: { category: "accessories", search: "반지" } },
-      { label: "키링",          filter: { category: "accessories", search: "키링" } },
+      { label: "지갑",          filter: { search: "지갑" } },
+      { label: "모자",          filter: { search: "모자" } },
+      { label: "벨트",          filter: { search: "벨트" } },
+      { label: "머플러",        filter: { search: "스카프" } },
+      { label: "팔찌",          filter: { search: "팔찌" } },
+      { label: "목걸이",        filter: { search: "목걸이" } },
+      { label: "반지",          filter: { search: "반지" } },
+      { label: "키링",          filter: { search: "키링" } },
     ],
     pills: [
       { label: "전체보기" },
@@ -295,14 +295,14 @@ const PAGE_CONFIGS: Record<string, PageConfig> = {
     iconImageDesktop: "thumbnail/20231212/bd099fb6b9a5e.jpg",
     iconImageMobile: "thumbnail/20240115/8e926bbd9078e.jpg",
     icons: [
-      { label: "지갑",          filter: { category: "accessories", search: "지갑" } },
-      { label: "모자",          filter: { category: "accessories", search: "모자" } },
-      { label: "벨트",          filter: { category: "accessories", search: "벨트" } },
-      { label: "스카프/머플러", filter: { category: "accessories", search: "스카프" } },
-      { label: "팔찌",          filter: { category: "accessories", search: "팔찌" } },
-      { label: "목걸이",        filter: { category: "accessories", search: "목걸이" } },
-      { label: "반지",          filter: { category: "accessories", search: "반지" } },
-      { label: "키링",          filter: { category: "accessories", search: "키링" } },
+      { label: "지갑",          filter: { search: "지갑" } },
+      { label: "모자",          filter: { search: "모자" } },
+      { label: "벨트",          filter: { search: "벨트" } },
+      { label: "스카프/머플러", filter: { search: "스카프" } },
+      { label: "팔찌",          filter: { search: "팔찌" } },
+      { label: "목걸이",        filter: { search: "목걸이" } },
+      { label: "반지",          filter: { search: "반지" } },
+      { label: "키링",          filter: { search: "키링" } },
     ],
     pills: [
       { label: "전체보기" },
@@ -576,8 +576,8 @@ export default function BlooStoreCategoryPage({ pageId }: { pageId: string }) {
     const p = new URLSearchParams();
     if (config) {
       p.set("gender", config.gender);
-      // Use categories (multi) if available and no specific icon filter is selected
-      if (!resolvedFilter.category && config.categories && config.categories.length > 0 && !resolvedFilter.brandId && !resolvedFilter.search) {
+      // Use categories (multi) if available — always, even when search/brandId filter is active
+      if (!resolvedFilter.category && config.categories && config.categories.length > 0) {
         p.set("categories", config.categories.join(","));
       } else if (!resolvedFilter.category && config.category) {
         p.set("category", config.category);

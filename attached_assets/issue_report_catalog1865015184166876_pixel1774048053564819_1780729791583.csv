@@ -1,0 +1,6 @@
+Issue Type,Event Name,Total Received,Sample Value,Sample Type,More Info,How To Fix
+Events not received,PURCHASE,0,,,Your pixel might not be sending events from your website. Check that it's set up correctly.,Learn how to use the Meta Pixel Helper: https://developers.facebook.com/docs/meta-pixel/support/pixel-helper
+Unmatched events,VIEW_CONTENT,1,e567c2d1-dfa2-46e7-aabd-99ef53189d44,CONTENT_ID,카탈로그에 이 콘텐츠 ID의 제품을 추가하거나 이벤트에서 올바른 콘텐츠 ID를 전송하고 있는지 확인하세요.,카탈로그에 제품을 추가하는 방법 알아보기: https://www.facebook.com/business/help/384041892421495?id=725943027795860
+Unmatched events,VIEW_CONTENT,1,https://bloostore.net/product/e567c2d1-dfa2-46e7-aabd-99ef53189d44,SOURCE_URL,카탈로그에 이 콘텐츠 ID의 제품을 추가하거나 이벤트에서 올바른 콘텐츠 ID를 전송하고 있는지 확인하세요.,카탈로그에 제품을 추가하는 방법 알아보기: https://www.facebook.com/business/help/384041892421495?id=725943027795860
+Missing content ID,PURCHASE,1,https://bloostore.net/order/e567c2d1-dfa2-46e7-aabd-99ef53189d44?quantity=1&option=사이즈:225,SOURCE_URL,이 카탈로그에 제품을 일치시키려면 웹사이트에서 반응을 보인 제품의 콘텐츠 ID가 필요합니다.,카탈로그의 이벤트 데이터 소스 문제를 해결하는 방법 알아보기: https://www.facebook.com/business/help/644889989181423?id=725943027795860&helpref=faq_content
+Events not received,ADD_TO_CART,0,,,Your pixel might not be sending events from your website. Check that it's set up correctly.,Learn how to use the Meta Pixel Helper: https://developers.facebook.com/docs/meta-pixel/support/pixel-helper

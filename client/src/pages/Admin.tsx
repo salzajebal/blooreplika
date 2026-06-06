@@ -4685,7 +4685,7 @@ export default function Admin() {
               {/* 성별 기반 카테고리 재분류 (ca_id 접두어 기준) */}
               <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-2">
                 <p className="text-sm font-medium text-purple-800">성별 카테고리 재분류 (핵심)</p>
-                <p className="text-xs text-purple-600">bagstyle 남성(b0xx)/여성(c0xx) ca_id 기준으로 categoryId와 gender를 정확하게 설정합니다. 기존 상품은 삭제되지 않습니다.</p>
+                <p className="text-xs text-purple-600">bloostore1 남성(b0xx)/여성(c0xx) ca_id 기준으로 categoryId와 gender를 정확하게 설정합니다. 기존 상품은 삭제되지 않습니다.</p>
                 <Button
                   data-testid="button-gender-reclassify"
                   onClick={runGenderReclassify}
