@@ -42,7 +42,7 @@ export default function ProductDetail() {
           // Meta Pixel: ViewContent
           if ((window as any).fbq) {
             (window as any).fbq("track", "ViewContent", {
-              content_ids: [String(d.data.id)],
+              content_ids: [String(d.data.sourceIdx ?? d.data.id)],
               content_name: d.data.name,
               content_type: "product",
               value: Number(d.data.price),
@@ -138,7 +138,7 @@ export default function ProductDetail() {
     // Meta Pixel: AddToCart
     if ((window as any).fbq) {
       (window as any).fbq("track", "AddToCart", {
-        content_ids: [String(product.id)],
+        content_ids: [String((product as any).sourceIdx ?? product.id)],
         content_name: product.name,
         content_type: "product",
         value: finalPrice,

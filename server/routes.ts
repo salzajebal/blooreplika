@@ -2727,7 +2727,7 @@ export async function registerRoutes(
   }
 
   // ==================== META CONVERSIONS API ====================
-  async function sendMetaCapiPurchase(order: { orderNumber: string; totalAmount: number | null; memberEmail?: string | null; memberPhone?: string | null; }): Promise<void> {
+  async function sendMetaCapiPurchase(order: { orderNumber: string; totalAmount: number | null; memberEmail?: string | null; memberPhone?: string | null; contentIds?: string[]; }): Promise<void> {
     try {
       const token = process.env.META_CAPI_ACCESS_TOKEN;
       if (!token) return;
@@ -2747,6 +2747,7 @@ export async function registerRoutes(
             value: order.totalAmount ?? 0,
             currency: "KRW",
             order_id: order.orderNumber,
+            ...(order.contentIds && order.contentIds.length > 0 ? { content_ids: order.contentIds, content_type: "product" } : {}),
           },
         }],
       };
@@ -4072,7 +4073,14 @@ export async function registerRoutes(
         if (orderData.paymentMethod === "bank" && order.memberPhone) {
           sendBankTransferSMS(order).catch(() => {});
         }
-        sendMetaCapiPurchase({ orderNumber: order.orderNumber, totalAmount: order.totalAmount, memberEmail: order.memberEmail, memberPhone: order.memberPhone }).catch(() => {});
+        (async () => {
+          try {
+            const productIds = cartItems.map((i: any) => i.productId).filter(Boolean);
+            const products = await Promise.all(productIds.map((pid: string) => storage.getProduct(pid)));
+            const contentIds = products.filter(Boolean).map((p: any) => String(p.sourceIdx ?? p.id));
+            await sendMetaCapiPurchase({ orderNumber: order.orderNumber, totalAmount: order.totalAmount, memberEmail: order.memberEmail, memberPhone: order.memberPhone, contentIds });
+          } catch { sendMetaCapiPurchase({ orderNumber: order.orderNumber, totalAmount: order.totalAmount, memberEmail: order.memberEmail, memberPhone: order.memberPhone }).catch(() => {}); }
+        })();
         return res.status(201).json({ success: true, data: order });
       }
       
@@ -4106,7 +4114,13 @@ export async function registerRoutes(
       if (order.paymentMethod === "bank" && order.memberPhone) {
         sendBankTransferSMS(order).catch(() => {});
       }
-      sendMetaCapiPurchase({ orderNumber: order.orderNumber, totalAmount: order.totalAmount, memberEmail: order.memberEmail, memberPhone: order.memberPhone }).catch(() => {});
+      (async () => {
+        try {
+          const p = order.productId ? await storage.getProduct(order.productId) : null;
+          const contentIds = p ? [String((p as any).sourceIdx ?? p.id)] : [];
+          await sendMetaCapiPurchase({ orderNumber: order.orderNumber, totalAmount: order.totalAmount, memberEmail: order.memberEmail, memberPhone: order.memberPhone, contentIds });
+        } catch { sendMetaCapiPurchase({ orderNumber: order.orderNumber, totalAmount: order.totalAmount, memberEmail: order.memberEmail, memberPhone: order.memberPhone }).catch(() => {}); }
+      })();
 
       res.status(201).json({ success: true, data: order });
     } catch (error) {

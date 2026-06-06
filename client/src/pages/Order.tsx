@@ -237,7 +237,7 @@ export default function Order() {
           // Meta Pixel: InitiateCheckout (단일 상품)
           if ((window as any).fbq) {
             (window as any).fbq("track", "InitiateCheckout", {
-              content_ids: [String(data.data.id)],
+              content_ids: [String(data.data.sourceIdx ?? data.data.id)],
               content_name: data.data.name,
               content_type: "product",
               value: Number(data.data.price),
@@ -549,11 +549,15 @@ export default function Order() {
         setOrderComplete(true);
         // Meta Pixel: Purchase (브라우저)
         if ((window as any).fbq) {
+          const purchaseContentIds = isCartOrder
+            ? cartItems.map((i: any) => String(i.sourceIdx ?? i.id))
+            : [String((product as any)?.sourceIdx ?? product?.id ?? id)];
           (window as any).fbq("track", "Purchase", {
+            content_ids: purchaseContentIds,
+            content_type: "product",
             value: calculateTotalAmount(),
             currency: "KRW",
             order_id: createdOrderNumber,
-            content_type: "product",
           });
         }
         // 비회원도 나중에 조회할 수 있도록 주문번호 localStorage 저장
