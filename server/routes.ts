@@ -5952,38 +5952,63 @@ export async function registerRoutes(
           const pageSize = 50;
           let hasMore = true;
           let pageErrStreak = 0;
+          let ssrTotalPages = 0; // 페이지 1 HTML에서 파악한 총 페이지 수
 
           while (hasMore && !bloo1ShouldStop) {
             try {
-              const url = cat.blooCategoryId
-                ? `https://bloostore1.co.kr/ajax/get_shop_list_view.cm?page=${page}&pagesize=${pageSize}&category=${cat.blooCategoryId}&sort=recent&menu_url=/${cat.menuUrl}/`
-                : `https://bloostore1.co.kr/ajax/get_shop_list_view.cm?page=${page}&pagesize=${pageSize}&menu_url=${cat.menuUrl}&sort=recent`;
-              const bloo1Controller = new AbortController();
-              const bloo1Timeout = setTimeout(() => bloo1Controller.abort(), 15000);
-              let response: globalThis.Response;
-              try {
-                response = await fetch(url, { headers: bloo1Headers, signal: bloo1Controller.signal });
-              } finally {
-                clearTimeout(bloo1Timeout);
+              let $: ReturnType<typeof cheerio.load>;
+
+              if (page === 1) {
+                // ── 1페이지: HTML 직접 파싱 (SSR 렌더링) ──────────────────────
+                const htmlUrl = `https://bloostore1.co.kr/${cat.menuUrl}`;
+                const ctrl = new AbortController();
+                const timer = setTimeout(() => ctrl.abort(), 20000);
+                let html = '';
+                try {
+                  const r = await fetch(htmlUrl, { headers: bloo1Headers, signal: ctrl.signal });
+                  if (!r.ok) { hasMore = false; break; }
+                  html = await r.text();
+                } finally { clearTimeout(timer); }
+
+                // 총 페이지 수 파악 (var page_count = N)
+                const pcMatch = html.match(/var\s+page_count\s*=\s*(\d+)/);
+                ssrTotalPages = pcMatch ? parseInt(pcMatch[1]) : 0;
+
+                $ = cheerio.load(html);
+              } else {
+                // ── 2페이지+: AJAX ────────────────────────────────────────────
+                const ajaxUrl = cat.blooCategoryId
+                  ? `https://bloostore1.co.kr/ajax/get_shop_list_view.cm?page=${page}&pagesize=${pageSize}&category=${cat.blooCategoryId}&sort=recent&menu_url=/${cat.menuUrl}/`
+                  : `https://bloostore1.co.kr/ajax/get_shop_list_view.cm?page=${page}&pagesize=${pageSize}&menu_url=${cat.menuUrl}&sort=recent`;
+                const bloo1Controller = new AbortController();
+                const bloo1Timeout = setTimeout(() => bloo1Controller.abort(), 15000);
+                let response: globalThis.Response;
+                try {
+                  response = await fetch(ajaxUrl, { headers: bloo1Headers, signal: bloo1Controller.signal });
+                } finally { clearTimeout(bloo1Timeout); }
+
+                if (!response.ok) {
+                  pageErrStreak++;
+                  if (pageErrStreak >= 3) { hasMore = false; }
+                  else { await delay(2000 * pageErrStreak); }
+                  continue;
+                }
+                pageErrStreak = 0;
+
+                const data = await response.json() as { html: string; msg: string };
+                if (data.msg !== 'SUCCESS' || !data.html || data.html.trim().length < 10) {
+                  hasMore = false;
+                  break;
+                }
+                $ = cheerio.load(data.html);
               }
 
-              if (!response.ok) {
-                pageErrStreak++;
-                if (pageErrStreak >= 3) { hasMore = false; }
-                else { await delay(2000 * pageErrStreak); }
-                continue;
-              }
-              pageErrStreak = 0;
-
-              const data = await response.json() as { html: string; msg: string };
-              if (data.msg !== 'SUCCESS' || !data.html || data.html.trim().length < 10) {
+              const elements = $('[data-product-properties]');
+              if (elements.length === 0) {
+                // page_count 알고 있으면 그 기준으로 종료, 아니면 그냥 종료
                 hasMore = false;
                 break;
               }
-
-              const $ = cheerio.load(data.html);
-              const elements = $('[data-product-properties]');
-              if (elements.length === 0) { hasMore = false; break; }
 
               bloo1Progress.message = `[${cat.name}] 페이지 ${page} 처리 중 (${elements.length}개)...`;
 
@@ -6126,7 +6151,15 @@ export async function registerRoutes(
                 }
               }
 
-              if (elements.length < pageSize) { hasMore = false; }
+              if (page === 1) {
+                // SSR 첫 페이지: page_count로 더 있는지 판단
+                if (ssrTotalPages <= 1) { hasMore = false; }
+              } else {
+                // AJAX 페이지: 가져온 수가 pageSize보다 적으면 마지막
+                if (elements.length < pageSize) { hasMore = false; }
+                // page_count 알고 있으면 초과 시 종료
+                if (ssrTotalPages > 0 && page >= ssrTotalPages) { hasMore = false; }
+              }
               page++;
               await delay(350);
             } catch (pageErr: any) {
