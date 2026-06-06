@@ -6078,8 +6078,35 @@ export async function registerRoutes(
 
                   const imageUrl = image_url ? image_url.split('?')[0] : '';
                   // fixedCategoryId가 있으면 직접 사용, 없으면 카테고리별 추론
-                  const subCat = cat.fixedCategoryId
+                  const rawCat = cat.fixedCategoryId
                     ?? (cat.isCeleb ? inferCelebCategory(name) : inferAccessoryCategory(name));
+                  // fixedCategoryId가 있어도 상품명 키워드가 명백히 다른 카테고리면 덮어쓰기
+                  const overrideCategoryByKeyword = (base: string, n: string): string => {
+                    const jewelKw = ['목걸이', '귀걸이', '이어링', '반지', '팔찌', '브로치', '펜던트', '주얼리', '쥬얼리', '참', '참팔찌', '네크리스', '체인', '초커'];
+                    if (jewelKw.some(k => n.includes(k))) return 'jewelry';
+                    const walletKw = ['지갑', '카드지갑', '장지갑', '반지갑', '머니클립', '카드홀더'];
+                    if (walletKw.some(k => n.includes(k))) return 'wallets';
+                    const beltKw = ['벨트'];
+                    if (beltKw.some(k => n.includes(k))) return 'belts';
+                    const glassKw = ['선글라스', '안경테', '아이웨어'];
+                    if (glassKw.some(k => n.includes(k))) return 'sunglasses';
+                    const watchKw = ['시계', ' 워치'];
+                    if (watchKw.some(k => n.toLowerCase().includes(k))) return 'watches';
+                    // shoes 카테고리인데 의류 키워드
+                    if (base === 'shoes') {
+                      const clothingKw = ['티셔츠', '후드', '자켓', '재킷', '코트', '팬츠', '바지', '스웨터', '니트', '원피스', '스커트', '블라우스', '셔츠', '점퍼', '패딩'];
+                      if (clothingKw.some(k => n.includes(k))) return 'clothing';
+                    }
+                    // bags 카테고리인데 의류/신발 키워드
+                    if (base === 'bags') {
+                      const shoeKw = ['스니커즈', '스니커', '구두', '로퍼', '부츠', '샌들', '슬리퍼', '뮬', '펌프스', '슈즈', '워커'];
+                      if (shoeKw.some(k => n.includes(k))) return 'shoes';
+                      const clothingKw2 = ['티셔츠', '후드', '자켓', '재킷', '코트', '팬츠', '바지', '스웨터', '니트', '원피스', '스커트', '블라우스', '셔츠', '점퍼', '패딩'];
+                      if (clothingKw2.some(k => n.includes(k))) return 'clothing';
+                    }
+                    return base;
+                  };
+                  const subCat = overrideCategoryByKeyword(rawCat, name);
                   const brandId = matchBrandFromText(name, allBrands);
                   // 성별 변환 (bloo1은 '남성'/'여성' → 'men'/'women')
                   const genderNorm = cat.gender === '남성' ? 'men' : cat.gender === '여성' ? 'women' : cat.gender;
