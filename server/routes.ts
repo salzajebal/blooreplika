@@ -3837,8 +3837,7 @@ export async function registerRoutes(
 
   app.put("/api/notices/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
-      const partialSchema = insertNoticeSchema.partial();
-      const validatedData = partialSchema.parse(req.body);
+      const validatedData = updateNoticeSchema.parse(req.body);
       const notice = await storage.updateNotice(req.params.id, validatedData);
       if (!notice) {
         return res.status(404).json({ success: false, error: "공지사항을 찾을 수 없습니다." });

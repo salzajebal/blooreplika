@@ -310,7 +310,6 @@ const SIDEBAR_CATEGORIES = [
     label: "커뮤니티",
     path: "#",
     subs: [
-      { id: "sameday", label: "오늘출발", path: "/products/sameday", hasBrands: false },
       { id: "blog", label: "썸머", path: "/blog", hasBrands: false },
     ],
   },

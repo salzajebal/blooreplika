@@ -42,7 +42,6 @@ const SIDEBAR_NAV = [
       { label: "회원/제품 문의", path: "/support" },
     ],
   },
-  { label: "오늘출발", path: "/sameday" },
   { label: "썸머", path: "/summer" },
 ];
 

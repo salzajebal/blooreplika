@@ -9,7 +9,6 @@ const MOBILE_SUB_NAV = [
   { label: "실시간 검수", path: "/inspection", color: "text-[#00a050] font-medium", dot: true },
   { label: "리뷰", path: "/reviews", color: "" },
   { label: "썸머", path: "/blog", color: "" },
-  { label: "오늘출발", path: "/products/sameday", color: "" },
   { label: "크롬하츠", path: "/products/clothing?brand=Chrome+Hearts", color: "" },
 ];
 
@@ -421,7 +420,6 @@ export function Header() {
                   </div>
                 )}
               </div>
-              <Link href="/products/sameday" onClick={() => setMenuOpen(false)} className="w-full text-left px-5 py-3.5 text-[14px] text-white/90 hover:text-white transition-colors border-b border-white/10">오늘출발</Link>
               <Link href="/blog" onClick={() => setMenuOpen(false)} className="w-full text-left px-5 py-3.5 text-[14px] text-white/90 hover:text-white transition-colors border-b border-white/10">썸머</Link>
             </div>
 

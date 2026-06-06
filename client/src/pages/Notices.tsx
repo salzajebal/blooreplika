@@ -51,9 +51,6 @@ const CommunitySidebar = ({ active }: { active: "notices" | "faq" | "reviews" })
     </div>
 
     <div className="mb-0.5">
-      <Link href="/products/sameday" className="block text-[14px] py-1.5 pl-5 border-l-2 border-transparent text-gray-600 hover:text-gray-900 transition-colors">오늘출발</Link>
-    </div>
-    <div className="mb-0.5">
       <Link href="/blog" className="block text-[14px] py-1.5 pl-5 border-l-2 border-transparent text-gray-600 hover:text-gray-900 transition-colors">썸머</Link>
     </div>
   </aside>

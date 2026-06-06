@@ -786,9 +786,6 @@ export default function BlooStoreCategoryPage({ pageId }: { pageId: string }) {
       <Link href="/notices">
         <div className="py-2 px-3 cursor-pointer text-gray-500 hover:text-black">커뮤니티</div>
       </Link>
-      <Link href="/products?same_day=true">
-        <div className="py-2 px-3 cursor-pointer text-gray-500 hover:text-black">오늘출발</div>
-      </Link>
       <Link href="/choice">
         <div className="py-2 px-3 cursor-pointer text-gray-500 hover:text-black">썸머</div>
       </Link>

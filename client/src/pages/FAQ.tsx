@@ -28,10 +28,9 @@ const FAQ_DATA: Record<string, { id: number; question: string; author: string; v
     { id: 104, question: "정품과 차이점이 있나요?", author: "BLOO", views: 5321, likes: 1203, answer: "실물 검수 결과 외관상 차이를 발견하기 어렵습니다. 1:1 비교 게시판에서 직접 비교해 보실 수 있습니다." },
   ],
   shipping: [
-    { id: 201, question: "배송은 얼마나 걸리나요?", author: "BLOO", views: 5234, likes: 1021, answer: "결제 확인 후 1-3 영업일 이내 발송되며, 국내 배송은 통상 2-3일 소요됩니다." },
+    { id: 201, question: "배송은 얼마나 걸리나요?", author: "BLOO", views: 5234, likes: 1021, answer: "결제 확인 후 1-3 영업일 이내 발송되며, 해외 배송은 통상 기본적으로 14일 소요됩니다." },
     { id: 202, question: "실시간 검수란 무엇인가요?", author: "BLOO", views: 3210, likes: 678, answer: "배송 전 전문 검수팀이 제품을 꼼꼼히 검사하는 서비스입니다. 검수 완료 사진을 카카오톡으로 발송해 드립니다." },
-    { id: 203, question: "해외 배송도 가능한가요?", author: "BLOO", views: 1543, likes: 89, answer: "현재 국내 배송만 가능합니다. 해외 배송은 준비 중이니 공지사항을 확인해 주세요." },
-    { id: 204, question: "배송 조회는 어떻게 하나요?", author: "BLOO", views: 2341, likes: 156, answer: "발송 후 문자로 전달된 운송장 번호로 택배사 홈페이지에서 조회하실 수 있습니다." },
+    { id: 204, question: "배송 조회는 어떻게 하나요?", author: "BLOO", views: 2341, likes: 156, answer: "1:1문의 또는 홈페이지에서 조회하실 수 있습니다." },
   ],
   exchange: [
     { id: 301, question: "교환/반품이 가능한가요?", author: "BLOO", views: 3421, likes: 234, answer: "제품 수령 후 7일 이내 미사용 상태에서 교환/반품이 가능합니다. 단, 고객 변심의 경우 왕복 배송비가 발생합니다." },
@@ -132,7 +131,6 @@ export default function FAQ() {
 
           {/* 오늘출발 / 썸머 */}
           <div className="mb-0.5">
-            <Link href="/products/sameday" className="block text-[14px] py-1.5 pl-5 border-l-2 border-transparent text-gray-600 hover:text-gray-900 transition-colors">오늘출발</Link>
           </div>
           <div className="mb-0.5">
             <Link href="/blog" className="block text-[14px] py-1.5 pl-5 border-l-2 border-transparent text-gray-600 hover:text-gray-900 transition-colors">썸머</Link>

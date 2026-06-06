@@ -418,10 +418,6 @@ export default function BlooGenderPage({ gender }: { gender: "남성" | "여성"
       <Link href="/notices">
         <div className="py-2 px-3 cursor-pointer text-gray-500 hover:text-black">커뮤니티</div>
       </Link>
-      {/* 오늘출발 */}
-      <Link href="/products?same_day=true">
-        <div className="py-2 px-3 cursor-pointer text-gray-500 hover:text-black">오늘출발</div>
-      </Link>
       {/* 썸머 */}
       <Link href="/choice">
         <div className="py-2 px-3 cursor-pointer text-gray-500 hover:text-black">썸머</div>
