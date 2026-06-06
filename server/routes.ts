@@ -6113,7 +6113,24 @@ export async function registerRoutes(
                       continue;
                     }
 
-                    // 이미 성별이 올바르게 설정된 경우 skip
+                    // 성별은 맞지만 categoryId가 다른 경우 → categoryId도 업데이트
+                    if (existing.categoryId !== subCat) {
+                      const subcatSlug = inferSubcatSlug(name.trim(), subCat, genderNorm);
+                      await storage.updateProduct(existing.id, {
+                        gender: genderNorm,
+                        categoryId: subCat,
+                        subcategoryId: subcatSlug || undefined,
+                        brandId: brandId || null,
+                        sourceUrl: `https://bloostore1.co.kr/${cat.menuUrl}?idx=${idx}`,
+                      } as any);
+                      existingSourceIdxMap.set(idx, { id: existing.id, gender: genderNorm, categoryId: subCat });
+                      totalInserted++;
+                      bloo1Progress.inserted = totalInserted;
+                      bloo1Progress.current = totalInserted + totalSkipped;
+                      continue;
+                    }
+
+                    // 성별·카테고리 모두 정확한 경우 skip
                     totalSkipped++;
                     bloo1Progress.skipped = totalSkipped;
                     continue;
