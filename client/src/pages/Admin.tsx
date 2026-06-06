@@ -8097,7 +8097,7 @@ export default function Admin() {
                 <div className="flex flex-wrap gap-3">
                   <Button
                     data-testid="button-start-bloo1-crawl"
-                    onClick={startBloo1Crawl}
+                    onClick={() => startBloo1Crawl()}
                     disabled={bloo1Progress.status === 'running' || selectedBloo1Categories.length === 0}
                     className="bg-violet-600 hover:bg-violet-700 text-white flex-1"
                   >
