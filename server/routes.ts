@@ -983,9 +983,9 @@ export async function registerRoutes(
       const B_MALE   = JSON.stringify({ colors: [], sizes: ['85','90','95','100','105','110','115'], extras: [] });
       const B_UNISEX = JSON.stringify({ colors: [], sizes: ['70','75','80','85','90','95','100','105','110','115'], extras: [] });
 
-      // gender 컬럼을 이름 패턴보다 우선 적용
-      const isFemale = `(gender = '여성' OR (gender IS NULL AND ${femalePattern}) OR (gender = '공용' AND ${femalePattern}))`;
-      const isMale   = `(gender = '남성' OR (gender IS NULL AND ${malePattern}))`;
+      // gender 컬럼 우선 적용 — 'men'/'women'(bloo1) 과 '남성'/'여성'(bagstyle) 모두 지원
+      const isFemale = `(gender IN ('women','여성') OR (gender IS NULL AND ${femalePattern}) OR (gender IN ('공용','공용') AND ${femalePattern}))`;
+      const isMale   = `(gender IN ('men','남성') OR (gender IS NULL AND ${malePattern}))`;
 
       const sql = `
         UPDATE products
