@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/layout/Header";
 import { ChevronDown, ChevronRight, Menu, X, Loader2 } from "lucide-react";
+import { useGlobalSale } from "@/hooks/use-global-sale";
 
 // ─── Bloostore1 image proxy ────────────────────────────────────────────────────
 function proxyImg(url: string) {
@@ -534,6 +535,7 @@ export default function BlooStoreCategoryPage({ pageId }: { pageId: string }) {
 
   const PAGE_SIZE = 60;
   const isWomen = config?.gender === "여성";
+  const { hasSale, calculateSalePrice } = useGlobalSale();
 
   // ── Brands ──
   const { data: brandsData } = useQuery<{ success: boolean; data: Brand[] }>({
@@ -905,8 +907,13 @@ export default function BlooStoreCategoryPage({ pageId }: { pageId: string }) {
                           <p className="text-[12px] md:text-[13px] text-gray-800 leading-tight line-clamp-2 break-keep">
                             {product.name}
                           </p>
-                          <p className="text-[13px] md:text-[14px] font-semibold text-gray-900 mt-1">
-                            {formatPrice(product.price)}
+                          {hasSale && (
+                            <p className="text-[11px] text-gray-400 line-through leading-tight">
+                              {formatPrice(product.price)}
+                            </p>
+                          )}
+                          <p className="text-[13px] md:text-[14px] font-semibold text-gray-900 mt-0.5">
+                            {formatPrice(hasSale ? calculateSalePrice(product.price) : product.price)}
                           </p>
                         </div>
                       </div>
