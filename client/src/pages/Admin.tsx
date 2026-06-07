@@ -2903,7 +2903,14 @@ export default function Admin() {
       const sizes = formData.optionSizes ? formData.optionSizes.split(",").map(s => s.trim()).filter(Boolean) : [];
       const colors = formData.optionColors ? formData.optionColors.split(",").map(s => s.trim()).filter(Boolean) : [];
       const { optionSizes: _os, optionColors: _oc, ...productData } = formData;
-      const submitData = { ...productData, options: (sizes.length > 0 || colors.length > 0) ? JSON.stringify({ sizes, colors, extras: [] }) : undefined };
+      const submitData = {
+        ...productData,
+        options: (sizes.length > 0 || colors.length > 0) ? JSON.stringify({ sizes, colors, extras: [] }) : undefined,
+        price: productData.price !== undefined && productData.price !== "" ? Number(productData.price) : undefined,
+        originalPrice: productData.originalPrice !== undefined && productData.originalPrice !== "" ? Number(productData.originalPrice) : undefined,
+        stock: productData.stock !== undefined && productData.stock !== "" ? Number(productData.stock) : undefined,
+        discountPercent: productData.discountPercent !== undefined && productData.discountPercent !== "" ? Number(productData.discountPercent) : undefined,
+      };
       const res = await fetchWithAuth("/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -2929,7 +2936,14 @@ export default function Admin() {
       const sizes = formData.optionSizes ? formData.optionSizes.split(",").map(s => s.trim()).filter(Boolean) : [];
       const colors = formData.optionColors ? formData.optionColors.split(",").map(s => s.trim()).filter(Boolean) : [];
       const { optionSizes: _os, optionColors: _oc, ...productData } = formData;
-      const submitData = { ...productData, options: (sizes.length > 0 || colors.length > 0) ? JSON.stringify({ sizes, colors, extras: [] }) : "" };
+      const submitData = {
+        ...productData,
+        options: (sizes.length > 0 || colors.length > 0) ? JSON.stringify({ sizes, colors, extras: [] }) : "",
+        price: productData.price !== undefined && productData.price !== "" ? Number(productData.price) : undefined,
+        originalPrice: productData.originalPrice !== undefined && productData.originalPrice !== "" ? Number(productData.originalPrice) : undefined,
+        stock: productData.stock !== undefined && productData.stock !== "" ? Number(productData.stock) : undefined,
+        discountPercent: productData.discountPercent !== undefined && productData.discountPercent !== "" ? Number(productData.discountPercent) : undefined,
+      };
       const res = await fetchWithAuth(`/api/products/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
