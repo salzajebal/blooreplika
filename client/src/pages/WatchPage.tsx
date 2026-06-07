@@ -69,7 +69,7 @@ const WATCH_BRANDS: WatchBrand[] = [
   {
     name: "샤넬",
     nameKo: "샤넬",
-    path: "/watch/샤넬",
+    path: "/419",
     imageUrl: "https://cdn-optimized.imweb.me/upload/S20230920d5d5cda65981a/94a686e75e855.jpg",
   },
 ];
