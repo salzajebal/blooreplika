@@ -11,7 +11,7 @@ import {
   Clock, Snowflake, Unlock, Settings, Link2, Upload,
   MessageCircle, Send, Circle, Volume2, Wallet, Download, Loader2, Search, Shield, Image, Globe, Gift,
   ChevronUp, ChevronDown, Type, Minus, MousePointer, Palette, GripVertical, Bot, LayoutGrid,
-  ShoppingCart, Trophy, TrendingDown
+  ShoppingCart, Trophy, TrendingDown, Filter, SlidersHorizontal
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Category, Member, Review, Notice, ChatConversation, ChatMessage, Order, CouponPayment } from "@shared/schema";
@@ -259,7 +259,7 @@ export default function Admin() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   
-  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff" | "contentSections" | "magazines" | "labs" | "quickMenu" | "ranking" | "telegram">("dashboard");
+  const [activeTab, setActiveTab] = useState<"dashboard" | "products" | "brands" | "members" | "orders" | "couponPayments" | "reviews" | "notices" | "chat" | "settings" | "staff" | "contentSections" | "magazines" | "labs" | "quickMenu" | "ranking" | "telegram" | "classify">("dashboard");
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [visitorStats, setVisitorStats] = useState<{ realtime: number; today: number; pageViews: number; recentPages: { page: string; count: number }[] } | null>(null);
   
@@ -286,6 +286,20 @@ export default function Admin() {
   const [bulkSectionId, setBulkSectionId] = useState<string>("");
   const [adminSections, setAdminSections] = useState<{ id: string; title: string; sectionType: string }[]>([]);
   const [bulkLoading, setBulkLoading] = useState(false);
+
+  // 상품 분류 탭 상태
+  const [clCategory, setClCategory] = useState<string>("shoes");
+  const [clGender, setClGender] = useState<string>("all");
+  const [clSearch, setClSearch] = useState<string>("");
+  const [clProducts, setClProducts] = useState<any[]>([]);
+  const [clTotal, setClTotal] = useState<number>(0);
+  const [clPage, setClPage] = useState<number>(1);
+  const [clLoading, setClLoading] = useState<boolean>(false);
+  const [clSelected, setClSelected] = useState<Set<string>>(new Set());
+  const [clTargetGender, setClTargetGender] = useState<string>("여성");
+  const [clTargetCategory, setClTargetCategory] = useState<string>("");
+  const [clApplying, setClApplying] = useState<boolean>(false);
+  const CL_LIMIT = 60;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -3766,6 +3780,15 @@ export default function Admin() {
               >
                 <Settings className="w-4 h-4 md:mr-2" />
                 <span className="hidden md:inline">설정</span>
+              </Button>
+              <Button
+                data-testid="tab-classify"
+                variant={activeTab === "classify" ? "default" : "outline"}
+                onClick={() => setActiveTab("classify")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "classify" ? "bg-emerald-500 hover:bg-emerald-600" : ""}`}
+              >
+                <Filter className="w-4 h-4 md:mr-2" />
+                <span className="hidden md:inline">상품 분류</span>
               </Button>
               <Button
                 data-testid="tab-staff"
@@ -8900,6 +8923,10 @@ export default function Admin() {
           </div>
         )}
 
+        {activeTab === "classify" && adminRole === "super_admin" && (
+          <ClassifyTab authToken={authToken} fetchWithAuth={fetchWithAuth} toast={toast} />
+        )}
+
         {activeTab === "staff" && adminRole === "super_admin" && (
           <div className="space-y-6">
             {/* 직원 접속 URL 안내 */}
@@ -11726,6 +11753,370 @@ function RankingAdminTab({ authToken }: { authToken: string }) {
                 </div>
               );
             })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ==================== 상품 분류 탭 ====================
+const CLASSIFY_CATEGORIES = [
+  { value: "shoes", label: "신발" },
+  { value: "clothing", label: "의류" },
+  { value: "bags", label: "가방" },
+  { value: "wallets", label: "지갑" },
+  { value: "jewelry", label: "쥬얼리/잡화" },
+  { value: "belts", label: "벨트" },
+  { value: "sunglasses", label: "선글라스" },
+  { value: "watches", label: "시계" },
+  { value: "golf", label: "골프" },
+  { value: "accessories", label: "악세서리" },
+];
+
+const CLASSIFY_GENDERS = [
+  { value: "all", label: "전체" },
+  { value: "남성", label: "남성" },
+  { value: "여성", label: "여성" },
+  { value: "공용", label: "공용" },
+  { value: "men", label: "men (영문)" },
+  { value: "women", label: "women (영문)" },
+  { value: "null", label: "미설정" },
+];
+
+const TARGET_GENDERS = [
+  { value: "남성", label: "남성" },
+  { value: "여성", label: "여성" },
+  { value: "공용", label: "공용" },
+  { value: "men", label: "men" },
+  { value: "women", label: "women" },
+];
+
+function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; fetchWithAuth: (url: string, options?: RequestInit) => Promise<Response>; toast: (opts: any) => void }) {
+  const [category, setCategory] = React.useState("shoes");
+  const [gender, setGender] = React.useState("all");
+  const [search, setSearch] = React.useState("");
+  const [searchInput, setSearchInput] = React.useState("");
+  const [products, setProducts] = React.useState<any[]>([]);
+  const [total, setTotal] = React.useState(0);
+  const [page, setPage] = React.useState(1);
+  const [loading, setLoading] = React.useState(false);
+  const [selected, setSelected] = React.useState<Set<string>>(new Set());
+  const [targetGender, setTargetGender] = React.useState("여성");
+  const [targetCategory, setTargetCategory] = React.useState("");
+  const [applying, setApplying] = React.useState(false);
+  const LIMIT = 60;
+
+  const loadProducts = React.useCallback(async (pg = 1, cat = category, gen = gender, q = search) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("limit", String(LIMIT));
+      params.set("offset", String((pg - 1) * LIMIT));
+      if (cat) params.set("categoryId", cat);
+      if (gen && gen !== "all" && gen !== "null") params.set("gender", gen);
+      if (q) params.set("search", q);
+      const res = await fetchWithAuth(`/api/products?${params}`);
+      const data = await res.json();
+      const list = data.data || [];
+      const filteredList = gen === "null" ? list.filter((p: any) => !p.gender) : list;
+      setProducts(filteredList);
+      setTotal(gen === "null" ? filteredList.length : (data.total || 0));
+      setSelected(new Set());
+    } finally {
+      setLoading(false);
+    }
+  }, [category, gender, search]);
+
+  React.useEffect(() => { loadProducts(1, category, gender, search); }, [category, gender]);
+
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selected.size === products.length) setSelected(new Set());
+    else setSelected(new Set(products.map((p: any) => p.id)));
+  };
+
+  const applyBulk = async () => {
+    if (selected.size === 0) { toast({ title: "상품을 선택해주세요.", variant: "destructive" }); return; }
+    if (!targetGender && !targetCategory) { toast({ title: "변경할 성별 또는 카테고리를 선택해주세요.", variant: "destructive" }); return; }
+    setApplying(true);
+    const ids = Array.from(selected);
+    const body: any = {};
+    if (targetGender) body.gender = targetGender;
+    if (targetCategory) body.categoryId = targetCategory;
+    let ok = 0, fail = 0;
+    const BATCH = 50;
+    for (let i = 0; i < ids.length; i += BATCH) {
+      const batch = ids.slice(i, i + BATCH);
+      const results = await Promise.all(batch.map(id =>
+        fetchWithAuth(`/api/products/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+          .then(r => r.ok ? "ok" : "fail").catch(() => "fail")
+      ));
+      ok += results.filter(r => r === "ok").length;
+      fail += results.filter(r => r === "fail").length;
+    }
+    setApplying(false);
+    toast({ title: `완료: ${ok}개 성공${fail > 0 ? `, ${fail}개 실패` : ""}` });
+    loadProducts(page, category, gender, search);
+  };
+
+  const autoDetect = async () => {
+    if (!window.confirm(`현재 필터 상품 ${total}개에서 제품명으로 성별을 자동 감지하여 변경합니다.\n계속하시겠습니까?`)) return;
+    setApplying(true);
+
+    const FEMALE_KW = ["슬링백","힐프스","펌프스","뮬","발레리나","발레플랫","오픈토","앵글힐","키튼힐","웨지","미드힐","블록힐","여성","(W)","[여성]","여성용","ladies","womens","여성전용","힐 ","샌들 힐"];
+    const MALE_KW = ["남성","(M)","[남성]","남성용","mens","남성전용"];
+    const FEMALE_SKIPS = ["스니커즈","로퍼","옥스퍼드","더비","첼시","워커 부츠","첼시 부츠","하이탑","로우탑"];
+
+    // 전체 불러오기
+    let all: any[] = [];
+    let off = 0;
+    while (true) {
+      const params = new URLSearchParams({ categoryId: category, limit: "500", offset: String(off) });
+      const res = await fetchWithAuth(`/api/products?${params}`);
+      const data = await res.json();
+      const batch = data.data || [];
+      all = all.concat(batch);
+      off += batch.length;
+      if (batch.length < 500) break;
+    }
+
+    const toFemale = all.filter((p: any) => {
+      if (p.gender === "여성" || p.gender === "women") return false;
+      const n = p.name || "";
+      const isFemale = FEMALE_KW.some(k => n.includes(k));
+      const isMaleOverride = MALE_KW.some(k => n.includes(k));
+      const isNeutral = FEMALE_SKIPS.some(k => n.includes(k));
+      return isFemale && !isMaleOverride && !isNeutral;
+    });
+
+    const toMale = all.filter((p: any) => {
+      if (p.gender === "남성" || p.gender === "men") return false;
+      const n = p.name || "";
+      const isMale = MALE_KW.some(k => n.includes(k));
+      const isFemaleOverride = FEMALE_KW.some(k => n.includes(k));
+      return isMale && !isFemaleOverride;
+    });
+
+    let ok = 0;
+    const allChanges = [
+      ...toFemale.map((p: any) => ({ id: p.id, gender: "여성" })),
+      ...toMale.map((p: any) => ({ id: p.id, gender: "남성" })),
+    ];
+
+    const BATCH = 50;
+    for (let i = 0; i < allChanges.length; i += BATCH) {
+      const batch = allChanges.slice(i, i + BATCH);
+      const results = await Promise.all(batch.map(({ id, gender: g }) =>
+        fetchWithAuth(`/api/products/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ gender: g }) })
+          .then(r => r.ok ? "ok" : "fail").catch(() => "fail")
+      ));
+      ok += results.filter(r => r === "ok").length;
+    }
+
+    setApplying(false);
+    toast({ title: `자동 분류 완료: 여성 ${toFemale.length}개, 남성 ${toMale.length}개 변경` });
+    loadProducts(page, category, gender, search);
+  };
+
+  const totalPages = Math.ceil(total / LIMIT);
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center">
+            <SlidersHorizontal className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold">상품 분류 관리</h2>
+            <p className="text-sm text-gray-500">카테고리·성별 필터로 상품을 찾아 일괄 분류하세요</p>
+          </div>
+        </div>
+
+        {/* 필터 행 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div>
+            <label className="text-xs font-medium text-gray-600 mb-1 block">카테고리</label>
+            <select
+              value={category}
+              onChange={e => { setCategory(e.target.value); setPage(1); }}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+            >
+              {CLASSIFY_CATEGORIES.map(c => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600 mb-1 block">현재 성별</label>
+            <select
+              value={gender}
+              onChange={e => { setGender(e.target.value); setPage(1); }}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+            >
+              {CLASSIFY_GENDERS.map(g => (
+                <option key={g.value} value={g.value}>{g.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="md:col-span-2">
+            <label className="text-xs font-medium text-gray-600 mb-1 block">키워드 검색</label>
+            <form onSubmit={e => { e.preventDefault(); setSearch(searchInput); setPage(1); loadProducts(1, category, gender, searchInput); }} className="flex gap-2">
+              <input
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+                placeholder="제품명 검색..."
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-emerald-400"
+              />
+              <Button type="submit" size="sm" className="bg-emerald-500 hover:bg-emerald-600 text-white px-3">
+                <Search className="w-4 h-4" />
+              </Button>
+              {search && (
+                <Button type="button" size="sm" variant="outline" onClick={() => { setSearchInput(""); setSearch(""); loadProducts(1, category, gender, ""); }}>
+                  <X className="w-4 h-4" />
+                </Button>
+              )}
+            </form>
+          </div>
+        </div>
+
+        {/* 일괄 변경 행 */}
+        <div className="flex flex-wrap items-center gap-3 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
+          <span className="text-sm font-medium text-emerald-800">
+            {selected.size > 0 ? `${selected.size}개 선택됨` : "상품 선택 후 변경"}
+          </span>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-emerald-700">→ 성별:</label>
+            <select
+              value={targetGender}
+              onChange={e => setTargetGender(e.target.value)}
+              className="border border-emerald-200 rounded-lg px-2 py-1.5 text-sm bg-white"
+            >
+              <option value="">변경 안함</option>
+              {TARGET_GENDERS.map(g => (
+                <option key={g.value} value={g.value}>{g.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-emerald-700">→ 카테고리:</label>
+            <select
+              value={targetCategory}
+              onChange={e => setTargetCategory(e.target.value)}
+              className="border border-emerald-200 rounded-lg px-2 py-1.5 text-sm bg-white"
+            >
+              <option value="">변경 안함</option>
+              {CLASSIFY_CATEGORIES.map(c => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+          </div>
+          <Button
+            size="sm"
+            onClick={applyBulk}
+            disabled={applying || selected.size === 0}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+          >
+            {applying ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />적용 중...</> : <><Check className="w-4 h-4 mr-1" />일괄 변경</>}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={autoDetect}
+            disabled={applying}
+            className="border-orange-300 text-orange-700 hover:bg-orange-50"
+            title="제품명에서 여성/남성 키워드를 감지해 자동으로 성별을 분류합니다"
+          >
+            {applying ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Filter className="w-4 h-4 mr-1" />}
+            자동 감지 분류
+          </Button>
+        </div>
+      </div>
+
+      {/* 상품 목록 */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={selected.size === products.length && products.length > 0}
+              onChange={toggleAll}
+              className="w-4 h-4 rounded accent-emerald-500 cursor-pointer"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              전체 선택 <span className="text-gray-400">({products.length}개 / 총 {total.toLocaleString()}개)</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {totalPages > 1 && (
+              <>
+                <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => { setPage(p => p - 1); loadProducts(page - 1, category, gender, search); }}>
+                  ‹ 이전
+                </Button>
+                <span className="text-sm text-gray-500">{page} / {totalPages}</span>
+                <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => { setPage(p => p + 1); loadProducts(page + 1, category, gender, search); }}>
+                  다음 ›
+                </Button>
+              </>
+            )}
+            <Button size="sm" variant="outline" onClick={() => loadProducts(page, category, gender, search)}>
+              <RefreshCw className="w-3.5 h-3.5 mr-1" />새로고침
+            </Button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-20 text-gray-400">
+            <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p>상품이 없습니다</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-50">
+            {products.map((p: any) => (
+              <div
+                key={p.id}
+                className={`flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer ${selected.has(p.id) ? "bg-emerald-50" : ""}`}
+                onClick={() => toggleSelect(p.id)}
+              >
+                <input
+                  type="checkbox"
+                  checked={selected.has(p.id)}
+                  onChange={() => toggleSelect(p.id)}
+                  onClick={e => e.stopPropagation()}
+                  className="w-4 h-4 rounded accent-emerald-500 flex-shrink-0 cursor-pointer"
+                />
+                <img
+                  src={p.imageUrl || "https://via.placeholder.com/40"}
+                  alt={p.name}
+                  className="w-10 h-10 object-cover rounded-md flex-shrink-0 border border-gray-100"
+                  onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/40"; }}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">{p.name}</p>
+                  <p className="text-xs text-gray-400">{p.categoryId} · {Number(p.price || 0).toLocaleString()}원</p>
+                </div>
+                <span className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${
+                  p.gender === "여성" || p.gender === "women" ? "bg-pink-100 text-pink-700" :
+                  p.gender === "남성" || p.gender === "men" ? "bg-blue-100 text-blue-700" :
+                  p.gender === "공용" ? "bg-purple-100 text-purple-700" :
+                  "bg-gray-100 text-gray-500"
+                }`}>
+                  {p.gender || "미설정"}
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </div>
