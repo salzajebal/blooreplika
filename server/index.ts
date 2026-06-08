@@ -134,6 +134,7 @@ app.use((req, res, next) => {
       runCriticalNameFixes();
       runJewelryCaIdFix();
       runWatchBrandsSeed();
+      runGenderNormalization();
       runStartupMaintenance();
     },
   );
@@ -638,5 +639,32 @@ async function runStartupMaintenance() {
     log(`Maintenance done: ${brandsCreated} brands created, ${htmlFixed} names fixed, ${classified} brands classified out of ${allProducts.length} products`, 'maintenance');
   } catch (error) {
     console.error('[maintenance] Error:', error);
+  }
+}
+
+// 성별 값 정규화: men → 남성, women → 여성
+async function runGenderNormalization() {
+  try {
+    const { db } = await import('./db.js');
+    const { products } = await import('../shared/schema.js');
+    const { sql } = await import('drizzle-orm');
+
+    const menResult = await db.execute(
+      sql`UPDATE products SET gender = '남성' WHERE gender = 'men' OR gender = 'Men' OR gender = 'MEN'`
+    );
+    const womenResult = await db.execute(
+      sql`UPDATE products SET gender = '여성' WHERE gender = 'women' OR gender = 'Women' OR gender = 'WOMEN'`
+    );
+
+    const menCount = (menResult as any).rowCount ?? 0;
+    const womenCount = (womenResult as any).rowCount ?? 0;
+
+    if (menCount > 0 || womenCount > 0) {
+      log(`성별 정규화: men→남성 ${menCount}개, women→여성 ${womenCount}개 변환`, 'migration');
+    } else {
+      log('성별 정규화: 이미 모두 한국어로 설정됨', 'migration');
+    }
+  } catch (err: any) {
+    console.error('[migration] 성별 정규화 오류:', err.message);
   }
 }

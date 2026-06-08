@@ -11779,8 +11779,6 @@ const CLASSIFY_GENDERS_FILTER = [
   { value: "남성", label: "남성" },
   { value: "여성", label: "여성" },
   { value: "공용", label: "공용" },
-  { value: "men", label: "men" },
-  { value: "women", label: "women" },
   { value: "null", label: "미설정" },
 ];
 
@@ -11788,8 +11786,6 @@ const CLASSIFY_GENDER_OPTIONS = [
   { value: "남성", label: "남성" },
   { value: "여성", label: "여성" },
   { value: "공용", label: "공용" },
-  { value: "men", label: "men" },
-  { value: "women", label: "women" },
 ];
 
 // 여성화 의심 키워드
