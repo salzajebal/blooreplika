@@ -11788,10 +11788,23 @@ const CLASSIFY_GENDER_OPTIONS = [
   { value: "공용", label: "공용" },
 ];
 
-// 여성화 의심 키워드
+// 여성화 의심 키워드 (남성/공용 상품에 포함되면 의심)
 const FEMALE_SUSPECT_KW = ["슬링백","힐프스","펌프스","발레리나","발레 플랫","오픈토","키튼힐","웨지힐","미드힐","블록힐","앵클 힐","코어힐","여성","(W)/","[여성]","여성용","ladies","샌들 힐","뮬 힐"];
-// 의류 의심 키워드 (신발에 있으면 이상)
+// 의류 의심 키워드 (신발 카테고리에 있으면 이상 — 다른 카테고리엔 정상)
 const CLOTHING_IN_SHOES_KW = ["재킷","자켓","팬츠","바지","셔츠","블레이저","코트","점퍼","파카","맨투맨","스웨터","니트 셔츠","후드 집업"];
+
+// 의심 판단 로직 (재사용 가능한 순수 함수)
+function isSuspectProduct(p: any, scanCategory: string): boolean {
+  const n = p.name || "";
+  // ① 신발 카테고리에 있는데 의류 키워드가 포함 — 카테고리가 바뀌었으면 더 이상 의심 아님
+  const inScannedCategory = !p.categoryId || p.categoryId === scanCategory;
+  const hasClothingKw = scanCategory === "shoes" && inScannedCategory && CLOTHING_IN_SHOES_KW.some(k => n.includes(k));
+  // ② 남성/공용 분류인데 여성화 키워드 포함
+  const isMale = p.gender === "남성";
+  const isCommon = p.gender === "공용";
+  const hasFemaleKw = FEMALE_SUSPECT_KW.some(k => n.includes(k));
+  return hasClothingKw || (hasFemaleKw && (isMale || isCommon));
+}
 
 function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; fetchWithAuth: (url: string, options?: RequestInit) => Promise<Response>; toast: (opts: any) => void }) {
   const [category, setCategory] = React.useState("shoes");
@@ -11833,7 +11846,7 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
 
   React.useEffect(() => { loadProducts(1, category, gender, search); }, [category, gender]);
 
-  // 의심 제품 감지: 현재 카테고리 전체 스캔 후 의심 목록을 products에 직접 설정
+  // 의심 제품 감지: 현재 카테고리 전체 스캔 (isSuspectProduct 함수 재사용)
   const detectSuspects = async () => {
     setDetectingSuspects(true);
     setSuspectIds(new Set());
@@ -11852,12 +11865,7 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
       const ids = new Set<string>();
       const suspectList: any[] = [];
       all.forEach((p: any) => {
-        const n = p.name || "";
-        const hasClothingKw = CLOTHING_IN_SHOES_KW.some(k => n.includes(k));
-        const isMale = p.gender === "남성" || p.gender === "men";
-        const isCommon = p.gender === "공용";
-        const hasFemaleKw = FEMALE_SUSPECT_KW.some(k => n.includes(k));
-        if (hasClothingKw || (hasFemaleKw && (isMale || isCommon))) {
+        if (isSuspectProduct(p, category)) {
           ids.add(p.id);
           suspectList.push(p);
         }
@@ -11872,7 +11880,14 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
     }
   };
 
-  // 인라인 즉시 저장
+  // suspectAll이 줄어서 현재 페이지가 비면 이전 페이지로 이동
+  React.useEffect(() => {
+    if (!suspectOnly || suspectAll.length === 0) return;
+    const maxPage = Math.max(1, Math.ceil(suspectAll.length / LIMIT));
+    if (suspectPage > maxPage) setSuspectPage(maxPage);
+  }, [suspectAll.length, suspectOnly]);
+
+  // 인라인 즉시 저장 + 의심 해소 시 목록에서 즉시 제거
   const saveField = async (productId: string, field: "gender" | "categoryId", value: string) => {
     setSaving(prev => ({ ...prev, [productId]: true }));
     try {
@@ -11882,12 +11897,30 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
         body: JSON.stringify({ [field]: value }),
       });
       if (res.ok) {
-        // products 상태와 suspectAll 상태 둘 다 업데이트
-        const updater = (list: any[]) => list.map(p => p.id === productId ? { ...p, [field]: value } : p);
-        setProducts(updater);
-        setSuspectAll(updater);
+        // 업데이트된 상품 데이터
+        const updatedProduct = (list: any[]) => {
+          const p = list.find(x => x.id === productId);
+          return p ? { ...p, [field]: value } : null;
+        };
+
+        // 일반 목록 업데이트
+        setProducts(prev => prev.map(p => p.id === productId ? { ...p, [field]: value } : p));
+
+        // 의심 목록: 의심 해소됐으면 즉시 제거, 아니면 값만 업데이트
+        setSuspectAll(prev => {
+          const updatedP = updatedProduct(prev);
+          if (!updatedP) return prev;
+          if (!isSuspectProduct(updatedP, category)) {
+            // 더 이상 의심 아님 → 목록에서 제거
+            setSuspectIds(ids => { const next = new Set(ids); next.delete(productId); return next; });
+            return prev.filter(p => p.id !== productId);
+          }
+          // 여전히 의심 → 값만 업데이트
+          return prev.map(p => p.id === productId ? updatedP : p);
+        });
+
         setSaved(prev => ({ ...prev, [productId]: true }));
-        setTimeout(() => setSaved(prev => ({ ...prev, [productId]: false })), 1500);
+        setTimeout(() => setSaved(prev => ({ ...prev, [productId]: false })), 1200);
       } else {
         const errData = await res.json().catch(() => ({}));
         toast({ title: `저장 실패: ${errData?.error || res.status}`, variant: "destructive" });
