@@ -11774,23 +11774,28 @@ const CLASSIFY_CATEGORIES = [
   { value: "accessories", label: "악세서리" },
 ];
 
-const CLASSIFY_GENDERS = [
+const CLASSIFY_GENDERS_FILTER = [
   { value: "all", label: "전체" },
   { value: "남성", label: "남성" },
   { value: "여성", label: "여성" },
   { value: "공용", label: "공용" },
-  { value: "men", label: "men (영문)" },
-  { value: "women", label: "women (영문)" },
+  { value: "men", label: "men" },
+  { value: "women", label: "women" },
   { value: "null", label: "미설정" },
 ];
 
-const TARGET_GENDERS = [
+const CLASSIFY_GENDER_OPTIONS = [
   { value: "남성", label: "남성" },
   { value: "여성", label: "여성" },
   { value: "공용", label: "공용" },
   { value: "men", label: "men" },
   { value: "women", label: "women" },
 ];
+
+// 여성화 의심 키워드
+const FEMALE_SUSPECT_KW = ["슬링백","힐프스","펌프스","발레리나","발레 플랫","오픈토","키튼힐","웨지힐","미드힐","블록힐","앵클 힐","코어힐","여성","(W)/","[여성]","여성용","ladies","샌들 힐","뮬 힐"];
+// 의류 의심 키워드 (신발에 있으면 이상)
+const CLOTHING_IN_SHOES_KW = ["재킷","자켓","팬츠","바지","셔츠","블레이저","코트","점퍼","파카","맨투맨","스웨터","니트 셔츠","후드 집업"];
 
 function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; fetchWithAuth: (url: string, options?: RequestInit) => Promise<Response>; toast: (opts: any) => void }) {
   const [category, setCategory] = React.useState("shoes");
@@ -11801,11 +11806,12 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
   const [total, setTotal] = React.useState(0);
   const [page, setPage] = React.useState(1);
   const [loading, setLoading] = React.useState(false);
-  const [selected, setSelected] = React.useState<Set<string>>(new Set());
-  const [targetGender, setTargetGender] = React.useState("여성");
-  const [targetCategory, setTargetCategory] = React.useState("");
-  const [applying, setApplying] = React.useState(false);
-  const LIMIT = 60;
+  const [saving, setSaving] = React.useState<Record<string, boolean>>({});
+  const [saved, setSaved] = React.useState<Record<string, boolean>>({});
+  const [suspectOnly, setSuspectOnly] = React.useState(false);
+  const [suspectIds, setSuspectIds] = React.useState<Set<string>>(new Set());
+  const [detectingSupects, setDetectingSuspects] = React.useState(false);
+  const LIMIT = 48;
 
   const loadProducts = React.useCallback(async (pg = 1, cat = category, gen = gender, q = search) => {
     setLoading(true);
@@ -11822,7 +11828,6 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
       const filteredList = gen === "null" ? list.filter((p: any) => !p.gender) : list;
       setProducts(filteredList);
       setTotal(gen === "null" ? filteredList.length : (data.total || 0));
-      setSelected(new Set());
     } finally {
       setLoading(false);
     }
@@ -11830,141 +11835,104 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
 
   React.useEffect(() => { loadProducts(1, category, gender, search); }, [category, gender]);
 
-  const toggleSelect = (id: string) => {
-    setSelected(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
-
-  const toggleAll = () => {
-    if (selected.size === products.length) setSelected(new Set());
-    else setSelected(new Set(products.map((p: any) => p.id)));
-  };
-
-  const applyBulk = async () => {
-    if (selected.size === 0) { toast({ title: "상품을 선택해주세요.", variant: "destructive" }); return; }
-    if (!targetGender && !targetCategory) { toast({ title: "변경할 성별 또는 카테고리를 선택해주세요.", variant: "destructive" }); return; }
-    setApplying(true);
-    const ids = Array.from(selected);
-    const body: any = {};
-    if (targetGender) body.gender = targetGender;
-    if (targetCategory) body.categoryId = targetCategory;
-    let ok = 0, fail = 0;
-    const BATCH = 50;
-    for (let i = 0; i < ids.length; i += BATCH) {
-      const batch = ids.slice(i, i + BATCH);
-      const results = await Promise.all(batch.map(id =>
-        fetchWithAuth(`/api/products/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-          .then(r => r.ok ? "ok" : "fail").catch(() => "fail")
-      ));
-      ok += results.filter(r => r === "ok").length;
-      fail += results.filter(r => r === "fail").length;
-    }
-    setApplying(false);
-    toast({ title: `완료: ${ok}개 성공${fail > 0 ? `, ${fail}개 실패` : ""}` });
-    loadProducts(page, category, gender, search);
-  };
-
-  const autoDetect = async () => {
-    if (!window.confirm(`현재 필터 상품 ${total}개에서 제품명으로 성별을 자동 감지하여 변경합니다.\n계속하시겠습니까?`)) return;
-    setApplying(true);
-
-    const FEMALE_KW = ["슬링백","힐프스","펌프스","뮬","발레리나","발레플랫","오픈토","앵글힐","키튼힐","웨지","미드힐","블록힐","여성","(W)","[여성]","여성용","ladies","womens","여성전용","힐 ","샌들 힐"];
-    const MALE_KW = ["남성","(M)","[남성]","남성용","mens","남성전용"];
-    const FEMALE_SKIPS = ["스니커즈","로퍼","옥스퍼드","더비","첼시","워커 부츠","첼시 부츠","하이탑","로우탑"];
-
-    // 전체 불러오기
+  // 의심 제품 감지: 현재 카테고리 전체 스캔
+  const detectSuspects = async () => {
+    setDetectingSuspects(true);
+    setSuspectIds(new Set());
     let all: any[] = [];
     let off = 0;
-    while (true) {
-      const params = new URLSearchParams({ categoryId: category, limit: "500", offset: String(off) });
-      const res = await fetchWithAuth(`/api/products?${params}`);
-      const data = await res.json();
-      const batch = data.data || [];
-      all = all.concat(batch);
-      off += batch.length;
-      if (batch.length < 500) break;
+    try {
+      while (true) {
+        const params = new URLSearchParams({ categoryId: category, limit: "500", offset: String(off) });
+        const res = await fetchWithAuth(`/api/products?${params}`);
+        const data = await res.json();
+        const batch = data.data || [];
+        all = all.concat(batch);
+        off += batch.length;
+        if (batch.length < 500) break;
+      }
+      const ids = new Set<string>();
+      all.forEach((p: any) => {
+        const n = p.name || "";
+        // 신발 카테고리에서 의류 제품명 포함
+        const hasClothingKw = CLOTHING_IN_SHOES_KW.some(k => n.includes(k));
+        // 남성 분류인데 여성화 키워드 포함
+        const isMale = p.gender === "남성" || p.gender === "men";
+        const isCommon = p.gender === "공용";
+        const hasFemaleKw = FEMALE_SUSPECT_KW.some(k => n.includes(k));
+        if (hasClothingKw || (hasFemaleKw && (isMale || isCommon))) {
+          ids.add(p.id);
+        }
+      });
+      setSuspectIds(ids);
+      setSuspectOnly(true);
+      toast({ title: `의심 상품 ${ids.size}개 감지됨. 의심 필터가 활성화되었습니다.` });
+    } finally {
+      setDetectingSuspects(false);
     }
+  };
 
-    const toFemale = all.filter((p: any) => {
-      if (p.gender === "여성" || p.gender === "women") return false;
-      const n = p.name || "";
-      const isFemale = FEMALE_KW.some(k => n.includes(k));
-      const isMaleOverride = MALE_KW.some(k => n.includes(k));
-      const isNeutral = FEMALE_SKIPS.some(k => n.includes(k));
-      return isFemale && !isMaleOverride && !isNeutral;
-    });
-
-    const toMale = all.filter((p: any) => {
-      if (p.gender === "남성" || p.gender === "men") return false;
-      const n = p.name || "";
-      const isMale = MALE_KW.some(k => n.includes(k));
-      const isFemaleOverride = FEMALE_KW.some(k => n.includes(k));
-      return isMale && !isFemaleOverride;
-    });
-
-    let ok = 0;
-    const allChanges = [
-      ...toFemale.map((p: any) => ({ id: p.id, gender: "여성" })),
-      ...toMale.map((p: any) => ({ id: p.id, gender: "남성" })),
-    ];
-
-    const BATCH = 50;
-    for (let i = 0; i < allChanges.length; i += BATCH) {
-      const batch = allChanges.slice(i, i + BATCH);
-      const results = await Promise.all(batch.map(({ id, gender: g }) =>
-        fetchWithAuth(`/api/products/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ gender: g }) })
-          .then(r => r.ok ? "ok" : "fail").catch(() => "fail")
-      ));
-      ok += results.filter(r => r === "ok").length;
+  // 인라인 즉시 저장
+  const saveField = async (productId: string, field: "gender" | "categoryId", value: string) => {
+    setSaving(prev => ({ ...prev, [productId]: true }));
+    try {
+      const res = await fetchWithAuth(`/api/products/${productId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
+      if (res.ok) {
+        setProducts(prev => prev.map(p => p.id === productId ? { ...p, [field]: value } : p));
+        setSaved(prev => ({ ...prev, [productId]: true }));
+        setTimeout(() => setSaved(prev => ({ ...prev, [productId]: false })), 1500);
+      } else {
+        toast({ title: "저장 실패", variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "저장 실패", variant: "destructive" });
+    } finally {
+      setSaving(prev => ({ ...prev, [productId]: false }));
     }
-
-    setApplying(false);
-    toast({ title: `자동 분류 완료: 여성 ${toFemale.length}개, 남성 ${toMale.length}개 변경` });
-    loadProducts(page, category, gender, search);
   };
 
   const totalPages = Math.ceil(total / LIMIT);
+  const displayProducts = suspectOnly && suspectIds.size > 0
+    ? products.filter(p => suspectIds.has(p.id))
+    : products;
 
   return (
     <div className="space-y-4">
+      {/* 헤더 & 필터 */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center">
             <SlidersHorizontal className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="text-lg font-bold">상품 분류 관리</h2>
-            <p className="text-sm text-gray-500">카테고리·성별 필터로 상품을 찾아 일괄 분류하세요</p>
+            <h2 className="text-lg font-bold">상품 직접 분류</h2>
+            <p className="text-sm text-gray-500">이미지를 확인하고 성별·카테고리를 즉시 변경 저장합니다</p>
           </div>
         </div>
 
-        {/* 필터 행 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
           <div>
             <label className="text-xs font-medium text-gray-600 mb-1 block">카테고리</label>
             <select
               value={category}
-              onChange={e => { setCategory(e.target.value); setPage(1); }}
+              onChange={e => { setCategory(e.target.value); setPage(1); setSuspectOnly(false); setSuspectIds(new Set()); }}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
             >
-              {CLASSIFY_CATEGORIES.map(c => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
+              {CLASSIFY_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">현재 성별</label>
+            <label className="text-xs font-medium text-gray-600 mb-1 block">성별 필터</label>
             <select
               value={gender}
               onChange={e => { setGender(e.target.value); setPage(1); }}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
             >
-              {CLASSIFY_GENDERS.map(g => (
-                <option key={g.value} value={g.value}>{g.label}</option>
-              ))}
+              {CLASSIFY_GENDERS_FILTER.map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
             </select>
           </div>
           <div className="md:col-span-2">
@@ -11988,138 +11956,169 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
           </div>
         </div>
 
-        {/* 일괄 변경 행 */}
-        <div className="flex flex-wrap items-center gap-3 p-3 bg-emerald-50 rounded-lg border border-emerald-100">
-          <span className="text-sm font-medium text-emerald-800">
-            {selected.size > 0 ? `${selected.size}개 선택됨` : "상품 선택 후 변경"}
-          </span>
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-emerald-700">→ 성별:</label>
-            <select
-              value={targetGender}
-              onChange={e => setTargetGender(e.target.value)}
-              className="border border-emerald-200 rounded-lg px-2 py-1.5 text-sm bg-white"
-            >
-              <option value="">변경 안함</option>
-              {TARGET_GENDERS.map(g => (
-                <option key={g.value} value={g.value}>{g.label}</option>
-              ))}
-            </select>
-          </div>
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-emerald-700">→ 카테고리:</label>
-            <select
-              value={targetCategory}
-              onChange={e => setTargetCategory(e.target.value)}
-              className="border border-emerald-200 rounded-lg px-2 py-1.5 text-sm bg-white"
-            >
-              <option value="">변경 안함</option>
-              {CLASSIFY_CATEGORIES.map(c => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </select>
-          </div>
-          <Button
-            size="sm"
-            onClick={applyBulk}
-            disabled={applying || selected.size === 0}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
-          >
-            {applying ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" />적용 중...</> : <><Check className="w-4 h-4 mr-1" />일괄 변경</>}
-          </Button>
+        {/* 의심 감지 & 필터 토글 */}
+        <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-gray-100">
           <Button
             size="sm"
             variant="outline"
-            onClick={autoDetect}
-            disabled={applying}
-            className="border-orange-300 text-orange-700 hover:bg-orange-50"
-            title="제품명에서 여성/남성 키워드를 감지해 자동으로 성별을 분류합니다"
+            onClick={detectSuspects}
+            disabled={detectingSupects}
+            className="border-orange-300 text-orange-700 hover:bg-orange-50 gap-1.5"
           >
-            {applying ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Filter className="w-4 h-4 mr-1" />}
-            자동 감지 분류
+            {detectingSupects ? <Loader2 className="w-4 h-4 animate-spin" /> : <Filter className="w-4 h-4" />}
+            의심 상품 감지
+          </Button>
+          {suspectIds.size > 0 && (
+            <button
+              onClick={() => setSuspectOnly(v => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                suspectOnly
+                  ? "bg-orange-500 text-white border-orange-500"
+                  : "bg-white text-orange-600 border-orange-300 hover:bg-orange-50"
+              }`}
+            >
+              <span className="w-4 h-4 rounded-full bg-orange-100 text-orange-700 text-xs flex items-center justify-center font-bold">{suspectIds.size}</span>
+              의심만 보기 {suspectOnly ? "켜짐" : "꺼짐"}
+            </button>
+          )}
+          <span className="text-xs text-gray-400 ml-auto">
+            💡 카드의 성별·카테고리 드롭다운을 바꾸면 즉시 저장됩니다
+          </span>
+        </div>
+      </div>
+
+      {/* 페이지네이션 상단 */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-500">
+          {suspectOnly ? `의심 ${displayProducts.length}개 표시` : `${total.toLocaleString()}개 중 ${displayProducts.length}개 표시`}
+        </span>
+        <div className="flex items-center gap-2">
+          {!suspectOnly && totalPages > 1 && (
+            <>
+              <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => { const p = page - 1; setPage(p); loadProducts(p, category, gender, search); }}>
+                ‹ 이전
+              </Button>
+              <span className="text-sm text-gray-500">{page} / {totalPages}</span>
+              <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => { const p = page + 1; setPage(p); loadProducts(p, category, gender, search); }}>
+                다음 ›
+              </Button>
+            </>
+          )}
+          <Button size="sm" variant="outline" onClick={() => loadProducts(page, category, gender, search)}>
+            <RefreshCw className="w-3.5 h-3.5 mr-1" />새로고침
           </Button>
         </div>
       </div>
 
-      {/* 상품 목록 */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={selected.size === products.length && products.length > 0}
-              onChange={toggleAll}
-              className="w-4 h-4 rounded accent-emerald-500 cursor-pointer"
-            />
-            <span className="text-sm font-medium text-gray-700">
-              전체 선택 <span className="text-gray-400">({products.length}개 / 총 {total.toLocaleString()}개)</span>
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            {totalPages > 1 && (
-              <>
-                <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => { setPage(p => p - 1); loadProducts(page - 1, category, gender, search); }}>
-                  ‹ 이전
-                </Button>
-                <span className="text-sm text-gray-500">{page} / {totalPages}</span>
-                <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => { setPage(p => p + 1); loadProducts(page + 1, category, gender, search); }}>
-                  다음 ›
-                </Button>
-              </>
-            )}
-            <Button size="sm" variant="outline" onClick={() => loadProducts(page, category, gender, search)}>
-              <RefreshCw className="w-3.5 h-3.5 mr-1" />새로고침
-            </Button>
-          </div>
+      {/* 상품 카드 그리드 */}
+      {loading ? (
+        <div className="flex items-center justify-center py-24">
+          <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
         </div>
-
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
-          </div>
-        ) : products.length === 0 ? (
-          <div className="text-center py-20 text-gray-400">
-            <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p>상품이 없습니다</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-50">
-            {products.map((p: any) => (
+      ) : displayProducts.length === 0 ? (
+        <div className="text-center py-24 text-gray-400">
+          <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p>상품이 없습니다</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {displayProducts.map((p: any) => {
+            const isSuspect = suspectIds.has(p.id);
+            const isSavingNow = saving[p.id];
+            const justSaved = saved[p.id];
+            return (
               <div
                 key={p.id}
-                className={`flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors cursor-pointer ${selected.has(p.id) ? "bg-emerald-50" : ""}`}
-                onClick={() => toggleSelect(p.id)}
+                className={`bg-white rounded-xl border overflow-hidden flex flex-col transition-all ${
+                  isSuspect ? "border-orange-300 shadow-orange-100 shadow-md" : "border-gray-100 shadow-sm"
+                } ${justSaved ? "ring-2 ring-emerald-400" : ""}`}
               >
-                <input
-                  type="checkbox"
-                  checked={selected.has(p.id)}
-                  onChange={() => toggleSelect(p.id)}
-                  onClick={e => e.stopPropagation()}
-                  className="w-4 h-4 rounded accent-emerald-500 flex-shrink-0 cursor-pointer"
-                />
-                <img
-                  src={p.imageUrl || "https://via.placeholder.com/40"}
-                  alt={p.name}
-                  className="w-10 h-10 object-cover rounded-md flex-shrink-0 border border-gray-100"
-                  onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/40"; }}
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 truncate">{p.name}</p>
-                  <p className="text-xs text-gray-400">{p.categoryId} · {Number(p.price || 0).toLocaleString()}원</p>
+                {/* 이미지 */}
+                <div className="relative aspect-square bg-gray-50 flex-shrink-0">
+                  <img
+                    src={p.imageUrl || "https://via.placeholder.com/200"}
+                    alt={p.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/200"; }}
+                  />
+                  {isSuspect && (
+                    <span className="absolute top-1.5 left-1.5 bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-medium">의심</span>
+                  )}
+                  {justSaved && (
+                    <span className="absolute inset-0 flex items-center justify-center bg-emerald-500/20">
+                      <Check className="w-8 h-8 text-emerald-600" />
+                    </span>
+                  )}
+                  {isSavingNow && (
+                    <span className="absolute inset-0 flex items-center justify-center bg-black/10">
+                      <Loader2 className="w-6 h-6 animate-spin text-white" />
+                    </span>
+                  )}
                 </div>
-                <span className={`flex-shrink-0 px-2 py-0.5 rounded-full text-xs font-medium ${
-                  p.gender === "여성" || p.gender === "women" ? "bg-pink-100 text-pink-700" :
-                  p.gender === "남성" || p.gender === "men" ? "bg-blue-100 text-blue-700" :
-                  p.gender === "공용" ? "bg-purple-100 text-purple-700" :
-                  "bg-gray-100 text-gray-500"
-                }`}>
-                  {p.gender || "미설정"}
-                </span>
+
+                {/* 제품 정보 & 인라인 편집 */}
+                <div className="p-2 flex flex-col gap-1.5 flex-1">
+                  <p className="text-xs font-medium text-gray-800 line-clamp-2 leading-tight">{p.name}</p>
+                  <p className="text-[10px] text-gray-400">{Number(p.price || 0).toLocaleString()}원</p>
+
+                  {/* 성별 드롭다운 */}
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-0.5 block">성별</label>
+                    <select
+                      value={p.gender || ""}
+                      onChange={e => saveField(p.id, "gender", e.target.value)}
+                      disabled={isSavingNow}
+                      className={`w-full text-xs border rounded-md px-1.5 py-1 bg-white appearance-none cursor-pointer ${
+                        p.gender === "여성" || p.gender === "women"
+                          ? "border-pink-300 text-pink-700 bg-pink-50"
+                          : p.gender === "남성" || p.gender === "men"
+                          ? "border-blue-300 text-blue-700 bg-blue-50"
+                          : p.gender === "공용"
+                          ? "border-purple-300 text-purple-700 bg-purple-50"
+                          : "border-gray-200 text-gray-500"
+                      }`}
+                    >
+                      <option value="">미설정</option>
+                      {CLASSIFY_GENDER_OPTIONS.map(g => (
+                        <option key={g.value} value={g.value}>{g.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 카테고리 드롭다운 */}
+                  <div>
+                    <label className="text-[10px] text-gray-500 mb-0.5 block">카테고리</label>
+                    <select
+                      value={p.categoryId || ""}
+                      onChange={e => saveField(p.id, "categoryId", e.target.value)}
+                      disabled={isSavingNow}
+                      className="w-full text-xs border border-gray-200 rounded-md px-1.5 py-1 bg-white appearance-none cursor-pointer text-gray-700"
+                    >
+                      <option value="">미설정</option>
+                      {CLASSIFY_CATEGORIES.map(c => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 페이지네이션 하단 */}
+      {!suspectOnly && totalPages > 1 && (
+        <div className="flex justify-center gap-2 pt-2">
+          <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => { const p = page - 1; setPage(p); loadProducts(p, category, gender, search); }}>
+            ‹ 이전
+          </Button>
+          <span className="flex items-center text-sm text-gray-500 px-2">{page} / {totalPages}</span>
+          <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => { const p = page + 1; setPage(p); loadProducts(p, category, gender, search); }}>
+            다음 ›
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
