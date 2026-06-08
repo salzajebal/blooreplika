@@ -178,7 +178,7 @@ export function Header() {
           <div className="flex items-center justify-center h-[48px] border-b border-gray-100">
             <Link href="/" data-testid="header-logo-mobile">
               <span
-                className="text-[30px] font-black tracking-widest text-[#060133] uppercase"
+                className="text-[30px] font-black tracking-widest text-[#0b1f5b] uppercase"
                 style={{ fontFamily: "'Playfair Display', serif" }}
               >
                 BLOO
@@ -243,7 +243,7 @@ export function Header() {
 
             {/* Logo */}
             <Link href="/" className="flex-shrink-0" data-testid="header-logo">
-              <span className="text-[28px] font-black tracking-widest text-[#060133] uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
+              <span className="text-[28px] font-black tracking-widest text-[#0b1f5b] uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
                 BLOO
               </span>
             </Link>
