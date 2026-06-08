@@ -11882,11 +11882,15 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
         body: JSON.stringify({ [field]: value }),
       });
       if (res.ok) {
-        setProducts(prev => prev.map(p => p.id === productId ? { ...p, [field]: value } : p));
+        // products 상태와 suspectAll 상태 둘 다 업데이트
+        const updater = (list: any[]) => list.map(p => p.id === productId ? { ...p, [field]: value } : p);
+        setProducts(updater);
+        setSuspectAll(updater);
         setSaved(prev => ({ ...prev, [productId]: true }));
         setTimeout(() => setSaved(prev => ({ ...prev, [productId]: false })), 1500);
       } else {
-        toast({ title: "저장 실패", variant: "destructive" });
+        const errData = await res.json().catch(() => ({}));
+        toast({ title: `저장 실패: ${errData?.error || res.status}`, variant: "destructive" });
       }
     } catch {
       toast({ title: "저장 실패", variant: "destructive" });
