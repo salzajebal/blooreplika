@@ -142,6 +142,7 @@ function Router() {
       <Route path="/416">{() => <WatchPage brandPath="/416" />}</Route>
       <Route path="/417">{() => <WatchPage brandPath="/417" />}</Route>
       <Route path="/418">{() => <WatchPage brandPath="/418" />}</Route>
+      <Route path="/419">{() => <WatchPage brandPath="/419" />}</Route>
       <Route path="/watch/샤넬">{() => <WatchPage brandPath="/watch/샤넬" />}</Route>
       <Route path="/537">{() => <BlooGenderPage gender="여성" />}</Route>
       <Route component={NotFound} />
