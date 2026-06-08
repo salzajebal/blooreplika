@@ -11810,6 +11810,8 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
   const [saved, setSaved] = React.useState<Record<string, boolean>>({});
   const [suspectOnly, setSuspectOnly] = React.useState(false);
   const [suspectIds, setSuspectIds] = React.useState<Set<string>>(new Set());
+  const [suspectAll, setSuspectAll] = React.useState<any[]>([]);
+  const [suspectPage, setSuspectPage] = React.useState(1);
   const [detectingSupects, setDetectingSuspects] = React.useState(false);
   const LIMIT = 48;
 
@@ -11865,9 +11867,8 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
         }
       });
       setSuspectIds(ids);
-      // 의심 상품 목록을 products에 직접 설정 (페이지 상관없이 전체 표시)
-      setProducts(suspectList);
-      setTotal(suspectList.length);
+      setSuspectAll(suspectList);
+      setSuspectPage(1);
       setSuspectOnly(true);
       toast({ title: `의심 상품 ${ids.size}개 감지됨. 목록에 표시합니다.` });
     } finally {
@@ -11899,8 +11900,10 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
   };
 
   const totalPages = Math.ceil(total / LIMIT);
-  const displayProducts = suspectOnly && suspectIds.size > 0
-    ? products.filter(p => suspectIds.has(p.id))
+  // 의심 모드: suspectAll을 페이지네이션 / 일반 모드: products(이미 페이지별 로드)
+  const suspectTotalPages = Math.ceil(suspectAll.length / LIMIT);
+  const displayProducts = suspectOnly && suspectAll.length > 0
+    ? suspectAll.slice((suspectPage - 1) * LIMIT, suspectPage * LIMIT)
     : products;
 
   return (
@@ -11993,9 +11996,22 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
       {/* 페이지네이션 상단 */}
       <div className="flex items-center justify-between">
         <span className="text-sm text-gray-500">
-          {suspectOnly ? `의심 ${displayProducts.length}개 표시` : `${total.toLocaleString()}개 중 ${displayProducts.length}개 표시`}
+          {suspectOnly
+            ? `의심 ${suspectAll.length.toLocaleString()}개 중 ${displayProducts.length}개 표시 (${suspectPage}/${suspectTotalPages || 1}페이지)`
+            : `${total.toLocaleString()}개 중 ${displayProducts.length}개 표시`}
         </span>
         <div className="flex items-center gap-2">
+          {suspectOnly && suspectTotalPages > 1 && (
+            <>
+              <Button size="sm" variant="outline" disabled={suspectPage <= 1} onClick={() => setSuspectPage(p => p - 1)}>
+                ‹ 이전
+              </Button>
+              <span className="text-sm text-gray-500">{suspectPage} / {suspectTotalPages}</span>
+              <Button size="sm" variant="outline" disabled={suspectPage >= suspectTotalPages} onClick={() => setSuspectPage(p => p + 1)}>
+                다음 ›
+              </Button>
+            </>
+          )}
           {!suspectOnly && totalPages > 1 && (
             <>
               <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => { const p = page - 1; setPage(p); loadProducts(p, category, gender, search); }}>
@@ -12111,13 +12127,24 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
       )}
 
       {/* 페이지네이션 하단 */}
+      {suspectOnly && suspectTotalPages > 1 && (
+        <div className="flex justify-center gap-2 pt-2">
+          <Button size="sm" variant="outline" disabled={suspectPage <= 1} onClick={() => { setSuspectPage(p => p - 1); window.scrollTo(0, 0); }}>
+            ‹ 이전
+          </Button>
+          <span className="flex items-center text-sm text-gray-500 px-2">{suspectPage} / {suspectTotalPages}</span>
+          <Button size="sm" variant="outline" disabled={suspectPage >= suspectTotalPages} onClick={() => { setSuspectPage(p => p + 1); window.scrollTo(0, 0); }}>
+            다음 ›
+          </Button>
+        </div>
+      )}
       {!suspectOnly && totalPages > 1 && (
         <div className="flex justify-center gap-2 pt-2">
-          <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => { const p = page - 1; setPage(p); loadProducts(p, category, gender, search); }}>
+          <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => { const p = page - 1; setPage(p); loadProducts(p, category, gender, search); window.scrollTo(0, 0); }}>
             ‹ 이전
           </Button>
           <span className="flex items-center text-sm text-gray-500 px-2">{page} / {totalPages}</span>
-          <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => { const p = page + 1; setPage(p); loadProducts(p, category, gender, search); }}>
+          <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => { const p = page + 1; setPage(p); loadProducts(p, category, gender, search); window.scrollTo(0, 0); }}>
             다음 ›
           </Button>
         </div>
