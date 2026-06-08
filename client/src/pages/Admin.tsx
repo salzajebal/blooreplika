@@ -11835,7 +11835,7 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
 
   React.useEffect(() => { loadProducts(1, category, gender, search); }, [category, gender]);
 
-  // 의심 제품 감지: 현재 카테고리 전체 스캔
+  // 의심 제품 감지: 현재 카테고리 전체 스캔 후 의심 목록을 products에 직접 설정
   const detectSuspects = async () => {
     setDetectingSuspects(true);
     setSuspectIds(new Set());
@@ -11852,21 +11852,24 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
         if (batch.length < 500) break;
       }
       const ids = new Set<string>();
+      const suspectList: any[] = [];
       all.forEach((p: any) => {
         const n = p.name || "";
-        // 신발 카테고리에서 의류 제품명 포함
         const hasClothingKw = CLOTHING_IN_SHOES_KW.some(k => n.includes(k));
-        // 남성 분류인데 여성화 키워드 포함
         const isMale = p.gender === "남성" || p.gender === "men";
         const isCommon = p.gender === "공용";
         const hasFemaleKw = FEMALE_SUSPECT_KW.some(k => n.includes(k));
         if (hasClothingKw || (hasFemaleKw && (isMale || isCommon))) {
           ids.add(p.id);
+          suspectList.push(p);
         }
       });
       setSuspectIds(ids);
+      // 의심 상품 목록을 products에 직접 설정 (페이지 상관없이 전체 표시)
+      setProducts(suspectList);
+      setTotal(suspectList.length);
       setSuspectOnly(true);
-      toast({ title: `의심 상품 ${ids.size}개 감지됨. 의심 필터가 활성화되었습니다.` });
+      toast({ title: `의심 상품 ${ids.size}개 감지됨. 목록에 표시합니다.` });
     } finally {
       setDetectingSuspects(false);
     }
