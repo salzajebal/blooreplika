@@ -48,13 +48,13 @@ function ChoiceDetail({ id }: { id: string }) {
       <main>
         <div className="bg-[#111111] border-b border-[#2a2a2a] py-4">
           <div className="max-w-[1200px] mx-auto px-4">
-            <h1 className="text-lg font-bold text-[#f0f0f0]">velour 초이스</h1>
+            <h1 className="text-lg font-bold text-[#f0f0f0]">BLOO 초이스</h1>
             <div className="flex items-center gap-2 text-sm text-[#888888] mt-1">
               <Link href="/" className="hover:text-[#c9a96e]">홈</Link>
               <span>&gt;</span>
               <span>쇼핑몰</span>
               <span>&gt;</span>
-              <Link href="/choice" className="hover:text-[#c9a96e]">velour 초이스</Link>
+              <Link href="/choice" className="hover:text-[#c9a96e]">BLOO 초이스</Link>
               <span>&gt;</span>
               <span className="truncate max-w-[200px]">{item.title}</span>
             </div>
@@ -210,13 +210,13 @@ function ChoiceList() {
       <main>
         <div className="bg-[#111111] border-b border-[#2a2a2a] py-4">
           <div className="max-w-[1200px] mx-auto px-4">
-            <h1 className="text-lg font-bold text-[#f0f0f0]">velour 초이스</h1>
+            <h1 className="text-lg font-bold text-[#f0f0f0]">BLOO 초이스</h1>
             <div className="flex items-center gap-2 text-sm text-[#888888] mt-1">
               <Link href="/" className="hover:text-[#c9a96e]">홈</Link>
               <span>&gt;</span>
               <span>쇼핑몰</span>
               <span>&gt;</span>
-              <span>velour 초이스</span>
+              <span>BLOO 초이스</span>
             </div>
           </div>
         </div>
