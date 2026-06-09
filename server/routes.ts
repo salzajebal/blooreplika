@@ -960,6 +960,26 @@ export async function registerRoutes(
     }
   });
 
+  // ===== 일괄 자동 가격 변경 저장 =====
+  app.post("/api/admin/products/bulk-price-assign", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { updates } = req.body;
+      if (!Array.isArray(updates) || updates.length === 0) {
+        return res.status(400).json({ success: false, error: "updates 배열이 필요합니다." });
+      }
+      let count = 0;
+      for (const u of updates) {
+        if (!u.id || typeof u.price !== "number" || u.price <= 0) continue;
+        await pool.query(`UPDATE products SET price = $1 WHERE id = $2`, [u.price, u.id]);
+        count++;
+      }
+      invalidateProductCache();
+      res.json({ success: true, updated: count });
+    } catch (e: any) {
+      res.status(500).json({ success: false, error: e.message });
+    }
+  });
+
   app.post("/api/admin/bulk-price-increase", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const { db } = await import("./db");

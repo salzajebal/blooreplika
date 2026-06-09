@@ -11817,6 +11817,32 @@ const PRICE_PRESETS = [
 
 const PAGE_LIMIT = 50;
 
+const TARGET_RANGES = [
+  { label: "5만원대",   min: 50000,    max: 99000 },
+  { label: "10만원대",  min: 100000,   max: 199000 },
+  { label: "20만원대",  min: 200000,   max: 299000 },
+  { label: "30만원대",  min: 300000,   max: 499000 },
+  { label: "50만원대",  min: 500000,   max: 999000 },
+  { label: "100만원대", min: 1000000,  max: 1999000 },
+  { label: "200만원대", min: 2000000,  max: 2999000 },
+  { label: "직접 입력", min: 0,        max: 0 },
+];
+
+function autoDistributePrices(items: any[], tMin: number, tMax: number): Array<{id:string; name:string; brand_name:string; image_url:string; price:number; newPrice:number}> {
+  const sorted = [...items].sort((a, b) => a.price - b.price);
+  const n = sorted.length;
+  const used = new Set<number>();
+  return sorted.map((p, i) => {
+    const ratio = n === 1 ? 0.5 : i / (n - 1);
+    let np = Math.round((tMin + ratio * (tMax - tMin)) / 1000) * 1000;
+    np = Math.max(tMin, Math.min(tMax, np));
+    while (used.has(np) && np + 1000 <= tMax) np += 1000;
+    if (used.has(np)) { let d = np; while (used.has(d) && d - 1000 >= tMin) d -= 1000; if (!used.has(d)) np = d; }
+    used.add(np);
+    return { ...p, newPrice: np };
+  });
+}
+
 function PriceEditTab({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, opts?: RequestInit) => Promise<Response>; toast: (o: any) => void }) {
   const [minPrice, setMinPrice] = React.useState(0);
   const [minPriceInput, setMinPriceInput] = React.useState("0");
@@ -11833,6 +11859,16 @@ function PriceEditTab({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, o
   const [editing, setEditing] = React.useState<Record<string, { price?: string; original_price?: string }>>({});
   const [saving, setSaving] = React.useState<Record<string, boolean>>({});
   const [saved, setSaved] = React.useState<Record<string, boolean>>({});
+
+  // 일괄 자동 가격 변경 패널
+  const [bulkOpen, setBulkOpen] = React.useState(false);
+  const [bulkRangeIdx, setBulkRangeIdx] = React.useState<number | null>(null);
+  const [bulkCustomMin, setBulkCustomMin] = React.useState("");
+  const [bulkCustomMax, setBulkCustomMax] = React.useState("");
+  const [bulkPreview, setBulkPreview] = React.useState<any[]>([]);
+  const [bulkPrices, setBulkPrices] = React.useState<Record<string, string>>({});
+  const [bulkLoading, setBulkLoading] = React.useState(false);
+  const [bulkSaving, setBulkSaving] = React.useState(false);
 
   const totalPages = Math.ceil(total / PAGE_LIMIT);
 
@@ -11859,6 +11895,63 @@ function PriceEditTab({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, o
 
   const applySearch = () => { setSearch(searchInput); setPage(1); load(1, minPrice, categoryId, searchInput, sortBy); };
   const applyMinPrice = (val: number) => { setMinPrice(val); setMinPriceInput(val.toLocaleString()); setPage(1); load(1, val, categoryId, search, sortBy); };
+
+  // ---- 일괄 자동 가격 변경 ----
+  const getBulkRange = () => {
+    if (bulkRangeIdx === null) return null;
+    const r = TARGET_RANGES[bulkRangeIdx];
+    if (r.label === "직접 입력") {
+      const mn = parseInt(bulkCustomMin.replace(/,/g, '')) || 0;
+      const mx = parseInt(bulkCustomMax.replace(/,/g, '')) || 0;
+      return { min: mn, max: mx };
+    }
+    return { min: r.min, max: r.max };
+  };
+
+  const loadBulkPreview = async () => {
+    const range = getBulkRange();
+    if (!range || range.min <= 0 || range.max <= 0 || range.min >= range.max) {
+      toast({ title: "목표 가격 범위를 올바르게 설정해주세요.", variant: "destructive" }); return;
+    }
+    setBulkLoading(true);
+    try {
+      const params = new URLSearchParams({ minPrice: String(minPrice), limit: '500', offset: '0', sortBy: 'price_asc' });
+      if (categoryId) params.set('categoryId', categoryId);
+      if (search) params.set('search', search);
+      const res = await fetchWithAuth(`/api/admin/products/price-edit?${params}`);
+      const data = await res.json();
+      if (data.success) {
+        const preview = autoDistributePrices(data.data, range.min, range.max);
+        setBulkPreview(preview);
+        const prices: Record<string, string> = {};
+        preview.forEach(p => { prices[p.id] = p.newPrice.toLocaleString(); });
+        setBulkPrices(prices);
+      }
+    } finally { setBulkLoading(false); }
+  };
+
+  const saveBulkPrices = async () => {
+    const updates = bulkPreview.map(p => ({
+      id: p.id,
+      price: parseInt((bulkPrices[p.id] || '').replace(/,/g, '')) || p.newPrice,
+    })).filter(u => u.price > 0);
+    if (updates.length === 0) return;
+    setBulkSaving(true);
+    try {
+      const res = await fetchWithAuth('/api/admin/products/bulk-price-assign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updates }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: `✅ ${data.updated}개 상품 가격이 변경됐습니다.` });
+        setBulkOpen(false); setBulkPreview([]); setBulkPrices({});
+        load(page);
+      } else { toast({ title: `저장 실패: ${data.error}`, variant: "destructive" }); }
+    } catch { toast({ title: "저장 실패", variant: "destructive" }); }
+    finally { setBulkSaving(false); }
+  };
 
   const startEdit = (id: string, field: "price" | "original_price", currentVal: number) => {
     setEditing(prev => ({ ...prev, [id]: { ...prev[id], [field]: String(currentVal || "") } }));
@@ -11987,11 +12080,150 @@ function PriceEditTab({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, o
         </div>
       </div>
 
-      {/* 사용 안내 */}
-      <div className="bg-violet-50 border border-violet-200 rounded-xl px-4 py-2.5 flex items-center gap-2">
-        <svg viewBox="0 0 24 24" className="w-4 h-4 text-violet-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-6v-4m0-4h.01"/></svg>
-        <p className="text-xs text-violet-700">가격 셀을 클릭하면 바로 수정 가능합니다. 수정 후 <strong>Enter</strong> 또는 저장 버튼을 누르세요. 판매가와 원가를 동시에 수정 후 한 번에 저장할 수 있습니다.</p>
+      {/* 사용 안내 + 일괄 변경 버튼 */}
+      <div className="flex items-center gap-3">
+        <div className="bg-violet-50 border border-violet-200 rounded-xl px-4 py-2.5 flex items-center gap-2 flex-1">
+          <svg viewBox="0 0 24 24" className="w-4 h-4 text-violet-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-6v-4m0-4h.01"/></svg>
+          <p className="text-xs text-violet-700">가격 셀을 클릭하면 바로 수정 가능합니다. 수정 후 <strong>Enter</strong> 또는 저장 버튼을 누르세요.</p>
+        </div>
+        <Button
+          onClick={() => { setBulkOpen(o => !o); setBulkPreview([]); setBulkPrices({}); setBulkRangeIdx(null); }}
+          className="flex-shrink-0 bg-amber-500 hover:bg-amber-600 text-white text-xs h-9 px-4"
+        >
+          <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          일괄 자동 가격 변경
+        </Button>
       </div>
+
+      {/* ===== 일괄 자동 가격 변경 패널 ===== */}
+      {bulkOpen && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              <h3 className="font-bold text-gray-900 text-sm">일괄 자동 가격 변경</h3>
+            </div>
+            <button onClick={() => { setBulkOpen(false); setBulkPreview([]); }} className="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
+          </div>
+
+          <p className="text-xs text-amber-700 bg-amber-100 rounded-lg px-3 py-2">
+            현재 필터 조건(<strong>{total.toLocaleString()}개 상품</strong>)을 목표 가격대 안에서 상품마다 자동으로 다른 가격으로 분배합니다.<br/>
+            기존 가격 순서를 유지하면서 고르게 분산되며, 미리보기에서 개별 수정도 가능합니다.
+          </p>
+
+          {/* 목표 가격대 선택 */}
+          <div>
+            <p className="text-xs font-semibold text-gray-700 mb-2">목표 가격대 선택</p>
+            <div className="flex flex-wrap gap-2">
+              {TARGET_RANGES.map((r, i) => (
+                <button
+                  key={i}
+                  onClick={() => { setBulkRangeIdx(i); setBulkPreview([]); setBulkPrices({}); }}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${bulkRangeIdx === i ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-gray-600 border-gray-300 hover:border-amber-400'}`}
+                >
+                  {r.label}
+                  {r.label !== "직접 입력" && <span className="ml-1 opacity-60">{r.min.toLocaleString()}~{r.max.toLocaleString()}</span>}
+                </button>
+              ))}
+            </div>
+
+            {/* 직접 입력 범위 */}
+            {bulkRangeIdx === TARGET_RANGES.length - 1 && (
+              <div className="flex items-center gap-2 mt-3">
+                <input
+                  type="text" value={bulkCustomMin}
+                  onChange={e => setBulkCustomMin(e.target.value)}
+                  placeholder="최소 금액"
+                  className="border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs w-32"
+                />
+                <span className="text-gray-400 text-sm">~</span>
+                <input
+                  type="text" value={bulkCustomMax}
+                  onChange={e => setBulkCustomMax(e.target.value)}
+                  placeholder="최대 금액"
+                  className="border border-gray-300 rounded-lg px-2.5 py-1.5 text-xs w-32"
+                />
+                <span className="text-xs text-gray-400">원</span>
+              </div>
+            )}
+          </div>
+
+          {/* 미리보기 생성 버튼 */}
+          {bulkRangeIdx !== null && bulkPreview.length === 0 && (
+            <Button
+              onClick={loadBulkPreview}
+              disabled={bulkLoading}
+              className="bg-amber-500 hover:bg-amber-600 text-white text-xs h-8 px-4"
+            >
+              {bulkLoading ? <><RefreshCw className="w-3.5 h-3.5 mr-1 animate-spin" />불러오는 중...</> : <>미리보기 생성</>}
+            </Button>
+          )}
+
+          {/* 미리보기 테이블 */}
+          {bulkPreview.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-gray-700">{bulkPreview.length}개 상품 미리보기 <span className="text-gray-400 font-normal ml-1">(가격을 직접 수정할 수 있습니다)</span></p>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" className="text-xs h-7" onClick={loadBulkPreview} disabled={bulkLoading}>재생성</Button>
+                  <Button
+                    size="sm"
+                    disabled={bulkSaving}
+                    onClick={saveBulkPrices}
+                    className="h-7 px-3 text-xs bg-emerald-500 hover:bg-emerald-600 text-white"
+                  >
+                    {bulkSaving ? <RefreshCw className="w-3 h-3 animate-spin mr-1" /> : null}
+                    {bulkPreview.length}개 전체 저장
+                  </Button>
+                </div>
+              </div>
+
+              {/* 테이블 헤더 */}
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                <div className="grid grid-cols-[40px_1fr_120px_140px] gap-0 bg-gray-50 border-b border-gray-100 text-xs font-medium text-gray-500 px-3 py-2">
+                  <span></span>
+                  <span>상품명 / 브랜드</span>
+                  <span className="text-right">현재가</span>
+                  <span className="text-right pr-1">변경가 (수정 가능)</span>
+                </div>
+                <div className="max-h-[400px] overflow-y-auto">
+                  {bulkPreview.map((p, idx) => (
+                    <div key={p.id} className={`grid grid-cols-[40px_1fr_120px_140px] gap-0 items-center border-b border-gray-50 last:border-0 px-3 py-1.5 ${idx % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
+                      <div className="text-xs text-gray-300 tabular-nums">{idx + 1}</div>
+                      <div className="min-w-0 pr-2">
+                        <p className="text-xs font-medium text-gray-800 truncate">{p.name}</p>
+                        <p className="text-xs text-gray-400 truncate">{p.brand_name || "-"}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-xs text-gray-400 line-through tabular-nums">₩{p.price?.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-end items-center gap-1 pr-1">
+                        <span className="text-xs text-gray-400">→</span>
+                        <input
+                          type="text"
+                          value={bulkPrices[p.id] ?? ''}
+                          onChange={e => setBulkPrices(prev => ({ ...prev, [p.id]: e.target.value }))}
+                          className="w-28 text-right text-xs border border-amber-300 rounded px-1.5 py-0.5 bg-amber-50 focus:border-amber-500 focus:outline-none tabular-nums font-medium text-gray-800"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-1">
+                <Button
+                  disabled={bulkSaving}
+                  onClick={saveBulkPrices}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-white text-xs h-9 px-5"
+                >
+                  {bulkSaving ? <><RefreshCw className="w-3.5 h-3.5 mr-1.5 animate-spin" />저장 중...</> : <><svg viewBox="0 0 24 24" className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>{bulkPreview.length}개 상품 일괄 저장</>}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 상품 테이블 */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
