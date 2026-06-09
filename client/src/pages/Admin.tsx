@@ -11915,17 +11915,41 @@ function PriceEditTab({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, o
     }
     setBulkLoading(true);
     try {
-      const params = new URLSearchParams({ minPrice: String(minPrice), limit: '500', offset: '0', sortBy: 'price_asc' });
-      if (categoryId) params.set('categoryId', categoryId);
-      if (search) params.set('search', search);
-      const res = await fetchWithAuth(`/api/admin/products/price-edit?${params}`);
-      const data = await res.json();
-      if (data.success) {
-        const preview = autoDistributePrices(data.data, range.min, range.max);
+      // 전체 상품 페이지네이션으로 모두 가져오기 (200개 제한 우회)
+      const PAGE_SIZE = 500;
+      let all: any[] = [];
+      let offset = 0;
+      let totalCount = Infinity;
+
+      while (all.length < totalCount) {
+        const params = new URLSearchParams({
+          minPrice: String(minPrice),
+          limit: String(PAGE_SIZE),
+          offset: String(offset),
+          sortBy: 'price_asc',
+        });
+        if (categoryId) params.set('categoryId', categoryId);
+        if (search)     params.set('search', search);
+
+        const res  = await fetchWithAuth(`/api/admin/products/price-edit?${params}`);
+        const data = await res.json();
+        if (!data.success || !data.data?.length) break;
+
+        all        = [...all, ...data.data];
+        totalCount = data.total ?? all.length;
+        offset    += PAGE_SIZE;
+
+        if (data.data.length < PAGE_SIZE) break; // 마지막 페이지
+      }
+
+      if (all.length > 0) {
+        const preview = autoDistributePrices(all, range.min, range.max);
         setBulkPreview(preview);
         const prices: Record<string, string> = {};
         preview.forEach(p => { prices[p.id] = p.newPrice.toLocaleString(); });
         setBulkPrices(prices);
+      } else {
+        toast({ title: "조건에 맞는 상품이 없습니다.", variant: "destructive" });
       }
     } finally { setBulkLoading(false); }
   };

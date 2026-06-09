@@ -800,7 +800,7 @@ export async function registerRoutes(
   app.get("/api/admin/products/price-edit", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const minPrice  = parseInt(req.query.minPrice  as string) || 0;
-      const limit     = Math.min(parseInt(req.query.limit  as string) || 50, 200);
+      const limit     = Math.min(parseInt(req.query.limit  as string) || 50, 5000);
       const offset    = parseInt(req.query.offset as string) || 0;
       const categoryId = (req.query.categoryId as string) || '';
       const brandId    = (req.query.brandId    as string) || '';
