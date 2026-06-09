@@ -658,36 +658,61 @@ async function runNikeJordanSizeFix() {
     );
     const nikeBrandId = brandRes.rows[0]?.id ?? null;
 
-    // 나이키 브랜드 신발 + 이름에 '조던'/'jordan' 포함된 신발 업데이트
-    // 단, options에 S/M/L/XL 같은 의류 사이즈가 있는 경우만 (or 아예 올바르지 않은 사이즈)
-    let whereClause = `category_id = 'shoes' AND (
-      options::text ILIKE '%"S"%'
-      OR options::text ILIKE '%"M"%'
-      OR options::text ILIKE '%"L"%'
-      OR options::text ILIKE '%"XL"%'
-      OR options::text ILIKE '%"44"%'
-      OR options::text ILIKE '%"55"%'
-    ) AND (`;
-
-    const params: any[] = [CORRECT_SIZES];
-    let pIdx = 2;
-
-    if (nikeBrandId) {
-      whereClause += `brand_id = $${pIdx++}`;
-      params.push(nikeBrandId);
-      whereClause += ` OR `;
+    // ── STEP 1: 조던/나이키 신발인데 잘못된 카테고리(bags/clothing 등)에 있는 경우 → shoes로 이동
+    const nikeBrandFilter = nikeBrandId ? `brand_id = '${nikeBrandId}' OR ` : '';
+    const catFix = await pool.query(
+      `UPDATE products
+       SET category_id = 'shoes', options = $1
+       WHERE category_id != 'shoes'
+         AND (
+           ${nikeBrandFilter}
+           name ILIKE '%조던%' OR name ILIKE '%jordan%'
+           OR name ILIKE '%나이키%' OR name ILIKE '%nike%'
+         )`,
+      [CORRECT_SIZES]
+    );
+    if (catFix.rowCount && catFix.rowCount > 0) {
+      log(`나이키/조던 카테고리 교정: ${catFix.rowCount}개 상품 → shoes로 이동 및 사이즈 교정`, 'migration');
     }
-    whereClause += `name ILIKE '%조던%' OR name ILIKE '%jordan%')`;
 
-    const result = await pool.query(
-      `UPDATE products SET options = $1 WHERE ${whereClause}`,
-      params
+    // ── STEP 2: shoes 카테고리인데 사이즈가 잘못된 경우 (S/M/L/XL, 44/55 의류사이즈, 또는 빈 sizes)
+    //    대상: 나이키 브랜드 OR 상품명에 나이키/조던 포함
+    const sizeFix = await pool.query(
+      `UPDATE products
+       SET options = $1
+       WHERE category_id = 'shoes'
+         AND (
+           ${nikeBrandFilter}
+           name ILIKE '%조던%' OR name ILIKE '%jordan%'
+           OR name ILIKE '%나이키%' OR name ILIKE '%nike%'
+         )
+         AND (
+           options IS NULL
+           OR options::text = '{}'
+           OR options::text ILIKE '%"sizes":[]%'
+           OR options::text ILIKE '%"S"%'
+           OR options::text ILIKE '%"M"%'
+           OR options::text ILIKE '%"L"%'
+           OR options::text ILIKE '%"XL"%'
+           OR options::text ILIKE '%"44"%'
+           OR options::text ILIKE '%"55"%'
+           OR options::text ILIKE '%"220"%'
+           OR options::text ILIKE '%"225"%'
+           OR options::text ILIKE '%"230"%'
+           OR options::text ILIKE '%"235"%'
+           OR options::text ILIKE '%"240"%'
+           OR options::text ILIKE '%"245"%'
+           OR options::text ILIKE '%"250"%'
+         )`,
+      [CORRECT_SIZES]
     );
 
-    if (result.rowCount && result.rowCount > 0) {
-      log(`나이키/조던 신발 사이즈 교정: ${result.rowCount}개 상품 255~285로 수정`, 'migration');
-    } else {
-      log('나이키/조던 신발 사이즈: 이미 모두 올바르게 설정됨', 'migration');
+    const total = (catFix.rowCount ?? 0) + (sizeFix.rowCount ?? 0);
+    if (sizeFix.rowCount && sizeFix.rowCount > 0) {
+      log(`나이키/조던 신발 사이즈 교정: ${sizeFix.rowCount}개 상품 255~285로 수정`, 'migration');
+    }
+    if (total === 0) {
+      log('나이키/조던 신발: 이미 모두 올바르게 설정됨', 'migration');
     }
   } catch (err: any) {
     console.error('[migration] 나이키/조던 사이즈 교정 오류:', err.message);
