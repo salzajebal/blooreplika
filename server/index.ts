@@ -136,6 +136,7 @@ app.use((req, res, next) => {
       runWatchBrandsSeed();
       runGenderNormalization();
       runStartupMaintenance();
+      runNikeJordanSizeFix();
     },
   );
 })();
@@ -639,6 +640,57 @@ async function runStartupMaintenance() {
     log(`Maintenance done: ${brandsCreated} brands created, ${htmlFixed} names fixed, ${classified} brands classified out of ${allProducts.length} products`, 'maintenance');
   } catch (error) {
     console.error('[maintenance] Error:', error);
+  }
+}
+
+// 나이키/조던 신발 사이즈 교정: 255~285 (5단위)
+async function runNikeJordanSizeFix() {
+  try {
+    const CORRECT_SIZES = JSON.stringify({
+      colors: [],
+      sizes: ["255","260","265","270","275","280","285"],
+      extras: []
+    });
+
+    // 나이키 브랜드 ID 조회
+    const brandRes = await pool.query(
+      `SELECT id FROM brands WHERE name ILIKE '%나이키%' OR name ILIKE '%nike%' LIMIT 1`
+    );
+    const nikeBrandId = brandRes.rows[0]?.id ?? null;
+
+    // 나이키 브랜드 신발 + 이름에 '조던'/'jordan' 포함된 신발 업데이트
+    // 단, options에 S/M/L/XL 같은 의류 사이즈가 있는 경우만 (or 아예 올바르지 않은 사이즈)
+    let whereClause = `category_id = 'shoes' AND (
+      options::text ILIKE '%"S"%'
+      OR options::text ILIKE '%"M"%'
+      OR options::text ILIKE '%"L"%'
+      OR options::text ILIKE '%"XL"%'
+      OR options::text ILIKE '%"44"%'
+      OR options::text ILIKE '%"55"%'
+    ) AND (`;
+
+    const params: any[] = [CORRECT_SIZES];
+    let pIdx = 2;
+
+    if (nikeBrandId) {
+      whereClause += `brand_id = $${pIdx++}`;
+      params.push(nikeBrandId);
+      whereClause += ` OR `;
+    }
+    whereClause += `name ILIKE '%조던%' OR name ILIKE '%jordan%')`;
+
+    const result = await pool.query(
+      `UPDATE products SET options = $1 WHERE ${whereClause}`,
+      params
+    );
+
+    if (result.rowCount && result.rowCount > 0) {
+      log(`나이키/조던 신발 사이즈 교정: ${result.rowCount}개 상품 255~285로 수정`, 'migration');
+    } else {
+      log('나이키/조던 신발 사이즈: 이미 모두 올바르게 설정됨', 'migration');
+    }
+  } catch (err: any) {
+    console.error('[migration] 나이키/조던 사이즈 교정 오류:', err.message);
   }
 }
 
