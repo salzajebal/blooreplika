@@ -10045,5 +10045,153 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
+  // ============= 상세이미지 정리 =============
+  function normalizeDetailImageUrl(url: string): string {
+    try {
+      if (url.includes('/api/bloostore-image-proxy?url=')) {
+        const match = url.match(/[?&]url=([^&]+)/);
+        if (match) return decodeURIComponent(match[1]).toLowerCase().trim();
+      }
+      // Remove protocol variation: treat http/https as same
+      return url.replace(/^https?:\/\//, '').toLowerCase().trim();
+    } catch {
+      return url.toLowerCase().trim();
+    }
+  }
+
+  app.post("/api/admin/detail-images/analyze", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { categoryId, threshold = 3 } = req.body;
+      const allProducts = await storage.getAllProducts();
+      const products = categoryId ? allProducts.filter((p: any) => p.categoryId === categoryId) : allProducts;
+
+      // URL 빈도 맵: normalizedUrl → Set<productId>
+      const urlFreq = new Map<string, Set<string>>();
+      for (const p of products) {
+        const urls: string[] = (p as any).detailImageUrls || [];
+        for (const url of urls) {
+          const norm = normalizeDetailImageUrl(url);
+          if (!urlFreq.has(norm)) urlFreq.set(norm, new Set());
+          urlFreq.get(norm)!.add((p as any).id);
+        }
+      }
+
+      // 의심 URL 판단: (1) 빈도 >= threshold  (2) /editor/ /ebcontents/ 경로
+      const suspectNorms = new Set<string>();
+      for (const [norm, ids] of urlFreq.entries()) {
+        if (ids.size >= Number(threshold) || norm.includes('/editor/') || norm.includes('/ebcontents/')) {
+          suspectNorms.add(norm);
+        }
+      }
+
+      // 상품별 분석
+      const affectedProducts: any[] = [];
+      const zeroImageProducts: any[] = [];
+
+      for (const p of products) {
+        const urls: string[] = (p as any).detailImageUrls || [];
+        if (!urls.length) continue;
+        const toRemove = urls.filter(u => suspectNorms.has(normalizeDetailImageUrl(u)));
+        const toKeep   = urls.filter(u => !suspectNorms.has(normalizeDetailImageUrl(u)));
+        if (!toRemove.length) continue;
+
+        affectedProducts.push({
+          id: (p as any).id,
+          name: (p as any).name,
+          imageUrl: (p as any).imageUrl,
+          categoryId: (p as any).categoryId,
+          before: urls.length,
+          after: toKeep.length,
+          removePreview: toRemove.slice(0, 4),
+        });
+        if (toKeep.length === 0) {
+          zeroImageProducts.push({ id: (p as any).id, name: (p as any).name, imageUrl: (p as any).imageUrl });
+        }
+      }
+
+      // 상위 의심 URL 목록 (이미지 미리보기용 원본 URL 복원)
+      const normToOriginal = new Map<string, string>();
+      for (const p of products) {
+        for (const url of ((p as any).detailImageUrls || [])) {
+          const norm = normalizeDetailImageUrl(url);
+          if (!normToOriginal.has(norm)) normToOriginal.set(norm, url);
+        }
+      }
+
+      const suspectUrlList = Array.from(urlFreq.entries())
+        .filter(([norm]) => suspectNorms.has(norm))
+        .map(([norm, ids]) => ({
+          url: normToOriginal.get(norm) || norm,
+          count: ids.size,
+          reason: (norm.includes('/editor/') || norm.includes('/ebcontents/')) ? '공용경로' : `${ids.size}개상품공유`,
+        }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 60);
+
+      res.json({
+        success: true,
+        stats: {
+          totalScanned: products.length,
+          suspectUrlCount: suspectNorms.size,
+          affectedProductCount: affectedProducts.length,
+          zeroImageCount: zeroImageProducts.length,
+        },
+        suspectUrls: suspectUrlList,
+        affectedProducts: affectedProducts.slice(0, 200),
+        zeroImageProducts,
+      });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  app.post("/api/admin/detail-images/cleanup", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const { categoryId, threshold = 3, excludeUrls = [], dryRun = false } = req.body;
+      const allProducts = await storage.getAllProducts();
+      const products = categoryId ? allProducts.filter((p: any) => p.categoryId === categoryId) : allProducts;
+
+      const urlFreq = new Map<string, Set<string>>();
+      for (const p of products) {
+        for (const url of ((p as any).detailImageUrls || [])) {
+          const norm = normalizeDetailImageUrl(url);
+          if (!urlFreq.has(norm)) urlFreq.set(norm, new Set());
+          urlFreq.get(norm)!.add((p as any).id);
+        }
+      }
+
+      const excludeNorms = new Set((excludeUrls as string[]).map(normalizeDetailImageUrl));
+      const suspectNorms = new Set<string>();
+      for (const [norm, ids] of urlFreq.entries()) {
+        if (excludeNorms.has(norm)) continue;
+        if (ids.size >= Number(threshold) || norm.includes('/editor/') || norm.includes('/ebcontents/')) {
+          suspectNorms.add(norm);
+        }
+      }
+
+      let updated = 0;
+      const zeroProducts: any[] = [];
+
+      for (const p of products) {
+        const urls: string[] = (p as any).detailImageUrls || [];
+        if (!urls.length) continue;
+        const kept = urls.filter(u => !suspectNorms.has(normalizeDetailImageUrl(u)));
+        if (kept.length === urls.length) continue;
+
+        if (!dryRun) {
+          await storage.updateProduct((p as any).id, { detailImageUrls: kept });
+        }
+        updated++;
+        if (kept.length === 0) {
+          zeroProducts.push({ id: (p as any).id, name: (p as any).name });
+        }
+      }
+
+      res.json({ success: true, updated, zeroCount: zeroProducts.length, zeroProducts, dryRun });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   return httpServer;
 }

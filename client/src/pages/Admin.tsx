@@ -3791,6 +3791,15 @@ export default function Admin() {
                 <span className="hidden md:inline">상품 분류</span>
               </Button>
               <Button
+                data-testid="tab-detail-images"
+                variant={activeTab === "detail-images" ? "default" : "outline"}
+                onClick={() => setActiveTab("detail-images")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "detail-images" ? "bg-rose-500 hover:bg-rose-600" : ""}`}
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4 md:mr-2" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                <span className="hidden md:inline">상세이미지 정리</span>
+              </Button>
+              <Button
                 data-testid="tab-staff"
                 variant={activeTab === "staff" ? "default" : "outline"}
                 onClick={() => setActiveTab("staff")}
@@ -8927,6 +8936,10 @@ export default function Admin() {
           <ClassifyTab authToken={authToken} fetchWithAuth={fetchWithAuth} toast={toast} />
         )}
 
+        {activeTab === "detail-images" && adminRole === "super_admin" && (
+          <DetailImageCleanupTab fetchWithAuth={fetchWithAuth} toast={toast} />
+        )}
+
         {activeTab === "staff" && adminRole === "super_admin" && (
           <div className="space-y-6">
             {/* 직원 접속 URL 안내 */}
@@ -11756,6 +11769,349 @@ function RankingAdminTab({ authToken }: { authToken: string }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ==================== 상세이미지 정리 탭 ====================
+const CATEGORY_OPTIONS_IMG = [
+  { value: "", label: "전체 카테고리" },
+  { value: "clothing", label: "의류" },
+  { value: "bags", label: "가방" },
+  { value: "wallets", label: "지갑" },
+  { value: "shoes", label: "신발" },
+  { value: "watches", label: "시계" },
+  { value: "jewelry", label: "쥬얼리/잡화" },
+  { value: "golf", label: "골프" },
+  { value: "sunglasses", label: "선글라스" },
+  { value: "belts", label: "벨트" },
+  { value: "accessories", label: "액세서리" },
+];
+
+function DetailImageCleanupTab({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, options?: RequestInit) => Promise<Response>; toast: (opts: any) => void }) {
+  const [categoryId, setCategoryId] = React.useState("");
+  const [threshold, setThreshold] = React.useState(3);
+  const [analyzing, setAnalyzing] = React.useState(false);
+  const [result, setResult] = React.useState<any>(null);
+  const [excludeUrls, setExcludeUrls] = React.useState<Set<string>>(new Set());
+  const [cleaning, setCleaning] = React.useState(false);
+  const [cleanResult, setCleanResult] = React.useState<any>(null);
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [showAllAffected, setShowAllAffected] = React.useState(false);
+  const [showSuspectUrls, setShowSuspectUrls] = React.useState(false);
+
+  const analyze = async () => {
+    setAnalyzing(true);
+    setResult(null);
+    setCleanResult(null);
+    setExcludeUrls(new Set());
+    setShowAllAffected(false);
+    setShowSuspectUrls(false);
+    try {
+      const res = await fetchWithAuth("/api/admin/detail-images/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categoryId: categoryId || undefined, threshold }),
+      });
+      const data = await res.json();
+      if (data.success) setResult(data);
+      else toast({ title: `분석 실패: ${data.error}`, variant: "destructive" });
+    } catch {
+      toast({ title: "분석 중 오류 발생", variant: "destructive" });
+    } finally {
+      setAnalyzing(false);
+    }
+  };
+
+  const cleanup = async () => {
+    setCleaning(true);
+    setConfirmOpen(false);
+    try {
+      const res = await fetchWithAuth("/api/admin/detail-images/cleanup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          categoryId: categoryId || undefined,
+          threshold,
+          excludeUrls: Array.from(excludeUrls),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCleanResult(data);
+        toast({ title: `✅ ${data.updated}개 상품 정리 완료` });
+        setResult(null);
+      } else {
+        toast({ title: `정리 실패: ${data.error}`, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "정리 중 오류 발생", variant: "destructive" });
+    } finally {
+      setCleaning(false);
+    }
+  };
+
+  const toggleExclude = (url: string) => {
+    setExcludeUrls(prev => {
+      const next = new Set(prev);
+      if (next.has(url)) next.delete(url);
+      else next.add(url);
+      return next;
+    });
+  };
+
+  const affectedToShow = showAllAffected ? result?.affectedProducts : result?.affectedProducts?.slice(0, 30);
+
+  return (
+    <div className="space-y-5">
+      {/* 헤더 */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-9 h-9 bg-rose-100 rounded-lg flex items-center justify-center flex-shrink-0">
+            <svg viewBox="0 0 24 24" className="w-5 h-5 text-rose-600" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+            </svg>
+          </div>
+          <div>
+            <h2 className="font-bold text-gray-900 text-base">상세이미지 정리</h2>
+            <p className="text-xs text-gray-500 mt-0.5">여러 상품에 공통으로 들어간 잘못된 상세이미지를 감지하고 제거합니다.<br/>대표이미지(imageUrl)와 갤러리(imageUrls)는 건드리지 않습니다.</p>
+          </div>
+        </div>
+
+        {/* 설정 */}
+        <div className="flex flex-wrap gap-3 items-end">
+          <div>
+            <label className="text-xs font-medium text-gray-600 block mb-1">카테고리</label>
+            <select
+              value={categoryId}
+              onChange={e => { setCategoryId(e.target.value); setResult(null); setCleanResult(null); }}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white"
+            >
+              {CATEGORY_OPTIONS_IMG.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600 block mb-1">
+              공유 임계값 <span className="text-gray-400">(N개 이상 상품에 동일 URL → 의심)</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="range" min={2} max={10} value={threshold}
+                onChange={e => setThreshold(Number(e.target.value))}
+                className="w-28"
+              />
+              <span className="text-sm font-bold text-rose-600 w-6">{threshold}</span>
+            </div>
+          </div>
+          <Button
+            onClick={analyze}
+            disabled={analyzing}
+            className="bg-rose-500 hover:bg-rose-600 text-white"
+            data-testid="button-analyze-detail-images"
+          >
+            {analyzing ? <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />분석 중...</> : <>🔍 분석 시작</>}
+          </Button>
+        </div>
+
+        {/* 의심 기준 안내 */}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <span className="text-xs bg-orange-50 text-orange-700 border border-orange-200 rounded px-2 py-0.5">① {threshold}개 이상 상품에 동일 URL 포함</span>
+          <span className="text-xs bg-orange-50 text-orange-700 border border-orange-200 rounded px-2 py-0.5">② /editor/ 또는 /ebcontents/ 경로</span>
+          <span className="text-xs text-gray-400 rounded px-2 py-0.5">→ 둘 중 하나라도 해당하면 의심</span>
+        </div>
+      </div>
+
+      {/* 분석 결과 */}
+      {result && (
+        <>
+          {/* 통계 요약 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { label: "스캔한 상품", value: result.stats.totalScanned.toLocaleString(), color: "gray" },
+              { label: "의심 URL 수", value: result.stats.suspectUrlCount.toLocaleString(), color: "orange" },
+              { label: "영향 상품 수", value: result.stats.affectedProductCount.toLocaleString(), color: "rose" },
+              { label: "이미지 0개 될 상품", value: result.stats.zeroImageCount.toLocaleString(), color: "red" },
+            ].map(s => (
+              <div key={s.label} className={`bg-white rounded-xl border p-4 shadow-sm ${s.color === 'red' && result.stats.zeroImageCount > 0 ? 'border-red-300 bg-red-50' : 'border-gray-100'}`}>
+                <p className="text-xs text-gray-500 mb-1">{s.label}</p>
+                <p className={`text-2xl font-bold ${s.color === 'orange' ? 'text-orange-600' : s.color === 'rose' ? 'text-rose-600' : s.color === 'red' && result.stats.zeroImageCount > 0 ? 'text-red-700' : 'text-gray-800'}`}>{s.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* 이미지 0개 경고 */}
+          {result.stats.zeroImageCount > 0 && (
+            <div className="bg-red-50 border border-red-300 rounded-xl p-4">
+              <div className="flex items-start gap-2">
+                <span className="text-red-500 text-lg">⚠️</span>
+                <div>
+                  <p className="text-sm font-bold text-red-700">정리 후 상세이미지가 0개가 되는 상품 {result.stats.zeroImageCount}개</p>
+                  <p className="text-xs text-red-600 mt-0.5">아래 상품들은 정리 후 상세이미지가 전부 없어집니다. 정리 후 재크롤이 필요합니다.</p>
+                  <div className="mt-2 max-h-32 overflow-y-auto space-y-1">
+                    {result.zeroImageProducts.map((p: any) => (
+                      <div key={p.id} className="flex items-center gap-2 text-xs text-red-700">
+                        {p.imageUrl && <img src={p.imageUrl} className="w-6 h-6 rounded object-cover" />}
+                        <span className="truncate">{p.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 의심 URL 목록 (이미지 미리보기) */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-bold text-gray-800 text-sm">
+                🚫 제거될 의심 URL <span className="text-rose-600">({result.suspectUrls.length}개)</span>
+              </h3>
+              <Button size="sm" variant="outline" onClick={() => setShowSuspectUrls(v => !v)} className="text-xs">
+                {showSuspectUrls ? "접기" : "펼쳐보기"}
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">체크 해제하면 해당 URL은 제거에서 제외됩니다.</p>
+            {showSuspectUrls && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 max-h-96 overflow-y-auto">
+                {result.suspectUrls.map((item: any, i: number) => {
+                  const excluded = excludeUrls.has(item.url);
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => toggleExclude(item.url)}
+                      className={`relative rounded-lg border-2 cursor-pointer transition-all ${excluded ? 'border-green-400 opacity-60' : 'border-rose-300'}`}
+                    >
+                      <img
+                        src={item.url}
+                        alt=""
+                        className="w-full h-20 object-cover rounded-t-md bg-gray-100"
+                        onError={(e) => { (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect fill='%23f3f4f6' width='24' height='24'/%3E%3Ctext y='16' x='4' font-size='10' fill='%239ca3af'%3E404%3C/text%3E%3C/svg%3E"; }}
+                      />
+                      <div className="p-1.5">
+                        <span className={`text-xs font-bold ${excluded ? 'text-green-600' : 'text-rose-600'}`}>
+                          {excluded ? "✓ 제외됨" : `${item.count}개 공유`}
+                        </span>
+                        <p className="text-xs text-gray-400 truncate">{item.reason}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {!showSuspectUrls && (
+              <p className="text-xs text-gray-400">"펼쳐보기"로 이미지 미리보기 확인 및 제외 설정이 가능합니다.</p>
+            )}
+          </div>
+
+          {/* 영향 상품 목록 */}
+          {result.affectedProducts.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <h3 className="font-bold text-gray-800 text-sm mb-3">
+                📦 영향 받는 상품 ({result.affectedProducts.length}개)
+              </h3>
+              <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                {affectedToShow.map((p: any) => (
+                  <div key={p.id} className="flex items-center gap-3 py-1.5 border-b border-gray-50 last:border-0">
+                    {p.imageUrl && <img src={p.imageUrl} className="w-8 h-8 rounded object-cover flex-shrink-0" />}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-800 truncate">{p.name}</p>
+                      <p className="text-xs text-gray-400">{p.categoryId}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <span className="text-xs text-gray-500">{p.before}장</span>
+                      <span className="text-xs text-gray-400">→</span>
+                      <span className={`text-xs font-bold ${p.after === 0 ? 'text-red-600' : 'text-emerald-600'}`}>{p.after}장</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {result.affectedProducts.length > 30 && (
+                <Button size="sm" variant="outline" onClick={() => setShowAllAffected(v => !v)} className="mt-3 text-xs w-full">
+                  {showAllAffected ? "접기" : `전체 ${result.affectedProducts.length}개 보기`}
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* 실행 버튼 */}
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-bold text-gray-800">정리 실행</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {result.affectedProducts.length}개 상품의 detailImageUrls에서 의심 이미지를 제거합니다.
+                  {excludeUrls.size > 0 && <span className="text-green-600"> ({excludeUrls.size}개 URL 제외 적용됨)</span>}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={analyze} disabled={analyzing} className="text-xs">
+                  🔄 재분석
+                </Button>
+                <Button
+                  onClick={() => setConfirmOpen(true)}
+                  disabled={cleaning || result.affectedProducts.length === 0}
+                  className="bg-rose-500 hover:bg-rose-600 text-white"
+                  data-testid="button-cleanup-detail-images"
+                >
+                  {cleaning ? <><RefreshCw className="w-4 h-4 mr-2 animate-spin" />정리 중...</> : "🗑️ 정리 실행"}
+                </Button>
+              </div>
+            </div>
+
+            {/* 확인 팝업 */}
+            {confirmOpen && (
+              <div className="mt-4 p-4 bg-rose-50 border border-rose-300 rounded-xl">
+                <p className="text-sm font-bold text-rose-800 mb-1">⚠️ 정말 실행하시겠습니까?</p>
+                <p className="text-xs text-rose-700 mb-3">
+                  {result.affectedProducts.length}개 상품에서 {result.stats.suspectUrlCount - excludeUrls.size}개 URL을 제거합니다.
+                  {result.stats.zeroImageCount > 0 && <strong> {result.stats.zeroImageCount}개 상품은 상세이미지가 0개가 됩니다.</strong>}
+                  &nbsp;이 작업은 되돌릴 수 없습니다.
+                </p>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setConfirmOpen(false)}>취소</Button>
+                  <Button size="sm" onClick={cleanup} disabled={cleaning} className="bg-rose-500 hover:bg-rose-600 text-white">
+                    확인, 실행
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* 정리 완료 결과 */}
+      {cleanResult && (
+        <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-5">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">✅</span>
+            <div>
+              <p className="font-bold text-emerald-800">정리 완료!</p>
+              <p className="text-sm text-emerald-700 mt-1">
+                <strong>{cleanResult.updated}개</strong> 상품에서 잘못된 상세이미지를 제거했습니다.
+              </p>
+              {cleanResult.zeroCount > 0 && (
+                <p className="text-xs text-orange-700 mt-1">
+                  ⚠️ {cleanResult.zeroCount}개 상품이 상세이미지 0개 상태가 됐습니다. 재크롤이 필요합니다.
+                </p>
+              )}
+              <Button size="sm" onClick={analyze} className="mt-3 text-xs" variant="outline">
+                다시 분석하기
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 빈 상태 */}
+      {!result && !cleanResult && !analyzing && (
+        <div className="bg-white rounded-xl border border-dashed border-gray-200 p-10 text-center">
+          <svg viewBox="0 0 24 24" className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+          </svg>
+          <p className="text-gray-500 text-sm font-medium">위에서 카테고리와 임계값을 설정하고 분석을 시작하세요.</p>
+          <p className="text-gray-400 text-xs mt-1">전체 분석은 상품 수에 따라 수 초 걸릴 수 있습니다.</p>
+        </div>
+      )}
     </div>
   );
 }
