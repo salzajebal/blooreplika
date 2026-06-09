@@ -11818,17 +11818,20 @@ const PRICE_PRESETS = [
 const PAGE_LIMIT = 50;
 
 const TARGET_RANGES = [
-  { label: "5만원대",   min: 50000,    max: 99000 },
-  { label: "10만원대",  min: 100000,   max: 199000 },
-  { label: "20만원대",  min: 200000,   max: 299000 },
-  { label: "30만원대",  min: 300000,   max: 499000 },
-  { label: "50만원대",  min: 500000,   max: 999000 },
-  { label: "100만원대", min: 1000000,  max: 1999000 },
-  { label: "200만원대", min: 2000000,  max: 2999000 },
-  { label: "직접 입력", min: 0,        max: 0 },
+  { label: "5만원대",      min: 50000,    max: 99000 },
+  { label: "10만원대",     min: 100000,   max: 199000 },
+  { label: "20만원 초반",  min: 200000,   max: 239000 },
+  { label: "20만원 중반",  min: 240000,   max: 269000 },
+  { label: "20만원 후반",  min: 270000,   max: 299000 },
+  { label: "20만원대 전체",min: 200000,   max: 299000 },
+  { label: "30만원대",     min: 300000,   max: 499000 },
+  { label: "50만원대",     min: 500000,   max: 999000 },
+  { label: "100만원대",    min: 1000000,  max: 1999000 },
+  { label: "200만원대",    min: 2000000,  max: 2999000 },
+  { label: "직접 입력",    min: 0,        max: 0 },
 ];
 
-function autoDistributePrices(items: any[], tMin: number, tMax: number): Array<{id:string; name:string; brand_name:string; image_url:string; price:number; newPrice:number}> {
+function autoDistributePrices(items: any[], tMin: number, tMax: number): Array<{id:string; name:string; brand_name:string; image_url:string; price:number; newPrice:number; aiScore?:number; aiLabel?:string}> {
   const sorted = [...items].sort((a, b) => a.price - b.price);
   const n = sorted.length;
   const used = new Set<number>();
@@ -11840,6 +11843,62 @@ function autoDistributePrices(items: any[], tMin: number, tMax: number): Array<{
     if (used.has(np)) { let d = np; while (used.has(d) && d - 1000 >= tMin) d -= 1000; if (!used.has(d)) np = d; }
     used.add(np);
     return { ...p, newPrice: np };
+  });
+}
+
+// ===== AI 분석 가격 배정 =====
+function getAIBrandScore(brandName: string): { score: number; label: string } {
+  const n = (brandName || '').toLowerCase();
+  const check = (list: string[]) => list.some(b => n.includes(b));
+  if (check(['에르메스','hermès','hermes']))                                                    return { score: 0.93, label: 'S+등급' };
+  if (check(['샤넬','chanel','루이비통','louis vuitton','lv']))                                 return { score: 0.83, label: 'S등급' };
+  if (check(['구찌','gucci','프라다','prada','디올','dior','발렌시아가','balenciaga','생로랑','saint laurent','ysl','셀린느','celine','보테가','bottega','로로피아나','loro piana'])) return { score: 0.67, label: 'A+등급' };
+  if (check(['지방시','givenchy','발렌티노','valentino','버버리','burberry','페라가amo','ferragamo','몽클레어','moncler','오프화이트','off-white','알렉산더맥퀸','alexander mcqueen','발망','balmain','끌로에','chloe','chloe','로에베','loewe','막스마라','max mara','라코스테','lacoste','아미','ami','코치','coach'])) return { score: 0.50, label: 'A등급' };
+  if (check(['마이클코어스','michael kors','케이트스페이드','kate spade','토리버치','tory burch','폴로','polo','캘빈클라인','calvin klein','타미힐피거','tommy hilfiger'])) return { score: 0.33, label: 'B등급' };
+  if (check(['나이키','nike','아디다스','adidas','뉴발란스','new balance','조던','jordan','반스','vans','컨버스','converse','퓨마','puma'])) return { score: 0.22, label: '스포츠' };
+  return { score: 0.20, label: '기타' };
+}
+function getAITypeBonus(name: string): number {
+  const n = (name || '').toLowerCase();
+  if (/시계|워치|watch/.test(n)) return 0.10;
+  if (/가방|백|토트|숄더|크로스|핸드백|클러치|보울링백|사첼|호보|버킷|탑핸들/.test(n)) return 0.07;
+  if (/자켓|재킷|코트|블레이저|패딩|점퍼/.test(n)) return 0.05;
+  if (/신발|슈즈|스니커|부츠|로퍼|샌들|펌프스|힐|뮬/.test(n)) return 0.04;
+  if (/지갑|카드지갑|머니클립|월렛/.test(n)) return 0.02;
+  if (/선글라스|안경/.test(n)) return -0.03;
+  if (/벨트/.test(n)) return -0.04;
+  if (/스카프|머플러|쁠리쎄/.test(n)) return -0.04;
+  if (/귀걸이|목걸이|반지|팔찌|브로치|참/.test(n)) return -0.09;
+  return 0;
+}
+function getAIKeywordBonus(name: string): number {
+  const n = (name || '').toLowerCase();
+  let s = 0;
+  if (/한정판|리미티드|limited/.test(n)) s += 0.10;
+  if (/콜라보|컬래버|collaboration/.test(n)) s += 0.07;
+  if (/레어|희귀|rare/.test(n)) s += 0.06;
+  if (/신상|신작|new arrival/.test(n)) s += 0.04;
+  if (/빈티지|앤틱|vintage/.test(n)) s -= 0.04;
+  if (/미니|nano|micro|초소형/.test(n)) s -= 0.03;
+  return s;
+}
+function aiSmartPrices(items: any[], tMin: number, tMax: number): Array<{id:string; name:string; brand_name:string; image_url:string; price:number; newPrice:number; aiScore:number; aiLabel:string}> {
+  const range = tMax - tMin;
+  const priceMap = new Map<number, number>(); // np → count for dedup
+  return items.map(p => {
+    const { score: brandScore, label: brandLabel } = getAIBrandScore(p.brand_name || '');
+    const typeBonus    = getAITypeBonus(p.name || '');
+    const keywordBonus = getAIKeywordBonus(p.name || '');
+    let score = Math.max(0, Math.min(1, brandScore + typeBonus + keywordBonus));
+    let np = Math.round((tMin + score * range) / 1000) * 1000;
+    np = Math.max(tMin, Math.min(tMax, np));
+    // dedup: nudge up then down
+    while ((priceMap.get(np) || 0) >= 3 && np + 1000 <= tMax) np += 1000;
+    if ((priceMap.get(np) || 0) >= 3) { let d = np; while ((priceMap.get(d) || 0) >= 3 && d - 1000 >= tMin) d -= 1000; if ((priceMap.get(d) || 0) < 3) np = d; }
+    priceMap.set(np, (priceMap.get(np) || 0) + 1);
+    // tier label
+    const tierEmoji = brandLabel === 'S+등급' ? '👑' : brandLabel === 'S등급' ? '💎' : brandLabel === 'A+등급' ? '✨' : brandLabel === 'A등급' ? '⭐' : brandLabel === 'B등급' ? '🔹' : brandLabel === '스포츠' ? '👟' : '📦';
+    return { ...p, newPrice: np, aiScore: score, aiLabel: `${tierEmoji} ${brandLabel}` };
   });
 }
 
@@ -11869,6 +11928,7 @@ function PriceEditTab({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, o
   const [bulkPrices, setBulkPrices] = React.useState<Record<string, string>>({});
   const [bulkLoading, setBulkLoading] = React.useState(false);
   const [bulkSaving, setBulkSaving] = React.useState(false);
+  const [bulkMode, setBulkMode] = React.useState<'auto' | 'ai'>('auto');
 
   const totalPages = Math.ceil(total / PAGE_LIMIT);
 
@@ -11915,7 +11975,7 @@ function PriceEditTab({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, o
     }
     setBulkLoading(true);
     try {
-      // 전체 상품 페이지네이션으로 모두 가져오기 (200개 제한 우회)
+      // 전체 상품 페이지네이션으로 모두 가져오기
       const PAGE_SIZE = 500;
       let all: any[] = [];
       let offset = 0;
@@ -11939,11 +11999,13 @@ function PriceEditTab({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, o
         totalCount = data.total ?? all.length;
         offset    += PAGE_SIZE;
 
-        if (data.data.length < PAGE_SIZE) break; // 마지막 페이지
+        if (data.data.length < PAGE_SIZE) break;
       }
 
       if (all.length > 0) {
-        const preview = autoDistributePrices(all, range.min, range.max);
+        const preview = bulkMode === 'ai'
+          ? aiSmartPrices(all, range.min, range.max)
+          : autoDistributePrices(all, range.min, range.max);
         setBulkPreview(preview);
         const prices: Record<string, string> = {};
         preview.forEach(p => { prices[p.id] = p.newPrice.toLocaleString(); });
@@ -12130,9 +12192,36 @@ function PriceEditTab({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, o
             <button onClick={() => { setBulkOpen(false); setBulkPreview([]); }} className="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
           </div>
 
+          {/* 배정 방식 선택 */}
+          <div>
+            <p className="text-xs font-semibold text-gray-700 mb-2">배정 방식</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setBulkMode('auto'); setBulkPreview([]); setBulkPrices({}); }}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium border transition-all ${bulkMode === 'auto' ? 'bg-amber-500 text-white border-amber-500 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:border-amber-400'}`}
+              >
+                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                균등 분배
+                <span className="opacity-70 font-normal">기존 가격 순서 유지</span>
+              </button>
+              <button
+                onClick={() => { setBulkMode('ai'); setBulkPreview([]); setBulkPrices({}); }}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-medium border transition-all ${bulkMode === 'ai' ? 'bg-violet-500 text-white border-violet-500 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:border-violet-400'}`}
+              >
+                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 12l4-4"/><circle cx="18" cy="6" r="3"/></svg>
+                AI 분석 배정
+                <span className="opacity-70 font-normal">브랜드·상품명 분석</span>
+              </button>
+            </div>
+            {bulkMode === 'ai' && (
+              <div className="mt-2 text-xs text-violet-700 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2 leading-relaxed">
+                <strong>AI 분석 기준:</strong> 브랜드 등급(에르메스·샤넬=최상단 / 루이비통·구찌·프라다=상단 / 코치·마이클코어스=중하단) + 상품 종류(시계·가방=높음 / 귀걸이·벨트=낮음) + 특이 키워드(한정판·콜라보=+높음 / 빈티지=약간낮음)을 종합해 가격대 내 위치를 결정합니다.
+              </div>
+            )}
+          </div>
+
           <p className="text-xs text-amber-700 bg-amber-100 rounded-lg px-3 py-2">
-            현재 필터 조건(<strong>{total.toLocaleString()}개 상품</strong>)을 목표 가격대 안에서 상품마다 자동으로 다른 가격으로 분배합니다.<br/>
-            기존 가격 순서를 유지하면서 고르게 분산되며, 미리보기에서 개별 수정도 가능합니다.
+            현재 필터 조건(<strong>{total.toLocaleString()}개 상품</strong>)을 목표 가격대 안에서 자동 배정합니다. 미리보기에서 개별 수정도 가능합니다.
           </p>
 
           {/* 목표 가격대 선택 */}
@@ -12146,7 +12235,7 @@ function PriceEditTab({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, o
                   className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${bulkRangeIdx === i ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-gray-600 border-gray-300 hover:border-amber-400'}`}
                 >
                   {r.label}
-                  {r.label !== "직접 입력" && <span className="ml-1 opacity-60">{r.min.toLocaleString()}~{r.max.toLocaleString()}</span>}
+                  {r.label !== "직접 입력" && <span className="ml-1 opacity-60">{(r.min/10000).toFixed(0)}~{(r.max/10000).toFixed(0)}만</span>}
                 </button>
               ))}
             </div>
@@ -12177,9 +12266,14 @@ function PriceEditTab({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, o
             <Button
               onClick={loadBulkPreview}
               disabled={bulkLoading}
-              className="bg-amber-500 hover:bg-amber-600 text-white text-xs h-8 px-4"
+              className={`text-white text-xs h-8 px-4 ${bulkMode === 'ai' ? 'bg-violet-500 hover:bg-violet-600' : 'bg-amber-500 hover:bg-amber-600'}`}
             >
-              {bulkLoading ? <><RefreshCw className="w-3.5 h-3.5 mr-1 animate-spin" />불러오는 중...</> : <>미리보기 생성</>}
+              {bulkLoading
+                ? <><RefreshCw className="w-3.5 h-3.5 mr-1 animate-spin" />분석 중...</>
+                : bulkMode === 'ai'
+                  ? <>✨ AI 분석 미리보기 생성</>
+                  : <>미리보기 생성</>
+              }
             </Button>
           )}
 
@@ -12187,7 +12281,11 @@ function PriceEditTab({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, o
           {bulkPreview.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold text-gray-700">{bulkPreview.length}개 상품 미리보기 <span className="text-gray-400 font-normal ml-1">(가격을 직접 수정할 수 있습니다)</span></p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-semibold text-gray-700">{bulkPreview.length}개 상품 미리보기</p>
+                  {bulkMode === 'ai' && <span className="text-xs bg-violet-100 text-violet-700 rounded-full px-2 py-0.5 font-medium">AI 분석</span>}
+                  <span className="text-gray-400 font-normal text-xs">(가격을 직접 수정할 수 있습니다)</span>
+                </div>
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" className="text-xs h-7" onClick={loadBulkPreview} disabled={bulkLoading}>재생성</Button>
                   <Button
@@ -12202,37 +12300,77 @@ function PriceEditTab({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, o
                 </div>
               </div>
 
-              {/* 테이블 헤더 */}
+              {/* 테이블 */}
               <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                <div className="grid grid-cols-[40px_1fr_120px_140px] gap-0 bg-gray-50 border-b border-gray-100 text-xs font-medium text-gray-500 px-3 py-2">
-                  <span></span>
-                  <span>상품명 / 브랜드</span>
-                  <span className="text-right">현재가</span>
-                  <span className="text-right pr-1">변경가 (수정 가능)</span>
-                </div>
-                <div className="max-h-[400px] overflow-y-auto">
-                  {bulkPreview.map((p, idx) => (
-                    <div key={p.id} className={`grid grid-cols-[40px_1fr_120px_140px] gap-0 items-center border-b border-gray-50 last:border-0 px-3 py-1.5 ${idx % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
-                      <div className="text-xs text-gray-300 tabular-nums">{idx + 1}</div>
-                      <div className="min-w-0 pr-2">
-                        <p className="text-xs font-medium text-gray-800 truncate">{p.name}</p>
-                        <p className="text-xs text-gray-400 truncate">{p.brand_name || "-"}</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-xs text-gray-400 line-through tabular-nums">₩{p.price?.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-end items-center gap-1 pr-1">
-                        <span className="text-xs text-gray-400">→</span>
-                        <input
-                          type="text"
-                          value={bulkPrices[p.id] ?? ''}
-                          onChange={e => setBulkPrices(prev => ({ ...prev, [p.id]: e.target.value }))}
-                          className="w-28 text-right text-xs border border-amber-300 rounded px-1.5 py-0.5 bg-amber-50 focus:border-amber-500 focus:outline-none tabular-nums font-medium text-gray-800"
-                        />
-                      </div>
+                {bulkMode === 'ai' ? (
+                  <>
+                    <div className="grid grid-cols-[36px_1fr_90px_120px_140px] gap-0 bg-gray-50 border-b border-gray-100 text-xs font-medium text-gray-500 px-3 py-2">
+                      <span></span>
+                      <span>상품명 / 브랜드</span>
+                      <span className="text-center">AI 등급</span>
+                      <span className="text-right">현재가</span>
+                      <span className="text-right pr-1">변경가 (수정 가능)</span>
                     </div>
-                  ))}
-                </div>
+                    <div className="max-h-[440px] overflow-y-auto">
+                      {bulkPreview.map((p, idx) => (
+                        <div key={p.id} className={`grid grid-cols-[36px_1fr_90px_120px_140px] gap-0 items-center border-b border-gray-50 last:border-0 px-3 py-1.5 ${idx % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
+                          <div className="text-xs text-gray-300 tabular-nums">{idx + 1}</div>
+                          <div className="min-w-0 pr-2">
+                            <p className="text-xs font-medium text-gray-800 truncate">{p.name}</p>
+                            <p className="text-xs text-gray-400 truncate">{p.brand_name || "-"}</p>
+                          </div>
+                          <div className="text-center">
+                            <span className="text-xs bg-violet-50 text-violet-600 rounded-full px-1.5 py-0.5 whitespace-nowrap">{p.aiLabel || '-'}</span>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-xs text-gray-400 line-through tabular-nums">₩{p.price?.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-end items-center gap-1 pr-1">
+                            <span className="text-xs text-gray-400">→</span>
+                            <input
+                              type="text"
+                              value={bulkPrices[p.id] ?? ''}
+                              onChange={e => setBulkPrices(prev => ({ ...prev, [p.id]: e.target.value }))}
+                              className="w-28 text-right text-xs border border-violet-300 rounded px-1.5 py-0.5 bg-violet-50 focus:border-violet-500 focus:outline-none tabular-nums font-medium text-gray-800"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-[40px_1fr_120px_140px] gap-0 bg-gray-50 border-b border-gray-100 text-xs font-medium text-gray-500 px-3 py-2">
+                      <span></span>
+                      <span>상품명 / 브랜드</span>
+                      <span className="text-right">현재가</span>
+                      <span className="text-right pr-1">변경가 (수정 가능)</span>
+                    </div>
+                    <div className="max-h-[440px] overflow-y-auto">
+                      {bulkPreview.map((p, idx) => (
+                        <div key={p.id} className={`grid grid-cols-[40px_1fr_120px_140px] gap-0 items-center border-b border-gray-50 last:border-0 px-3 py-1.5 ${idx % 2 === 0 ? '' : 'bg-gray-50/30'}`}>
+                          <div className="text-xs text-gray-300 tabular-nums">{idx + 1}</div>
+                          <div className="min-w-0 pr-2">
+                            <p className="text-xs font-medium text-gray-800 truncate">{p.name}</p>
+                            <p className="text-xs text-gray-400 truncate">{p.brand_name || "-"}</p>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-xs text-gray-400 line-through tabular-nums">₩{p.price?.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-end items-center gap-1 pr-1">
+                            <span className="text-xs text-gray-400">→</span>
+                            <input
+                              type="text"
+                              value={bulkPrices[p.id] ?? ''}
+                              onChange={e => setBulkPrices(prev => ({ ...prev, [p.id]: e.target.value }))}
+                              className="w-28 text-right text-xs border border-amber-300 rounded px-1.5 py-0.5 bg-amber-50 focus:border-amber-500 focus:outline-none tabular-nums font-medium text-gray-800"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="flex justify-end pt-1">
