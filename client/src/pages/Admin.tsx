@@ -3800,6 +3800,15 @@ export default function Admin() {
                 <span className="hidden md:inline">상세이미지 정리</span>
               </Button>
               <Button
+                data-testid="tab-price-edit"
+                variant={activeTab === "price-edit" ? "default" : "outline"}
+                onClick={() => setActiveTab("price-edit")}
+                className={`flex-shrink-0 text-xs md:text-sm ${activeTab === "price-edit" ? "bg-violet-500 hover:bg-violet-600" : ""}`}
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4 md:mr-2" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/><path d="M9 12h6"/></svg>
+                <span className="hidden md:inline">가격 수정</span>
+              </Button>
+              <Button
                 data-testid="tab-staff"
                 variant={activeTab === "staff" ? "default" : "outline"}
                 onClick={() => setActiveTab("staff")}
@@ -8940,6 +8949,10 @@ export default function Admin() {
           <DetailImageCleanupTab fetchWithAuth={fetchWithAuth} toast={toast} />
         )}
 
+        {activeTab === "price-edit" && adminRole === "super_admin" && (
+          <PriceEditTab fetchWithAuth={fetchWithAuth} toast={toast} />
+        )}
+
         {activeTab === "staff" && adminRole === "super_admin" && (
           <div className="space-y-6">
             {/* 직원 접속 URL 안내 */}
@@ -11769,6 +11782,340 @@ function RankingAdminTab({ authToken }: { authToken: string }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ==================== 가격 수정 탭 ====================
+const PRICE_CATEGORIES = [
+  { value: "", label: "전체 카테고리" },
+  { value: "clothing", label: "의류" },
+  { value: "bags", label: "가방" },
+  { value: "wallets", label: "지갑" },
+  { value: "shoes", label: "신발" },
+  { value: "watches", label: "시계" },
+  { value: "jewelry", label: "쥬얼리/잡화" },
+  { value: "golf", label: "골프" },
+  { value: "sunglasses", label: "선글라스" },
+  { value: "belts", label: "벨트" },
+];
+
+const PRICE_SORT = [
+  { value: "price_desc", label: "높은 가격순" },
+  { value: "price_asc",  label: "낮은 가격순" },
+  { value: "name_asc",   label: "이름순" },
+];
+
+const PRICE_PRESETS = [
+  { label: "전체", value: 0 },
+  { label: "10만+", value: 100000 },
+  { label: "30만+", value: 300000 },
+  { label: "50만+", value: 500000 },
+  { label: "100만+", value: 1000000 },
+  { label: "300만+", value: 3000000 },
+];
+
+const PAGE_LIMIT = 50;
+
+function PriceEditTab({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, opts?: RequestInit) => Promise<Response>; toast: (o: any) => void }) {
+  const [minPrice, setMinPrice] = React.useState(0);
+  const [minPriceInput, setMinPriceInput] = React.useState("0");
+  const [categoryId, setCategoryId] = React.useState("");
+  const [search, setSearch] = React.useState("");
+  const [searchInput, setSearchInput] = React.useState("");
+  const [sortBy, setSortBy] = React.useState("price_desc");
+  const [products, setProducts] = React.useState<any[]>([]);
+  const [total, setTotal] = React.useState(0);
+  const [page, setPage] = React.useState(1);
+  const [loading, setLoading] = React.useState(false);
+
+  // 인라인 편집 상태: { [productId]: { price?: string; original_price?: string } }
+  const [editing, setEditing] = React.useState<Record<string, { price?: string; original_price?: string }>>({});
+  const [saving, setSaving] = React.useState<Record<string, boolean>>({});
+  const [saved, setSaved] = React.useState<Record<string, boolean>>({});
+
+  const totalPages = Math.ceil(total / PAGE_LIMIT);
+
+  const load = React.useCallback(async (pg = 1, mp = minPrice, cat = categoryId, q = search, sort = sortBy) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        minPrice: String(mp),
+        limit: String(PAGE_LIMIT),
+        offset: String((pg - 1) * PAGE_LIMIT),
+        sortBy: sort,
+      });
+      if (cat) params.set("categoryId", cat);
+      if (q)   params.set("search", q);
+      const res = await fetchWithAuth(`/api/admin/products/price-edit?${params}`);
+      const data = await res.json();
+      if (data.success) { setProducts(data.data); setTotal(data.total); }
+    } finally {
+      setLoading(false);
+    }
+  }, [minPrice, categoryId, search, sortBy]);
+
+  React.useEffect(() => { load(1, minPrice, categoryId, search, sortBy); }, [categoryId, sortBy]);
+
+  const applySearch = () => { setSearch(searchInput); setPage(1); load(1, minPrice, categoryId, searchInput, sortBy); };
+  const applyMinPrice = (val: number) => { setMinPrice(val); setMinPriceInput(val.toLocaleString()); setPage(1); load(1, val, categoryId, search, sortBy); };
+
+  const startEdit = (id: string, field: "price" | "original_price", currentVal: number) => {
+    setEditing(prev => ({ ...prev, [id]: { ...prev[id], [field]: String(currentVal || "") } }));
+  };
+
+  const cancelEdit = (id: string, field: "price" | "original_price") => {
+    setEditing(prev => {
+      const next = { ...prev };
+      if (next[id]) { delete next[id][field]; if (Object.keys(next[id]).length === 0) delete next[id]; }
+      return next;
+    });
+  };
+
+  const savePrice = async (id: string) => {
+    const edits = editing[id];
+    if (!edits) return;
+    const body: any = {};
+    if (edits.price !== undefined) {
+      const v = parseInt(edits.price.replace(/,/g, ''));
+      if (isNaN(v) || v < 0) { toast({ title: "올바른 금액을 입력해주세요.", variant: "destructive" }); return; }
+      body.price = v;
+    }
+    if (edits.original_price !== undefined) {
+      const v = parseInt(edits.original_price.replace(/,/g, ''));
+      if (isNaN(v) || v < 0) { toast({ title: "올바른 금액을 입력해주세요.", variant: "destructive" }); return; }
+      body.originalPrice = v;
+    }
+    setSaving(prev => ({ ...prev, [id]: true }));
+    try {
+      const res = await fetchWithAuth(`/api/products/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        // 로컬 상태 즉시 반영
+        setProducts(prev => prev.map(p => p.id === id ? {
+          ...p,
+          price: body.price ?? p.price,
+          original_price: body.originalPrice ?? p.original_price,
+        } : p));
+        setEditing(prev => { const n = { ...prev }; delete n[id]; return n; });
+        setSaved(prev => ({ ...prev, [id]: true }));
+        setTimeout(() => setSaved(prev => ({ ...prev, [id]: false })), 1500);
+      } else {
+        const d = await res.json().catch(() => ({}));
+        toast({ title: `저장 실패: ${d?.error || res.status}`, variant: "destructive" });
+      }
+    } catch { toast({ title: "저장 실패", variant: "destructive" }); }
+    finally { setSaving(prev => ({ ...prev, [id]: false })); }
+  };
+
+  const fmt = (n: number) => n?.toLocaleString() ?? "-";
+
+  return (
+    <div className="space-y-4">
+      {/* 필터 헤더 */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center">
+            <svg viewBox="0 0 24 24" className="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M9 12h6"/></svg>
+          </div>
+          <h2 className="font-bold text-gray-900">가격 수정</h2>
+          {total > 0 && <span className="text-xs text-gray-400 ml-1">총 {total.toLocaleString()}개 상품</span>}
+        </div>
+
+        {/* 최소금액 프리셋 */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {PRICE_PRESETS.map(p => (
+            <button
+              key={p.value}
+              onClick={() => applyMinPrice(p.value)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${minPrice === p.value ? 'bg-violet-500 text-white border-violet-500' : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-violet-300'}`}
+            >
+              {p.label}
+            </button>
+          ))}
+          {/* 직접입력 */}
+          <div className="flex items-center gap-1.5">
+            <input
+              type="text"
+              value={minPriceInput}
+              onChange={e => setMinPriceInput(e.target.value)}
+              onKeyDown={e => { if (e.key === "Enter") { const v = parseInt(minPriceInput.replace(/,/g, '')) || 0; applyMinPrice(v); }}}
+              placeholder="직접 입력"
+              className="border border-gray-200 rounded-lg px-2.5 py-1 text-xs w-28"
+            />
+            <span className="text-xs text-gray-400">원+</span>
+            <Button size="sm" variant="outline" className="text-xs h-7 px-2" onClick={() => { const v = parseInt(minPriceInput.replace(/,/g, '')) || 0; applyMinPrice(v); }}>적용</Button>
+          </div>
+        </div>
+
+        {/* 필터 행 */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <select
+            value={categoryId}
+            onChange={e => { setCategoryId(e.target.value); setPage(1); }}
+            className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white"
+          >
+            {PRICE_CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+          <select
+            value={sortBy}
+            onChange={e => { setSortBy(e.target.value); setPage(1); }}
+            className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs bg-white"
+          >
+            {PRICE_SORT.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+          <div className="flex gap-1.5 flex-1 min-w-0">
+            <input
+              type="text"
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && applySearch()}
+              placeholder="상품명 검색"
+              className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs flex-1 min-w-0"
+            />
+            <Button size="sm" variant="outline" className="text-xs h-7 px-2.5" onClick={applySearch}>검색</Button>
+            {(search || categoryId || minPrice > 0) && (
+              <Button size="sm" variant="ghost" className="text-xs h-7 px-2 text-gray-400" onClick={() => {
+                setSearchInput(""); setSearch(""); setCategoryId(""); setMinPrice(0); setMinPriceInput("0");
+                setPage(1); load(1, 0, "", "", sortBy);
+              }}>초기화</Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 사용 안내 */}
+      <div className="bg-violet-50 border border-violet-200 rounded-xl px-4 py-2.5 flex items-center gap-2">
+        <svg viewBox="0 0 24 24" className="w-4 h-4 text-violet-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-6v-4m0-4h.01"/></svg>
+        <p className="text-xs text-violet-700">가격 셀을 클릭하면 바로 수정 가능합니다. 수정 후 <strong>Enter</strong> 또는 저장 버튼을 누르세요. 판매가와 원가를 동시에 수정 후 한 번에 저장할 수 있습니다.</p>
+      </div>
+
+      {/* 상품 테이블 */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center h-32 text-gray-400">
+            <RefreshCw className="w-5 h-5 animate-spin mr-2" />불러오는 중...
+          </div>
+        ) : products.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-32 text-gray-400">
+            <p className="text-sm">조건에 맞는 상품이 없습니다.</p>
+          </div>
+        ) : (
+          <>
+            {/* 테이블 헤더 */}
+            <div className="grid grid-cols-[48px_1fr_80px_110px_110px_80px] gap-0 border-b border-gray-100 bg-gray-50 text-xs font-medium text-gray-500 px-4 py-2.5">
+              <span></span>
+              <span>상품명</span>
+              <span>카테고리</span>
+              <span className="text-right">판매가</span>
+              <span className="text-right">원가</span>
+              <span className="text-center">저장</span>
+            </div>
+
+            {/* 상품 행 */}
+            {products.map(p => {
+              const ed = editing[p.id] || {};
+              const isSaving = saving[p.id];
+              const isSaved  = saved[p.id];
+              const hasEdit  = Object.keys(ed).length > 0;
+
+              return (
+                <div key={p.id} className={`grid grid-cols-[48px_1fr_80px_110px_110px_80px] gap-0 items-center border-b border-gray-50 last:border-0 px-4 py-2 hover:bg-gray-50/50 transition-colors ${isSaved ? 'bg-emerald-50/40' : ''}`}>
+                  {/* 썸네일 */}
+                  <div className="flex-shrink-0">
+                    {p.image_url
+                      ? <img src={p.image_url} alt="" className="w-9 h-9 rounded-md object-cover border border-gray-100" />
+                      : <div className="w-9 h-9 rounded-md bg-gray-100 flex items-center justify-center text-gray-300 text-xs">无</div>
+                    }
+                  </div>
+
+                  {/* 상품명 + 브랜드 */}
+                  <div className="min-w-0 pr-2">
+                    <p className="text-xs font-medium text-gray-800 truncate" title={p.name}>{p.name}</p>
+                    <p className="text-xs text-gray-400 truncate">{p.brand_name || "-"}</p>
+                  </div>
+
+                  {/* 카테고리 */}
+                  <span className="text-xs text-gray-500 truncate">{p.category_id}</span>
+
+                  {/* 판매가 인라인 편집 */}
+                  <div className="flex justify-end">
+                    {ed.price !== undefined ? (
+                      <input
+                        type="text"
+                        value={ed.price}
+                        onChange={e => setEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], price: e.target.value } }))}
+                        onKeyDown={e => { if (e.key === "Enter") savePrice(p.id); if (e.key === "Escape") cancelEdit(p.id, "price"); }}
+                        autoFocus
+                        className="w-24 text-right text-xs border border-violet-400 rounded px-1.5 py-0.5 outline-none ring-1 ring-violet-400"
+                      />
+                    ) : (
+                      <button
+                        onClick={() => startEdit(p.id, "price", p.price)}
+                        className="text-xs text-gray-800 font-medium hover:text-violet-600 hover:underline tabular-nums text-right w-full pr-0.5"
+                        title="클릭하여 수정"
+                      >
+                        ₩{fmt(p.price)}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 원가 인라인 편집 */}
+                  <div className="flex justify-end">
+                    {ed.original_price !== undefined ? (
+                      <input
+                        type="text"
+                        value={ed.original_price}
+                        onChange={e => setEditing(prev => ({ ...prev, [p.id]: { ...prev[p.id], original_price: e.target.value } }))}
+                        onKeyDown={e => { if (e.key === "Enter") savePrice(p.id); if (e.key === "Escape") cancelEdit(p.id, "original_price"); }}
+                        className="w-24 text-right text-xs border border-violet-400 rounded px-1.5 py-0.5 outline-none ring-1 ring-violet-400"
+                      />
+                    ) : (
+                      <button
+                        onClick={() => startEdit(p.id, "original_price", p.original_price)}
+                        className={`text-xs hover:text-violet-600 hover:underline tabular-nums text-right w-full pr-0.5 ${p.original_price ? 'text-gray-500 line-through' : 'text-gray-300'}`}
+                        title="클릭하여 수정 (원가/정가)"
+                      >
+                        {p.original_price ? `₩${fmt(p.original_price)}` : "원가 없음"}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* 저장 버튼 */}
+                  <div className="flex justify-center">
+                    {isSaved ? (
+                      <span className="text-emerald-500 text-xs font-medium">✓ 저장</span>
+                    ) : hasEdit ? (
+                      <Button
+                        size="sm"
+                        disabled={isSaving}
+                        onClick={() => savePrice(p.id)}
+                        className="h-6 px-2 text-xs bg-violet-500 hover:bg-violet-600 text-white"
+                      >
+                        {isSaving ? <RefreshCw className="w-3 h-3 animate-spin" /> : "저장"}
+                      </Button>
+                    ) : (
+                      <span className="text-gray-200 text-xs">—</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </>
+        )}
+      </div>
+
+      {/* 페이지네이션 */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 py-2">
+          <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => { const p = page - 1; setPage(p); load(p); }}>‹ 이전</Button>
+          <span className="text-sm text-gray-500 px-2">{page} / {totalPages} <span className="text-gray-400 text-xs">({total.toLocaleString()}개)</span></span>
+          <Button size="sm" variant="outline" disabled={page >= totalPages} onClick={() => { const p = page + 1; setPage(p); load(p); }}>다음 ›</Button>
+        </div>
+      )}
     </div>
   );
 }

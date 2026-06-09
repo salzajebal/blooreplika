@@ -796,6 +796,51 @@ export async function registerRoutes(
     }
   });
   
+  // ===== 가격 수정 탭 전용 API =====
+  app.get("/api/admin/products/price-edit", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const minPrice  = parseInt(req.query.minPrice  as string) || 0;
+      const limit     = Math.min(parseInt(req.query.limit  as string) || 50, 200);
+      const offset    = parseInt(req.query.offset as string) || 0;
+      const categoryId = (req.query.categoryId as string) || '';
+      const brandId    = (req.query.brandId    as string) || '';
+      const search     = (req.query.search     as string) || '';
+      const sortBy     = (req.query.sortBy     as string) || 'price_desc'; // price_desc|price_asc|name_asc
+
+      let where = `p.price >= $1`;
+      const params: any[] = [minPrice];
+      let pIdx = 2;
+
+      if (categoryId) { where += ` AND p.category_id = $${pIdx++}`; params.push(categoryId); }
+      if (brandId)    { where += ` AND p.brand_id    = $${pIdx++}`; params.push(brandId); }
+      if (search)     { where += ` AND p.name ILIKE $${pIdx++}`;    params.push(`%${search}%`); }
+
+      const orderClause =
+        sortBy === 'price_asc'  ? 'p.price ASC'  :
+        sortBy === 'name_asc'   ? 'p.name ASC'   : 'p.price DESC';
+
+      const countRes = await pool.query(
+        `SELECT COUNT(*) FROM products p WHERE ${where}`, params
+      );
+      const total = parseInt(countRes.rows[0].count);
+
+      const rows = await pool.query(
+        `SELECT p.id, p.name, p.price, p.original_price, p.category_id, p.image_url,
+                b.name AS brand_name
+         FROM products p
+         LEFT JOIN brands b ON p.brand_id = b.id
+         WHERE ${where}
+         ORDER BY ${orderClause}
+         LIMIT $${pIdx++} OFFSET $${pIdx++}`,
+        [...params, limit, offset]
+      );
+
+      res.json({ success: true, total, data: rows.rows });
+    } catch (e: any) {
+      res.status(500).json({ success: false, error: e.message });
+    }
+  });
+
   app.patch("/api/products/:id", requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const partialSchema = insertProductSchema.partial();
