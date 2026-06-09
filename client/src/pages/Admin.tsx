@@ -12024,19 +12024,29 @@ function PriceEditTab({ fetchWithAuth, toast }: { fetchWithAuth: (url: string, o
     if (updates.length === 0) return;
     setBulkSaving(true);
     try {
-      const res = await fetchWithAuth('/api/admin/products/bulk-price-assign', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ updates }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast({ title: `✅ ${data.updated}개 상품 가격이 변경됐습니다.` });
-        setBulkOpen(false); setBulkPreview([]); setBulkPrices({});
-        load(page);
-      } else { toast({ title: `저장 실패: ${data.error}`, variant: "destructive" }); }
-    } catch { toast({ title: "저장 실패", variant: "destructive" }); }
-    finally { setBulkSaving(false); }
+      // 500개씩 나눠서 전송 (대량 요청 안정성)
+      const CHUNK = 500;
+      let totalUpdated = 0;
+      for (let i = 0; i < updates.length; i += CHUNK) {
+        const chunk = updates.slice(i, i + CHUNK);
+        const res = await fetchWithAuth('/api/admin/products/bulk-price-assign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ updates: chunk }),
+        });
+        const data = await res.json();
+        if (!data.success) {
+          toast({ title: `저장 실패: ${data.error}`, variant: "destructive" });
+          return;
+        }
+        totalUpdated += data.updated ?? 0;
+      }
+      toast({ title: `✅ ${totalUpdated}개 상품 가격이 변경됐습니다.` });
+      setBulkOpen(false); setBulkPreview([]); setBulkPrices({});
+      load(page);
+    } catch (e: any) {
+      toast({ title: `저장 실패: ${e?.message || '알 수 없는 오류'}`, variant: "destructive" });
+    } finally { setBulkSaving(false); }
   };
 
   const startEdit = (id: string, field: "price" | "original_price", currentVal: number) => {
