@@ -517,14 +517,15 @@ export default function ProductList() {
   useEffect(() => {
     if (isInitialMount.current) { isInitialMount.current = false; sessionStorage.setItem("productListCategory", categorySlug || ""); return; }
     setCurrentPage(1);
-    setSelectedBrand(null);
+    // urlBrand가 있으면 브랜드 필터를 유지 (브랜드+카테고리 동시 네비게이션)
+    if (!urlBrand) setSelectedBrand(null);
     if (!isGenderCategory) setSelectedGender(null);
     setSelectedSubcategory(null);
     const base = location.split("?")[0];
     const p = new URLSearchParams(searchString);
     let changed = false;
     if (p.has("subname")) { p.delete("subname"); changed = true; }
-    if (p.has("brand")) { p.delete("brand"); changed = true; }
+    // brand 파라미터는 삭제하지 않음 — 브랜드 필터가 유지되어야 함
     if (changed) navigate(`${base}${p.toString() ? "?" + p.toString() : ""}`);
     sessionStorage.setItem("productListPage", "1");
     sessionStorage.setItem("productListScroll", "0");
@@ -586,6 +587,8 @@ export default function ProductList() {
     const filterChanged = filterKeyRef.current !== filterKey;
     if (filterChanged) {
       filterKeyRef.current = filterKey;
+      // 필터 변경 시 page를 1로 리셋 — 이전 페이지 데이터가 누적되는 버그 방지
+      setCurrentPage(1);
       setAccumulatedProducts(filteredProducts);
     } else if (currentPage === 1) {
       setAccumulatedProducts(filteredProducts);
