@@ -357,7 +357,7 @@ export function Header() {
                 실시간 검수 사진 <span className="text-green-400 font-bold">✓</span>
               </Link>
               <div className="w-full border-b border-white/10">
-                <button onClick={() => setMenOpen(o => !o)} className="w-full px-5 py-3.5 text-[14px] text-white/90 hover:text-white transition-colors flex items-center justify-between" data-testid="side-menu-men">
+                <button onClick={() => { setMenOpen(o => !o); setWomenOpen(false); }} className="w-full px-5 py-3.5 text-[14px] text-white/90 hover:text-white transition-colors flex items-center justify-between" data-testid="side-menu-men">
                   남성
                   <ChevronRight className={`w-3.5 h-3.5 transition-transform ${menOpen ? 'rotate-90' : ''}`} />
                 </button>
@@ -389,7 +389,7 @@ export function Header() {
               </div>
 
               <div className="w-full border-b border-white/10">
-                <button onClick={() => setWomenOpen(o => !o)} className="w-full px-5 py-3.5 text-[14px] text-white/90 hover:text-white transition-colors flex items-center justify-between" data-testid="side-menu-women">
+                <button onClick={() => { setWomenOpen(o => !o); setMenOpen(false); }} className="w-full px-5 py-3.5 text-[14px] text-white/90 hover:text-white transition-colors flex items-center justify-between" data-testid="side-menu-women">
                   여성
                   <ChevronRight className={`w-3.5 h-3.5 transition-transform ${womenOpen ? 'rotate-90' : ''}`} />
                 </button>
