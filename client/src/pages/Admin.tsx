@@ -13001,7 +13001,7 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
       const res = await fetchWithAuth(`/api/products/${productId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [field]: value }),
+        body: JSON.stringify({ [field]: value, subcategoryId: null }),
       });
       if (res.ok) {
         // 업데이트된 상품 데이터
