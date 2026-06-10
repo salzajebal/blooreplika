@@ -9,7 +9,6 @@ const MOBILE_SUB_NAV = [
   { label: "실시간 검수", path: "/inspection", color: "text-[#00a050] font-medium", dot: true },
   { label: "리뷰", path: "/reviews", color: "" },
   { label: "썸머", path: "/blog", color: "" },
-  { label: "크롬하츠", path: "/products/clothing?brand=Chrome+Hearts", color: "" },
 ];
 
 const DESKTOP_SUB_NAV = [
