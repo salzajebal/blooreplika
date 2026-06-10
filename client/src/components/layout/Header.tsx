@@ -5,7 +5,6 @@ import { useState, useEffect, useRef } from "react";
 import { SignupModal } from "./SignupModal";
 
 const MOBILE_SUB_NAV = [
-  { label: "신규혜택", path: "/sale", color: "text-[#FF6100] font-bold" },
   { label: "실시간 검수", path: "/inspection", color: "text-[#00a050] font-medium", dot: true },
   { label: "리뷰", path: "/reviews", color: "" },
   { label: "썸머", path: "/blog", color: "" },
