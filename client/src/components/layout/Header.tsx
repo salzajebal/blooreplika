@@ -8,6 +8,8 @@ const MOBILE_SUB_NAV = [
   { label: "실시간 검수", path: "/inspection", color: "text-[#00a050] font-medium", dot: true },
   { label: "리뷰", path: "/reviews", color: "" },
   { label: "썸머", path: "/blog", color: "" },
+  { label: "남성", path: "/httpstheblooshop1496458051", color: "" },
+  { label: "여성", path: "/497", color: "" },
 ];
 
 const DESKTOP_SUB_NAV = [
