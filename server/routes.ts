@@ -2797,7 +2797,7 @@ export async function registerRoutes(
     try {
       const token = process.env.META_CAPI_ACCESS_TOKEN;
       if (!token) return;
-      const pixelId = "27084236911240023";
+      const pixelId = "2012919919584350";
       const crypto = await import("crypto");
       const hashValue = (val: string) => crypto.createHash("sha256").update(val.trim().toLowerCase()).digest("hex");
       const userData: Record<string, string> = {};
