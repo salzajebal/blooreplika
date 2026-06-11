@@ -12879,7 +12879,7 @@ const CLASSIFY_CATEGORIES = [
   { value: "watches", label: "시계" },
   { value: "golf", label: "골프" },
   { value: "accessories", label: "악세서리" },
-  { value: "brand:Chrome Hearts", label: "크롬하츠" },
+  { value: "brand:크롬하츠", label: "크롬하츠" },
 ];
 
 const CLASSIFY_GENDERS_FILTER = [
