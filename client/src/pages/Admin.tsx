@@ -12882,6 +12882,9 @@ const CLASSIFY_CATEGORIES = [
   { value: "brand:크롬하츠", label: "크롬하츠" },
 ];
 
+// 상품 카드에서 실제 카테고리 저장용 — brand: 접두사 항목 제외
+const CLASSIFY_ASSIGN_CATEGORIES = CLASSIFY_CATEGORIES.filter(c => !c.value.startsWith("brand:"));
+
 const CLASSIFY_GENDERS_FILTER = [
   { value: "all", label: "전체" },
   { value: "남성", label: "남성" },
@@ -13003,6 +13006,8 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
 
   // 인라인 즉시 저장 + 의심 해소 시 목록에서 즉시 제거
   const saveField = async (productId: string, field: "gender" | "categoryId", value: string) => {
+    // brand: 접두사는 필터용 값 — DB에 저장 금지
+    if (field === "categoryId" && value.startsWith("brand:")) return;
     setSaving(prev => ({ ...prev, [productId]: true }));
     try {
       const res = await fetchWithAuth(`/api/products/${productId}`, {
@@ -13255,13 +13260,13 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
                   <div>
                     <label className="text-[10px] text-gray-500 mb-0.5 block">카테고리</label>
                     <select
-                      value={p.categoryId || ""}
+                      value={CLASSIFY_ASSIGN_CATEGORIES.find(c => c.value === p.categoryId) ? p.categoryId || "" : ""}
                       onChange={e => saveField(p.id, "categoryId", e.target.value)}
                       disabled={isSavingNow}
                       className="w-full text-xs border border-gray-200 rounded-md px-1.5 py-1 bg-white appearance-none cursor-pointer text-gray-700"
                     >
                       <option value="">미설정</option>
-                      {CLASSIFY_CATEGORIES.map(c => (
+                      {CLASSIFY_ASSIGN_CATEGORIES.map(c => (
                         <option key={c.value} value={c.value}>{c.label}</option>
                       ))}
                     </select>
