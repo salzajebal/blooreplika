@@ -299,9 +299,9 @@ export default function BlooGenderPage({ gender }: { gender: "남성" | "여성"
             <div
               className={`py-1.5 px-3 cursor-pointer hover:text-black ${filter.label === "크롬하츠" ? "font-semibold border-l-2 border-black -ml-px pl-3" : ""}`}
               onClick={() => {
-                const brandId = brandNameMap["Chrome Hearts"];
+                const brandId = brandNameMap["크롬하츠"];
                 if (brandId) setFilter({ brandId, label: "크롬하츠" });
-                else setFilter({ search: "Chrome Hearts", label: "크롬하츠" });
+                else setFilter({ search: "크롬하츠", label: "크롬하츠" });
                 setPage(0);
               }}
             >
@@ -419,9 +419,9 @@ export default function BlooGenderPage({ gender }: { gender: "남성" | "여성"
           <div
             className={`py-1.5 px-3 cursor-pointer hover:text-black ${filter.label === "크롬하츠" ? "font-semibold border-l-2 border-black -ml-px pl-3" : ""}`}
             onClick={() => {
-              const brandId = brandNameMap["Chrome Hearts"];
+              const brandId = brandNameMap["크롬하츠"];
               if (brandId) setFilter({ brandId, label: "크롬하츠" });
-              else setFilter({ search: "Chrome Hearts", label: "크롬하츠" });
+              else setFilter({ search: "크롬하츠", label: "크롬하츠" });
               setPage(0);
             }}
           >

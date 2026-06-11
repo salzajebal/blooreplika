@@ -339,12 +339,13 @@ export default function ProductList() {
   const categoryInfo = CATEGORIES.find((c) => c.slug === categorySlug);
   const searchString = useSearch();
 
-  const { searchQuery, subcategoryId, urlBrand, activeTab, monthParam, genderParam, subnameParam, filterCategoryParam } = useMemo(() => {
+  const { searchQuery, subcategoryId, urlBrand, urlBrandName, activeTab, monthParam, genderParam, subnameParam, filterCategoryParam } = useMemo(() => {
     const p = new URLSearchParams(searchString);
     return {
       searchQuery: p.get("q"),
       subcategoryId: p.get("sub"),
       urlBrand: p.get("brand"),
+      urlBrandName: p.get("brandName"),
       activeTab: p.get("tab") || "all",
       monthParam: p.get("month") || undefined,
       genderParam: p.get("gender") || undefined,
@@ -512,7 +513,21 @@ export default function ProductList() {
     }
   }, [currentPage, totalPages]);
 
-  useEffect(() => { setSelectedBrand(urlBrand || null); }, [urlBrand]);
+  // brandName URL 파라미터를 brand UUID로 변환
+  const resolvedBrandId = useMemo(() => {
+    if (urlBrand) return urlBrand;
+    if (!urlBrandName || !brands.length) return null;
+    const lower = urlBrandName.toLowerCase().replace(/\s/g, "");
+    const exact = brands.find((b: any) => b.name === urlBrandName);
+    if (exact) return exact.id;
+    const partial = brands.find((b: any) => {
+      const bn = b.name.toLowerCase().replace(/\s/g, "");
+      return bn.includes(lower) || lower.includes(bn);
+    });
+    return partial?.id ?? null;
+  }, [urlBrand, urlBrandName, brands]);
+
+  useEffect(() => { setSelectedBrand(resolvedBrandId || null); }, [resolvedBrandId]);
 
   useEffect(() => {
     if (isInitialMount.current) { isInitialMount.current = false; sessionStorage.setItem("productListCategory", categorySlug || ""); return; }
