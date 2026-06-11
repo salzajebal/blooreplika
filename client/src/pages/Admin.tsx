@@ -12879,6 +12879,7 @@ const CLASSIFY_CATEGORIES = [
   { value: "watches", label: "시계" },
   { value: "golf", label: "골프" },
   { value: "accessories", label: "악세서리" },
+  { value: "brand:Chrome Hearts", label: "크롬하츠" },
 ];
 
 const CLASSIFY_GENDERS_FILTER = [
@@ -12937,7 +12938,13 @@ function ClassifyTab({ authToken, fetchWithAuth, toast }: { authToken: string; f
       const params = new URLSearchParams();
       params.set("limit", String(LIMIT));
       params.set("offset", String((pg - 1) * LIMIT));
-      if (cat) params.set("categoryId", cat);
+      if (cat) {
+        if (cat.startsWith("brand:")) {
+          params.set("brandName", cat.slice(6));
+        } else {
+          params.set("categoryId", cat);
+        }
+      }
       if (gen && gen !== "all" && gen !== "null") params.set("gender", gen);
       if (q) params.set("search", q);
       const res = await fetchWithAuth(`/api/products?${params}`);
