@@ -366,7 +366,7 @@ export function Header() {
                     <Link href="/httpstheblooshop1496458051" onClick={() => setMenuOpen(false)} className="w-full px-7 py-2.5 text-[13px] text-white/70 hover:text-white border-t border-white/5">남성 의류</Link>
                     <Link href="/220" onClick={() => setMenuOpen(false)} className="w-full px-7 py-2.5 text-[13px] text-white/70 hover:text-white border-t border-white/5">남성 신발</Link>
                     <Link href="/1212" onClick={() => setMenuOpen(false)} className="w-full px-7 py-2.5 text-[13px] text-white/70 hover:text-white border-t border-white/5">남성 가방</Link>
-                    <Link href="/products/clothing?brand=8273afba-6d4d-40ba-b718-e4a882a423ca" onClick={() => setMenuOpen(false)} className="w-full px-7 py-2.5 text-[13px] text-white/70 hover:text-white border-t border-white/5">크롬하츠</Link>
+                    <Link href="/products?brand=8273afba-6d4d-40ba-b718-e4a882a423ca" onClick={() => setMenuOpen(false)} className="w-full px-7 py-2.5 text-[13px] text-white/70 hover:text-white border-t border-white/5">크롬하츠</Link>
                     <div className="w-full border-t border-white/5">
                       <button onClick={() => setMenAccOpen(o => !o)} className="w-full px-7 py-2.5 text-[13px] text-white/70 hover:text-white flex items-center justify-between">
                         남성 패션 잡화
@@ -400,7 +400,7 @@ export function Header() {
                     <Link href="/656" onClick={() => setMenuOpen(false)} className="w-full px-7 py-2.5 text-[13px] text-white/70 hover:text-white border-t border-white/5">여성 신발</Link>
                     <Link href="/1447" onClick={() => setMenuOpen(false)} className="w-full px-7 py-2.5 text-[13px] text-white/70 hover:text-white border-t border-white/5">여성 가방</Link>
                     <Link href="/716" onClick={() => setMenuOpen(false)} className="w-full px-7 py-2.5 text-[13px] text-white/70 hover:text-white border-t border-white/5">여성 패션 잡화</Link>
-                    <Link href="/products/clothing?brand=8273afba-6d4d-40ba-b718-e4a882a423ca" onClick={() => setMenuOpen(false)} className="w-full px-7 py-2.5 text-[13px] text-white/70 hover:text-white border-t border-white/5">크롬하츠</Link>
+                    <Link href="/products?brand=8273afba-6d4d-40ba-b718-e4a882a423ca" onClick={() => setMenuOpen(false)} className="w-full px-7 py-2.5 text-[13px] text-white/70 hover:text-white border-t border-white/5">크롬하츠</Link>
                   </div>
                 )}
               </div>
