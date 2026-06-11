@@ -340,10 +340,12 @@ const SIDEBAR_NAV = [
   { label: "남성 신발",    path: "/220",  gender: "남성", cat: "shoes" },
   { label: "남성 가방",    path: "/1212", gender: "남성", cat: "bags" },
   { label: "남성 패션 잡화", path: "/26", gender: "남성", cat: "accessories" },
+  { label: "크롬하츠",     path: "/products/clothing?brandName=Chrome+Hearts", gender: "남성", cat: "clothing" },
   { label: "여성 의류",    path: "/497",  gender: "여성", cat: "clothing" },
   { label: "여성 가방",    path: "/1447", gender: "여성", cat: "bags" },
   { label: "여성 신발",    path: "/656",  gender: "여성", cat: "shoes" },
   { label: "여성 패션 잡화", path: "/716", gender: "여성", cat: "accessories" },
+  { label: "크롬하츠",     path: "/products/clothing?brandName=Chrome+Hearts", gender: "여성", cat: "clothing" },
 ];
 
 // ─── Icon Row Component ────────────────────────────────────────────────────────
