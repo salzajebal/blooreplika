@@ -513,13 +513,51 @@ export default function ProductList() {
     }
   }, [currentPage, totalPages]);
 
+  // 영문 브랜드명 → 한글 브랜드명 명시적 매핑 (DB는 한글로 저장됨)
+  const BRAND_NAME_MAP: Record<string, string> = {
+    "chrome hearts": "크롬하츠",
+    "chromehearts": "크롬하츠",
+    "gucci": "구찌",
+    "louis vuitton": "루이비통",
+    "chanel": "샤넬",
+    "hermes": "에르메스",
+    "dior": "디올",
+    "prada": "프라다",
+    "burberry": "버버리",
+    "balenciaga": "발렌시아가",
+    "saint laurent": "생로랑",
+    "bottega veneta": "보테가베네타",
+    "givenchy": "지방시",
+    "celine": "셀린느",
+    "valentino": "발렌티노",
+    "versace": "베르사체",
+    "fendi": "펜디",
+    "loewe": "로에베",
+    "alexander mcqueen": "알렉산더맥퀸",
+    "moncler": "몽클레르",
+    "canada goose": "캐나다구스",
+    "stone island": "스톤아일랜드",
+  };
+
   // brandName URL 파라미터를 brand UUID로 변환
   const resolvedBrandId = useMemo(() => {
     if (urlBrand) return urlBrand;
     if (!urlBrandName || !brands.length) return null;
-    const lower = urlBrandName.toLowerCase().replace(/\s/g, "");
+    const lower = urlBrandName.toLowerCase().replace(/\s/g, "").trim();
+    const lowerWithSpace = urlBrandName.toLowerCase().trim();
+    // 1. 정확히 일치
     const exact = brands.find((b: any) => b.name === urlBrandName);
     if (exact) return exact.id;
+    // 2. 영문→한글 명시적 매핑 후 재검색
+    const mappedKorean = BRAND_NAME_MAP[lowerWithSpace] || BRAND_NAME_MAP[lower];
+    if (mappedKorean) {
+      const mapped = brands.find((b: any) => b.name === mappedKorean);
+      if (mapped) return mapped.id;
+    }
+    // 3. slug 일치 (DB의 slug 필드)
+    const bySlug = brands.find((b: any) => (b.slug || "").toLowerCase().replace(/\s/g, "") === lower);
+    if (bySlug) return bySlug.id;
+    // 4. 부분 문자열 일치 (같은 언어권)
     const partial = brands.find((b: any) => {
       const bn = b.name.toLowerCase().replace(/\s/g, "");
       return bn.includes(lower) || lower.includes(bn);
