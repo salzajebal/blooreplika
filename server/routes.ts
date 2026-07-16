@@ -120,7 +120,7 @@ async function uploadBufferToObjectStorage(
 }
 
 const ADMIN_USERNAME = "admin";
-const ADMIN_PASSWORD = "tkfwkwpqkf!@!";
+const ADMIN_PASSWORD = "skwhdrlf123!@$";
 
 // ── DB 기반 어드민 세션 ──────────────────────────────────────
 async function ensureAdminSessionsTable() {
