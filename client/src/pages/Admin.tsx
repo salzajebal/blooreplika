@@ -6283,6 +6283,7 @@ export default function Admin() {
                     <th className="px-4 py-3 text-left font-medium">작성자</th>
                     <th className="px-4 py-3 text-left font-medium">제목</th>
                     <th className="px-4 py-3 text-left font-medium">내용</th>
+                    <th className="px-4 py-3 text-left font-medium">이미지</th>
                     <th className="px-4 py-3 text-left font-medium">별점</th>
                     <th className="px-4 py-3 text-left font-medium">작성일</th>
                     <th className="px-4 py-3 text-left font-medium">공개</th>
@@ -6316,6 +6317,35 @@ export default function Admin() {
                               className="w-full px-2 py-1 text-sm border rounded min-h-[60px] resize-y focus:outline-none focus:border-primary"
                               placeholder="내용"
                             />
+                          </td>
+                          <td className="px-4 py-3 min-w-[160px]">
+                            <div className="space-y-1">
+                              <label className="flex items-center justify-center px-2 py-1 bg-gray-100 border border-gray-300 rounded cursor-pointer hover:bg-gray-200 transition-colors text-xs">
+                                <Upload className="w-3 h-3 mr-1" />
+                                {uploadingImage ? "업로드중..." : "사진 선택"}
+                                <input
+                                  type="file"
+                                  accept="image/jpeg,image/png,image/gif,image/webp"
+                                  onChange={handleImageUpload}
+                                  disabled={uploadingImage}
+                                  className="hidden"
+                                />
+                              </label>
+                              <Input
+                                value={reviewFormData.imageUrl}
+                                onChange={(e) => setReviewFormData({ ...reviewFormData, imageUrl: e.target.value })}
+                                placeholder="URL 직접입력"
+                                className="h-7 text-xs"
+                              />
+                              {reviewFormData.imageUrl && (
+                                <img
+                                  src={reviewFormData.imageUrl}
+                                  alt="미리보기"
+                                  className="w-16 h-16 object-cover rounded border"
+                                  onError={(e) => (e.currentTarget.style.display = 'none')}
+                                />
+                              )}
+                            </div>
                           </td>
                           <td className="px-4 py-3">
                             <select
@@ -6372,6 +6402,18 @@ export default function Admin() {
                           <td className="px-4 py-3">{review.title}</td>
                           <td className="px-4 py-3 text-sm text-gray-600 max-w-xs">
                             <p className="line-clamp-3 whitespace-pre-line">{review.content}</p>
+                          </td>
+                          <td className="px-4 py-3">
+                            {review.imageUrl ? (
+                              <img
+                                src={review.imageUrl}
+                                alt="후기 이미지"
+                                className="w-14 h-14 object-cover rounded border"
+                                onError={(e) => (e.currentTarget.style.display = 'none')}
+                              />
+                            ) : (
+                              <span className="text-xs text-gray-400">없음</span>
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex text-yellow-400">
