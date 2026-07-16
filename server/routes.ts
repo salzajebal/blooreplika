@@ -4229,6 +4229,19 @@ export async function registerRoutes(
     }
   });
 
+  app.delete("/api/admin/orders/:id", requireAdminAuth, async (req: Request, res: Response) => {
+    try {
+      const deleted = await storage.deleteOrder(req.params.id);
+      if (!deleted) {
+        return res.status(404).json({ success: false, error: "주문을 찾을 수 없습니다." });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting order:", error);
+      res.status(500).json({ success: false, error: "주문 삭제 중 오류가 발생했습니다." });
+    }
+  });
+
   // ==================== CARD PAYMENT (GH PAYMENTS) API ====================
 
   app.get("/api/orders/status/:orderNumber", async (req: Request, res: Response) => {

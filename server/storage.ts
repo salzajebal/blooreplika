@@ -207,6 +207,7 @@ export interface IStorage {
   getOrderItem(id: string): Promise<OrderItem | undefined>;
   createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem>;
   deleteOrderItem(id: string): Promise<boolean>;
+  deleteOrder(id: string): Promise<boolean>;
   hasMemberOrderedProduct(memberId: string, productId: string): Promise<boolean>;
   
   // Coupon Payments
@@ -1340,6 +1341,12 @@ export class DatabaseStorage implements IStorage {
 
   async deleteOrderItem(id: string): Promise<boolean> {
     const result = await db.delete(orderItems).where(eq(orderItems.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async deleteOrder(id: string): Promise<boolean> {
+    await db.delete(orderItems).where(eq(orderItems.orderId, id));
+    const result = await db.delete(orders).where(eq(orders.id, id)).returning();
     return result.length > 0;
   }
 

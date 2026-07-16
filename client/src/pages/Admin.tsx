@@ -2186,6 +2186,22 @@ export default function Admin() {
     }
   };
 
+  const handleDeleteOrder = async (orderId: string, orderNumber: string) => {
+    if (!confirm(`주문 ${orderNumber}을(를) 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+    try {
+      const res = await fetchWithAuth(`/api/admin/orders/${orderId}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        toast({ title: "완료", description: "주문이 삭제되었습니다." });
+        fetchOrders();
+      } else {
+        toast({ title: "오류", description: data.error, variant: "destructive" });
+      }
+    } catch (error) {
+      toast({ title: "오류", description: "삭제 중 오류가 발생했습니다.", variant: "destructive" });
+    }
+  };
+
   const handleUpdateOrderStatus = async (orderId: string, status: string) => {
     try {
       const res = await fetchWithAuth(`/api/admin/orders/${orderId}`, {
@@ -5728,6 +5744,15 @@ export default function Admin() {
                           <option value="paid">결제 완료</option>
                           <option value="refunded">환불됨</option>
                         </select>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 border-red-300 hover:bg-red-50 hover:border-red-500 w-full"
+                          onClick={() => handleDeleteOrder(order.id, order.orderNumber)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          주문 삭제
+                        </Button>
                       </div>
                     </div>
                   </div>
