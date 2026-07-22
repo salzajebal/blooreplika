@@ -345,7 +345,7 @@ export default function Admin() {
     content: "",
     imageUrl: "",
     isVisible: true,
-    displayDate: new Date().toISOString().slice(0, 16),
+    displayDate: new Date(Date.now() + 9*60*60*1000).toISOString().slice(0, 16),
   });
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [showAddReviewForm, setShowAddReviewForm] = useState(false);
@@ -3308,7 +3308,7 @@ export default function Admin() {
       if (data.success) {
         toast({ title: "성공", description: "후기가 추가되었습니다." });
         setShowAddReviewForm(false);
-        setReviewFormData({ authorName: "", productName: "", rating: 5, title: "", content: "", imageUrl: "", isVisible: true, displayDate: new Date().toISOString().slice(0, 16) });
+        setReviewFormData({ authorName: "", productName: "", rating: 5, title: "", content: "", imageUrl: "", isVisible: true, displayDate: new Date(Date.now() + 9*60*60*1000).toISOString().slice(0, 16) });
         fetchReviews();
       } else {
         console.error("Review creation error:", data.error);
@@ -3384,7 +3384,7 @@ export default function Admin() {
     setEditingReviewId(review.id);
     
     // Preserve the original displayDate exactly as stored
-    let displayDateForInput = new Date().toISOString().slice(0, 16);
+    let displayDateForInput = new Date(Date.now() + 9*60*60*1000).toISOString().slice(0, 16);
     if (review.displayDate) {
       // Store the original ISO string to preserve it during edit
       const originalDate = new Date(review.displayDate);
@@ -6068,92 +6068,6 @@ export default function Admin() {
 
         {activeTab === "reviews" && (
           <div className="space-y-6">
-          {/* 블루스토어 후기 크롤링 섹션 */}
-          <div className="bg-white rounded-xl shadow-sm border border-blue-100 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <RefreshCw className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-900">블루스토어 후기 크롤링</h3>
-                <p className="text-sm text-gray-500">bloostore1.co.kr 사진후기 게시판에서 제목·이름·사진을 자동 수집합니다</p>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 rounded-lg p-3 mb-4 text-xs text-blue-700 flex items-start gap-2">
-              <span>📋</span>
-              <span>수집 URL: <code className="bg-blue-100 px-1 rounded">bloostore1.co.kr/330</code> (리뷰&후기 게시판)</span>
-            </div>
-
-            <div className="flex flex-wrap gap-4 items-end mb-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">수집 페이지 수</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={50}
-                  value={bloostoreReviewMaxPages}
-                  onChange={(e) => setBloostoreReviewMaxPages(Number(e.target.value))}
-                  className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                  data-testid="input-review-crawl-pages"
-                />
-                <p className="text-xs text-gray-400 mt-1">페이지당 약 12~20개</p>
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer pb-2">
-                <input
-                  type="checkbox"
-                  checked={bloostoreReviewClearExisting}
-                  onChange={(e) => setBloostoreReviewClearExisting(e.target.checked)}
-                  className="w-4 h-4 rounded"
-                  data-testid="checkbox-review-clear"
-                />
-                <span className="text-sm text-gray-600">기존 크롤링 후기 삭제 후 시작</span>
-              </label>
-              <Button
-                onClick={startBloostoreReviewCrawl}
-                disabled={bloostoreReviewCrawl.status === 'running'}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                data-testid="button-start-review-crawl"
-              >
-                <RefreshCw className={`w-4 h-4 mr-2 ${bloostoreReviewCrawl.status === 'running' ? 'animate-spin' : ''}`} />
-                {bloostoreReviewCrawl.status === 'running' ? '크롤링 중...' : '후기 크롤링 시작'}
-              </Button>
-            </div>
-
-            {bloostoreReviewCrawl.status !== 'idle' && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-600">{bloostoreReviewCrawl.message}</span>
-                  {bloostoreReviewCrawl.total > 0 && (
-                    <span className="font-medium text-gray-800">{bloostoreReviewCrawl.current}/{bloostoreReviewCrawl.total}</span>
-                  )}
-                </div>
-                {bloostoreReviewCrawl.total > 0 && (
-                  <div className="w-full bg-gray-100 rounded-full h-3">
-                    <div
-                      className={`h-3 rounded-full transition-all duration-500 ${
-                        bloostoreReviewCrawl.status === 'error' ? 'bg-red-500' :
-                        bloostoreReviewCrawl.status === 'done' ? 'bg-green-500' : 'bg-blue-500'
-                      }`}
-                      style={{ width: `${Math.round((bloostoreReviewCrawl.current / bloostoreReviewCrawl.total) * 100)}%` }}
-                    />
-                  </div>
-                )}
-                <div className="flex gap-4 text-sm">
-                  <span className="text-green-600 font-medium">✓ 저장됨: {bloostoreReviewCrawl.inserted}개</span>
-                  {bloostoreReviewCrawl.skipped > 0 && (
-                    <span className="text-gray-500">건너뜀: {bloostoreReviewCrawl.skipped}개</span>
-                  )}
-                  {bloostoreReviewCrawl.status === 'done' && (
-                    <span className="text-green-700 font-bold">🎉 완료!</span>
-                  )}
-                  {bloostoreReviewCrawl.status === 'error' && (
-                    <span className="text-red-600 font-bold">⚠ 오류 발생</span>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
 
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <div className="flex items-center justify-between mb-6">
@@ -6165,7 +6079,7 @@ export default function Admin() {
                 data-testid="button-add-review"
                 onClick={() => {
                   setShowAddReviewForm(true);
-                  setReviewFormData({ authorName: "", productName: "", rating: 5, title: "", content: "", imageUrl: "", isVisible: true, displayDate: new Date().toISOString().slice(0, 16) });
+                  setReviewFormData({ authorName: "", productName: "", rating: 5, title: "", content: "", imageUrl: "", isVisible: true, displayDate: new Date(Date.now() + 9*60*60*1000).toISOString().slice(0, 16) });
                 }}
                 className="bg-yellow-500 hover:bg-yellow-600"
               >
@@ -6183,7 +6097,7 @@ export default function Admin() {
                     <Input
                       value={reviewFormData.authorName}
                       onChange={(e) => setReviewFormData({ ...reviewFormData, authorName: e.target.value })}
-                      placeholder="홍길동"
+                      placeholder=""
                       data-testid="input-review-author"
                     />
                   </div>
@@ -6192,7 +6106,7 @@ export default function Admin() {
                     <Input
                       value={reviewFormData.productName}
                       onChange={(e) => setReviewFormData({ ...reviewFormData, productName: e.target.value })}
-                      placeholder="루이비통 가방"
+                      placeholder=""
                       data-testid="input-review-product"
                     />
                   </div>
