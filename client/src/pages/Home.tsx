@@ -47,7 +47,6 @@ function MainBannerSlider() {
   });
 
   const STATIC_BANNERS = [
-    { imageUrl: "/bloo/banner_review_event.jpg", linkUrl: "/reviews",              title: "", pos: "50% 50%" },
     { imageUrl: "/bloo/banner_app.jpg",          linkUrl: "/products",             title: "", pos: "50% 50%" },
     { imageUrl: "/bloo/banner_carrier.jpg",      linkUrl: "/products",             title: "", pos: "50% 50%" },
     { imageUrl: "/bloo/banner_acc.jpg",          linkUrl: "/products/accessories", title: "", pos: "50% 50%" },
@@ -577,23 +576,6 @@ function InspectionSection() {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Review Event Banner — Daily & Weekly (full image)
-// ─────────────────────────────────────────────────────────────
-function ReviewEventBanner() {
-  return (
-    <Link href="/notices" data-testid="review-event-banner" className="block w-full">
-      <img
-        src={BP("https://cdn.imweb.me/thumbnail/20231214/72c7ff6bcbc3c.jpg")}
-        alt="커뮤니티"
-        className="w-full block"
-        style={{ display: "block" }}
-        loading="lazy"
-      />
-    </Link>
-  );
-}
-
-// ─────────────────────────────────────────────────────────────
 // Reviews section — BLOO 3-col style
 // ─────────────────────────────────────────────────────────────
 function ReviewsSection() {
@@ -800,10 +782,7 @@ export default function Home() {
           testId="watch-section"
         />
 
-        {/* 11. 커뮤니티 리뷰 배너 */}
-        <ReviewEventBanner />
-
-        {/* 12. Reviews */}
+        {/* 11. Reviews */}
         <ReviewsSection />
 
         {/* 13. Customer support */}
